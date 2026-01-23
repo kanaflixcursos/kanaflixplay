@@ -34,43 +34,52 @@ Deno.serve(async (req) => {
     const pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
 
     if (!pandaApiKey) {
+      console.error("PANDAVIDEO_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "Pandavideo API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check authorization - either service key (cron) or admin user
-    const authHeader = req.headers.get("Authorization");
-    let isAuthorized = false;
+    const url = new URL(req.url);
     
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      
-      // Check if it's a user token
+    // Parse body for POST requests
+    let bodyData: { courseId?: string } = {};
+    if (req.method === "POST") {
+      try {
+        bodyData = await req.json();
+      } catch {
+        // No body or invalid JSON
+      }
+    }
+
+    // Get courseId from query params or body
+    const courseId = url.searchParams.get("course_id") || bodyData.courseId;
+    const isCronJob = url.searchParams.get("cron") === "true";
+
+    // Check authorization for non-cron requests
+    const authHeader = req.headers.get("Authorization");
+    let isAuthorized = isCronJob;
+    
+    if (!isCronJob && authHeader?.startsWith("Bearer ")) {
       const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } }
       });
       
-      const { data: claimsData } = await supabaseClient.auth.getClaims(token);
+      const { data: { user } } = await supabaseClient.auth.getUser();
       
-      if (claimsData?.claims?.sub) {
-        // Check if user is admin
+      if (user) {
         const { data: roleData } = await supabaseClient
           .from("user_roles")
           .select("role")
-          .eq("user_id", claimsData.claims.sub)
+          .eq("user_id", user.id)
           .single();
         
         isAuthorized = roleData?.role === "admin";
       }
     }
 
-    // For cron jobs, we use service role key directly
-    const url = new URL(req.url);
-    const isCronJob = url.searchParams.get("cron") === "true";
-    
-    if (!isAuthorized && !isCronJob) {
+    if (!isAuthorized) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -79,9 +88,6 @@ Deno.serve(async (req) => {
 
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get course_id from params (optional - if not provided, sync all courses)
-    const courseId = url.searchParams.get("course_id");
 
     // Fetch courses with pandavideo folders
     let coursesQuery = supabase
@@ -103,6 +109,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    console.log(`Found ${courses?.length || 0} courses to sync`);
+
     if (!courses || courses.length === 0) {
       return new Response(
         JSON.stringify({ message: "No courses with Pandavideo folders to sync", synced: 0 }),
@@ -120,26 +128,49 @@ Deno.serve(async (req) => {
 
     for (const course of courses as Course[]) {
       try {
+        console.log(`Syncing course ${course.id} with folder ${course.pandavideo_folder_id}`);
+        
         // Fetch videos from Pandavideo folder
-        const response = await fetch(
-          `${PANDAVIDEO_API_URL}/videos?folder_id=${course.pandavideo_folder_id}&limit=100`,
-          {
-            headers: {
-              Authorization: pandaApiKey,
-              Accept: "application/json",
-            },
-          }
-        );
+        const pandaUrl = `${PANDAVIDEO_API_URL}/videos?folder_id=${course.pandavideo_folder_id}&limit=100`;
+        console.log(`Fetching from: ${pandaUrl}`);
+        
+        const response = await fetch(pandaUrl, {
+          headers: {
+            Authorization: pandaApiKey,
+            Accept: "application/json",
+          },
+        });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Error fetching videos for course ${course.id}:`, errorText);
-          results.errors.push(`Course ${course.id}: Failed to fetch videos`);
+          console.error(`Pandavideo API error for course ${course.id}:`, response.status, errorText);
+          results.errors.push(`Course ${course.id}: Pandavideo API error ${response.status}`);
           continue;
         }
 
         const data = await response.json();
-        const videos: PandaVideo[] = data.videos || data || [];
+        console.log(`Pandavideo response structure:`, JSON.stringify(Object.keys(data)));
+        
+        // Handle different response formats
+        let videos: PandaVideo[] = [];
+        if (Array.isArray(data)) {
+          videos = data;
+        } else if (data.videos && Array.isArray(data.videos)) {
+          videos = data.videos;
+        } else if (data.data && Array.isArray(data.data)) {
+          videos = data.data;
+        }
+        
+        console.log(`Found ${videos.length} videos in folder`);
+        
+        if (videos.length > 0) {
+          console.log(`First video sample:`, JSON.stringify({
+            id: videos[0].id,
+            title: videos[0].title,
+            status: videos[0].status,
+            folder_id: videos[0].folder_id,
+          }));
+        }
 
         // Get existing lessons for this course
         const { data: existingLessons } = await supabase
@@ -153,35 +184,43 @@ Deno.serve(async (req) => {
         );
         const pandaVideoIds = new Set(videos.map((v) => v.id));
 
-        // Process each video
-        for (let index = 0; index < videos.length; index++) {
-          const video = videos[index];
+        console.log(`Existing lessons with pandavideo_video_id: ${existingVideoIds.size}`);
+
+        // Process each video - accept more status values
+        const validStatuses = ["converted", "ready", "published", "active", "online"];
+        let orderIndex = 1;
+        
+        for (const video of videos) {
+          const status = (video.status || "").toLowerCase();
           
-          // Skip non-converted videos
-          if (video.status !== "converted" && video.status !== "ready") {
+          // Be more permissive with status - if no status or unknown, still try to sync
+          const isValidStatus = !video.status || validStatuses.some(s => status.includes(s));
+          
+          if (!isValidStatus) {
+            console.log(`Skipping video ${video.id} with status: ${video.status}`);
             continue;
           }
 
-          const embedUrl = video.player_url || `https://player-vz-${video.id.slice(0, 8)}.tv.pandavideo.com.br/embed/?v=${video.id}`;
+          // Build embed URL
+          const embedUrl = video.player_url || 
+            `https://player-vz-${video.id.substring(0, 8)}.tv.pandavideo.com.br/embed/?v=${video.id}`;
           const durationMinutes = video.duration ? Math.ceil(video.duration / 60) : null;
 
           const lessonData = {
             course_id: course.id,
-            title: video.title,
+            title: video.title || `Vídeo ${orderIndex}`,
             description: video.description || "",
             video_url: embedUrl,
             pandavideo_video_id: video.id,
-            order_index: index + 1,
+            order_index: orderIndex,
             duration_minutes: durationMinutes,
           };
 
           if (existingVideoIds.has(video.id)) {
-            // Update existing lesson
+            // Update existing lesson (don't override user-edited title)
             const { error: updateError } = await supabase
               .from("lessons")
               .update({
-                title: lessonData.title,
-                description: lessonData.description,
                 video_url: lessonData.video_url,
                 order_index: lessonData.order_index,
                 duration_minutes: lessonData.duration_minutes,
@@ -197,25 +236,29 @@ Deno.serve(async (req) => {
             }
           } else {
             // Create new lesson
+            console.log(`Creating lesson for video: ${video.id} - ${video.title}`);
             const { error: insertError } = await supabase
               .from("lessons")
               .insert(lessonData);
 
             if (insertError) {
               console.error(`Error creating lesson for video ${video.id}:`, insertError);
-              results.errors.push(`Video ${video.id}: Insert failed`);
+              results.errors.push(`Video ${video.id}: Insert failed - ${insertError.message}`);
             } else {
               results.created++;
             }
           }
+          
+          orderIndex++;
         }
 
         // Delete lessons for videos that no longer exist in Pandavideo
         const lessonsToDelete = (existingLessons || []).filter(
-          (l) => !pandaVideoIds.has(l.pandavideo_video_id!)
+          (l) => l.pandavideo_video_id && !pandaVideoIds.has(l.pandavideo_video_id)
         );
 
         if (lessonsToDelete.length > 0) {
+          console.log(`Deleting ${lessonsToDelete.length} orphaned lessons`);
           const { error: deleteError } = await supabase
             .from("lessons")
             .delete()
