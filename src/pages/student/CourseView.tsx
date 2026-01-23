@@ -62,6 +62,8 @@ export default function CourseView() {
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchCourseData = async () => {
       if (!courseId || !user) return;
 
@@ -71,6 +73,8 @@ export default function CourseView() {
         .select('*')
         .eq('id', courseId)
         .single();
+
+      if (!isMounted) return;
 
       if (courseError) {
         console.error('Error fetching course:', courseError);
@@ -88,6 +92,8 @@ export default function CourseView() {
         .eq('course_id', courseId)
         .single();
 
+      if (!isMounted) return;
+      
       setIsEnrolled(!!enrollment);
 
       // Fetch lessons if enrolled (excluding hidden ones for students)
@@ -105,6 +111,8 @@ export default function CourseView() {
           .select('lesson_id, completed')
           .eq('user_id', user.id);
 
+        if (!isMounted) return;
+
         const progressMap = new Map(progressData?.map(p => [p.lesson_id, p.completed]) || []);
 
         // Fetch materials for all lessons
@@ -114,6 +122,8 @@ export default function CourseView() {
           .select('*')
           .in('lesson_id', lessonIds)
           .order('order_index');
+
+        if (!isMounted) return;
 
         const materialsByLesson: Record<string, LessonMaterial[]> = {};
         (materialsData || []).forEach((material: LessonMaterial) => {
@@ -131,16 +141,23 @@ export default function CourseView() {
 
         setLessons(lessonsWithProgress);
         
-        // Auto-select first incomplete or first lesson
-        const firstIncomplete = lessonsWithProgress.find(l => !l.completed);
-        setSelectedLesson(firstIncomplete || lessonsWithProgress[0] || null);
+        // Auto-select first incomplete or first lesson only on initial load
+        if (!selectedLesson) {
+          const firstIncomplete = lessonsWithProgress.find(l => !l.completed);
+          setSelectedLesson(firstIncomplete || lessonsWithProgress[0] || null);
+        }
       }
 
       setLoading(false);
     };
 
     fetchCourseData();
-  }, [courseId, user, navigate]);
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, user?.id]);
 
   const handleEnroll = async () => {
     if (!user || !courseId) return;
