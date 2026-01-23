@@ -22,7 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, BookOpen, GraduationCap, LogOut, Settings, Shield } from 'lucide-react';
+import { Home, BookOpen, LogOut, Shield } from 'lucide-react';
+import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -50,10 +51,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
       <div className="min-h-screen flex w-full">
         <Sidebar>
           <div className="p-4 border-b">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-lg">Kanaflix Play</span>
-            </div>
+            <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />
           </div>
           <SidebarContent>
             <SidebarGroup>

@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { GraduationCap } from 'lucide-react';
+import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -53,11 +53,8 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <GraduationCap className="h-8 w-8 text-primary" />
-            </div>
+            <img src={logoKanaflix} alt="Kanaflix" className="h-12 w-auto" />
           </div>
-          <CardTitle className="text-2xl">Kanaflix Play</CardTitle>
           <CardDescription>
             Plataforma de cursos online
           </CardDescription>

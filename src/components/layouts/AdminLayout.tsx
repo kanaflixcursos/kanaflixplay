@@ -22,7 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut } from 'lucide-react';
+import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
@@ -50,12 +51,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen flex w-full">
         <Sidebar>
           <div className="p-4 border-b">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-6 w-6 text-primary" />
-              <div>
-                <span className="font-semibold text-lg">Kanaflix Play</span>
-                <span className="block text-xs text-muted-foreground">Admin</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />
+              <span className="text-xs text-muted-foreground font-medium">Admin</span>
             </div>
           </div>
           <SidebarContent>
