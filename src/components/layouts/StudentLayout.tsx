@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
+import Footer from '@/components/Footer';
 import {
   Sidebar,
   SidebarContent,
@@ -165,6 +166,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           <main className="flex-1 p-6 overflow-auto">
             {children}
           </main>
+
+          <Footer />
         </div>
       </div>
     </SidebarProvider>

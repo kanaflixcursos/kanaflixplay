@@ -1,45 +1,46 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Users, PlayCircle, TrendingUp } from 'lucide-react';
+import { Users, UserCheck, BookOpen } from 'lucide-react';
 import StatCard from '@/components/StatCard';
+import DashboardActiveUsersChart from '@/components/admin/DashboardActiveUsersChart';
+import DashboardManageCourses from '@/components/admin/DashboardManageCourses';
+import DashboardManageUsers from '@/components/admin/DashboardManageUsers';
+import DashboardRecentComments from '@/components/admin/DashboardRecentComments';
+import DashboardRecentSignups from '@/components/admin/DashboardRecentSignups';
+import { subDays } from 'date-fns';
 
 interface Stats {
-  totalCourses: number;
-  publishedCourses: number;
   totalStudents: number;
-  totalLessons: number;
+  activeStudents: number;
+  totalCourses: number;
 }
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({
-    totalCourses: 0,
-    publishedCourses: 0,
     totalStudents: 0,
-    totalLessons: 0,
+    activeStudents: 0,
+    totalCourses: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+
       const [
-        { count: totalCourses },
-        { count: publishedCourses },
         { count: totalStudents },
-        { count: totalLessons },
+        { count: activeStudents },
+        { count: totalCourses },
       ] = await Promise.all([
-        supabase.from('courses').select('*', { count: 'exact', head: true }),
-        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-        supabase.from('lessons').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('last_seen_at', sevenDaysAgo),
+        supabase.from('courses').select('*', { count: 'exact', head: true }),
       ]);
 
       setStats({
-        totalCourses: totalCourses || 0,
-        publishedCourses: publishedCourses || 0,
         totalStudents: totalStudents || 0,
-        totalLessons: totalLessons || 0,
+        activeStudents: activeStudents || 0,
+        totalCourses: totalCourses || 0,
       });
 
       setLoading(false);
@@ -50,30 +51,22 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      title: 'Total de Cursos',
-      value: stats.totalCourses,
-      icon: BookOpen,
-      description: `${stats.publishedCourses} publicados`,
-    },
-    {
       title: 'Total de Alunos',
       value: stats.totalStudents,
       icon: Users,
       description: 'Usuários registrados',
     },
     {
-      title: 'Total de Aulas',
-      value: stats.totalLessons,
-      icon: PlayCircle,
-      description: 'Em todos os cursos',
+      title: 'Alunos Ativos',
+      value: stats.activeStudents,
+      icon: UserCheck,
+      description: 'Últimos 7 dias',
     },
     {
-      title: 'Taxa de Publicação',
-      value: stats.totalCourses > 0 
-        ? `${Math.round((stats.publishedCourses / stats.totalCourses) * 100)}%`
-        : '0%',
-      icon: TrendingUp,
-      description: 'Cursos publicados',
+      title: 'Total de Cursos',
+      value: stats.totalCourses,
+      icon: BookOpen,
+      description: 'Todos os cursos',
     },
   ];
 
@@ -86,7 +79,8 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* StatCards */}
+      <div className="grid gap-4 md:grid-cols-3">
         {statCards.map((stat) => (
           <StatCard
             key={stat.title}
@@ -99,35 +93,16 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Ações Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <Link to="/admin/courses" className="block">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="pt-6">
-                <BookOpen className="h-8 w-8 mb-2 text-primary" />
-                <h3 className="action-card-title">Gerenciar Cursos</h3>
-                <p className="action-card-description">
-                  Criar, editar e publicar cursos
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link to="/admin/students" className="block">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="pt-6">
-                <Users className="h-8 w-8 mb-2 text-primary" />
-                <h3 className="action-card-title">Gerenciar Alunos</h3>
-                <p className="action-card-description">
-                  Ver alunos e matrículas
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </CardContent>
-      </Card>
+      {/* Active Users Chart */}
+      <DashboardActiveUsersChart />
+
+      {/* 2x2 Grid */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <DashboardManageCourses />
+        <DashboardManageUsers />
+        <DashboardRecentComments />
+        <DashboardRecentSignups />
+      </div>
     </div>
   );
 }

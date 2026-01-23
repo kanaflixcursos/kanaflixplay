@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
+import Footer from '@/components/Footer';
 import {
   Sidebar,
   SidebarContent,
@@ -127,6 +128,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <main className="flex-1 p-6 overflow-auto bg-muted/30">
             {children}
           </main>
+
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
