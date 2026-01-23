@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, Trophy } from 'lucide-react';
+import { BookOpen, Play } from 'lucide-react';
 
 interface EnrolledCourse {
   id: string;
@@ -16,12 +16,14 @@ interface EnrolledCourse {
   };
   totalLessons: number;
   completedLessons: number;
+  lastWatchedAt?: string;
 }
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastCourse, setLastCourse] = useState<EnrolledCourse | null>(null);
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
@@ -48,29 +50,50 @@ export default function StudentDashboard() {
             .select('*', { count: 'exact', head: true })
             .eq('course_id', enrollment.course.id);
 
-          const { count: completedLessons } = await supabase
+          const lessonIds = (await supabase
+            .from('lessons')
+            .select('id')
+            .eq('course_id', enrollment.course.id)
+          ).data?.map(l => l.id) || [];
+
+          const { data: progressData } = await supabase
             .from('lesson_progress')
-            .select('*', { count: 'exact', head: true })
+            .select('lesson_id, completed, completed_at')
             .eq('user_id', user.id)
-            .eq('completed', true)
-            .in('lesson_id', 
-              (await supabase
-                .from('lessons')
-                .select('id')
-                .eq('course_id', enrollment.course.id)
-              ).data?.map(l => l.id) || []
-            );
+            .in('lesson_id', lessonIds);
+
+          const completedLessons = progressData?.filter(p => p.completed).length || 0;
+          
+          // Get most recent activity
+          const lastActivity = progressData?.reduce((latest, p) => {
+            if (p.completed_at && (!latest || p.completed_at > latest)) {
+              return p.completed_at;
+            }
+            return latest;
+          }, null as string | null);
 
           return {
             id: enrollment.id,
             course: enrollment.course,
             totalLessons: totalLessons || 0,
-            completedLessons: completedLessons || 0,
+            completedLessons,
+            lastWatchedAt: lastActivity || undefined,
           };
         })
       );
 
       setEnrolledCourses(coursesWithProgress);
+
+      // Find last watched course
+      const sortedByActivity = [...coursesWithProgress]
+        .filter(c => c.lastWatchedAt)
+        .sort((a, b) => {
+          if (!a.lastWatchedAt) return 1;
+          if (!b.lastWatchedAt) return -1;
+          return new Date(b.lastWatchedAt).getTime() - new Date(a.lastWatchedAt).getTime();
+        });
+
+      setLastCourse(sortedByActivity[0] || coursesWithProgress[0] || null);
       setLoading(false);
     };
 
@@ -78,9 +101,6 @@ export default function StudentDashboard() {
   }, [user]);
 
   const totalCourses = enrolledCourses.length;
-  const totalLessons = enrolledCourses.reduce((acc, c) => acc + c.totalLessons, 0);
-  const completedLessons = enrolledCourses.reduce((acc, c) => acc + c.completedLessons, 0);
-  const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -89,7 +109,7 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground">Bem-vindo de volta! Continue seus estudos.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cursos Matriculados</CardTitle>
@@ -100,26 +120,33 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aulas Concluídas</CardTitle>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedLessons} / {totalLessons}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Progresso Geral</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overallProgress}%</div>
-            <Progress value={overallProgress} className="mt-2" />
-          </CardContent>
-        </Card>
+        {lastCourse && (
+          <Link to={`/courses/${lastCourse.course.id}`}>
+            <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Último Curso Assistido</CardTitle>
+                <Play className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg font-semibold line-clamp-1">{lastCourse.course.title}</p>
+                <div className="flex items-center justify-between text-sm text-muted-foreground mt-2 mb-1">
+                  <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
+                  <span>
+                    {lastCourse.totalLessons > 0 
+                      ? Math.round((lastCourse.completedLessons / lastCourse.totalLessons) * 100) 
+                      : 0}%
+                  </span>
+                </div>
+                <Progress 
+                  value={lastCourse.totalLessons > 0 
+                    ? (lastCourse.completedLessons / lastCourse.totalLessons) * 100 
+                    : 0
+                  } 
+                />
+              </CardContent>
+            </Card>
+          </Link>
+        )}
       </div>
 
       <div>
