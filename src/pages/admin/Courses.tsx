@@ -4,8 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder, RefreshCw } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Course {
   id: string;
@@ -22,6 +30,7 @@ interface Course {
 
 export default function AdminCourses() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
@@ -139,34 +148,72 @@ export default function AdminCourses() {
     return `Sync: ${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  const CourseActions = ({ course }: { course: Course }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="bg-popover">
+        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}>
+          <Eye className="h-4 w-4 mr-2" />
+          Ver Aulas
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/edit`)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
+          {course.is_published ? '📤 Despublicar' : '📥 Publicar'}
+        </DropdownMenuItem>
+        {course.pandavideo_folder_id && (
+          <DropdownMenuItem 
+            onClick={() => handleSyncCourse(course.id)}
+            disabled={syncing === course.id}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncing === course.id ? 'animate-spin' : ''}`} />
+            Sincronizar
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => handleDelete(course.id)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Cursos</h1>
-          <p className="text-muted-foreground">Gerencie os cursos da plataforma</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Cursos</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Gerencie os cursos da plataforma</p>
         </div>
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
+            size={isMobile ? "icon" : "default"}
             onClick={() => handleSyncCourse()}
             disabled={syncingAll}
           >
             {syncingAll ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sincronizando...
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Sincronizar Todos
+                <RefreshCw className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+                {!isMobile && 'Sincronizar Todos'}
               </>
             )}
           </Button>
-          <Button onClick={() => navigate('/admin/courses/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Curso
+          <Button onClick={() => navigate('/admin/courses/new')} size={isMobile ? "icon" : "default"}>
+            <Plus className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
+            {!isMobile && 'Novo Curso'}
           </Button>
         </div>
       </div>
@@ -187,37 +234,37 @@ export default function AdminCourses() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-3 md:gap-4">
           {courses.map((course) => (
             <Card key={course.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
+              <CardContent className="p-3 md:p-4">
+                <div className="flex items-center gap-3 md:gap-4">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-20 h-24 object-cover rounded"
+                      className="w-14 h-16 md:w-20 md:h-24 object-cover rounded flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-20 h-24 bg-muted rounded flex items-center justify-center">
-                      <BookOpen className="h-6 w-6 text-muted-foreground" />
+                    <div className="w-14 h-16 md:w-20 md:h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
                     </div>
                   )}
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="card-title truncate">{course.title}</h3>
-                      <Badge variant={course.is_published ? 'default' : 'secondary'}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="card-title truncate text-sm md:text-base">{course.title}</h3>
+                      <Badge variant={course.is_published ? 'default' : 'secondary'} className="text-xs">
                         {course.is_published ? 'Publicado' : 'Rascunho'}
                       </Badge>
                     </div>
-                    <p className="card-description line-clamp-1">
+                    <p className="card-description line-clamp-1 hidden sm:block">
                       {course.description}
                     </p>
-                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap gap-2 md:gap-4 mt-1 text-xs text-muted-foreground">
                       <span>{course.lessonCount} aulas</span>
                       <span>{course.enrollmentCount} alunos</span>
-                      {course.pandavideo_folder_id && (
+                      {course.pandavideo_folder_id && !isMobile && (
                         <>
                           <span className="flex items-center gap-1">
                             <Folder className="h-3 w-3" />
@@ -229,52 +276,58 @@ export default function AdminCourses() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    {course.pandavideo_folder_id && (
+                  {/* Mobile: Dropdown menu */}
+                  {isMobile ? (
+                    <CourseActions course={course} />
+                  ) : (
+                    /* Desktop: Button row */
+                    <div className="flex items-center gap-2">
+                      {course.pandavideo_folder_id && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleSyncCourse(course.id)}
+                          disabled={syncing === course.id}
+                          title="Sincronizar aulas"
+                        >
+                          {syncing === course.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Aulas
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleSyncCourse(course.id)}
-                        disabled={syncing === course.id}
-                        title="Sincronizar aulas"
+                        onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
                       >
-                        {syncing === course.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4" />
-                        )}
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Aulas
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleTogglePublish(course)}
-                    >
-                      {course.is_published ? '📤' : '📥'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(course.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleTogglePublish(course)}
+                      >
+                        {course.is_published ? '📤' : '📥'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(course.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

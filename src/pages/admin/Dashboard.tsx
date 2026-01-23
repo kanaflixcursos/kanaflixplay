@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* StatCards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {statCards.map((stat) => (
           <StatCard
             key={stat.title}
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       <DashboardActiveUsersChart />
 
       {/* 2x2 Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <DashboardManageCourses />
         <DashboardManageUsers />
         <DashboardRecentComments />
