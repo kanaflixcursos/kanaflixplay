@@ -51,6 +51,7 @@ interface Lesson {
   is_hidden: boolean;
   completed: boolean;
   materials: LessonMaterial[];
+  thumbnail_url: string | null;
 }
 
 export default function CourseView() {
@@ -429,7 +430,28 @@ export default function CourseView() {
                     setMaterialsOpen(false);
                   }}
                 >
-                  <CardContent className="p-4 flex items-center gap-3">
+                  <CardContent className="p-3 flex items-center gap-3">
+                    {/* Thumbnail */}
+                    <div className="relative w-16 h-10 rounded overflow-hidden bg-muted shrink-0">
+                      {lesson.thumbnail_url ? (
+                        <img 
+                          src={lesson.thumbnail_url} 
+                          alt={lesson.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Play className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      {selectedLesson?.id === lesson.id && (
+                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                          <Play className="h-4 w-4 text-primary" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Status icon */}
                     <div className="flex-shrink-0">
                       {lesson.completed ? (
                         <CheckCircle className="h-5 w-5 text-green-500" />
@@ -437,6 +459,8 @@ export default function CourseView() {
                         <Circle className="h-5 w-5 text-muted-foreground" />
                       )}
                     </div>
+                    
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">
                         {index + 1}. {lesson.title}
