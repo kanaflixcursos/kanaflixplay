@@ -34,6 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateLastSeen = async (userId: string) => {
+    await supabase
+      .from('profiles')
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq('user_id', userId);
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -42,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) {
           setTimeout(() => fetchUserRole(session.user.id), 0);
+          setTimeout(() => updateLastSeen(session.user.id), 0);
         } else {
           setRole(null);
         }
@@ -56,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         fetchUserRole(session.user.id);
+        updateLastSeen(session.user.id);
       }
       
       setLoading(false);
