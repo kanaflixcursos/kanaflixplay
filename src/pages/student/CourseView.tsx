@@ -6,14 +6,39 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, Play, CheckCircle, Circle, Loader2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Play, 
+  CheckCircle, 
+  Circle, 
+  Loader2, 
+  FileText, 
+  Image as ImageIcon,
+  Download,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 import PandavideoPlayer from '@/components/PandavideoPlayer';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface Course {
   id: string;
   title: string;
   description: string;
   thumbnail_url: string;
+}
+
+interface LessonMaterial {
+  id: string;
+  lesson_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
 }
 
 interface Lesson {
@@ -23,7 +48,9 @@ interface Lesson {
   video_url: string;
   order_index: number;
   duration_minutes: number;
+  is_hidden: boolean;
   completed: boolean;
+  materials: LessonMaterial[];
 }
 
 export default function CourseView() {
@@ -37,6 +64,7 @@ export default function CourseView() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [materialsOpen, setMaterialsOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -67,12 +95,13 @@ export default function CourseView() {
 
       setIsEnrolled(!!enrollment);
 
-      // Fetch lessons if enrolled
+      // Fetch lessons if enrolled (excluding hidden ones for students)
       if (enrollment) {
         const { data: lessonsData } = await supabase
           .from('lessons')
           .select('*')
           .eq('course_id', courseId)
+          .eq('is_hidden', false)
           .order('order_index');
 
         // Fetch progress
@@ -83,9 +112,26 @@ export default function CourseView() {
 
         const progressMap = new Map(progressData?.map(p => [p.lesson_id, p.completed]) || []);
 
+        // Fetch materials for all lessons
+        const lessonIds = (lessonsData || []).map(l => l.id);
+        const { data: materialsData } = await supabase
+          .from('lesson_materials')
+          .select('*')
+          .in('lesson_id', lessonIds)
+          .order('order_index');
+
+        const materialsByLesson: Record<string, LessonMaterial[]> = {};
+        (materialsData || []).forEach((material: LessonMaterial) => {
+          if (!materialsByLesson[material.lesson_id]) {
+            materialsByLesson[material.lesson_id] = [];
+          }
+          materialsByLesson[material.lesson_id].push(material);
+        });
+
         const lessonsWithProgress = (lessonsData || []).map(lesson => ({
           ...lesson,
           completed: progressMap.get(lesson.id) || false,
+          materials: materialsByLesson[lesson.id] || [],
         }));
 
         setLessons(lessonsWithProgress);
@@ -117,16 +163,34 @@ export default function CourseView() {
       toast.success('Matrícula realizada com sucesso!');
       setIsEnrolled(true);
       
-      // Fetch lessons
+      // Fetch lessons (excluding hidden)
       const { data: lessonsData } = await supabase
         .from('lessons')
         .select('*')
         .eq('course_id', courseId)
+        .eq('is_hidden', false)
         .order('order_index');
+
+      // Fetch materials
+      const lessonIds = (lessonsData || []).map(l => l.id);
+      const { data: materialsData } = await supabase
+        .from('lesson_materials')
+        .select('*')
+        .in('lesson_id', lessonIds)
+        .order('order_index');
+
+      const materialsByLesson: Record<string, LessonMaterial[]> = {};
+      (materialsData || []).forEach((material: LessonMaterial) => {
+        if (!materialsByLesson[material.lesson_id]) {
+          materialsByLesson[material.lesson_id] = [];
+        }
+        materialsByLesson[material.lesson_id].push(material);
+      });
 
       const lessonsWithProgress = (lessonsData || []).map(lesson => ({
         ...lesson,
         completed: false,
+        materials: materialsByLesson[lesson.id] || [],
       }));
 
       setLessons(lessonsWithProgress);
@@ -154,8 +218,41 @@ export default function CourseView() {
       setLessons(lessons.map(l => 
         l.id === lessonId ? { ...l, completed: true } : l
       ));
+      if (selectedLesson?.id === lessonId) {
+        setSelectedLesson({ ...selectedLesson, completed: true });
+      }
       toast.success('Aula concluída!');
+      
+      // Auto advance to next lesson
+      const currentIndex = lessons.findIndex(l => l.id === lessonId);
+      if (currentIndex < lessons.length - 1) {
+        const nextLesson = lessons[currentIndex + 1];
+        setSelectedLesson({ ...nextLesson });
+      }
     }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type === 'application/pdf') {
+      return <FileText className="h-4 w-4 text-red-500" />;
+    }
+    return <ImageIcon className="h-4 w-4 text-blue-500" />;
+  };
+
+  const formatDuration = (minutes: number | null) => {
+    if (!minutes) return '';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs > 0) {
+      return `${hrs}h ${mins}min`;
+    }
+    return `${mins}min`;
   };
 
   if (loading) {
@@ -169,6 +266,9 @@ export default function CourseView() {
   if (!course) {
     return null;
   }
+
+  const completedCount = lessons.filter(l => l.completed).length;
+  const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -207,7 +307,7 @@ export default function CourseView() {
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Video Player */}
+          {/* Video Player & Materials */}
           <div className="lg:col-span-2 space-y-4">
             <Card>
               <CardContent className="p-0">
@@ -224,11 +324,18 @@ export default function CourseView() {
                 )}
               </CardContent>
               {selectedLesson && (
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{selectedLesson.title}</CardTitle>
+                <CardHeader className="space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="truncate">{selectedLesson.title}</CardTitle>
+                      {selectedLesson.duration_minutes && (
+                        <span className="text-sm text-muted-foreground">
+                          {formatDuration(selectedLesson.duration_minutes)}
+                        </span>
+                      )}
+                    </div>
                     {selectedLesson.completed ? (
-                      <Badge variant="secondary" className="gap-1">
+                      <Badge variant="secondary" className="gap-1 shrink-0">
                         <CheckCircle className="h-3 w-3" />
                         Concluída
                       </Badge>
@@ -236,12 +343,58 @@ export default function CourseView() {
                       <Button 
                         size="sm" 
                         onClick={() => handleMarkComplete(selectedLesson.id)}
+                        className="shrink-0"
                       >
                         Marcar como concluída
                       </Button>
                     )}
                   </div>
-                  <CardDescription>{selectedLesson.description}</CardDescription>
+                  {selectedLesson.description && (
+                    <CardDescription>{selectedLesson.description}</CardDescription>
+                  )}
+                  
+                  {/* Materials Section */}
+                  {selectedLesson.materials.length > 0 && (
+                    <Collapsible open={materialsOpen} onOpenChange={setMaterialsOpen}>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between">
+                          <span className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Materiais Complementares ({selectedLesson.materials.length})
+                          </span>
+                          {materialsOpen ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-3">
+                        <div className="space-y-2">
+                          {selectedLesson.materials.map((material) => (
+                            <a
+                              key={material.id}
+                              href={material.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                            >
+                              {getFileIcon(material.file_type)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {material.file_name}
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatFileSize(material.file_size)}
+                                </span>
+                              </div>
+                              <Download className="h-4 w-4 text-muted-foreground" />
+                            </a>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
                 </CardHeader>
               )}
             </Card>
@@ -249,7 +402,19 @@ export default function CourseView() {
 
           {/* Lessons List */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Aulas do Curso</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-medium">Aulas do Curso</h2>
+              <Badge variant="outline">{progressPercent}%</Badge>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+
             <div className="space-y-2">
               {lessons.map((lesson, index) => (
                 <Card 
@@ -259,7 +424,10 @@ export default function CourseView() {
                       ? 'ring-2 ring-primary' 
                       : 'hover:shadow-md'
                   }`}
-                  onClick={() => setSelectedLesson(lesson)}
+                  onClick={() => {
+                    setSelectedLesson(lesson);
+                    setMaterialsOpen(false);
+                  }}
                 >
                   <CardContent className="p-4 flex items-center gap-3">
                     <div className="flex-shrink-0">
@@ -273,11 +441,19 @@ export default function CourseView() {
                       <p className="font-medium text-sm truncate">
                         {index + 1}. {lesson.title}
                       </p>
-                      {lesson.duration_minutes && (
-                        <p className="text-xs text-muted-foreground">
-                          {lesson.duration_minutes} min
-                        </p>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {lesson.duration_minutes && (
+                          <p className="text-xs text-muted-foreground">
+                            {formatDuration(lesson.duration_minutes)}
+                          </p>
+                        )}
+                        {lesson.materials.length > 0 && (
+                          <Badge variant="outline" className="text-xs gap-1 h-5">
+                            <FileText className="h-3 w-3" />
+                            {lesson.materials.length}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
