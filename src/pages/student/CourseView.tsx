@@ -303,7 +303,7 @@ export default function CourseView() {
           {/* Course Info */}
           <div className="lg:col-span-2 space-y-6">
             {course.thumbnail_url && (
-              <div className="aspect-video w-full overflow-hidden rounded-lg">
+              <div className="aspect-[4/5] max-w-md overflow-hidden rounded-lg">
                 <img 
                   src={course.thumbnail_url} 
                   alt={course.title}
