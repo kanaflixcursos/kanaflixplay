@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder, RefreshCw } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 
@@ -30,6 +30,7 @@ interface Course {
   is_published: boolean;
   created_at: string;
   pandavideo_folder_id: string | null;
+  last_synced_at: string | null;
   lessonCount: number;
   enrollmentCount: number;
 }
@@ -59,6 +60,8 @@ export default function AdminCourses() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
 
   const fetchCourses = async () => {
@@ -198,6 +201,53 @@ export default function AdminCourses() {
     });
   };
 
+  const handleSyncCourse = async (courseId?: string) => {
+    if (courseId) {
+      setSyncing(courseId);
+    } else {
+      setSyncingAll(true);
+    }
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast.error('Você precisa estar autenticado');
+        return;
+      }
+
+      const url = courseId 
+        ? `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/sync-pandavideo-lessons?course_id=${courseId}`
+        : `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/sync-pandavideo-lessons`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao sincronizar');
+      }
+
+      toast.success(`Sincronização concluída: ${data.created} criadas, ${data.updated} atualizadas, ${data.deleted} removidas`);
+      fetchCourses();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Erro ao sincronizar aulas');
+    } finally {
+      setSyncing(null);
+      setSyncingAll(false);
+    }
+  };
+
+  const formatLastSync = (date: string | null) => {
+    if (!date) return 'Nunca sincronizado';
+    const d = new Date(date);
+    return `Sync: ${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -205,13 +255,31 @@ export default function AdminCourses() {
           <h1 className="text-3xl font-bold">Cursos</h1>
           <p className="text-muted-foreground">Gerencie os cursos da plataforma</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Curso
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => handleSyncCourse()}
+            disabled={syncingAll}
+          >
+            {syncingAll ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sincronizando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Sincronizar Todos
+              </>
+            )}
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Curso
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -315,6 +383,7 @@ export default function AdminCourses() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {loading ? (
@@ -364,15 +433,33 @@ export default function AdminCourses() {
                       <span>{course.lessonCount} aulas</span>
                       <span>{course.enrollmentCount} alunos</span>
                       {course.pandavideo_folder_id && (
-                        <span className="flex items-center gap-1">
-                          <Folder className="h-3 w-3" />
-                          Pandavideo
-                        </span>
+                        <>
+                          <span className="flex items-center gap-1">
+                            <Folder className="h-3 w-3" />
+                            Pandavideo
+                          </span>
+                          <span>{formatLastSync(course.last_synced_at)}</span>
+                        </>
                       )}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {course.pandavideo_folder_id && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleSyncCourse(course.id)}
+                        disabled={syncing === course.id}
+                        title="Sincronizar aulas"
+                      >
+                        {syncing === course.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
