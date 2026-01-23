@@ -1,0 +1,181 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { BookOpen, Clock, Trophy } from 'lucide-react';
+
+interface EnrolledCourse {
+  id: string;
+  course: {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail_url: string;
+  };
+  totalLessons: number;
+  completedLessons: number;
+}
+
+export default function StudentDashboard() {
+  const { user } = useAuth();
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEnrolledCourses = async () => {
+      if (!user) return;
+
+      const { data: enrollments, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          id,
+          course:courses(id, title, description, thumbnail_url)
+        `)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching enrollments:', error);
+        setLoading(false);
+        return;
+      }
+
+      const coursesWithProgress = await Promise.all(
+        (enrollments || []).map(async (enrollment: any) => {
+          const { count: totalLessons } = await supabase
+            .from('lessons')
+            .select('*', { count: 'exact', head: true })
+            .eq('course_id', enrollment.course.id);
+
+          const { count: completedLessons } = await supabase
+            .from('lesson_progress')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('completed', true)
+            .in('lesson_id', 
+              (await supabase
+                .from('lessons')
+                .select('id')
+                .eq('course_id', enrollment.course.id)
+              ).data?.map(l => l.id) || []
+            );
+
+          return {
+            id: enrollment.id,
+            course: enrollment.course,
+            totalLessons: totalLessons || 0,
+            completedLessons: completedLessons || 0,
+          };
+        })
+      );
+
+      setEnrolledCourses(coursesWithProgress);
+      setLoading(false);
+    };
+
+    fetchEnrolledCourses();
+  }, [user]);
+
+  const totalCourses = enrolledCourses.length;
+  const totalLessons = enrolledCourses.reduce((acc, c) => acc + c.totalLessons, 0);
+  const completedLessons = enrolledCourses.reduce((acc, c) => acc + c.completedLessons, 0);
+  const overallProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Bem-vindo de volta! Continue seus estudos.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cursos Matriculados</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCourses}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Aulas Concluídas</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedLessons} / {totalLessons}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Progresso Geral</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{overallProgress}%</div>
+            <Progress value={overallProgress} className="mt-2" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Continuar Estudando</h2>
+        
+        {loading ? (
+          <p className="text-muted-foreground">Carregando...</p>
+        ) : enrolledCourses.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center">
+              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Você ainda não está matriculado em nenhum curso.</p>
+              <Link to="/courses" className="text-primary hover:underline mt-2 inline-block">
+                Ver cursos disponíveis
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {enrolledCourses.map((enrollment) => {
+              const progress = enrollment.totalLessons > 0 
+                ? Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100) 
+                : 0;
+              
+              return (
+                <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    {enrollment.course.thumbnail_url && (
+                      <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                        <img 
+                          src={enrollment.course.thumbnail_url} 
+                          alt={enrollment.course.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
+                      <CardDescription className="line-clamp-2">
+                        {enrollment.course.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                        <span>{enrollment.completedLessons} de {enrollment.totalLessons} aulas</span>
+                        <span>{progress}%</span>
+                      </div>
+                      <Progress value={progress} />
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
