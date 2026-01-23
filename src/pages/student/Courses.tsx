@@ -87,7 +87,7 @@ export default function StudentCourses() {
             <Link key={course.id} to={`/courses/${course.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                 {course.thumbnail_url ? (
-                  <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                  <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
                     <img 
                       src={course.thumbnail_url} 
                       alt={course.title}
@@ -95,7 +95,7 @@ export default function StudentCourses() {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-video w-full bg-muted rounded-t-lg flex items-center justify-center">
+                  <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
                     <BookOpen className="h-12 w-12 text-muted-foreground" />
                   </div>
                 )}

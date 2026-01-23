@@ -175,7 +175,7 @@ export default function StudentDashboard() {
                 <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                     {enrollment.course.thumbnail_url && (
-                      <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
                         <img 
                           src={enrollment.course.thumbnail_url} 
                           alt={enrollment.course.title}

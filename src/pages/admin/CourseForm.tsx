@@ -299,6 +299,24 @@ export default function CourseForm() {
         }
       }
 
+      // Auto-sync lessons from Pandavideo after creating/updating course
+      if (savedCourseId && formData.pandavideo_folder_id) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            await supabase.functions.invoke('sync-pandavideo-lessons', {
+              body: { courseId: savedCourseId },
+              headers: {
+                Authorization: `Bearer ${sessionData.session.access_token}`,
+              },
+            });
+          }
+        } catch (syncError) {
+          console.error('Auto-sync error:', syncError);
+          // Don't fail the save operation if sync fails
+        }
+      }
+
       toast.success(isEditing ? 'Curso atualizado!' : 'Curso criado com sucesso!');
       navigate('/admin/courses');
     } catch (error) {
