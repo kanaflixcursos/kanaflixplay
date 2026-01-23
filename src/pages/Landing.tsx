@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { Loader2 } from 'lucide-react';
 
@@ -18,6 +19,7 @@ export default function Landing() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [enrolledCourseIds, setEnrolledCourseIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,21 +29,37 @@ export default function Landing() {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      if (!user) return;
+
+      // Fetch courses
+      const { data: coursesData } = await supabase
         .from('courses')
         .select('id, title, description, thumbnail_url')
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setCourses(data);
+      if (coursesData) {
+        setCourses(coursesData);
       }
+
+      // Fetch enrollments
+      const { data: enrollments } = await supabase
+        .from('course_enrollments')
+        .select('course_id')
+        .eq('user_id', user.id);
+
+      if (enrollments) {
+        setEnrolledCourseIds(new Set(enrollments.map(e => e.course_id)));
+      }
+
       setLoading(false);
     };
 
-    fetchCourses();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   if (authLoading) {
     return (
@@ -97,48 +115,56 @@ export default function Landing() {
 
       {/* Courses Section */}
       <section className="relative z-10 px-6 pb-16 md:px-12 max-w-7xl mx-auto">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Cursos Disponíveis</h2>
-        
         {loading ? (
-          <div className="flex justify-center gap-6 flex-wrap">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div 
                 key={i} 
-                className="w-64 aspect-[4/5] bg-muted rounded-xl animate-pulse"
+                className="aspect-[4/5] bg-muted rounded-xl animate-pulse"
               />
             ))}
           </div>
         ) : courses.length === 0 ? (
           <p className="text-muted-foreground text-center">Nenhum curso disponível no momento.</p>
         ) : (
-          <div className="flex justify-center gap-6 flex-wrap">
-            {courses.map((course) => (
-              <Link
-                key={course.id}
-                to={`/courses/${course.id}`}
-                className="group"
-              >
-                <div className="w-64 aspect-[4/5] rounded-xl overflow-hidden bg-muted relative shadow-lg">
-                  {course.thumbnail_url ? (
-                    <img
-                      src={course.thumbnail_url}
-                      alt={course.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                      <span className="text-5xl font-bold text-foreground/20">
-                        {course.title.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <h3 className="mt-4 text-base font-medium text-foreground line-clamp-2 w-64 text-center">
-                  {course.title}
-                </h3>
-              </Link>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {courses.map((course) => {
+              const isEnrolled = enrolledCourseIds.has(course.id);
+              
+              return (
+                <Link
+                  key={course.id}
+                  to={`/courses/${course.id}`}
+                  className="group"
+                >
+                  <div className="aspect-[4/5] rounded-xl overflow-hidden bg-muted relative shadow-lg">
+                    {course.thumbnail_url ? (
+                      <img
+                        src={course.thumbnail_url}
+                        alt={course.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                        <span className="text-5xl font-bold text-foreground/20">
+                          {course.title.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {isEnrolled && (
+                      <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
+                        Matriculado
+                      </Badge>
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-base font-medium text-foreground line-clamp-2 text-center">
+                    {course.title}
+                  </h3>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
