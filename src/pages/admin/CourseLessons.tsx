@@ -3,34 +3,55 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Loader2, PlayCircle, Video } from 'lucide-react';
-import PandavideoSelector from '@/components/PandavideoSelector';
+import { 
+  ArrowLeft, 
+  Loader2, 
+  PlayCircle, 
+  Eye, 
+  EyeOff, 
+  Check, 
+  X,
+  RefreshCw,
+  FileText,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import LessonMaterialUpload from '@/components/LessonMaterialUpload';
+
+interface LessonMaterial {
+  id: string;
+  lesson_id: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  file_size: number;
+  order_index: number;
+}
 
 interface Lesson {
   id: string;
   title: string;
-  description: string;
-  video_url: string;
+  description: string | null;
+  video_url: string | null;
   order_index: number;
-  duration_minutes: number;
+  duration_minutes: number | null;
+  pandavideo_video_id: string | null;
+  is_hidden: boolean;
 }
 
 interface Course {
   id: string;
   title: string;
+  pandavideo_folder_id: string | null;
+  last_synced_at: string | null;
 }
 
 export default function CourseLessons() {
@@ -39,24 +60,20 @@ export default function CourseLessons() {
   
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [materials, setMaterials] = useState<Record<string, LessonMaterial[]>>({});
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
-  const [saving, setSaving] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    video_url: '',
-    duration_minutes: 0,
-  });
+  const [syncing, setSyncing] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
     if (!courseId) return;
 
     const { data: courseData, error: courseError } = await supabase
       .from('courses')
-      .select('id, title')
+      .select('id, title, pandavideo_folder_id, last_synced_at')
       .eq('id', courseId)
       .single();
 
@@ -74,7 +91,28 @@ export default function CourseLessons() {
       .eq('course_id', courseId)
       .order('order_index');
 
-    setLessons(lessonsData || []);
+    const lessonsList = (lessonsData || []) as Lesson[];
+    setLessons(lessonsList);
+
+    // Fetch materials for all lessons
+    if (lessonsList.length > 0) {
+      const lessonIds = lessonsList.map(l => l.id);
+      const { data: materialsData } = await supabase
+        .from('lesson_materials')
+        .select('*')
+        .in('lesson_id', lessonIds)
+        .order('order_index');
+
+      const materialsByLesson: Record<string, LessonMaterial[]> = {};
+      (materialsData || []).forEach((material: LessonMaterial) => {
+        if (!materialsByLesson[material.lesson_id]) {
+          materialsByLesson[material.lesson_id] = [];
+        }
+        materialsByLesson[material.lesson_id].push(material);
+      });
+      setMaterials(materialsByLesson);
+    }
+
     setLoading(false);
   };
 
@@ -82,87 +120,98 @@ export default function CourseLessons() {
     fetchData();
   }, [courseId]);
 
-  const handleOpenDialog = (lesson?: Lesson) => {
-    if (lesson) {
-      setEditingLesson(lesson);
-      setFormData({
-        title: lesson.title,
-        description: lesson.description || '',
-        video_url: lesson.video_url || '',
-        duration_minutes: lesson.duration_minutes || 0,
-      });
-    } else {
-      setEditingLesson(null);
-      setFormData({
-        title: '',
-        description: '',
-        video_url: '',
-        duration_minutes: 0,
-      });
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!formData.title.trim() || !courseId) {
-      toast.error('O título é obrigatório');
+  const handleSync = async () => {
+    if (!course?.pandavideo_folder_id) {
+      toast.error('Este curso não tem uma pasta do Pandavideo vinculada');
       return;
     }
 
-    setSaving(true);
+    setSyncing(true);
+    try {
+      const { error } = await supabase.functions.invoke('sync-pandavideo-lessons', {
+        body: { courseId },
+      });
 
-    if (editingLesson) {
-      const { error } = await supabase
-        .from('lessons')
-        .update(formData)
-        .eq('id', editingLesson.id);
+      if (error) throw error;
 
-      if (error) {
-        toast.error('Erro ao atualizar aula');
-      } else {
-        toast.success('Aula atualizada com sucesso!');
-        fetchData();
-        setIsDialogOpen(false);
-      }
-    } else {
-      const newOrderIndex = lessons.length > 0 
-        ? Math.max(...lessons.map(l => l.order_index)) + 1 
-        : 0;
-
-      const { error } = await supabase
-        .from('lessons')
-        .insert({
-          ...formData,
-          course_id: courseId,
-          order_index: newOrderIndex,
-        });
-
-      if (error) {
-        toast.error('Erro ao criar aula');
-      } else {
-        toast.success('Aula criada com sucesso!');
-        fetchData();
-        setIsDialogOpen(false);
-      }
+      toast.success('Aulas sincronizadas com sucesso!');
+      fetchData();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Erro ao sincronizar aulas');
+    } finally {
+      setSyncing(false);
     }
-
-    setSaving(false);
   };
 
-  const handleDelete = async (lessonId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta aula?')) return;
+  const handleStartEdit = (lesson: Lesson) => {
+    setEditingLessonId(lesson.id);
+    setEditingTitle(lesson.title);
+  };
 
+  const handleCancelEdit = () => {
+    setEditingLessonId(null);
+    setEditingTitle('');
+  };
+
+  const handleSaveTitle = async (lessonId: string) => {
+    if (!editingTitle.trim()) {
+      toast.error('O título não pode estar vazio');
+      return;
+    }
+
+    setSavingId(lessonId);
     const { error } = await supabase
       .from('lessons')
-      .delete()
+      .update({ title: editingTitle.trim() })
       .eq('id', lessonId);
 
     if (error) {
-      toast.error('Erro ao excluir aula');
+      toast.error('Erro ao salvar título');
     } else {
-      toast.success('Aula excluída com sucesso!');
+      toast.success('Título atualizado');
+      setEditingLessonId(null);
       fetchData();
     }
+    setSavingId(null);
+  };
+
+  const handleToggleVisibility = async (lesson: Lesson) => {
+    setSavingId(lesson.id);
+    const { error } = await supabase
+      .from('lessons')
+      .update({ is_hidden: !lesson.is_hidden })
+      .eq('id', lesson.id);
+
+    if (error) {
+      toast.error('Erro ao alterar visibilidade');
+    } else {
+      toast.success(lesson.is_hidden ? 'Aula visível' : 'Aula ocultada');
+      fetchData();
+    }
+    setSavingId(null);
+  };
+
+  const toggleExpanded = (lessonId: string) => {
+    setExpandedLessons(prev => {
+      const next = new Set(prev);
+      if (next.has(lessonId)) {
+        next.delete(lessonId);
+      } else {
+        next.add(lessonId);
+      }
+      return next;
+    });
+  };
+
+  const formatDuration = (minutes: number | null) => {
+    if (!minutes) return '';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs > 0) {
+      return `${hrs}h ${mins}min`;
+    }
+    return `${mins}min`;
   };
 
   if (loading) {
@@ -181,159 +230,156 @@ export default function CourseLessons() {
           Voltar
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Aulas: {course?.title}</h1>
-          <p className="text-muted-foreground">Gerencie as aulas deste curso</p>
+          <h1 className="text-3xl font-medium">Aulas: {course?.title}</h1>
+          <p className="text-muted-foreground">
+            {course?.pandavideo_folder_id 
+              ? 'Aulas sincronizadas do Pandavideo'
+              : 'Nenhuma pasta do Pandavideo vinculada'}
+          </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Aula
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingLesson ? 'Editar Aula' : 'Nova Aula'}
-              </DialogTitle>
-              <DialogDescription>
-                Preencha as informações da aula abaixo.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Nome da aula"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva a aula..."
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Vídeo (Pandavideo)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="video_url"
-                    value={formData.video_url}
-                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                    placeholder="URL do vídeo embed"
-                    className="flex-1"
-                    readOnly
-                  />
-                  <PandavideoSelector
-                    onSelect={(video) => {
-                      setFormData({
-                        ...formData,
-                        video_url: video.embedUrl,
-                        duration_minutes: video.duration || formData.duration_minutes,
-                        title: formData.title || video.title,
-                      });
-                    }}
-                    trigger={
-                      <Button variant="outline" type="button">
-                        <Video className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Clique no botão para selecionar um vídeo do Pandavideo
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duração (minutos)</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
-                  placeholder="10"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={saving}>
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  'Salvar'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {course?.pandavideo_folder_id && (
+          <Button onClick={handleSync} disabled={syncing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+            Sincronizar
+          </Button>
+        )}
       </div>
+
+      {course?.last_synced_at && (
+        <p className="text-sm text-muted-foreground">
+          Última sincronização: {new Date(course.last_synced_at).toLocaleString('pt-BR')}
+        </p>
+      )}
 
       {lessons.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
             <PlayCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nenhuma aula cadastrada ainda.</p>
-            <Button className="mt-4" onClick={() => handleOpenDialog()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Primeira Aula
-            </Button>
+            <p className="text-muted-foreground mb-4">Nenhuma aula encontrada.</p>
+            {course?.pandavideo_folder_id && (
+              <Button onClick={handleSync} disabled={syncing}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                Sincronizar do Pandavideo
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
           {lessons.map((lesson, index) => (
-            <Card key={lesson.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <GripVertical className="h-5 w-5 text-muted-foreground cursor-move" />
-                  
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                    {index + 1}
+            <Card 
+              key={lesson.id} 
+              className={lesson.is_hidden ? 'opacity-60' : ''}
+            >
+              <Collapsible
+                open={expandedLessons.has(lesson.id)}
+                onOpenChange={() => toggleExpanded(lesson.id)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      {editingLessonId === lesson.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            className="h-8"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveTitle(lesson.id);
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleSaveTitle(lesson.id)}
+                            disabled={savingId === lesson.id}
+                          >
+                            {savingId === lesson.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer hover:text-primary transition-colors"
+                          onClick={() => handleStartEdit(lesson)}
+                        >
+                          <h3 className="font-medium truncate">{lesson.title}</h3>
+                          {lesson.duration_minutes && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatDuration(lesson.duration_minutes)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {lesson.is_hidden && (
+                        <Badge variant="secondary">Oculta</Badge>
+                      )}
+                      
+                      {(materials[lesson.id]?.length || 0) > 0 && (
+                        <Badge variant="outline" className="gap-1">
+                          <FileText className="h-3 w-3" />
+                          {materials[lesson.id].length}
+                        </Badge>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleToggleVisibility(lesson)}
+                        disabled={savingId === lesson.id}
+                        title={lesson.is_hidden ? 'Tornar visível' : 'Ocultar aula'}
+                      >
+                        {savingId === lesson.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : lesson.is_hidden ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          {expandedLessons.has(lesson.id) ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{lesson.title}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {lesson.description}
-                    </p>
-                    {lesson.duration_minutes > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {lesson.duration_minutes} min
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleOpenDialog(lesson)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(lesson.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
+
+                  <CollapsibleContent className="pt-4 border-t mt-4">
+                    <LessonMaterialUpload
+                      lessonId={lesson.id}
+                      materials={materials[lesson.id] || []}
+                      onMaterialsChange={fetchData}
+                    />
+                  </CollapsibleContent>
+                </CardContent>
+              </Collapsible>
             </Card>
           ))}
         </div>
