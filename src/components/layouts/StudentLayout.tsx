@@ -25,6 +25,7 @@ import {
 import { Home, BookOpen, LogOut, Shield, User, Compass } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { supabase } from '@/integrations/supabase/client';
+import NotificationsDropdown from '@/components/NotificationsDropdown';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -125,6 +126,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           <header className="h-14 border-b flex items-center justify-between px-4">
             <SidebarTrigger />
             
+            <div className="flex items-center gap-2">
+              <NotificationsDropdown />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -148,6 +151,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </header>
 
           <main className="flex-1 p-6 overflow-auto">
