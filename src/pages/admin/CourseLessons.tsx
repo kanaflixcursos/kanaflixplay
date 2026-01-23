@@ -16,7 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Loader2, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, GripVertical, Loader2, PlayCircle, Video } from 'lucide-react';
+import PandavideoSelector from '@/components/PandavideoSelector';
 
 interface Lesson {
   id: string;
@@ -220,13 +221,35 @@ export default function CourseLessons() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="video_url">URL do Vídeo (embed)</Label>
-                <Input
-                  id="video_url"
-                  value={formData.video_url}
-                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                  placeholder="https://www.youtube.com/embed/..."
-                />
+                <Label>Vídeo (Pandavideo)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="video_url"
+                    value={formData.video_url}
+                    onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    placeholder="URL do vídeo embed"
+                    className="flex-1"
+                    readOnly
+                  />
+                  <PandavideoSelector
+                    onSelect={(video) => {
+                      setFormData({
+                        ...formData,
+                        video_url: video.embedUrl,
+                        duration_minutes: video.duration || formData.duration_minutes,
+                        title: formData.title || video.title,
+                      });
+                    }}
+                    trigger={
+                      <Button variant="outline" type="button">
+                        <Video className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Clique no botão para selecionar um vídeo do Pandavideo
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duração (minutos)</Label>
