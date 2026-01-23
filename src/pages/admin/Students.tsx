@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -18,17 +21,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Loader2, UserPlus } from 'lucide-react';
+import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, X } from 'lucide-react';
+import PhoneInput from '@/components/PhoneInput';
 
 interface Student {
   id: string;
   user_id: string;
   full_name: string;
   email: string;
+  phone: string | null;
+  avatar_url: string | null;
+  birth_date: string | null;
   role: string;
   enrolledCourses: number;
   created_at: string;
+  last_seen_at: string | null;
 }
 
 interface Course {
@@ -37,13 +70,34 @@ interface Course {
 }
 
 export default function AdminStudents() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Enroll dialog
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [enrolling, setEnrolling] = useState(false);
+  
+  // View profile dialog
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  
+  // Edit profile dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date: '' });
+  const [saving, setSaving] = useState(false);
+  
+  // Delete confirmation
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     // Fetch profiles with roles
@@ -79,10 +133,14 @@ export default function AdminStudents() {
       id: profile.id,
       user_id: profile.user_id,
       full_name: profile.full_name || 'Sem nome',
-      email: '', // Email não está na tabela profiles
+      email: '',
+      phone: profile.phone,
+      avatar_url: profile.avatar_url,
+      birth_date: profile.birth_date,
       role: rolesMap.get(profile.user_id) || 'student',
       enrolledCourses: enrollmentCounts.get(profile.user_id) || 0,
       created_at: profile.created_at,
+      last_seen_at: profile.last_seen_at,
     }));
 
     setStudents(studentsWithData);
@@ -95,6 +153,15 @@ export default function AdminStudents() {
 
     setCourses(coursesData || []);
     setLoading(false);
+
+    // Check URL params for edit mode
+    const editId = searchParams.get('edit');
+    if (editId) {
+      const studentToEdit = studentsWithData.find(s => s.user_id === editId);
+      if (studentToEdit) {
+        handleOpenEditDialog(studentToEdit);
+      }
+    }
   };
 
   useEffect(() => {
@@ -153,11 +220,134 @@ export default function AdminStudents() {
     }
   };
 
+  const handleOpenViewDialog = (student: Student) => {
+    setViewingStudent(student);
+    setViewDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (student: Student) => {
+    setEditingStudent(student);
+    setEditForm({
+      full_name: student.full_name === 'Sem nome' ? '' : student.full_name,
+      phone: student.phone || '',
+      birth_date: student.birth_date || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditingStudent(null);
+    // Clear edit param from URL
+    if (searchParams.has('edit')) {
+      searchParams.delete('edit');
+      setSearchParams(searchParams);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingStudent) return;
+
+    setSaving(true);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: editForm.full_name || null,
+        phone: editForm.phone || null,
+        birth_date: editForm.birth_date || null,
+      })
+      .eq('user_id', editingStudent.user_id);
+
+    if (error) {
+      toast.error('Erro ao salvar perfil');
+    } else {
+      toast.success('Perfil atualizado com sucesso!');
+      fetchData();
+      handleCloseEditDialog();
+    }
+
+    setSaving(false);
+  };
+
+  const handleOpenDeleteDialog = (student: Student) => {
+    setDeletingStudent(student);
+    setDeleteConfirmation('');
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!deletingStudent || deleteConfirmation !== deletingStudent.full_name) {
+      toast.error('Digite o nome do usuário corretamente para confirmar');
+      return;
+    }
+
+    setDeleting(true);
+
+    // Delete in order: enrollments, progress, comments, notifications, roles, profile
+    const userId = deletingStudent.user_id;
+
+    // Delete enrollments
+    await supabase.from('course_enrollments').delete().eq('user_id', userId);
+    
+    // Delete lesson progress
+    await supabase.from('lesson_progress').delete().eq('user_id', userId);
+    
+    // Delete comments
+    await supabase.from('lesson_comments').delete().eq('user_id', userId);
+    
+    // Delete notifications
+    await supabase.from('notifications').delete().eq('user_id', userId);
+    
+    // Delete roles
+    await supabase.from('user_roles').delete().eq('user_id', userId);
+    
+    // Delete profile
+    const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
+
+    if (error) {
+      toast.error('Erro ao excluir usuário');
+    } else {
+      toast.success('Usuário excluído com sucesso!');
+      fetchData();
+      setDeleteDialogOpen(false);
+    }
+
+    setDeleting(false);
+  };
+
+  const filteredStudents = students.filter(student =>
+    student.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return 'Nunca';
+    return new Date(dateString).toLocaleString('pt-BR');
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Alunos</h1>
-        <p className="text-muted-foreground">Gerencie os alunos da plataforma</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Alunos</h1>
+          <p className="text-muted-foreground">Gerencie os alunos da plataforma</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-64"
+            />
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -172,56 +362,209 @@ export default function AdminStudents() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {students.map((student) => (
-            <Card key={student.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium">
-                      {student.full_name.slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">{student.full_name}</h3>
-                      <Badge variant={student.role === 'admin' ? 'default' : 'secondary'}>
-                        {student.role === 'admin' ? 'Admin' : 'Aluno'}
-                      </Badge>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Usuário</TableHead>
+                <TableHead>Função</TableHead>
+                <TableHead className="text-center">Cursos</TableHead>
+                <TableHead>Último Acesso</TableHead>
+                <TableHead>Cadastro</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStudents.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {student.avatar_url ? (
+                        <img 
+                          src={student.avatar_url} 
+                          alt={student.full_name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-sm font-medium">
+                            {student.full_name.slice(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <span className="font-medium">{student.full_name}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {student.enrolledCourses} {student.enrolledCourses === 1 ? 'curso' : 'cursos'} matriculado(s)
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Desde {new Date(student.created_at).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenEnrollDialog(student)}
-                    >
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      Matricular
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleRole(student)}
-                    >
-                      {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={student.role === 'admin' ? 'default' : 'secondary'}>
+                      {student.role === 'admin' ? 'Admin' : 'Aluno'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">{student.enrolledCourses}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDateTime(student.last_seen_at)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDate(student.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenViewDialog(student)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenEditDialog(student)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Editar Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenEnrollDialog(student)}>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Matricular em Curso
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleRole(student)}>
+                          {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleOpenDeleteDialog(student)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir Usuário
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
+      {/* View Profile Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Perfil do Usuário</DialogTitle>
+          </DialogHeader>
+          {viewingStudent && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                {viewingStudent.avatar_url ? (
+                  <img 
+                    src={viewingStudent.avatar_url} 
+                    alt={viewingStudent.full_name}
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xl font-medium">
+                      {viewingStudent.full_name.slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-semibold text-lg">{viewingStudent.full_name}</h3>
+                  <Badge variant={viewingStudent.role === 'admin' ? 'default' : 'secondary'}>
+                    {viewingStudent.role === 'admin' ? 'Administrador' : 'Aluno'}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="grid gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Telefone:</span>
+                  <span>{viewingStudent.phone || '-'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data de Nascimento:</span>
+                  <span>{formatDate(viewingStudent.birth_date)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cursos Matriculados:</span>
+                  <span>{viewingStudent.enrolledCourses}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Último Acesso:</span>
+                  <span>{formatDateTime(viewingStudent.last_seen_at)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cadastrado em:</span>
+                  <span>{formatDateTime(viewingStudent.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={(open) => !open && handleCloseEditDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do usuário {editingStudent?.full_name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Nome Completo</Label>
+              <Input
+                id="full_name"
+                value={editForm.full_name}
+                onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="Nome do usuário"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <PhoneInput
+                value={editForm.phone}
+                onChange={(value) => setEditForm(prev => ({ ...prev, phone: value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birth_date">Data de Nascimento</Label>
+              <Input
+                id="birth_date"
+                type="date"
+                value={editForm.birth_date}
+                onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseEditDialog}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enroll Dialog */}
       <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -261,6 +604,61 @@ export default function AdminStudents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Excluir Usuário
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Esta ação é <strong>irreversível</strong>. Todos os dados do usuário serão permanentemente excluídos, incluindo:
+              </p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                <li>Perfil e informações pessoais</li>
+                <li>Matrículas em cursos</li>
+                <li>Progresso nas aulas</li>
+                <li>Comentários</li>
+                <li>Notificações</li>
+              </ul>
+              <div className="pt-2">
+                <Label htmlFor="confirm-delete">
+                  Digite <strong>{deletingStudent?.full_name}</strong> para confirmar:
+                </Label>
+                <Input
+                  id="confirm-delete"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  placeholder="Nome do usuário"
+                  className="mt-2"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStudent}
+              disabled={deleting || deleteConfirmation !== deletingStudent?.full_name}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Excluir Permanentemente'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
