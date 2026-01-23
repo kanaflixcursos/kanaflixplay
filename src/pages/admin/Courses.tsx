@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -18,7 +18,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, BookOpen, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder } from 'lucide-react';
+import ImageUpload from '@/components/ImageUpload';
+import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 
 interface Course {
   id: string;
@@ -27,9 +29,28 @@ interface Course {
   thumbnail_url: string;
   is_published: boolean;
   created_at: string;
+  pandavideo_folder_id: string | null;
   lessonCount: number;
   enrollmentCount: number;
 }
+
+interface FormData {
+  title: string;
+  description: string;
+  thumbnail_url: string;
+  is_published: boolean;
+  pandavideo_folder_id: string;
+  pandavideo_folder_name: string;
+}
+
+const initialFormData: FormData = {
+  title: '',
+  description: '',
+  thumbnail_url: '',
+  is_published: false,
+  pandavideo_folder_id: '',
+  pandavideo_folder_name: '',
+};
 
 export default function AdminCourses() {
   const navigate = useNavigate();
@@ -38,13 +59,7 @@ export default function AdminCourses() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [saving, setSaving] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    thumbnail_url: '',
-    is_published: false,
-  });
+  const [formData, setFormData] = useState<FormData>(initialFormData);
 
   const fetchCourses = async () => {
     const { data: coursesData, error } = await supabase
@@ -89,31 +104,36 @@ export default function AdminCourses() {
         description: course.description || '',
         thumbnail_url: course.thumbnail_url || '',
         is_published: course.is_published,
+        pandavideo_folder_id: course.pandavideo_folder_id || '',
+        pandavideo_folder_name: '',
       });
     } else {
       setEditingCourse(null);
-      setFormData({
-        title: '',
-        description: '',
-        thumbnail_url: '',
-        is_published: false,
-      });
+      setFormData(initialFormData);
     }
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
-      toast.error('O título é obrigatório');
+      toast.error('O nome do curso é obrigatório');
       return;
     }
 
     setSaving(true);
 
+    const courseData = {
+      title: formData.title,
+      description: formData.description,
+      thumbnail_url: formData.thumbnail_url,
+      is_published: formData.is_published,
+      pandavideo_folder_id: formData.pandavideo_folder_id || null,
+    };
+
     if (editingCourse) {
       const { error } = await supabase
         .from('courses')
-        .update(formData)
+        .update(courseData)
         .eq('id', editingCourse.id);
 
       if (error) {
@@ -126,7 +146,7 @@ export default function AdminCourses() {
     } else {
       const { error } = await supabase
         .from('courses')
-        .insert(formData);
+        .insert(courseData);
 
       if (error) {
         toast.error('Erro ao criar curso');
@@ -170,6 +190,14 @@ export default function AdminCourses() {
     }
   };
 
+  const handleFolderSelect = (folder: { id: string; name: string }) => {
+    setFormData({
+      ...formData,
+      pandavideo_folder_id: folder.id,
+      pandavideo_folder_name: folder.name,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -184,7 +212,7 @@ export default function AdminCourses() {
               Novo Curso
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingCourse ? 'Editar Curso' : 'Novo Curso'}
@@ -193,42 +221,81 @@ export default function AdminCourses() {
                 Preencha as informações do curso abaixo.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              {/* Left column - Cover image */}
               <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Nome do curso"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva o curso..."
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="thumbnail">URL da Thumbnail</Label>
-                <Input
-                  id="thumbnail"
+                <Label>Capa do Curso</Label>
+                <ImageUpload
                   value={formData.thumbnail_url}
-                  onChange={(e) => setFormData({ ...formData, thumbnail_url: e.target.value })}
-                  placeholder="https://..."
+                  onChange={(url) => setFormData({ ...formData, thumbnail_url: url })}
+                  bucket="course-covers"
+                  aspectRatio="4/5"
+                  maxWidth={1080}
+                  maxHeight={1350}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Tamanho recomendado: 1080x1350px
+                </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="published"
-                  checked={formData.is_published}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
-                />
-                <Label htmlFor="published">Publicado</Label>
+
+              {/* Right column - Form fields */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Nome do Curso</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Digite o nome do curso"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Descrição do Curso</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Descreva o conteúdo do curso..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Pasta de Vídeos (Pandavideo)</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 p-3 rounded-lg border bg-muted/50 min-h-[42px] flex items-center">
+                      {formData.pandavideo_folder_id ? (
+                        <div className="flex items-center gap-2">
+                          <Folder className="h-4 w-4 text-primary" />
+                          <span className="text-sm">
+                            {formData.pandavideo_folder_name || 'Pasta selecionada'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Nenhuma pasta selecionada
+                        </span>
+                      )}
+                    </div>
+                    <PandavideoFolderSelector
+                      onSelect={handleFolderSelect}
+                      selectedFolderId={formData.pandavideo_folder_id}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    As aulas serão importadas automaticamente desta pasta
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch
+                    id="published"
+                    checked={formData.is_published}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_published: checked })}
+                  />
+                  <Label htmlFor="published">Publicar curso</Label>
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -275,10 +342,10 @@ export default function AdminCourses() {
                     <img
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-24 h-16 object-cover rounded"
+                      className="w-20 h-24 object-cover rounded"
                     />
                   ) : (
-                    <div className="w-24 h-16 bg-muted rounded flex items-center justify-center">
+                    <div className="w-20 h-24 bg-muted rounded flex items-center justify-center">
                       <BookOpen className="h-6 w-6 text-muted-foreground" />
                     </div>
                   )}
@@ -296,6 +363,12 @@ export default function AdminCourses() {
                     <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
                       <span>{course.lessonCount} aulas</span>
                       <span>{course.enrollmentCount} alunos</span>
+                      {course.pandavideo_folder_id && (
+                        <span className="flex items-center gap-1">
+                          <Folder className="h-3 w-3" />
+                          Pandavideo
+                        </span>
+                      )}
                     </div>
                   </div>
                   
