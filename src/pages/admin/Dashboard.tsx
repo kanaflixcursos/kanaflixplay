@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Users, PlayCircle, TrendingUp } from 'lucide-react';
+import StatCard from '@/components/StatCard';
 
 interface Stats {
   totalCourses: number;
@@ -86,18 +88,14 @@ export default function AdminDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <span className="stat-card-label">{stat.title}</span>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="stat-card-value">
-                {loading ? '...' : stat.value}
-              </div>
-              <p className="stat-card-description">{stat.description}</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            key={stat.title}
+            title={stat.title}
+            value={stat.value}
+            description={stat.description}
+            icon={stat.icon}
+            loading={loading}
+          />
         ))}
       </div>
 
@@ -106,7 +104,7 @@ export default function AdminDashboard() {
           <CardTitle>Ações Rápidas</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
-          <a href="/admin/courses" className="block">
+          <Link to="/admin/courses" className="block">
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-6">
                 <BookOpen className="h-8 w-8 mb-2 text-primary" />
@@ -116,8 +114,8 @@ export default function AdminDashboard() {
                 </p>
               </CardContent>
             </Card>
-          </a>
-          <a href="/admin/students" className="block">
+          </Link>
+          <Link to="/admin/students" className="block">
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-6">
                 <Users className="h-8 w-8 mb-2 text-primary" />
@@ -127,7 +125,7 @@ export default function AdminDashboard() {
                 </p>
               </CardContent>
             </Card>
-          </a>
+          </Link>
         </CardContent>
       </Card>
     </div>

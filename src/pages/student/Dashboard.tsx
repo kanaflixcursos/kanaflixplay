@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, Play } from 'lucide-react';
+import StatCard from '@/components/StatCard';
 
 interface EnrolledCourse {
   id: string;
@@ -110,15 +111,12 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <span className="stat-card-label">Cursos Matriculados</span>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="stat-card-value">{totalCourses}</div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Cursos Matriculados"
+          value={totalCourses}
+          icon={BookOpen}
+          loading={loading}
+        />
         
         {lastCourse && (
           <Link to={`/courses/${lastCourse.course.id}`}>
