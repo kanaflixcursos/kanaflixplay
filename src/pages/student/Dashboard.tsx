@@ -163,7 +163,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {enrolledCourses.map((enrollment) => {
               const progress = enrollment.totalLessons > 0 
                 ? Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100) 
@@ -173,7 +173,7 @@ export default function StudentDashboard() {
                 <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                     {enrollment.course.thumbnail_url && (
-                      <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
                         <img 
                           src={enrollment.course.thumbnail_url} 
                           alt={enrollment.course.title}
