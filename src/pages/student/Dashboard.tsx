@@ -104,13 +104,13 @@ export default function StudentDashboard() {
   const totalCourses = enrolledCourses.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Bem-vindo de volta! Continue seus estudos.</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Bem-vindo de volta! Continue seus estudos.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}

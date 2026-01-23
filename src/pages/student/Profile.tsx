@@ -273,10 +273,10 @@ export default function StudentProfile() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold">Meu Perfil</h1>
-        <p className="text-muted-foreground">Gerencie suas informações pessoais</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Gerencie suas informações pessoais</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

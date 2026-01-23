@@ -66,10 +66,10 @@ export default function StudentCourses() {
   }, [user]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Cursos</h1>
-        <p className="text-muted-foreground">Explore todos os cursos disponíveis na plataforma.</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Cursos</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Explore todos os cursos disponíveis na plataforma.</p>
       </div>
 
       {loading ? (

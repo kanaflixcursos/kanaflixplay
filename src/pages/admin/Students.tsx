@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,9 +46,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, X } from 'lucide-react';
+import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Student {
   id: string;
@@ -70,12 +76,13 @@ interface Course {
 }
 
 export default function AdminStudents() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   
   // Enroll dialog
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
@@ -100,7 +107,6 @@ export default function AdminStudents() {
   const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
-    // Fetch profiles with roles
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('*')
@@ -112,14 +118,12 @@ export default function AdminStudents() {
       return;
     }
 
-    // Get roles for each user
     const { data: rolesData } = await supabase
       .from('user_roles')
       .select('user_id, role');
 
     const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
 
-    // Get enrollment counts
     const { data: enrollmentsData } = await supabase
       .from('course_enrollments')
       .select('user_id');
@@ -145,7 +149,6 @@ export default function AdminStudents() {
 
     setStudents(studentsWithData);
 
-    // Fetch courses for enrollment dialog
     const { data: coursesData } = await supabase
       .from('courses')
       .select('id, title')
@@ -154,7 +157,6 @@ export default function AdminStudents() {
     setCourses(coursesData || []);
     setLoading(false);
 
-    // Check URL params for edit mode
     const editId = searchParams.get('edit');
     if (editId) {
       const studentToEdit = studentsWithData.find(s => s.user_id === editId);
@@ -238,7 +240,6 @@ export default function AdminStudents() {
   const handleCloseEditDialog = () => {
     setEditDialogOpen(false);
     setEditingStudent(null);
-    // Clear edit param from URL
     if (searchParams.has('edit')) {
       searchParams.delete('edit');
       setSearchParams(searchParams);
@@ -284,25 +285,14 @@ export default function AdminStudents() {
 
     setDeleting(true);
 
-    // Delete in order: enrollments, progress, comments, notifications, roles, profile
     const userId = deletingStudent.user_id;
 
-    // Delete enrollments
     await supabase.from('course_enrollments').delete().eq('user_id', userId);
-    
-    // Delete lesson progress
     await supabase.from('lesson_progress').delete().eq('user_id', userId);
-    
-    // Delete comments
     await supabase.from('lesson_comments').delete().eq('user_id', userId);
-    
-    // Delete notifications
     await supabase.from('notifications').delete().eq('user_id', userId);
-    
-    // Delete roles
     await supabase.from('user_roles').delete().eq('user_id', userId);
     
-    // Delete profile
     const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
 
     if (error) {
@@ -330,23 +320,119 @@ export default function AdminStudents() {
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Alunos</h1>
-          <p className="text-muted-foreground">Gerencie os alunos da plataforma</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-64"
-            />
+  const StudentActions = ({ student }: { student: Student }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="bg-popover">
+        <DropdownMenuItem onClick={() => handleOpenViewDialog(student)}>
+          <Eye className="h-4 w-4 mr-2" />
+          Ver Perfil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleOpenEditDialog(student)}>
+          <Pencil className="h-4 w-4 mr-2" />
+          Editar Perfil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleOpenEnrollDialog(student)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Matricular em Curso
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleToggleRole(student)}>
+          {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => handleOpenDeleteDialog(student)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Excluir Usuário
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const MobileStudentCard = ({ student }: { student: Student }) => {
+    const isExpanded = expandedStudentId === student.id;
+
+    return (
+      <Collapsible open={isExpanded} onOpenChange={() => setExpandedStudentId(isExpanded ? null : student.id)}>
+        <div className="p-4 border rounded-lg bg-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {student.avatar_url ? (
+                <img 
+                  src={student.avatar_url} 
+                  alt={student.full_name}
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-medium">
+                    {student.full_name.slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-medium truncate">{student.full_name}</p>
+                <Badge variant={student.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
+                  {student.role === 'admin' ? 'Admin' : 'Aluno'}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <StudentActions student={student} />
+            </div>
           </div>
+          
+          <CollapsibleContent className="mt-4 pt-4 border-t space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Cursos:</span>
+                <span className="ml-2 font-medium">{student.enrolledCourses}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Telefone:</span>
+                <span className="ml-2">{student.phone || '-'}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Último acesso:</span>
+                <span className="ml-2">{formatDateTime(student.last_seen_at)}</span>
+              </div>
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Cadastro:</span>
+                <span className="ml-2">{formatDate(student.created_at)}</span>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    );
+  };
+
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Alunos</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Gerencie os alunos da plataforma</p>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 w-full sm:w-64"
+          />
         </div>
       </div>
 
@@ -361,7 +447,15 @@ export default function AdminStudents() {
             <p className="text-muted-foreground">Nenhum usuário cadastrado ainda.</p>
           </CardContent>
         </Card>
+      ) : isMobile ? (
+        // Mobile: Card list with collapsible details
+        <div className="space-y-3">
+          {filteredStudents.map((student) => (
+            <MobileStudentCard key={student.id} student={student} />
+          ))}
+        </div>
       ) : (
+        // Desktop: Table view
         <Card>
           <Table>
             <TableHeader>
@@ -408,38 +502,7 @@ export default function AdminStudents() {
                     {formatDate(student.created_at)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenViewDialog(student)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenEditDialog(student)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Editar Perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleOpenEnrollDialog(student)}>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Matricular em Curso
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleRole(student)}>
-                          {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleOpenDeleteDialog(student)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir Usuário
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <StudentActions student={student} />
                   </TableCell>
                 </TableRow>
               ))}
