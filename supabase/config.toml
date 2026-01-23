@@ -2,3 +2,6 @@ project_id = "fwytxapogblcesvyxrzt"
 
 [functions.pandavideo]
 verify_jwt = false
+
+[functions.sync-pandavideo-lessons]
+verify_jwt = false
