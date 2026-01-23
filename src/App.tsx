@@ -17,6 +17,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminCourses from "@/pages/admin/Courses";
 import CourseLessons from "@/pages/admin/CourseLessons";
+import CourseForm from "@/pages/admin/CourseForm";
 import AdminStudents from "@/pages/admin/Students";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -74,6 +75,26 @@ const App = () => (
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <AdminCourses />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/courses/new"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <CourseForm />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/courses/:courseId/edit"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <CourseForm />
                   </AdminLayout>
                 </ProtectedRoute>
               }
