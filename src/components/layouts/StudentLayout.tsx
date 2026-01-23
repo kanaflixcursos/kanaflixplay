@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, BookOpen, LogOut, Shield, User, Compass } from 'lucide-react';
+import { Home, BookOpen, LogOut, Shield, User, Compass, GraduationCap } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { supabase } from '@/integrations/supabase/client';
 import NotificationsDropdown from '@/components/NotificationsDropdown';
@@ -42,6 +42,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -54,6 +55,9 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
       
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
+      }
+      if (data?.full_name) {
+        setUserName(data.full_name);
       }
     };
     fetchProfile();
@@ -138,12 +142,16 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-sm text-muted-foreground">
-                  {user?.email}
-                </DropdownMenuItem>
+                <div className="px-2 py-1.5 text-sm font-medium">
+                  {userName || 'Usuário'}
+                </div>
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />
                   Meu Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/courses')}>
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Meus Cursos
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
