@@ -364,6 +364,7 @@ export default function CourseView() {
           {selectedLesson?.video_url ? (
             <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-lg">
               <iframe
+                key={selectedLesson.id}
                 src={selectedLesson.video_url}
                 title={selectedLesson.title}
                 className="w-full h-full border-0"
