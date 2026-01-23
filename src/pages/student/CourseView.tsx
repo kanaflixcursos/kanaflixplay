@@ -362,12 +362,12 @@ export default function CourseView() {
         <div className="lg:col-span-2 space-y-6">
           {/* Video Player */}
           {selectedLesson?.video_url ? (
-            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-lg">
               <iframe
                 src={selectedLesson.video_url}
                 title={selectedLesson.title}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
               />
             </div>
@@ -456,79 +456,89 @@ export default function CourseView() {
 
         {/* Lessons Sidebar */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Conteúdo do Curso</h3>
-            <span className="text-sm text-muted-foreground">{getTotalDuration()}</span>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-
-          <div className="space-y-1 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
-            {lessons.map((lesson, index) => (
-              <button
-                key={lesson.id}
-                className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
-                  selectedLesson?.id === lesson.id 
-                    ? 'bg-primary/10 ring-1 ring-primary' 
-                    : 'hover:bg-muted'
-                }`}
-                onClick={() => setSelectedLesson(lesson)}
-              >
-                {/* Thumbnail */}
-                <div className="relative w-16 h-10 rounded overflow-hidden bg-muted shrink-0">
-                  {lesson.thumbnail_url ? (
-                    <img 
-                      src={lesson.thumbnail_url} 
-                      alt={lesson.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Play className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-                  {selectedLesson?.id === lesson.id && (
-                    <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                      <Play className="h-4 w-4 text-white" />
-                    </div>
-                  )}
+          <Card className="sticky top-6">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Conteúdo do Curso</CardTitle>
+                <span className="text-sm text-muted-foreground">{getTotalDuration()}</span>
+              </div>
+              
+              {/* Progress bar */}
+              <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {completedCount} de {lessons.length} aulas concluídas
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
+                <div className="p-2 space-y-1">
+                  {lessons.map((lesson, index) => (
+                    <button
+                      key={lesson.id}
+                      className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
+                        selectedLesson?.id === lesson.id 
+                          ? 'bg-primary/10 ring-1 ring-primary' 
+                          : 'hover:bg-muted'
+                      }`}
+                      onClick={() => setSelectedLesson(lesson)}
+                    >
+                      {/* Thumbnail */}
+                      <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
+                        {lesson.thumbnail_url ? (
+                          <img 
+                            src={lesson.thumbnail_url} 
+                            alt={lesson.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Play className="h-3 w-3 text-muted-foreground" />
+                          </div>
+                        )}
+                        {selectedLesson?.id === lesson.id && (
+                          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+                            <Play className="h-3 w-3 text-white fill-white" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Status icon */}
+                      <div className="shrink-0">
+                        {lesson.completed ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium line-clamp-2 leading-tight">
+                          {index + 1}. {lesson.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          {lesson.duration_minutes && (
+                            <span>{formatDuration(lesson.duration_minutes)}</span>
+                          )}
+                          {lesson.materials.length > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <FileText className="h-3 w-3" />
+                              {lesson.materials.length}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                
-                {/* Status icon */}
-                <div className="shrink-0">
-                  {lesson.completed ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-                
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {index + 1}. {lesson.title}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {lesson.duration_minutes && (
-                      <span>{formatDuration(lesson.duration_minutes)}</span>
-                    )}
-                    {lesson.materials.length > 0 && (
-                      <Badge variant="outline" className="text-xs h-4 px-1">
-                        <FileText className="h-2.5 w-2.5 mr-0.5" />
-                        {lesson.materials.length}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
