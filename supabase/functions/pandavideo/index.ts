@@ -72,10 +72,14 @@ Deno.serve(async (req) => {
         const page = url.searchParams.get("page") || "1";
         const limit = url.searchParams.get("limit") || "50";
         const search = url.searchParams.get("search") || "";
+        const folderId = url.searchParams.get("folder_id") || "";
 
         let apiUrl = `${PANDAVIDEO_API_URL}/videos?page=${page}&limit=${limit}`;
         if (search) {
           apiUrl += `&title=${encodeURIComponent(search)}`;
+        }
+        if (folderId) {
+          apiUrl += `&folder_id=${encodeURIComponent(folderId)}`;
         }
 
         const response = await fetch(apiUrl, {
