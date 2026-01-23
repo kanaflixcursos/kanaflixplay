@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
+import { Loader2 } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -13,10 +15,16 @@ interface Course {
 }
 
 export default function Landing() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -35,6 +43,20 @@ export default function Landing() {
     fetchCourses();
   }, []);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const userInitials = user.email?.slice(0, 2).toUpperCase() || 'U';
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <div className="mesh-gradient-bg" aria-hidden="true" />
@@ -42,59 +64,61 @@ export default function Landing() {
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 py-4 md:px-12">
         <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />
-        {user ? (
+        <div className="flex items-center gap-4">
           <Button onClick={() => navigate('/')} variant="default">
-            Acessar Plataforma
+            Minha Área
           </Button>
-        ) : (
-          <Button onClick={() => navigate('/login')} variant="default">
-            Entrar
-          </Button>
-        )}
+          <div className="flex items-center gap-2">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-foreground hidden md:block">
+              {user.email}
+            </span>
+          </div>
+        </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 py-16 md:px-12 md:py-24">
-        <div className="max-w-4xl">
-          <h1 
-            className="font-display text-foreground mb-6"
-            style={{ fontSize: '70px', fontWeight: 600, lineHeight: 1.1, letterSpacing: '-0.03em' }}
-          >
-            Um novo espaço para a oftalmologia
-          </h1>
-          <p 
-            className="text-muted-foreground max-w-2xl"
-            style={{ fontSize: '22px', fontWeight: 400, lineHeight: 1.5 }}
-          >
-            Conteúdos gratuitos e pagos. Direto ao ponto. Criado por oftalmologistas especialistas.
-          </p>
-        </div>
+      <section className="relative z-10 px-6 py-16 md:px-12 md:py-24 text-center max-w-5xl mx-auto">
+        <h1 
+          className="font-display text-foreground mb-6"
+          style={{ fontSize: 'clamp(36px, 8vw, 70px)', fontWeight: 600, lineHeight: 1.1, letterSpacing: '-0.03em' }}
+        >
+          Um novo espaço para a oftalmologia
+        </h1>
+        <p 
+          className="text-muted-foreground max-w-2xl mx-auto"
+          style={{ fontSize: 'clamp(16px, 3vw, 22px)', fontWeight: 400, lineHeight: 1.5 }}
+        >
+          Conteúdos gratuitos e pagos. Direto ao ponto. Criado por oftalmologistas especialistas.
+        </p>
       </section>
 
       {/* Courses Section */}
-      <section className="relative z-10 px-6 pb-16 md:px-12">
-        <h2 className="text-2xl font-semibold mb-6">Cursos Disponíveis</h2>
+      <section className="relative z-10 px-6 pb-16 md:px-12 max-w-7xl mx-auto">
+        <h2 className="text-2xl font-semibold mb-6 text-center">Cursos Disponíveis</h2>
         
         {loading ? (
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex justify-center gap-6 flex-wrap">
             {[1, 2, 3, 4].map((i) => (
               <div 
                 key={i} 
-                className="flex-shrink-0 w-48 aspect-[4/5] bg-muted rounded-lg animate-pulse"
+                className="w-64 aspect-[4/5] bg-muted rounded-xl animate-pulse"
               />
             ))}
           </div>
         ) : courses.length === 0 ? (
-          <p className="text-muted-foreground">Nenhum curso disponível no momento.</p>
+          <p className="text-muted-foreground text-center">Nenhum curso disponível no momento.</p>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 md:-mx-12 md:px-12 scrollbar-hide">
+          <div className="flex justify-center gap-6 flex-wrap">
             {courses.map((course) => (
               <Link
                 key={course.id}
-                to={user ? `/courses/${course.id}` : '/login'}
-                className="flex-shrink-0 group"
+                to={`/courses/${course.id}`}
+                className="group"
               >
-                <div className="w-48 aspect-[4/5] rounded-lg overflow-hidden bg-muted relative">
+                <div className="w-64 aspect-[4/5] rounded-xl overflow-hidden bg-muted relative shadow-lg">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
@@ -103,14 +127,14 @@ export default function Landing() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                      <span className="text-4xl font-bold text-foreground/20">
+                      <span className="text-5xl font-bold text-foreground/20">
                         {course.title.charAt(0)}
                       </span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h3 className="mt-3 text-sm font-medium text-foreground line-clamp-2 w-48">
+                <h3 className="mt-4 text-base font-medium text-foreground line-clamp-2 w-64 text-center">
                   {course.title}
                 </h3>
               </Link>
