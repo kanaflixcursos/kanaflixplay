@@ -88,14 +88,14 @@ export default function AdminDashboard() {
         {statCards.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <span className="stat-card-label">{stat.title}</span>
               <stat.icon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="stat-card-value">
                 {loading ? '...' : stat.value}
               </div>
-              <p className="text-xs text-muted-foreground">{stat.description}</p>
+              <p className="stat-card-description">{stat.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -110,8 +110,8 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-6">
                 <BookOpen className="h-8 w-8 mb-2 text-primary" />
-                <h3 className="font-semibold">Gerenciar Cursos</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="action-card-title">Gerenciar Cursos</h3>
+                <p className="action-card-description">
                   Criar, editar e publicar cursos
                 </p>
               </CardContent>
@@ -121,8 +121,8 @@ export default function AdminDashboard() {
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="pt-6">
                 <Users className="h-8 w-8 mb-2 text-primary" />
-                <h3 className="font-semibold">Gerenciar Alunos</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="action-card-title">Gerenciar Alunos</h3>
+                <p className="action-card-description">
                   Ver alunos e matrículas
                 </p>
               </CardContent>

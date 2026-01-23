@@ -159,7 +159,7 @@ export default function Landing() {
                       </Badge>
                     )}
                   </div>
-                  <h3 className="mt-4 text-base font-medium text-foreground line-clamp-2 text-center">
+                  <h3 className="card-title mt-4 line-clamp-2 text-center">
                     {course.title}
                   </h3>
                 </Link>

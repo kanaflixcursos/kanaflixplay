@@ -206,12 +206,12 @@ export default function AdminCourses() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">{course.title}</h3>
+                      <h3 className="card-title truncate">{course.title}</h3>
                       <Badge variant={course.is_published ? 'default' : 'secondary'}>
                         {course.is_published ? 'Publicado' : 'Rascunho'}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
+                    <p className="card-description line-clamp-1">
                       {course.description}
                     </p>
                     <div className="flex gap-4 mt-1 text-xs text-muted-foreground">

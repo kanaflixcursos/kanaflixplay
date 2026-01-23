@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, Play } from 'lucide-react';
 
@@ -112,11 +112,11 @@ export default function StudentDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cursos Matriculados</CardTitle>
+            <span className="stat-card-label">Cursos Matriculados</span>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCourses}</div>
+            <div className="stat-card-value">{totalCourses}</div>
           </CardContent>
         </Card>
         
@@ -124,11 +124,11 @@ export default function StudentDashboard() {
           <Link to={`/courses/${lastCourse.course.id}`}>
             <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Último Curso Assistido</CardTitle>
+                <span className="stat-card-label">Último Curso Assistido</span>
                 <Play className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <p className="text-lg font-semibold line-clamp-1">{lastCourse.course.title}</p>
+                <p className="card-title line-clamp-1">{lastCourse.course.title}</p>
                 <div className="flex items-center justify-between text-sm text-muted-foreground mt-2 mb-1">
                   <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
                   <span>
@@ -184,10 +184,10 @@ export default function StudentDashboard() {
                       </div>
                     )}
                     <CardHeader>
-                      <CardTitle className="line-clamp-1">{enrollment.course.title}</CardTitle>
-                      <CardDescription className="line-clamp-2">
+                      <h3 className="card-title line-clamp-1">{enrollment.course.title}</h3>
+                      <p className="card-description line-clamp-2">
                         {enrollment.course.description}
-                      </CardDescription>
+                      </p>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">

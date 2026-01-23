@@ -167,6 +167,45 @@ All colors MUST be HSL.
   }
 }
 
+/* Card Typography System - Padronização de tipografia para cards */
+@layer components {
+  /* Stat Cards - Cards de métricas/estatísticas */
+  .stat-card-label {
+    @apply text-sm font-medium text-foreground;
+  }
+  
+  .stat-card-value {
+    @apply text-3xl font-semibold tracking-tight text-foreground;
+  }
+  
+  .stat-card-description {
+    @apply text-xs text-muted-foreground mt-1;
+  }
+
+  /* Content Cards - Cards de conteúdo (cursos, itens) */
+  .card-title {
+    @apply text-lg font-medium tracking-tight text-foreground;
+  }
+  
+  .card-description {
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+
+  /* Compact Cards - Cards menores ou sidebar */
+  .card-title-compact {
+    @apply text-base font-medium text-foreground;
+  }
+
+  /* Action Cards - Cards de ação rápida */
+  .action-card-title {
+    @apply text-base font-medium text-foreground;
+  }
+  
+  .action-card-description {
+    @apply text-sm text-muted-foreground;
+  }
+}
+
 /* Mesh gradient background */
 .mesh-gradient-bg {
   position: fixed;
