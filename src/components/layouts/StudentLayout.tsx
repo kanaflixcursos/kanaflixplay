@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
@@ -15,19 +15,21 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Home, BookOpen, LogOut, Shield } from 'lucide-react';
+import { Home, BookOpen, LogOut, Shield, User, Compass } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Meus Cursos', url: '/courses', icon: BookOpen },
+  { title: 'Explorar', url: '/welcome', icon: Compass },
 ];
 
 interface StudentLayoutProps {
@@ -38,6 +40,23 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -110,6 +129,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={avatarUrl || undefined} className="object-cover" />
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -117,6 +137,10 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem className="text-sm text-muted-foreground">
                   {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Meu Perfil
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
