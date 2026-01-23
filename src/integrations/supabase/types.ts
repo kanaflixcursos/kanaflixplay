@@ -165,6 +165,7 @@ export type Database = {
           is_hidden: boolean
           order_index: number
           pandavideo_video_id: string | null
+          thumbnail_url: string | null
           title: string
           updated_at: string
           video_url: string | null
@@ -178,6 +179,7 @@ export type Database = {
           is_hidden?: boolean
           order_index?: number
           pandavideo_video_id?: string | null
+          thumbnail_url?: string | null
           title: string
           updated_at?: string
           video_url?: string | null
@@ -191,6 +193,7 @@ export type Database = {
           is_hidden?: boolean
           order_index?: number
           pandavideo_video_id?: string | null
+          thumbnail_url?: string | null
           title?: string
           updated_at?: string
           video_url?: string | null

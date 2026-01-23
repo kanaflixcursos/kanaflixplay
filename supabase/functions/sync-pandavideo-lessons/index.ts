@@ -15,6 +15,9 @@ interface PandaVideo {
   duration?: number;
   folder_id?: string;
   player_url?: string;
+  thumbnail?: string;
+  thumbnail_url?: string;
+  cover?: string;
   created_at?: string;
 }
 
@@ -168,14 +171,16 @@ Deno.serve(async (req) => {
             id: videos[0].id,
             title: videos[0].title,
             status: videos[0].status,
-            folder_id: videos[0].folder_id,
+            thumbnail: videos[0].thumbnail,
+            thumbnail_url: videos[0].thumbnail_url,
+            cover: videos[0].cover,
           }));
         }
 
         // Get existing lessons for this course
         const { data: existingLessons } = await supabase
           .from("lessons")
-          .select("id, pandavideo_video_id")
+          .select("id, pandavideo_video_id, order_index")
           .eq("course_id", course.id)
           .not("pandavideo_video_id", "is", null);
 
@@ -184,11 +189,16 @@ Deno.serve(async (req) => {
         );
         const pandaVideoIds = new Set(videos.map((v) => v.id));
 
+        // Create a map to preserve existing order_index
+        const existingOrderMap = new Map(
+          (existingLessons || []).map((l) => [l.pandavideo_video_id, l.order_index])
+        );
+
         console.log(`Existing lessons with pandavideo_video_id: ${existingVideoIds.size}`);
 
         // Process each video - accept more status values
         const validStatuses = ["converted", "ready", "published", "active", "online"];
-        let orderIndex = 1;
+        let newOrderIndex = existingLessons?.length || 0;
         
         for (const video of videos) {
           const status = (video.status || "").toLowerCase();
@@ -205,25 +215,18 @@ Deno.serve(async (req) => {
           const embedUrl = video.player_url || 
             `https://player-vz-${video.id.substring(0, 8)}.tv.pandavideo.com.br/embed/?v=${video.id}`;
           const durationMinutes = video.duration ? Math.ceil(video.duration / 60) : null;
-
-          const lessonData = {
-            course_id: course.id,
-            title: video.title || `Vídeo ${orderIndex}`,
-            description: video.description || "",
-            video_url: embedUrl,
-            pandavideo_video_id: video.id,
-            order_index: orderIndex,
-            duration_minutes: durationMinutes,
-          };
+          
+          // Get thumbnail URL - try different possible fields from Pandavideo API
+          const thumbnailUrl = video.thumbnail || video.thumbnail_url || video.cover || null;
 
           if (existingVideoIds.has(video.id)) {
-            // Update existing lesson (don't override user-edited title)
+            // Update existing lesson - preserve order_index, update video_url, duration, and thumbnail
             const { error: updateError } = await supabase
               .from("lessons")
               .update({
-                video_url: lessonData.video_url,
-                order_index: lessonData.order_index,
-                duration_minutes: lessonData.duration_minutes,
+                video_url: embedUrl,
+                duration_minutes: durationMinutes,
+                thumbnail_url: thumbnailUrl,
               })
               .eq("pandavideo_video_id", video.id)
               .eq("course_id", course.id);
@@ -235,7 +238,19 @@ Deno.serve(async (req) => {
               results.updated++;
             }
           } else {
-            // Create new lesson
+            // Create new lesson with next order_index
+            newOrderIndex++;
+            const lessonData = {
+              course_id: course.id,
+              title: video.title || `Vídeo ${newOrderIndex}`,
+              description: video.description || "",
+              video_url: embedUrl,
+              pandavideo_video_id: video.id,
+              order_index: newOrderIndex,
+              duration_minutes: durationMinutes,
+              thumbnail_url: thumbnailUrl,
+            };
+            
             console.log(`Creating lesson for video: ${video.id} - ${video.title}`);
             const { error: insertError } = await supabase
               .from("lessons")
@@ -248,8 +263,6 @@ Deno.serve(async (req) => {
               results.created++;
             }
           }
-          
-          orderIndex++;
         }
 
         // Delete lessons for videos that no longer exist in Pandavideo
