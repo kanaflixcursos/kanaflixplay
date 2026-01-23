@@ -15,10 +15,35 @@ interface PandaVideo {
   duration?: number;
   folder_id?: string;
   player_url?: string;
+  video_player?: string;
+  video_external_id?: string;
+  library_id?: string;
   thumbnail?: string;
   thumbnail_url?: string;
   cover?: string;
   created_at?: string;
+}
+
+// Helper to fetch individual video details to get player_url
+async function fetchVideoDetails(videoId: string, apiKey: string): Promise<PandaVideo | null> {
+  try {
+    const response = await fetch(`${PANDAVIDEO_API_URL}/videos/${videoId}`, {
+      headers: {
+        Authorization: apiKey,
+        Accept: "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch video details for ${videoId}: ${response.status}`);
+      return null;
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching video details for ${videoId}:`, error);
+    return null;
+  }
 }
 
 interface Course {
@@ -211,17 +236,28 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Build embed URL - use player_url from API if available
-          let embedUrl = video.player_url;
+          // Fetch individual video details to get the correct player_url
+          const videoDetails = await fetchVideoDetails(video.id, pandaApiKey);
+          
+          // Build embed URL - prioritize video_player from details, then player_url
+          let embedUrl = videoDetails?.video_player || videoDetails?.player_url || video.player_url;
+          
+          if (!embedUrl && videoDetails?.video_external_id && videoDetails?.library_id) {
+            // Build URL from library_id and video_external_id
+            embedUrl = `https://player-vz-${videoDetails.library_id}.tv.pandavideo.com.br/embed/?v=${videoDetails.video_external_id}`;
+          }
+          
           if (!embedUrl) {
-            // Fallback: try to get the correct player domain from the video data
-            // Pandavideo uses format like player-vz-XXXXXXXX-XXX.tv.pandavideo.com.br
+            // Last resort fallback
             embedUrl = `https://player-vz-910d72b1-f0c.tv.pandavideo.com.br/embed/?v=${video.id}`;
           }
-          const durationMinutes = video.duration ? Math.ceil(video.duration / 60) : null;
+          
+          console.log(`Video ${video.id} embed URL: ${embedUrl}`);
+          
+          const durationMinutes = (videoDetails?.duration || video.duration) ? Math.ceil((videoDetails?.duration || video.duration || 0) / 60) : null;
           
           // Get thumbnail URL - try different possible fields from Pandavideo API
-          const thumbnailUrl = video.thumbnail || video.thumbnail_url || video.cover || null;
+          const thumbnailUrl = videoDetails?.thumbnail || video.thumbnail || video.thumbnail_url || video.cover || null;
 
           if (existingVideoIds.has(video.id)) {
             // Update existing lesson - preserve order_index, update video_url, duration, and thumbnail
