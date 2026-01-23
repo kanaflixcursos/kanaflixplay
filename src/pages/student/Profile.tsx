@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PhoneInput from '@/components/PhoneInput';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -362,12 +363,10 @@ export default function StudentProfile() {
                     <Phone className="h-4 w-4" />
                     Telefone
                   </Label>
-                  <Input
+                  <PhoneInput
                     id="phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(00) 00000-0000"
-                    maxLength={20}
+                    onChange={setPhone}
                   />
                 </div>
 
