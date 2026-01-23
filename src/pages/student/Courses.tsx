@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen } from 'lucide-react';
 
@@ -101,14 +101,14 @@ export default function StudentCourses() {
                 )}
                 <CardHeader>
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="line-clamp-1">{course.title}</CardTitle>
+                    <h3 className="card-title line-clamp-1">{course.title}</h3>
                     {course.isEnrolled && (
                       <Badge variant="secondary">Matriculado</Badge>
                     )}
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <p className="card-description line-clamp-2">
                     {course.description}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">

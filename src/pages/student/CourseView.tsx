@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -322,10 +322,10 @@ export default function CourseView() {
           <div>
             <Card className="sticky top-6">
               <CardHeader>
-                <CardTitle>Matricule-se agora</CardTitle>
-                <CardDescription>
+                <h3 className="card-title">Matricule-se agora</h3>
+                <p className="card-description">
                   Tenha acesso completo a todo o conteúdo do curso
-                </CardDescription>
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -432,10 +432,10 @@ export default function CourseView() {
               {selectedLesson.materials.length > 0 && (
                 <Card>
                   <CardHeader className="py-4">
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <h3 className="card-title-compact flex items-center gap-2">
                       <Download className="h-4 w-4" />
                       Materiais Complementares
-                    </CardTitle>
+                    </h3>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="grid gap-2 sm:grid-cols-2">
@@ -477,7 +477,7 @@ export default function CourseView() {
           <Card className="sticky top-6">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Conteúdo do Curso</CardTitle>
+                <span className="card-title-compact">Conteúdo do Curso</span>
                 <span className="text-sm text-muted-foreground">{getTotalDuration()}</span>
               </div>
               

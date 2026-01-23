@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
@@ -55,9 +55,9 @@ export default function Login() {
           <div className="flex justify-center mb-4">
             <img src={logoKanaflix} alt="Kanaflix" className="h-12 w-auto" />
           </div>
-          <CardDescription>
+          <p className="card-description text-center">
             Plataforma de cursos online
-          </CardDescription>
+          </p>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
