@@ -79,6 +79,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_materials: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id: string
+          lesson_id: string
+          order_index: number
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size: number
+          file_type: string
+          file_url: string
+          id?: string
+          lesson_id: string
+          order_index?: number
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string
+          id?: string
+          lesson_id?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_materials_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed: boolean
@@ -121,6 +162,7 @@ export type Database = {
           description: string | null
           duration_minutes: number | null
           id: string
+          is_hidden: boolean
           order_index: number
           pandavideo_video_id: string | null
           title: string
@@ -133,6 +175,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_hidden?: boolean
           order_index?: number
           pandavideo_video_id?: string | null
           title: string
@@ -145,6 +188,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number | null
           id?: string
+          is_hidden?: boolean
           order_index?: number
           pandavideo_video_id?: string | null
           title?: string
