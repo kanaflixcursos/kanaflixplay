@@ -211,9 +211,13 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Build embed URL
-          const embedUrl = video.player_url || 
-            `https://player-vz-${video.id.substring(0, 8)}.tv.pandavideo.com.br/embed/?v=${video.id}`;
+          // Build embed URL - use player_url from API if available
+          let embedUrl = video.player_url;
+          if (!embedUrl) {
+            // Fallback: try to get the correct player domain from the video data
+            // Pandavideo uses format like player-vz-XXXXXXXX-XXX.tv.pandavideo.com.br
+            embedUrl = `https://player-vz-910d72b1-f0c.tv.pandavideo.com.br/embed/?v=${video.id}`;
+          }
           const durationMinutes = video.duration ? Math.ceil(video.duration / 60) : null;
           
           // Get thumbnail URL - try different possible fields from Pandavideo API
