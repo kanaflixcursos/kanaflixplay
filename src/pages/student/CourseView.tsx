@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -13,17 +14,11 @@ import {
   Circle, 
   Loader2, 
   FileText, 
-  Image as ImageIcon,
   Download,
-  ChevronDown,
-  ChevronUp
+  Clock,
+  BookOpen
 } from 'lucide-react';
-import PandavideoPlayer from '@/components/PandavideoPlayer';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import LessonComments from '@/components/LessonComments';
 
 interface Course {
   id: string;
@@ -65,7 +60,6 @@ export default function CourseView() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [materialsOpen, setMaterialsOpen] = useState(false);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -216,19 +210,22 @@ export default function CourseView() {
     if (error) {
       toast.error('Erro ao marcar aula como concluída');
     } else {
-      setLessons(lessons.map(l => 
+      const updatedLessons = lessons.map(l => 
         l.id === lessonId ? { ...l, completed: true } : l
-      ));
+      );
+      setLessons(updatedLessons);
+      
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson({ ...selectedLesson, completed: true });
       }
+      
       toast.success('Aula concluída!');
       
       // Auto advance to next lesson
       const currentIndex = lessons.findIndex(l => l.id === lessonId);
       if (currentIndex < lessons.length - 1) {
-        const nextLesson = lessons[currentIndex + 1];
-        setSelectedLesson({ ...nextLesson });
+        const nextLesson = updatedLessons[currentIndex + 1];
+        setSelectedLesson(nextLesson);
       }
     }
   };
@@ -243,7 +240,7 @@ export default function CourseView() {
     if (type === 'application/pdf') {
       return <FileText className="h-4 w-4 text-red-500" />;
     }
-    return <ImageIcon className="h-4 w-4 text-blue-500" />;
+    return <FileText className="h-4 w-4 text-blue-500" />;
   };
 
   const formatDuration = (minutes: number | null) => {
@@ -254,6 +251,11 @@ export default function CourseView() {
       return `${hrs}h ${mins}min`;
     }
     return `${mins}min`;
+  };
+
+  const getTotalDuration = () => {
+    const total = lessons.reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
+    return formatDuration(total);
   };
 
   if (loading) {
@@ -271,221 +273,264 @@ export default function CourseView() {
   const completedCount = lessons.filter(l => l.completed).length;
   const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
-  return (
-    <div className="space-y-6">
-      <Button variant="ghost" onClick={() => navigate('/courses')} className="gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Voltar aos Cursos
-      </Button>
+  // Not enrolled - show course details and enrollment button
+  if (!isEnrolled) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => navigate('/courses')} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar aos Cursos
+        </Button>
 
-      {!isEnrolled ? (
-        <Card>
-          {course.thumbnail_url && (
-            <div className="aspect-video w-full overflow-hidden rounded-t-lg">
-              <img 
-                src={course.thumbnail_url} 
-                alt={course.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          <CardHeader>
-            <CardTitle className="text-2xl">{course.title}</CardTitle>
-            <CardDescription>{course.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleEnroll} disabled={enrolling} className="w-full md:w-auto">
-              {enrolling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Matriculando...
-                </>
-              ) : (
-                'Matricular-se neste curso'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Video Player & Materials */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card>
-              <CardContent className="p-0">
-                {selectedLesson?.video_url ? (
-                  <PandavideoPlayer 
-                    videoUrl={selectedLesson.video_url}
-                    title={selectedLesson.title}
-                    className="rounded-t-lg overflow-hidden"
-                  />
-                ) : (
-                  <div className="aspect-video bg-muted flex items-center justify-center rounded-t-lg">
-                    <Play className="h-16 w-16 text-muted-foreground" />
-                  </div>
-                )}
-              </CardContent>
-              {selectedLesson && (
-                <CardHeader className="space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="truncate">{selectedLesson.title}</CardTitle>
-                      {selectedLesson.duration_minutes && (
-                        <span className="text-sm text-muted-foreground">
-                          {formatDuration(selectedLesson.duration_minutes)}
-                        </span>
-                      )}
-                    </div>
-                    {selectedLesson.completed ? (
-                      <Badge variant="secondary" className="gap-1 shrink-0">
-                        <CheckCircle className="h-3 w-3" />
-                        Concluída
-                      </Badge>
-                    ) : (
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleMarkComplete(selectedLesson.id)}
-                        className="shrink-0"
-                      >
-                        Marcar como concluída
-                      </Button>
-                    )}
-                  </div>
-                  {selectedLesson.description && (
-                    <CardDescription>{selectedLesson.description}</CardDescription>
-                  )}
-                  
-                  {/* Materials Section */}
-                  {selectedLesson.materials.length > 0 && (
-                    <Collapsible open={materialsOpen} onOpenChange={setMaterialsOpen}>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
-                          <span className="flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            Materiais Complementares ({selectedLesson.materials.length})
-                          </span>
-                          {materialsOpen ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-3">
-                        <div className="space-y-2">
-                          {selectedLesson.materials.map((material) => (
-                            <a
-                              key={material.id}
-                              href={material.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                            >
-                              {getFileIcon(material.file_type)}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">
-                                  {material.file_name}
-                                </p>
-                                <span className="text-xs text-muted-foreground">
-                                  {formatFileSize(material.file_size)}
-                                </span>
-                              </div>
-                              <Download className="h-4 w-4 text-muted-foreground" />
-                            </a>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  )}
-                </CardHeader>
-              )}
-            </Card>
+          {/* Course Info */}
+          <div className="lg:col-span-2 space-y-6">
+            {course.thumbnail_url && (
+              <div className="aspect-video w-full overflow-hidden rounded-lg">
+                <img 
+                  src={course.thumbnail_url} 
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <h1 className="text-3xl font-medium">{course.title}</h1>
+              <p className="text-muted-foreground text-lg">{course.description}</p>
+            </div>
           </div>
 
-          {/* Lessons List */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-medium">Aulas do Curso</h2>
-              <Badge variant="outline">{progressPercent}%</Badge>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary transition-all duration-300"
-                style={{ width: `${progressPercent}%` }}
+          {/* Enrollment Card */}
+          <div>
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle>Matricule-se agora</CardTitle>
+                <CardDescription>
+                  Tenha acesso completo a todo o conteúdo do curso
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <BookOpen className="h-4 w-4" />
+                  <span>{lessons.length || '—'} aulas</span>
+                </div>
+                
+                <Button 
+                  onClick={handleEnroll} 
+                  disabled={enrolling} 
+                  className="w-full"
+                  size="lg"
+                >
+                  {enrolling ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Matriculando...
+                    </>
+                  ) : (
+                    'Matricular-se Gratuitamente'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Enrolled - show lesson player
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/courses')} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-xl font-medium">{course.title}</h1>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>{completedCount}/{lessons.length} aulas concluídas</span>
+            <span>•</span>
+            <span>{progressPercent}% completo</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Content Area */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Video Player */}
+          {selectedLesson?.video_url ? (
+            <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
+              <iframe
+                src={selectedLesson.video_url}
+                title={selectedLesson.title}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
               />
             </div>
+          ) : (
+            <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
+              <Play className="h-16 w-16 text-muted-foreground" />
+            </div>
+          )}
 
-            <div className="space-y-2">
-              {lessons.map((lesson, index) => (
-                <Card 
-                  key={lesson.id}
-                  className={`cursor-pointer transition-all ${
-                    selectedLesson?.id === lesson.id 
-                      ? 'ring-2 ring-primary' 
-                      : 'hover:shadow-md'
-                  }`}
-                  onClick={() => {
-                    setSelectedLesson(lesson);
-                    setMaterialsOpen(false);
-                  }}
-                >
-                  <CardContent className="p-3 flex items-center gap-3">
-                    {/* Thumbnail */}
-                    <div className="relative w-16 h-10 rounded overflow-hidden bg-muted shrink-0">
-                      {lesson.thumbnail_url ? (
-                        <img 
-                          src={lesson.thumbnail_url} 
-                          alt={lesson.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Play className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
-                      {selectedLesson?.id === lesson.id && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <Play className="h-4 w-4 text-primary" />
-                        </div>
-                      )}
+          {/* Lesson Info - Outside the player card */}
+          {selectedLesson && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-medium">{selectedLesson.title}</h2>
+                  {selectedLesson.duration_minutes && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      {formatDuration(selectedLesson.duration_minutes)}
                     </div>
-                    
-                    {/* Status icon */}
-                    <div className="flex-shrink-0">
-                      {lesson.completed ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {index + 1}. {lesson.title}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {lesson.duration_minutes && (
-                          <p className="text-xs text-muted-foreground">
-                            {formatDuration(lesson.duration_minutes)}
-                          </p>
-                        )}
-                        {lesson.materials.length > 0 && (
-                          <Badge variant="outline" className="text-xs gap-1 h-5">
-                            <FileText className="h-3 w-3" />
-                            {lesson.materials.length}
-                          </Badge>
-                        )}
-                      </div>
+                  )}
+                </div>
+                {selectedLesson.completed ? (
+                  <Badge variant="secondary" className="gap-1 shrink-0">
+                    <CheckCircle className="h-3 w-3" />
+                    Concluída
+                  </Badge>
+                ) : (
+                  <Button 
+                    onClick={() => handleMarkComplete(selectedLesson.id)}
+                    className="shrink-0"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Marcar como concluída
+                  </Button>
+                )}
+              </div>
+              
+              {selectedLesson.description && (
+                <p className="text-muted-foreground">{selectedLesson.description}</p>
+              )}
+
+              {/* Materials Download Section */}
+              {selectedLesson.materials.length > 0 && (
+                <Card>
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Materiais Complementares
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {selectedLesson.materials.map((material) => (
+                        <a
+                          key={material.id}
+                          href={material.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          {getFileIcon(material.file_type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {material.file_name}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatFileSize(material.file_size)}
+                            </span>
+                          </div>
+                          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </a>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              )}
+
+              <Separator />
+
+              {/* Comments Section */}
+              <LessonComments lessonId={selectedLesson.id} />
             </div>
+          )}
+        </div>
+
+        {/* Lessons Sidebar */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Conteúdo do Curso</h3>
+            <span className="text-sm text-muted-foreground">{getTotalDuration()}</span>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="space-y-1 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
+            {lessons.map((lesson, index) => (
+              <button
+                key={lesson.id}
+                className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
+                  selectedLesson?.id === lesson.id 
+                    ? 'bg-primary/10 ring-1 ring-primary' 
+                    : 'hover:bg-muted'
+                }`}
+                onClick={() => setSelectedLesson(lesson)}
+              >
+                {/* Thumbnail */}
+                <div className="relative w-16 h-10 rounded overflow-hidden bg-muted shrink-0">
+                  {lesson.thumbnail_url ? (
+                    <img 
+                      src={lesson.thumbnail_url} 
+                      alt={lesson.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Play className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  {selectedLesson?.id === lesson.id && (
+                    <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+                      <Play className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Status icon */}
+                <div className="shrink-0">
+                  {lesson.completed ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {index + 1}. {lesson.title}
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {lesson.duration_minutes && (
+                      <span>{formatDuration(lesson.duration_minutes)}</span>
+                    )}
+                    {lesson.materials.length > 0 && (
+                      <Badge variant="outline" className="text-xs h-4 px-1">
+                        <FileText className="h-2.5 w-2.5 mr-0.5" />
+                        {lesson.materials.length}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
