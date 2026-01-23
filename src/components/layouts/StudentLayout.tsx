@@ -48,7 +48,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="mesh-gradient-bg" aria-hidden="true" />
+      <div className="min-h-screen flex w-full relative">
         <Sidebar>
           <div className="p-4 border-b">
             <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />

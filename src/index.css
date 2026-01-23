@@ -166,3 +166,58 @@ All colors MUST be HSL.
     letter-spacing: -0.03em;
   }
 }
+
+/* Mesh gradient background */
+.mesh-gradient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mesh-gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 20%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, hsl(var(--accent) / 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 60%, hsl(var(--primary) / 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 70% 30%, hsl(var(--accent) / 0.1) 0%, transparent 45%);
+  animation: mesh-move 20s ease-in-out infinite alternate;
+}
+
+.mesh-gradient-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 60% 40%, hsl(var(--accent) / 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 30% 70%, hsl(var(--primary) / 0.1) 0%, transparent 45%);
+  animation: mesh-move-alt 25s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-move {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(2%, 2%) rotate(3deg);
+  }
+}
+
+@keyframes mesh-move-alt {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(-2%, -1%) rotate(-2deg);
+  }
+}
