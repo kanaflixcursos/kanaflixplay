@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, Play, CheckCircle, Circle, Loader2 } from 'lucide-react';
+import PandavideoPlayer from '@/components/PandavideoPlayer';
 
 interface Course {
   id: string;
@@ -211,13 +212,11 @@ export default function CourseView() {
             <Card>
               <CardContent className="p-0">
                 {selectedLesson?.video_url ? (
-                  <div className="aspect-video">
-                    <iframe
-                      src={selectedLesson.video_url}
-                      className="w-full h-full rounded-t-lg"
-                      allowFullScreen
-                    />
-                  </div>
+                  <PandavideoPlayer 
+                    videoUrl={selectedLesson.video_url}
+                    title={selectedLesson.title}
+                    className="rounded-t-lg overflow-hidden"
+                  />
                 ) : (
                   <div className="aspect-video bg-muted flex items-center justify-center rounded-t-lg">
                     <Play className="h-16 w-16 text-muted-foreground" />
