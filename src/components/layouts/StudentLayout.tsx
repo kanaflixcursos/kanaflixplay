@@ -31,7 +31,7 @@ import NotificationsDropdown from '@/components/NotificationsDropdown';
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Meus Cursos', url: '/courses', icon: BookOpen },
-  { title: 'Explorar', url: '/welcome', icon: Compass },
+  { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
 ];
 
 interface StudentLayoutProps {
@@ -87,15 +87,27 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        <NavLink
-                          to={item.url}
-                          end={item.url === '/'}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
-                          activeClassName="bg-accent text-accent-foreground font-medium"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
+                        {'external' in item && item.external ? (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </a>
+                        ) : (
+                          <NavLink
+                            to={item.url}
+                            end={item.url === '/'}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                            activeClassName="bg-accent text-accent-foreground font-medium"
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </NavLink>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}

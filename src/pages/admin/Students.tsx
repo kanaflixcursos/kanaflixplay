@@ -97,7 +97,8 @@ export default function AdminStudents() {
   // Edit profile dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date: '' });
+const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date: '', email: '' });
+  const [emailChangePending, setEmailChangePending] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // Delete confirmation
@@ -233,7 +234,9 @@ export default function AdminStudents() {
       full_name: student.full_name === 'Sem nome' ? '' : student.full_name,
       phone: student.phone || '',
       birth_date: student.birth_date || '',
+      email: student.email || '',
     });
+    setEmailChangePending(false);
     setEditDialogOpen(true);
   };
 
@@ -251,6 +254,17 @@ export default function AdminStudents() {
 
     setSaving(true);
 
+    // Validate email format if changed
+    const emailChanged = editForm.email !== editingStudent.email;
+    if (emailChanged && editForm.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(editForm.email)) {
+        toast.error('Email inválido');
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -262,12 +276,31 @@ export default function AdminStudents() {
 
     if (error) {
       toast.error('Erro ao salvar perfil');
-    } else {
-      toast.success('Perfil atualizado com sucesso!');
-      fetchData();
-      handleCloseEditDialog();
+      setSaving(false);
+      return;
     }
 
+    // If email changed, trigger email change in auth (requires edge function)
+    if (emailChanged && editForm.email) {
+      const { error: emailError } = await supabase.functions.invoke('update-user-email', {
+        body: { user_id: editingStudent.user_id, new_email: editForm.email }
+      });
+
+      if (emailError) {
+        toast.error('Erro ao atualizar email. Perfil salvo, mas email não alterado.');
+      } else {
+        setEmailChangePending(true);
+        toast.success('Perfil salvo! Um email de confirmação foi enviado para o novo endereço.');
+        fetchData();
+        handleCloseEditDialog();
+        setSaving(false);
+        return;
+      }
+    }
+
+    toast.success('Perfil atualizado com sucesso!');
+    fetchData();
+    handleCloseEditDialog();
     setSaving(false);
   };
 
@@ -461,10 +494,9 @@ export default function AdminStudents() {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
-                <TableHead>Função</TableHead>
                 <TableHead className="text-center">Cursos</TableHead>
                 <TableHead>Último Acesso</TableHead>
-                <TableHead>Cadastro</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -494,17 +526,12 @@ export default function AdminStudents() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant={student.role === 'admin' ? 'default' : 'secondary'}>
-                      {student.role === 'admin' ? 'Admin' : 'Aluno'}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="text-center">{student.enrolledCourses}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {formatDateTime(student.last_seen_at)}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {formatDate(student.created_at)}
+                    {student.email || '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     <StudentActions student={student} />
@@ -600,6 +627,21 @@ export default function AdminStudents() {
                 onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
                 placeholder="Nome do usuário"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@exemplo.com"
+              />
+              {editForm.email !== editingStudent?.email && editForm.email && (
+                <p className="text-xs text-muted-foreground">
+                  ⚠️ Um email de confirmação será enviado para o novo endereço.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
