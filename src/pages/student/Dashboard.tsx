@@ -171,26 +171,26 @@ export default function StudentDashboard() {
               
               return (
                 <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
-                  <Card className="group cursor-pointer h-full overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
-                      {enrollment.course.thumbnail_url ? (
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    {enrollment.course.thumbnail_url ? (
+                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
                         <img 
                           src={enrollment.course.thumbnail_url} 
                           alt={enrollment.course.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                          <BookOpen className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-3">
-                      <h3 className="card-title line-clamp-2 text-center">{enrollment.course.title}</h3>
-                      <div className="mt-2">
-                        <Progress value={progress} className="h-1.5" />
-                        <p className="text-xs text-muted-foreground text-center mt-1">{progress}% concluído</p>
                       </div>
+                    ) : (
+                      <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
+                        <BookOpen className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                    <CardHeader>
+                      <h3 className="card-title line-clamp-2">{enrollment.course.title}</h3>
+                    </CardHeader>
+                    <CardContent>
+                      <Progress value={progress} className="h-1.5" />
+                      <p className="text-xs text-muted-foreground mt-1">{progress}% concluído</p>
                     </CardContent>
                   </Card>
                 </Link>
