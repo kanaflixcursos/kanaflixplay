@@ -166,8 +166,8 @@ function SortableLessonCard({
                   <PlayCircle className="h-6 w-6 text-muted-foreground" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Play className="h-5 w-5 text-white" />
+              <div className="absolute inset-0 bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Play className="h-5 w-5 text-background" />
               </div>
             </div>
 

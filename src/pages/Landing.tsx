@@ -151,7 +151,7 @@ export default function Landing() {
                         </span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {isEnrolled && (
                       <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground">
