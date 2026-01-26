@@ -30,7 +30,6 @@ import NotificationsDropdown from '@/components/NotificationsDropdown';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Meus Cursos', url: '/courses', icon: BookOpen },
   { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
 ];
 

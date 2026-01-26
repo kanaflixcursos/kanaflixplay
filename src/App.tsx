@@ -10,7 +10,6 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
 import StudentLayout from "@/components/layouts/StudentLayout";
-import StudentCourses from "@/pages/student/Courses";
 import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
 
@@ -37,16 +36,6 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             {/* Student Routes */}
             <Route path="/" element={<Index />} />
-            <Route
-              path="/courses"
-              element={
-                <ProtectedRoute>
-                  <StudentLayout>
-                    <StudentCourses />
-                  </StudentLayout>
-                </ProtectedRoute>
-              }
-            />
             <Route
               path="/courses/:courseId"
               element={
