@@ -36,17 +36,15 @@ export default function DashboardManageUsers() {
   }, []);
 
   const fetchUsers = async () => {
-    // Get profiles
+    // Get profiles with email
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, user_id, full_name')
+      .select('id, user_id, full_name, email')
       .order('created_at', { ascending: false })
       .limit(5);
 
     if (profiles) {
-      // We can't get emails from auth.users, so we'll show what we have
-      // In a real scenario, you might store email in profiles table
-      setUsers(profiles.map(p => ({ ...p, email: 'email@oculto.com' })));
+      setUsers(profiles.map(p => ({ ...p, email: p.email || '' })));
     }
     setLoading(false);
   };

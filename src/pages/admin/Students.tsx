@@ -137,7 +137,7 @@ export default function AdminStudents() {
       id: profile.id,
       user_id: profile.user_id,
       full_name: profile.full_name || 'Sem nome',
-      email: '',
+      email: profile.email || '',
       phone: profile.phone,
       avatar_url: profile.avatar_url,
       birth_date: profile.birth_date,
@@ -486,7 +486,12 @@ export default function AdminStudents() {
                           </span>
                         </div>
                       )}
-                      <span className="font-medium">{student.full_name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{student.full_name}</span>
+                        {student.email && (
+                          <span className="text-xs text-muted-foreground">{student.email}</span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -542,6 +547,10 @@ export default function AdminStudents() {
               </div>
               
               <div className="grid gap-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Email:</span>
+                  <span>{viewingStudent.email || '-'}</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Telefone:</span>
                   <span>{viewingStudent.phone || '-'}</span>
