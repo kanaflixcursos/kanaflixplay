@@ -100,12 +100,7 @@ export default function StudentCourses() {
                   </div>
                 )}
                 <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="card-title line-clamp-1">{course.title}</h3>
-                    {course.isEnrolled && (
-                      <Badge variant="secondary">Matriculado</Badge>
-                    )}
-                  </div>
+                  <h3 className="card-title line-clamp-1">{course.title}</h3>
                   <p className="card-description line-clamp-2">
                     {course.description}
                   </p>
