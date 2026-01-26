@@ -125,7 +125,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </DropdownMenu>
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto bg-muted/30">
+          <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">
             {children}
           </main>
 
