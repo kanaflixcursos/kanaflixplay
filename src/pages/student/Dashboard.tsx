@@ -150,7 +150,7 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground text-sm md:text-base">Bem-vindo de volta! Continue seus estudos.</p>
       </div>
 
-      <div className="grid gap-6 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}
@@ -178,31 +178,33 @@ export default function StudentDashboard() {
       </div>
 
       {lastCourse && (
-        <Link to={`/courses/${lastCourse.course.id}`}>
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <span className="stat-card-label">Continuar Assistindo</span>
-              <Play className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="card-title line-clamp-1">{lastCourse.course.title}</p>
-              <div className="flex items-center justify-between text-sm text-muted-foreground mt-2 mb-1">
-                <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
-                <span>
-                  {lastCourse.totalLessons > 0 
-                    ? Math.round((lastCourse.completedLessons / lastCourse.totalLessons) * 100) 
-                    : 0}%
-                </span>
-              </div>
-              <Progress 
-                value={lastCourse.totalLessons > 0 
-                  ? (lastCourse.completedLessons / lastCourse.totalLessons) * 100 
-                  : 0
-                } 
-              />
-            </CardContent>
-          </Card>
-        </Link>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Continuar Assistindo</h2>
+          <Link to={`/courses/${lastCourse.course.id}`}>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <span className="stat-card-label">{lastCourse.course.title}</span>
+                <Play className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                  <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
+                  <span>
+                    {lastCourse.totalLessons > 0 
+                      ? Math.round((lastCourse.completedLessons / lastCourse.totalLessons) * 100) 
+                      : 0}%
+                  </span>
+                </div>
+                <Progress 
+                  value={lastCourse.totalLessons > 0 
+                    ? (lastCourse.completedLessons / lastCourse.totalLessons) * 100 
+                    : 0
+                  } 
+                />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       )}
 
       <div>
