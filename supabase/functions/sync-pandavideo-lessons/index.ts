@@ -83,27 +83,36 @@ Deno.serve(async (req) => {
 
     // Get courseId from query params or body
     const courseId = url.searchParams.get("course_id") || bodyData.courseId;
-    const isCronJob = url.searchParams.get("cron") === "true";
 
-    // Check authorization for non-cron requests
+    // Check if this is a service role request (from cron job with service role key)
     const authHeader = req.headers.get("Authorization");
-    let isAuthorized = isCronJob;
+    let isAuthorized = false;
     
-    if (!isCronJob && authHeader?.startsWith("Bearer ")) {
-      const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } }
-      });
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "");
       
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      
-      if (user) {
-        const { data: roleData } = await supabaseClient
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
+      // Check if it's the service role key (for cron jobs)
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (token === serviceRoleKey) {
+        isAuthorized = true;
+      } else {
+        // Otherwise, validate as a regular user JWT and check admin role
+        const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+          global: { headers: { Authorization: authHeader } }
+        });
         
-        isAuthorized = roleData?.role === "admin";
+        const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+        
+        if (!claimsError && claimsData?.claims) {
+          const userId = claimsData.claims.sub;
+          const { data: roleData } = await supabaseClient
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
+            .single();
+          
+          isAuthorized = roleData?.role === "admin";
+        }
       }
     }
 
