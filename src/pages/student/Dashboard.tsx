@@ -148,7 +148,7 @@ export default function StudentDashboard() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Continuar Estudando</h2>
+        <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
         
         {loading ? (
           <p className="text-muted-foreground">Carregando...</p>
