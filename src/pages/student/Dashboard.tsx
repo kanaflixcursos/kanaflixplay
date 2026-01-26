@@ -171,8 +171,8 @@ export default function StudentDashboard() {
               
               return (
                 <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
-                  <div className="group cursor-pointer">
-                    <div className="aspect-[4/5] w-full overflow-hidden rounded-xl bg-muted relative">
+                  <Card className="group cursor-pointer h-full overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="aspect-[4/5] w-full overflow-hidden bg-muted">
                       {enrollment.course.thumbnail_url ? (
                         <img 
                           src={enrollment.course.thumbnail_url} 
@@ -185,12 +185,14 @@ export default function StudentDashboard() {
                         </div>
                       )}
                     </div>
-                    <h3 className="card-title line-clamp-2 mt-3 text-center">{enrollment.course.title}</h3>
-                    <div className="mt-2">
-                      <Progress value={progress} className="h-1.5" />
-                      <p className="text-xs text-muted-foreground text-center mt-1">{progress}% concluído</p>
-                    </div>
-                  </div>
+                    <CardContent className="p-3">
+                      <h3 className="card-title line-clamp-2 text-center">{enrollment.course.title}</h3>
+                      <div className="mt-2">
+                        <Progress value={progress} className="h-1.5" />
+                        <p className="text-xs text-muted-foreground text-center mt-1">{progress}% concluído</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               );
             })}
