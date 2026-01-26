@@ -150,9 +150,9 @@ export default function LessonMaterialUpload({
 
   const getFileIcon = (type: string) => {
     if (type === 'application/pdf') {
-      return <FileText className="h-4 w-4 text-red-500" />;
+      return <FileText className="h-4 w-4 text-destructive" />;
     }
-    return <Image className="h-4 w-4 text-blue-500" />;
+    return <Image className="h-4 w-4 text-primary" />;
   };
 
   return (
