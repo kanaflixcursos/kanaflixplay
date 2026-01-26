@@ -105,7 +105,7 @@ export default function DashboardManageCourses() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{course.title}</p>
-                  <span className={`text-xs ${course.is_published ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  <span className={`text-xs ${course.is_published ? 'text-success' : 'text-muted-foreground'}`}>
                     {course.is_published ? 'Publicado' : 'Rascunho'}
                   </span>
                 </div>

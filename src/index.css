@@ -42,6 +42,12 @@ All colors MUST be HSL.
     --input: 0 0% 63.9216%;
     --ring: 0 0% 45.098%;
 
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
+
     --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
@@ -127,6 +133,10 @@ All colors MUST be HSL.
     --border: 0 0% 14.902%;
     --input: 0 0% 14.902%;
     --ring: 0 0% 63.9216%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 212 26% 83%;

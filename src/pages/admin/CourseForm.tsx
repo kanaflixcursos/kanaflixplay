@@ -496,8 +496,8 @@ export default function CourseForm() {
                         </span>
                         <span className={`text-xs px-2 py-1 rounded ${
                           video.status === 'CONVERTED' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                            ? 'bg-success/10 text-success' 
+                            : 'bg-warning/10 text-warning-foreground'
                         }`}>
                           {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
                         </span>
@@ -620,7 +620,7 @@ export default function CourseForm() {
                 {/* Basic Info Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    formData.title ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                    formData.title ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                   }`}>
                     <Check className="h-4 w-4" />
                   </div>
@@ -628,7 +628,7 @@ export default function CourseForm() {
                     <p className="font-medium">Informações Básicas</p>
                     <p className="text-sm text-muted-foreground">{formData.title || 'Sem título'}</p>
                     {formData.thumbnail_url && (
-                      <p className="text-xs text-green-600 mt-1">✓ Capa adicionada</p>
+                      <p className="text-xs text-success mt-1">✓ Capa adicionada</p>
                     )}
                   </div>
                 </div>
@@ -636,7 +636,7 @@ export default function CourseForm() {
                 {/* Videos Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    videos.length > 0 ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
+                    videos.length > 0 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning-foreground'
                   }`}>
                     <Check className="h-4 w-4" />
                   </div>
@@ -652,7 +652,7 @@ export default function CourseForm() {
 
                 {/* Pricing Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-green-100 text-green-600">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-success/10 text-success">
                     <Check className="h-4 w-4" />
                   </div>
                   <div className="flex-1">

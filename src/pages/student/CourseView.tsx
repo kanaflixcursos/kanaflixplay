@@ -255,9 +255,9 @@ export default function CourseView() {
 
   const getFileIcon = (type: string) => {
     if (type === 'application/pdf') {
-      return <FileText className="h-4 w-4 text-red-500" />;
+      return <FileText className="h-4 w-4 text-destructive" />;
     }
-    return <FileText className="h-4 w-4 text-blue-500" />;
+    return <FileText className="h-4 w-4 text-primary" />;
   };
 
   const formatDuration = (minutes: number | null) => {
@@ -520,7 +520,7 @@ export default function CourseView() {
                         )}
                         {selectedLesson?.id === lesson.id && (
                           <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                            <Play className="h-3 w-3 text-white fill-white" />
+                            <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
                           </div>
                         )}
                       </div>
@@ -528,7 +528,7 @@ export default function CourseView() {
                       {/* Status icon */}
                       <div className="shrink-0">
                         {lesson.completed ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                         ) : (
                           <Circle className="h-4 w-4 text-muted-foreground" />
                         )}
