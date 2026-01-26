@@ -85,35 +85,45 @@ export default {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out'
   		},
-		fontFamily: {
-			sans: [
-				'Inter',
-				'ui-sans-serif',
-				'system-ui',
-				'sans-serif',
-				'Apple Color Emoji',
-				'Segoe UI Emoji',
-				'Segoe UI Symbol',
-				'Noto Color Emoji'
-			],
-			display: [
-				'Google Sans',
-				'Product Sans',
-				'ui-sans-serif',
-				'system-ui',
-				'sans-serif'
-			],
-			mono: [
-				'ui-monospace',
-				'SFMono-Regular',
-				'Menlo',
-				'Monaco',
-				'Consolas',
-				'Liberation Mono',
-				'Courier New',
-				'monospace'
-			]
-		}
+  		fontFamily: {
+  			sans: [
+  				'Inter',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif',
+  				'Apple Color Emoji',
+  				'Segoe UI Emoji',
+  				'Segoe UI Symbol',
+  				'Noto Color Emoji'
+  			],
+  			display: [
+  				'Google Sans',
+  				'Product Sans',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif'
+  			],
+  			mono: [
+  				'Cascadia Code',
+  				'ui-monospace',
+  				'SFMono-Regular',
+  				'Menlo',
+  				'Monaco',
+  				'Consolas',
+  				'Liberation Mono',
+  				'Courier New',
+  				'monospace'
+  			],
+  			serif: [
+  				'Playfair Display',
+  				'ui-serif',
+  				'Georgia',
+  				'Cambria',
+  				'Times New Roman',
+  				'Times',
+  				'serif'
+  			]
+  		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

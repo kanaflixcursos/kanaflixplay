@@ -1,6 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cascadia+Code&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,80 +15,80 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 265 4% 12.9%;
+    --foreground: 0 0% 25.098%;
 
     --card: 0 0% 100%;
-    --card-foreground: 229 84% 4.902%;
+    --card-foreground: 0 0% 25.098%;
 
-    --popover: 210 40% 98.0392%;
-    --popover-foreground: 229 84% 4.902%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 19.1176% 26.6667%;
 
-    --primary: 172 90% 29%;
-    --primary-foreground: 210 40% 98.0392%;
+    --primary: 0 0% 25.098%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 98.0392%;
-    --secondary-foreground: 229 84% 4.902%;
+    --secondary: 0 0% 25.098%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 98.0392%;
-    --muted-foreground: 257 4.6% 55.4%;
+    --muted: 218 10.6145% 64.902%;
+    --muted-foreground: 217 19.1176% 26.6667%;
 
-    --accent: 13 100% 55%;
-    --accent-foreground: 210 40% 98.0392%;
+    --accent: 0 0% 89.8039%;
+    --accent-foreground: 0 0% 25.098%;
 
-    --destructive: 0 84.2365% 60.1961%;
-    --destructive-foreground: 210 40% 98.0392%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 85% 97%;
 
-    --border: 256 1.3% 92.9%;
-    --input: 256 1.3% 92.9%;
-    --ring: 257 4% 70.4%;
+    --border: 0 0% 89.8039%;
+    --input: 0 0% 63.9216%;
+    --ring: 0 0% 45.098%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
-    --sidebar-foreground: 265 4% 12.9%;
+    --sidebar-foreground: 222 47% 11%;
 
-    --sidebar-primary: 266 4% 20.8%;
+    --sidebar-primary: 216 19% 26%;
 
-    --sidebar-primary-foreground: 248 0.3% 98.4%;
+    --sidebar-primary-foreground: 210 19% 98%;
 
-    --sidebar-accent: 248 0.7% 96.8%;
+    --sidebar-accent: 215 19% 34%;
 
-    --sidebar-accent-foreground: 266 4% 20.8%;
+    --sidebar-accent-foreground: 210 40% 98%;
 
-    --sidebar-border: 256 1.3% 92.9%;
+    --sidebar-border: 212 26% 83%;
 
-    --sidebar-ring: 257 4% 70.4%;
+    --sidebar-ring: 216 19% 26%;
 
-    --chart-1: 41 22.2% 64.6%;
+    --chart-1: 217 10% 64%;
 
-    --chart-2: 185 11.8% 60%;
+    --chart-2: 215 20% 65%;
 
-    --chart-3: 227 7% 39.8%;
+    --chart-3: 215 16% 46%;
 
-    --chart-4: 84 18.9% 82.8%;
+    --chart-4: 219 8% 46%;
 
-    --chart-5: 70 18.8% 76.9%;
+    --chart-5: 215 19% 34%;
 
-    --sidebar: 248 0.3% 98.4%;
+    --sidebar: 210 40% 98%;
 
-    --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
 
-    --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
 
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-mono: "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
 
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
 
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
 
-    --shadow-sm: 0px 4px 5.75px 0px hsla(0, 0%, 0%, 0.05);
+    --shadow-sm: 0px 2px 3.5px 1px hsla(0, 0%, 0%, 0.04);
 
-    --shadow: 0px 4px 11.5px 0px hsla(0, 0%, 0%, 0.05);
+    --shadow: 0px 2px 7px 1px hsla(0, 0%, 0%, 0.04);
 
-    --shadow-md: 0px 4px 17.25px 0px hsla(0, 0%, 0%, 0.05);
+    --shadow-md: 0px 2px 10.5px 1px hsla(0, 0%, 0%, 0.04);
 
-    --shadow-lg: 0px 4px 28.75px 0px hsla(0, 0%, 0%, 0.05);
+    --shadow-lg: 0px 2px 17.5px 1px hsla(0, 0%, 0%, 0.04);
 
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
 
@@ -97,47 +100,47 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 0 0% 15%;
-    --foreground: 248 0.3% 98.4%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 266 4% 20.8%;
-    --card-foreground: 248 0.3% 98.4%;
+    --card: 0 0% 9.0196%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 266 4% 20.8%;
-    --popover-foreground: 248 0.3% 98.4%;
+    --popover: 0 0% 83.1373%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 256 1.3% 92.9%;
-    --primary-foreground: 266 4% 20.8%;
+    --primary: 0 0% 25.098%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 4.1% 27.9%;
-    --secondary-foreground: 248 0.3% 98.4%;
+    --secondary: 0 0% 25.098%;
+    --secondary-foreground: 0 0% 89.8039%;
 
-    --muted: 260 4.1% 27.9%;
-    --muted-foreground: 257 4% 70.4%;
+    --muted: 0 0% 14.902%;
+    --muted-foreground: 0 0% 100%;
 
-    --accent: 260 4.1% 27.9%;
-    --accent-foreground: 248 0.3% 98.4%;
+    --accent: 83 77.9736% 55.4902%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 22 19.1% 70.4%;
-    --destructive-foreground: 248 0.3% 98.4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 85% 97%;
 
-    --border: 0 0% 100% / 10%;
-    --input: 0 0% 100% / 15%;
-    --ring: 264 2.7% 55.1%;
+    --border: 0 0% 14.902%;
+    --input: 0 0% 14.902%;
+    --ring: 0 0% 63.9216%;
     --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 248 0.3% 98.4%;
-    --sidebar-primary: 264 24.3% 48.8%;
-    --sidebar-primary-foreground: 248 0.3% 98.4%;
-    --sidebar-accent: 260 4.1% 27.9%;
-    --sidebar-accent-foreground: 248 0.3% 98.4%;
-    --sidebar-border: 0 0% 100% / 10%;
-    --sidebar-ring: 264 2.7% 55.1%;
-    --chart-1: 264 24.3% 48.8%;
-    --chart-2: 162 17% 69.6%;
-    --chart-3: 70 18.8% 76.9%;
-    --chart-4: 304 26.5% 62.7%;
-    --chart-5: 16 24.6% 64.5%;
-    --sidebar: 266 4% 20.8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 212 26% 83%;
+    --sidebar-primary-foreground: 228 84% 4%;
+    --sidebar-accent: 215 20% 65%;
+    --sidebar-accent-foreground: 228 84% 4%;
+    --sidebar-border: 215 19% 34%;
+    --sidebar-ring: 212 26% 83%;
+    --chart-1: 215 12% 83%;
+    --chart-2: 212 26% 83%;
+    --chart-3: 215 20% 65%;
+    --chart-4: 217 10% 64%;
+    --chart-5: 215 16% 46%;
+    --sidebar: 217 32% 17%;
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -173,11 +176,11 @@ All colors MUST be HSL.
   .stat-card-label {
     @apply text-sm font-medium text-foreground;
   }
-  
+
   .stat-card-value {
     @apply text-3xl font-semibold tracking-tight text-foreground;
   }
-  
+
   .stat-card-description {
     @apply text-xs text-muted-foreground mt-1;
   }
@@ -186,7 +189,7 @@ All colors MUST be HSL.
   .card-title {
     @apply text-lg font-medium tracking-tight text-foreground;
   }
-  
+
   .card-description {
     @apply text-sm text-muted-foreground leading-relaxed;
   }
@@ -200,7 +203,7 @@ All colors MUST be HSL.
   .action-card-title {
     @apply text-base font-medium text-foreground;
   }
-  
+
   .action-card-description {
     @apply text-sm text-muted-foreground;
   }
