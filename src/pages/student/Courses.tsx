@@ -68,8 +68,8 @@ export default function StudentCourses() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Cursos</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Explore todos os cursos disponíveis na plataforma.</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Meus Cursos</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Todos os cursos comprados, alugados ou inscrito gratuitamente estão aqui.</p>
       </div>
 
       {loading ? (
@@ -87,7 +87,7 @@ export default function StudentCourses() {
             <Link key={course.id} to={`/courses/${course.id}`}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                 {course.thumbnail_url ? (
-                  <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
+                  <div className="aspect-[4/3] w-full overflow-hidden rounded-t-lg">
                     <img 
                       src={course.thumbnail_url} 
                       alt={course.title}
@@ -95,7 +95,7 @@ export default function StudentCourses() {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
+                  <div className="aspect-[4/3] w-full bg-muted rounded-t-lg flex items-center justify-center">
                     <BookOpen className="h-12 w-12 text-muted-foreground" />
                   </div>
                 )}
