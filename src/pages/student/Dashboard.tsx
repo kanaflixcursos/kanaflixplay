@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Play } from 'lucide-react';
+import { BookOpen, Play, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 
 interface EnrolledCourse {
@@ -20,11 +20,35 @@ interface EnrolledCourse {
   lastWatchedAt?: string;
 }
 
+interface StudyStats {
+  totalWatchedSeconds: number;
+  totalLessonsCompleted: number;
+  totalCoursesCompleted: number;
+}
+
+// Helper to format seconds into readable time
+const formatStudyTime = (seconds: number): string => {
+  if (seconds < 60) return `${seconds}s`;
+  
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}min`;
+  }
+  return `${minutes}min`;
+};
+
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastCourse, setLastCourse] = useState<EnrolledCourse | null>(null);
+  const [stats, setStats] = useState<StudyStats>({
+    totalWatchedSeconds: 0,
+    totalLessonsCompleted: 0,
+    totalCoursesCompleted: 0,
+  });
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
@@ -44,6 +68,16 @@ export default function StudentDashboard() {
         return;
       }
 
+      // Fetch all user progress at once for efficiency
+      const { data: allProgress } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed, completed_at, watched_seconds')
+        .eq('user_id', user.id);
+
+      // Calculate total study time
+      const totalWatchedSeconds = allProgress?.reduce((sum, p) => sum + (p.watched_seconds || 0), 0) || 0;
+      const totalLessonsCompleted = allProgress?.filter(p => p.completed).length || 0;
+
       const coursesWithProgress = await Promise.all(
         (enrollments || []).map(async (enrollment: any) => {
           const { count: totalLessons } = await supabase
@@ -51,22 +85,17 @@ export default function StudentDashboard() {
             .select('*', { count: 'exact', head: true })
             .eq('course_id', enrollment.course.id);
 
-          const lessonIds = (await supabase
+          const { data: lessonIds } = await supabase
             .from('lessons')
             .select('id')
-            .eq('course_id', enrollment.course.id)
-          ).data?.map(l => l.id) || [];
+            .eq('course_id', enrollment.course.id);
 
-          const { data: progressData } = await supabase
-            .from('lesson_progress')
-            .select('lesson_id, completed, completed_at')
-            .eq('user_id', user.id)
-            .in('lesson_id', lessonIds);
-
-          const completedLessons = progressData?.filter(p => p.completed).length || 0;
+          const lessonIdSet = new Set(lessonIds?.map(l => l.id) || []);
+          const courseProgress = allProgress?.filter(p => lessonIdSet.has(p.lesson_id)) || [];
+          const completedLessons = courseProgress.filter(p => p.completed).length;
           
           // Get most recent activity
-          const lastActivity = progressData?.reduce((latest, p) => {
+          const lastActivity = courseProgress.reduce((latest, p) => {
             if (p.completed_at && (!latest || p.completed_at > latest)) {
               return p.completed_at;
             }
@@ -82,6 +111,17 @@ export default function StudentDashboard() {
           };
         })
       );
+
+      // Count completed courses (100% progress)
+      const totalCoursesCompleted = coursesWithProgress.filter(
+        c => c.totalLessons > 0 && c.completedLessons >= c.totalLessons
+      ).length;
+
+      setStats({
+        totalWatchedSeconds,
+        totalLessonsCompleted,
+        totalCoursesCompleted,
+      });
 
       setEnrolledCourses(coursesWithProgress);
 
@@ -110,42 +150,60 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground text-sm md:text-base">Bem-vindo de volta! Continue seus estudos.</p>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}
           icon={BookOpen}
           loading={loading}
         />
-        
-        {lastCourse && (
-          <Link to={`/courses/${lastCourse.course.id}`}>
-            <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <span className="stat-card-label">Último Curso Assistido</span>
-                <Play className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <p className="card-title line-clamp-1">{lastCourse.course.title}</p>
-                <div className="flex items-center justify-between text-sm text-muted-foreground mt-2 mb-1">
-                  <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
-                  <span>
-                    {lastCourse.totalLessons > 0 
-                      ? Math.round((lastCourse.completedLessons / lastCourse.totalLessons) * 100) 
-                      : 0}%
-                  </span>
-                </div>
-                <Progress 
-                  value={lastCourse.totalLessons > 0 
-                    ? (lastCourse.completedLessons / lastCourse.totalLessons) * 100 
-                    : 0
-                  } 
-                />
-              </CardContent>
-            </Card>
-          </Link>
-        )}
+        <StatCard
+          title="Tempo de Estudo"
+          value={formatStudyTime(stats.totalWatchedSeconds)}
+          icon={Clock}
+          loading={loading}
+        />
+        <StatCard
+          title="Aulas Concluídas"
+          value={stats.totalLessonsCompleted}
+          icon={CheckCircle}
+          loading={loading}
+        />
+        <StatCard
+          title="Cursos Finalizados"
+          value={stats.totalCoursesCompleted}
+          icon={Trophy}
+          loading={loading}
+        />
       </div>
+
+      {lastCourse && (
+        <Link to={`/courses/${lastCourse.course.id}`}>
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <span className="stat-card-label">Continuar Assistindo</span>
+              <Play className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="card-title line-clamp-1">{lastCourse.course.title}</p>
+              <div className="flex items-center justify-between text-sm text-muted-foreground mt-2 mb-1">
+                <span>{lastCourse.completedLessons} de {lastCourse.totalLessons} aulas</span>
+                <span>
+                  {lastCourse.totalLessons > 0 
+                    ? Math.round((lastCourse.completedLessons / lastCourse.totalLessons) * 100) 
+                    : 0}%
+                </span>
+              </div>
+              <Progress 
+                value={lastCourse.totalLessons > 0 
+                  ? (lastCourse.completedLessons / lastCourse.totalLessons) * 100 
+                  : 0
+                } 
+              />
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
