@@ -171,30 +171,26 @@ export default function StudentDashboard() {
               
               return (
                 <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    {enrollment.course.thumbnail_url && (
-                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
+                  <div className="group cursor-pointer">
+                    <div className="aspect-[4/5] w-full overflow-hidden rounded-xl bg-muted relative">
+                      {enrollment.course.thumbnail_url ? (
                         <img 
                           src={enrollment.course.thumbnail_url} 
                           alt={enrollment.course.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
-                      </div>
-                    )}
-                    <CardHeader>
-                      <h3 className="card-title line-clamp-1">{enrollment.course.title}</h3>
-                      <p className="card-description line-clamp-2">
-                        {enrollment.course.description}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                        <span>{enrollment.completedLessons} de {enrollment.totalLessons} aulas</span>
-                        <span>{progress}%</span>
-                      </div>
-                      <Progress value={progress} />
-                    </CardContent>
-                  </Card>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                          <BookOpen className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="card-title line-clamp-2 mt-3 text-center">{enrollment.course.title}</h3>
+                    <div className="mt-2">
+                      <Progress value={progress} className="h-1.5" />
+                      <p className="text-xs text-muted-foreground text-center mt-1">{progress}% concluído</p>
+                    </div>
+                  </div>
                 </Link>
               );
             })}

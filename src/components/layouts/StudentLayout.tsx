@@ -90,7 +90,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                         <NavLink
                           to={item.url}
                           end={item.url === '/'}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
                           activeClassName="bg-accent text-accent-foreground font-medium"
                         >
                           <item.icon className="h-4 w-4" />
@@ -112,7 +112,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                       <SidebarMenuButton asChild>
                         <NavLink
                           to="/admin"
-                          className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
                           activeClassName="bg-accent text-accent-foreground font-medium"
                         >
                           <Shield className="h-4 w-4" />

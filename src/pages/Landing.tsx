@@ -83,9 +83,6 @@ export default function Landing() {
       <header className="relative z-10 flex items-center justify-between px-6 py-4 md:px-12">
         <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />
         <div className="flex items-center gap-4">
-          <Button onClick={() => navigate('/')} variant="default">
-            Minha Área
-          </Button>
           <div className="flex items-center gap-2">
             <Avatar className="h-9 w-9">
               <AvatarFallback>{userInitials}</AvatarFallback>
@@ -94,6 +91,9 @@ export default function Landing() {
               {user.email}
             </span>
           </div>
+          <Button onClick={() => navigate('/')} variant="default">
+            Minha Área
+          </Button>
         </div>
       </header>
 
