@@ -52,7 +52,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -106,6 +106,14 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // Reset progress dialog
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetStudent, setResetStudent] = useState<Student | null>(null);
+  const [resetType, setResetType] = useState<'all' | 'course'>('all');
+  const [resetCourseId, setResetCourseId] = useState<string>('');
+  const [resetting, setResetting] = useState(false);
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -339,6 +347,84 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     setDeleting(false);
   };
 
+  const handleOpenResetDialog = async (student: Student) => {
+    setResetStudent(student);
+    setResetType('all');
+    setResetCourseId('');
+    setResetting(false);
+    
+    // Fetch courses the student is enrolled in
+    const { data: enrollments } = await supabase
+      .from('course_enrollments')
+      .select('course_id')
+      .eq('user_id', student.user_id);
+    
+    if (enrollments && enrollments.length > 0) {
+      const courseIds = enrollments.map(e => e.course_id);
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', courseIds);
+      
+      setEnrolledCourses(coursesData || []);
+    } else {
+      setEnrolledCourses([]);
+    }
+    
+    setResetDialogOpen(true);
+  };
+
+  const handleResetProgress = async () => {
+    if (!resetStudent) return;
+    
+    if (resetType === 'course' && !resetCourseId) {
+      toast.error('Selecione um curso');
+      return;
+    }
+
+    setResetting(true);
+
+    try {
+      if (resetType === 'all') {
+        // Reset all progress for this user
+        const { error } = await supabase
+          .from('lesson_progress')
+          .delete()
+          .eq('user_id', resetStudent.user_id);
+
+        if (error) throw error;
+        toast.success(`Progresso total de ${resetStudent.full_name} resetado com sucesso!`);
+      } else {
+        // Reset progress only for lessons in the selected course
+        const { data: lessons } = await supabase
+          .from('lessons')
+          .select('id')
+          .eq('course_id', resetCourseId);
+
+        if (lessons && lessons.length > 0) {
+          const lessonIds = lessons.map(l => l.id);
+          const { error } = await supabase
+            .from('lesson_progress')
+            .delete()
+            .eq('user_id', resetStudent.user_id)
+            .in('lesson_id', lessonIds);
+
+          if (error) throw error;
+        }
+
+        const courseName = enrolledCourses.find(c => c.id === resetCourseId)?.title || 'curso';
+        toast.success(`Progresso de ${resetStudent.full_name} no curso "${courseName}" resetado com sucesso!`);
+      }
+
+      setResetDialogOpen(false);
+    } catch (error) {
+      console.error('Error resetting progress:', error);
+      toast.error('Erro ao resetar progresso');
+    }
+
+    setResetting(false);
+  };
+
   const filteredStudents = students.filter(student =>
     student.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -377,6 +463,10 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Resetar Progresso
+        </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleOpenDeleteDialog(student)}
           className="text-destructive focus:text-destructive"
@@ -773,6 +863,109 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Progress Dialog */}
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Resetar Progresso
+            </DialogTitle>
+            <DialogDescription>
+              Escolha o tipo de reset para {resetStudent?.full_name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  id="reset-all"
+                  name="reset-type"
+                  checked={resetType === 'all'}
+                  onChange={() => setResetType('all')}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="reset-all" className="cursor-pointer flex-1">
+                  <span className="font-medium">Reset Total</span>
+                  <p className="text-sm text-muted-foreground">
+                    Remove todo o progresso do aluno em todos os cursos
+                  </p>
+                </Label>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <input
+                  type="radio"
+                  id="reset-course"
+                  name="reset-type"
+                  checked={resetType === 'course'}
+                  onChange={() => setResetType('course')}
+                  className="h-4 w-4 mt-1"
+                />
+                <Label htmlFor="reset-course" className="cursor-pointer flex-1">
+                  <span className="font-medium">Reset por Curso</span>
+                  <p className="text-sm text-muted-foreground">
+                    Remove o progresso apenas do curso selecionado
+                  </p>
+                </Label>
+              </div>
+            </div>
+
+            {resetType === 'course' && (
+              <div className="pl-7">
+                {enrolledCourses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Este aluno não está matriculado em nenhum curso.
+                  </p>
+                ) : (
+                  <Select value={resetCourseId} onValueChange={setResetCourseId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um curso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {enrolledCourses.map((course) => (
+                        <SelectItem key={course.id} value={course.id}>
+                          {course.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <p className="text-sm text-warning-foreground">
+                ⚠️ Esta ação irá remover todas as aulas concluídas e o tempo de estudo registrado. Esta ação não pode ser desfeita.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleResetProgress} 
+              disabled={resetting || (resetType === 'course' && !resetCourseId)}
+              variant="destructive"
+            >
+              {resetting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resetando...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Resetar Progresso
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
