@@ -19,6 +19,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
+import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
 
 interface Course {
   id: string;
@@ -379,14 +380,29 @@ export default function CourseView() {
         <div className="lg:col-span-2 space-y-6">
           {/* Video Player */}
           {selectedLesson?.video_url ? (
-            <div className="aspect-video w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
-              <iframe
+            <div className="w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
+              <PandavideoPlayerWithProgress
                 key={selectedLesson.id}
-                src={selectedLesson.video_url}
+                videoUrl={selectedLesson.video_url}
+                lessonId={selectedLesson.id}
                 title={selectedLesson.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                allowFullScreen
+                durationMinutes={selectedLesson.duration_minutes}
+                onComplete={() => {
+                  // Update local state when auto-completed
+                  const updatedLessons = lessons.map(l => 
+                    l.id === selectedLesson.id ? { ...l, completed: true } : l
+                  );
+                  setLessons(updatedLessons);
+                  setSelectedLesson({ ...selectedLesson, completed: true });
+                  toast.success('Aula concluída!');
+                  
+                  // Auto advance to next lesson
+                  const currentIndex = lessons.findIndex(l => l.id === selectedLesson.id);
+                  if (currentIndex < lessons.length - 1) {
+                    const nextLesson = updatedLessons[currentIndex + 1];
+                    setSelectedLesson(nextLesson);
+                  }
+                }}
               />
             </div>
           ) : (
