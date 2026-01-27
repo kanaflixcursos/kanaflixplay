@@ -299,16 +299,17 @@ export default function AdminCourses() {
                       )}
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
+                        title="Ver aulas"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Aulas
+                        <Eye className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
+                        title="Editar curso"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -316,6 +317,7 @@ export default function AdminCourses() {
                         variant="outline"
                         size="icon"
                         onClick={() => handleTogglePublish(course)}
+                        title={course.is_published ? 'Despublicar' : 'Publicar'}
                       >
                         {course.is_published ? '📤' : '📥'}
                       </Button>
@@ -323,6 +325,7 @@ export default function AdminCourses() {
                         variant="outline"
                         size="icon"
                         onClick={() => handleDelete(course.id)}
+                        title="Excluir curso"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
