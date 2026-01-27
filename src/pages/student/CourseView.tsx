@@ -482,7 +482,7 @@ export default function CourseView() {
                     <CheckCircle className="h-3 w-3" />
                     Concluída
                   </Badge>
-                ) : (
+                ) : !course.is_sequential && (
                   <Button 
                     onClick={() => handleMarkComplete(selectedLesson.id)}
                     className="shrink-0"
