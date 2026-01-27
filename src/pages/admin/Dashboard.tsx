@@ -71,16 +71,16 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard Administrativo</h1>
+        <p className="text-muted-foreground text-sm md:text-base">
           Visão geral da plataforma Kanaflix Play
         </p>
       </div>
 
-      {/* StatCards */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+      {/* StatCards - 2 cols on mobile, 3 on tablet+ */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
         {statCards.map((stat) => (
           <StatCard
             key={stat.title}

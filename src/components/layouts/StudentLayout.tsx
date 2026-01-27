@@ -161,7 +161,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                   <User className="mr-2 h-4 w-4" />
                   Meu Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/courses')}>
+                <DropdownMenuItem onClick={() => navigate('/')}>
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Meus Cursos
                 </DropdownMenuItem>

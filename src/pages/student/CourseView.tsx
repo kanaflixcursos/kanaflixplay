@@ -348,7 +348,7 @@ export default function CourseView() {
   if (!isEnrolled) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/courses')} className="gap-2">
+        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Voltar aos Cursos
         </Button>
@@ -412,25 +412,27 @@ export default function CourseView() {
 
   // Enrolled - show lesson player
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/courses')} className="gap-2">
+    <div className="space-y-4 md:space-y-6">
+      {/* Header - Mobile optimized */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 w-fit">
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          <span className="hidden sm:inline">Voltar</span>
         </Button>
         <div className="flex-1">
-          <h1 className="text-xl font-medium">{course.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{completedCount}/{lessons.length} aulas concluídas</span>
+          <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+            <span>{completedCount}/{lessons.length} aulas</span>
             <span>•</span>
-            <span>{progressPercent}% completo</span>
+            <span>{progressPercent}%</span>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Mobile: Stack vertically, Desktop: Grid */}
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         {/* Main Content Area */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Video Player */}
           {selectedLesson?.video_url ? (
             <div className="w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
@@ -467,13 +469,13 @@ export default function CourseView() {
 
           {/* Lesson Info - Outside the player card */}
           {selectedLesson && (
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-1">
-                  <h2 className="text-2xl font-medium">{selectedLesson.title}</h2>
+            <div className="space-y-3 md:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                <div className="space-y-1 min-w-0">
+                  <h2 className="text-lg sm:text-2xl font-medium line-clamp-2">{selectedLesson.title}</h2>
                   {selectedLesson.duration_minutes && (
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                       {formatDuration(selectedLesson.duration_minutes)}
                     </div>
                   )}
@@ -495,10 +497,12 @@ export default function CourseView() {
                 ) : !course.is_sequential && (
                   <Button 
                     onClick={() => handleMarkComplete(selectedLesson.id)}
-                    className="shrink-0"
+                    className="shrink-0 text-xs sm:text-sm"
+                    size="sm"
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Marcar como concluída
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Marcar como concluída</span>
+                    <span className="sm:hidden">Concluir</span>
                   </Button>
                 )}
               </div>
@@ -551,13 +555,13 @@ export default function CourseView() {
           )}
         </div>
 
-        {/* Lessons Sidebar */}
-        <div className="space-y-4">
-          <Card className="sticky top-6">
-            <CardHeader className="pb-3">
+        {/* Lessons Sidebar - Collapsible on mobile */}
+        <div className="space-y-4 order-first lg:order-last">
+          <Card className="lg:sticky lg:top-6">
+            <CardHeader className="pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
-                <span className="card-title-compact">Conteúdo do Curso</span>
-                <span className="text-sm text-muted-foreground">{getTotalDuration()}</span>
+                <span className="card-title-compact text-sm sm:text-base">Conteúdo</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">{getTotalDuration()}</span>
               </div>
               
               {/* Progress bar */}
@@ -583,7 +587,7 @@ export default function CourseView() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
+              <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
                   {lessons.map((lesson, index) => {
                     const locked = isLessonLocked(lesson.id);
