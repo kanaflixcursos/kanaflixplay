@@ -59,14 +59,14 @@ export default function DashboardActiveUsersChart() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Usuários Ativos Diariamente
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Usuários Ativos</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex justify-center py-12">
+        <CardContent className="flex justify-center py-8 sm:py-12 p-4 sm:p-6 pt-0">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
@@ -74,18 +74,18 @@ export default function DashboardActiveUsersChart() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          Usuários Ativos Diariamente
+    <Card className="overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="truncate">Usuários Ativos</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <ChartContainer config={chartConfig} className="h-[180px] sm:h-[250px] w-full">
           <AreaChart
             data={data}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 5, left: -15, bottom: 0 }}
           >
             <defs>
               <linearGradient id="fillActiveUsers" x1="0" y1="0" x2="0" y2="1">
@@ -99,14 +99,15 @@ export default function DashboardActiveUsersChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              fontSize={12}
+              fontSize={10}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
-              fontSize={12}
+              tickMargin={4}
+              fontSize={10}
               allowDecimals={false}
+              width={30}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
             <Area

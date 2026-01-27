@@ -73,14 +73,14 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground text-sm md:text-base">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Dashboard Administrativo</h1>
+        <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
           Visão geral da plataforma Kanaflix Play
         </p>
       </div>
 
-      {/* StatCards - 2 cols on mobile, 3 on tablet+ */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3">
+      {/* StatCards - 1 col on tiny screens, 2 on mobile, 3 on tablet+ */}
+      <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3">
         {statCards.map((stat) => (
           <StatCard
             key={stat.title}
@@ -96,8 +96,8 @@ export default function AdminDashboard() {
       {/* Active Users Chart */}
       <DashboardActiveUsersChart />
 
-      {/* 2x2 Grid */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      {/* Grid - 1 col on mobile, 2 on tablet+ */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
         <DashboardManageCourses />
         <DashboardManageUsers />
         <DashboardRecentComments />
