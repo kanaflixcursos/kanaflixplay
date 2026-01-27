@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -478,10 +479,19 @@ export default function CourseView() {
                   )}
                 </div>
                 {selectedLesson.completed ? (
-                  <Badge variant="secondary" className="gap-1 shrink-0">
-                    <CheckCircle className="h-3 w-3" />
-                    Concluída
-                  </Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="gap-1 shrink-0 cursor-help">
+                          <CheckCircle className="h-3 w-3" />
+                          Concluída
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Aula completada automaticamente após assistir 90% do vídeo</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 ) : !course.is_sequential && (
                   <Button 
                     onClick={() => handleMarkComplete(selectedLesson.id)}
