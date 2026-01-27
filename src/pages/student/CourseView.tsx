@@ -280,22 +280,8 @@ export default function CourseView() {
     return formatDuration(total);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!course) {
-    return null;
-  }
-
-  const completedCount = lessons.filter(l => l.completed).length;
-  const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
-
   // Calculate which lessons are unlocked based on sequential progress
+  // Must be called before any early returns to maintain hook order
   const unlockedLessonIds = useMemo(() => {
     if (!course?.is_sequential) {
       // All lessons unlocked if course is not sequential
@@ -323,6 +309,8 @@ export default function CourseView() {
   }, [lessons, course?.is_sequential]);
 
   const unlockedCount = unlockedLessonIds.size;
+  const completedCount = lessons.filter(l => l.completed).length;
+  const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
   const isLessonLocked = (lessonId: string) => !unlockedLessonIds.has(lessonId);
 
   // Detect when a new lesson gets unlocked and trigger animation
@@ -342,6 +330,18 @@ export default function CourseView() {
     }
     prevUnlockedCountRef.current = unlockedCount;
   }, [unlockedCount, unlockedLessonIds, course?.is_sequential]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return null;
+  }
 
   // Not enrolled - show course details and enrollment button
   if (!isEnrolled) {
