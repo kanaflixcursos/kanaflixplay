@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +17,8 @@ import {
   Download,
   Clock,
   BookOpen,
-  Lock
+  Lock,
+  Unlock
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -62,6 +63,8 @@ export default function CourseView() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [justUnlockedId, setJustUnlockedId] = useState<string | null>(null);
+  const prevUnlockedCountRef = useRef<number>(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -319,7 +322,26 @@ export default function CourseView() {
     return unlocked;
   }, [lessons, course?.is_sequential]);
 
+  const unlockedCount = unlockedLessonIds.size;
   const isLessonLocked = (lessonId: string) => !unlockedLessonIds.has(lessonId);
+
+  // Detect when a new lesson gets unlocked and trigger animation
+  useEffect(() => {
+    if (prevUnlockedCountRef.current > 0 && unlockedCount > prevUnlockedCountRef.current && course?.is_sequential) {
+      // Find the newly unlocked lesson (last one in the unlocked set)
+      const unlockedArray = Array.from(unlockedLessonIds);
+      const newlyUnlockedId = unlockedArray[unlockedArray.length - 1];
+      setJustUnlockedId(newlyUnlockedId);
+      
+      // Clear the animation after 2 seconds
+      const timer = setTimeout(() => {
+        setJustUnlockedId(null);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+    prevUnlockedCountRef.current = unlockedCount;
+  }, [unlockedCount, unlockedLessonIds, course?.is_sequential]);
 
   // Not enrolled - show course details and enrollment button
   if (!isEnrolled) {
@@ -535,24 +557,38 @@ export default function CourseView() {
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {completedCount} de {lessons.length} aulas concluídas
-              </p>
+              
+              {/* Stats row */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  {completedCount}/{lessons.length} concluídas
+                </span>
+                {course?.is_sequential && (
+                  <span className="flex items-center gap-1">
+                    <Unlock className="h-3 w-3" />
+                    {unlockedCount}/{lessons.length} desbloqueadas
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
                   {lessons.map((lesson, index) => {
                     const locked = isLessonLocked(lesson.id);
+                    const isJustUnlocked = justUnlockedId === lesson.id;
                     return (
                       <button
                         key={lesson.id}
                         className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
-                          selectedLesson?.id === lesson.id 
-                            ? 'bg-primary/10 ring-1 ring-primary' 
-                            : locked 
-                              ? 'opacity-60 cursor-not-allowed' 
-                              : 'hover:bg-muted'
+                          isJustUnlocked
+                            ? 'bg-success/20 ring-2 ring-success animate-pulse'
+                            : selectedLesson?.id === lesson.id 
+                              ? 'bg-primary/10 ring-1 ring-primary' 
+                              : locked 
+                                ? 'opacity-60 cursor-not-allowed' 
+                                : 'hover:bg-muted'
                         }`}
                         onClick={() => setSelectedLesson(lesson)}
                       >
@@ -585,7 +621,9 @@ export default function CourseView() {
                         
                         {/* Status icon */}
                         <div className="shrink-0">
-                          {locked ? (
+                          {isJustUnlocked ? (
+                            <Unlock className="h-4 w-4 text-success animate-bounce" />
+                          ) : locked ? (
                             <Lock className="h-4 w-4 text-muted-foreground" />
                           ) : lesson.completed ? (
                             <CheckCircle className="h-4 w-4 text-success" />
