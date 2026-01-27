@@ -82,14 +82,30 @@ export default function PandavideoPlayerWithProgress({
       return;
     }
 
-    // Track video duration
+    // Debug: log all Pandavideo events to understand the API
+    console.log('[Pandavideo Event]', data.message, data);
+
+    // Track video duration from multiple possible sources
     if (data.duration && data.duration > 0) {
       totalDurationRef.current = data.duration;
+      console.log('[Pandavideo] Duration set from event:', data.duration);
+    }
+    
+    // Some players send duration in a 'ready' or 'loadedmetadata' event
+    if ((data.message === 'panda_ready' || data.message === 'panda_loadedmetadata') && data.duration) {
+      totalDurationRef.current = data.duration;
+      console.log('[Pandavideo] Duration set from ready/loadedmetadata:', data.duration);
     }
 
     // Handle timeupdate events - save progress every 10 seconds
-    if (data.message === 'panda_timeupdate' && data.currentTime) {
+    if (data.message === 'panda_timeupdate' && data.currentTime !== undefined) {
       const currentTime = data.currentTime;
+      
+      // Try to capture duration from timeupdate if we don't have it yet
+      if (data.duration && data.duration > 0 && totalDurationRef.current === 0) {
+        totalDurationRef.current = data.duration;
+        console.log('[Pandavideo] Duration set from timeupdate:', data.duration);
+      }
       
       // Save every 10 seconds
       if (currentTime - lastSaveTimeRef.current >= 10) {
@@ -99,9 +115,12 @@ export default function PandavideoPlayerWithProgress({
 
       // Check for 90% completion
       const duration = totalDurationRef.current || (durationMinutes ? durationMinutes * 60 : 0);
+      console.log('[Pandavideo] Progress check - currentTime:', currentTime, 'duration:', duration, 'percent:', duration > 0 ? ((currentTime / duration) * 100).toFixed(1) + '%' : 'N/A');
+      
       if (duration > 0 && !hasMarkedCompleteRef.current) {
         const percentWatched = (currentTime / duration) * 100;
         if (percentWatched >= 90) {
+          console.log('[Pandavideo] 90% reached! Marking as complete.');
           hasMarkedCompleteRef.current = true;
           saveProgress(currentTime, true);
           onComplete?.();
@@ -111,6 +130,7 @@ export default function PandavideoPlayerWithProgress({
 
     // Handle video end
     if (data.message === 'panda_ended') {
+      console.log('[Pandavideo] Video ended.');
       const duration = totalDurationRef.current || (durationMinutes ? durationMinutes * 60 : 0);
       if (!hasMarkedCompleteRef.current) {
         hasMarkedCompleteRef.current = true;
@@ -120,7 +140,7 @@ export default function PandavideoPlayerWithProgress({
     }
 
     // Handle pause - save current progress
-    if (data.message === 'panda_pause' && data.currentTime) {
+    if (data.message === 'panda_pause' && data.currentTime !== undefined) {
       saveProgress(data.currentTime, false);
     }
   }, [saveProgress, durationMinutes, onComplete]);
