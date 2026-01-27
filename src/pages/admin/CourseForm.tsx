@@ -39,6 +39,7 @@ interface FormData {
   pandavideo_folder_id: string;
   pandavideo_folder_name: string;
   is_sequential: boolean;
+  save_as_draft: boolean;
   pricing_type: 'free' | 'paid';
   price: string;
   payment_methods: string[];
@@ -52,6 +53,7 @@ const initialFormData: FormData = {
   pandavideo_folder_id: '',
   pandavideo_folder_name: '',
   is_sequential: true,
+  save_as_draft: false,
   pricing_type: 'free',
   price: '',
   payment_methods: [],
@@ -116,6 +118,7 @@ export default function CourseForm() {
       pandavideo_folder_id: data.pandavideo_folder_id || '',
       pandavideo_folder_name: '',
       is_sequential: data.is_sequential ?? true,
+      save_as_draft: !data.is_published,
       pricing_type: 'free',
       price: '',
       payment_methods: [],
@@ -262,7 +265,7 @@ export default function CourseForm() {
         thumbnail_url: formData.thumbnail_url,
         pandavideo_folder_id: formData.pandavideo_folder_id || null,
         is_sequential: formData.is_sequential,
-        is_published: false,
+        is_published: !formData.save_as_draft,
       };
 
       let savedCourseId = courseId;
@@ -691,6 +694,26 @@ export default function CourseForm() {
                         ).join(', ')}
                       </p>
                     )}
+                  </div>
+                </div>
+
+                {/* Draft Option */}
+                <div className="flex items-start gap-3 p-4 rounded-lg border">
+                  <Checkbox
+                    id="save_as_draft"
+                    checked={formData.save_as_draft}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, save_as_draft: checked as boolean })
+                    }
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="save_as_draft" className="cursor-pointer font-medium">
+                      Salvar como rascunho
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      O curso não ficará visível para os alunos até ser publicado
+                    </p>
                   </div>
                 </div>
               </div>

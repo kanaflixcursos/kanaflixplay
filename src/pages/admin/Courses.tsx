@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder, RefreshCw, MoreHorizontal } from 'lucide-react';
+import { Plus, BookOpen, Edit, Trash2, Eye, Loader2, Folder, RefreshCw, MoreHorizontal, Globe, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Course {
@@ -165,7 +165,17 @@ export default function AdminCourses() {
           Editar
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
-          {course.is_published ? '📤 Despublicar' : '📥 Publicar'}
+          {course.is_published ? (
+            <>
+              <FileText className="h-4 w-4 mr-2" />
+              Despublicar
+            </>
+          ) : (
+            <>
+              <Globe className="h-4 w-4 mr-2" />
+              Publicar
+            </>
+          )}
         </DropdownMenuItem>
         {course.pandavideo_folder_id && (
           <DropdownMenuItem 
@@ -319,7 +329,7 @@ export default function AdminCourses() {
                         onClick={() => handleTogglePublish(course)}
                         title={course.is_published ? 'Despublicar' : 'Publicar'}
                       >
-                        {course.is_published ? '📤' : '📥'}
+                        {course.is_published ? <FileText className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                       </Button>
                       <Button
                         variant="outline"
