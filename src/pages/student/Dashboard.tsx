@@ -165,9 +165,9 @@ export default function StudentDashboard() {
             <CardContent className="py-10 text-center">
               <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Você ainda não está matriculado em nenhum curso.</p>
-              <Link to="/courses" className="text-primary hover:underline mt-2 inline-block">
+              <a href="https://kanaflix.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mt-2 inline-block">
                 Ver cursos disponíveis
-              </Link>
+              </a>
             </CardContent>
           </Card>
         ) : (
