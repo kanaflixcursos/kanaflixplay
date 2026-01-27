@@ -38,6 +38,7 @@ interface FormData {
   thumbnail_url: string;
   pandavideo_folder_id: string;
   pandavideo_folder_name: string;
+  is_sequential: boolean;
   pricing_type: 'free' | 'paid';
   price: string;
   payment_methods: string[];
@@ -50,6 +51,7 @@ const initialFormData: FormData = {
   thumbnail_url: '',
   pandavideo_folder_id: '',
   pandavideo_folder_name: '',
+  is_sequential: true,
   pricing_type: 'free',
   price: '',
   payment_methods: [],
@@ -113,6 +115,7 @@ export default function CourseForm() {
       thumbnail_url: data.thumbnail_url || '',
       pandavideo_folder_id: data.pandavideo_folder_id || '',
       pandavideo_folder_name: '',
+      is_sequential: data.is_sequential ?? true,
       pricing_type: 'free',
       price: '',
       payment_methods: [],
@@ -258,6 +261,7 @@ export default function CourseForm() {
         description: formData.description,
         thumbnail_url: formData.thumbnail_url,
         pandavideo_folder_id: formData.pandavideo_folder_id || null,
+        is_sequential: formData.is_sequential,
         is_published: false,
       };
 
@@ -426,6 +430,24 @@ export default function CourseForm() {
                     placeholder="Descreva o conteúdo do curso..."
                     rows={6}
                   />
+                </div>
+
+                <div className="flex items-center space-x-3 pt-2">
+                  <Checkbox
+                    id="is_sequential"
+                    checked={formData.is_sequential}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, is_sequential: checked === true })
+                    }
+                  />
+                  <div className="space-y-1">
+                    <Label htmlFor="is_sequential" className="cursor-pointer">
+                      Progressão sequencial obrigatória
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Alunos precisam assistir 90% de cada aula para desbloquear a próxima
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -49,6 +49,7 @@ export type Database = {
           description: string | null
           id: string
           is_published: boolean
+          is_sequential: boolean
           last_synced_at: string | null
           pandavideo_folder_id: string | null
           thumbnail_url: string | null
@@ -60,6 +61,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          is_sequential?: boolean
           last_synced_at?: string | null
           pandavideo_folder_id?: string | null
           thumbnail_url?: string | null
@@ -71,6 +73,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean
+          is_sequential?: boolean
           last_synced_at?: string | null
           pandavideo_folder_id?: string | null
           thumbnail_url?: string | null
