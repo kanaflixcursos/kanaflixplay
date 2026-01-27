@@ -66,14 +66,14 @@ export default function DashboardRecentComments() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Comentários Recentes
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Comentários Recentes</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex justify-center py-8">
+        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
@@ -81,47 +81,47 @@ export default function DashboardRecentComments() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Comentários Recentes
+    <Card className="overflow-hidden">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="truncate">Comentários Recentes</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 sm:p-6 pt-0">
         {comments.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhum comentário ainda
           </p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {comments.map((comment) => (
               <div
                 key={comment.id}
-                className="p-3 rounded-lg border bg-card"
+                className="p-2 sm:p-3 rounded-lg border bg-card"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">
+                    <p className="text-xs sm:text-sm font-medium">
                       {comment.user_name || 'Usuário'}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                       {comment.content}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                       {formatDistanceToNow(new Date(comment.created_at), {
                         addSuffix: true,
                         locale: ptBR,
                       })}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 shrink-0" asChild>
                     <Link to={`/courses/${comment.course_id}?lesson=${comment.lesson_id}`}>
-                      <ExternalLink className="h-4 w-4" />
+                      <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Link>
                   </Button>
                 </div>
-                <p className="text-xs text-primary mt-2 truncate">
+                <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 truncate">
                   Em: {comment.lesson_title}
                 </p>
               </div>
