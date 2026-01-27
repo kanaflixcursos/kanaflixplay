@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Play } from 'lucide-react';
+import { Play, Lock } from 'lucide-react';
 
 interface PandavideoPlayerWithProgressProps {
   videoUrl: string;
@@ -10,12 +10,17 @@ interface PandavideoPlayerWithProgressProps {
   className?: string;
   durationMinutes?: number | null;
   onComplete?: () => void;
+  isLocked?: boolean;
 }
 
 interface PandaVideoEvent {
   message: string;
   currentTime?: number;
   duration?: number;
+  playerData?: {
+    duration?: number;
+    currentTime?: number;
+  };
   [key: string]: any;
 }
 
@@ -25,7 +30,8 @@ export default function PandavideoPlayerWithProgress({
   title, 
   className = '',
   durationMinutes,
-  onComplete
+  onComplete,
+  isLocked = false
 }: PandavideoPlayerWithProgressProps) {
   const { user } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -82,30 +88,23 @@ export default function PandavideoPlayerWithProgress({
       return;
     }
 
-    // Debug: log all Pandavideo events to understand the API
-    console.log('[Pandavideo Event]', data.message, data);
-
     // Track video duration from multiple possible sources
-    if (data.duration && data.duration > 0) {
+    // Priority 1: Direct duration field
+    if (data.duration && data.duration > 0 && totalDurationRef.current === 0) {
       totalDurationRef.current = data.duration;
-      console.log('[Pandavideo] Duration set from event:', data.duration);
     }
     
-    // Some players send duration in a 'ready' or 'loadedmetadata' event
-    if ((data.message === 'panda_ready' || data.message === 'panda_loadedmetadata') && data.duration) {
-      totalDurationRef.current = data.duration;
-      console.log('[Pandavideo] Duration set from ready/loadedmetadata:', data.duration);
+    // Priority 2: panda_allData event with playerData.duration
+    if (data.message === 'panda_allData' && data.playerData?.duration && data.playerData.duration > 0) {
+      if (totalDurationRef.current === 0) {
+        totalDurationRef.current = data.playerData.duration;
+        console.log('[Pandavideo] Duration set from panda_allData:', data.playerData.duration);
+      }
     }
 
     // Handle timeupdate events - save progress every 10 seconds
     if (data.message === 'panda_timeupdate' && data.currentTime !== undefined) {
       const currentTime = data.currentTime;
-      
-      // Try to capture duration from timeupdate if we don't have it yet
-      if (data.duration && data.duration > 0 && totalDurationRef.current === 0) {
-        totalDurationRef.current = data.duration;
-        console.log('[Pandavideo] Duration set from timeupdate:', data.duration);
-      }
       
       // Save every 10 seconds
       if (currentTime - lastSaveTimeRef.current >= 10) {
@@ -115,7 +114,6 @@ export default function PandavideoPlayerWithProgress({
 
       // Check for 90% completion
       const duration = totalDurationRef.current || (durationMinutes ? durationMinutes * 60 : 0);
-      console.log('[Pandavideo] Progress check - currentTime:', currentTime, 'duration:', duration, 'percent:', duration > 0 ? ((currentTime / duration) * 100).toFixed(1) + '%' : 'N/A');
       
       if (duration > 0 && !hasMarkedCompleteRef.current) {
         const percentWatched = (currentTime / duration) * 100;
@@ -130,7 +128,6 @@ export default function PandavideoPlayerWithProgress({
 
     // Handle video end
     if (data.message === 'panda_ended') {
-      console.log('[Pandavideo] Video ended.');
       const duration = totalDurationRef.current || (durationMinutes ? durationMinutes * 60 : 0);
       if (!hasMarkedCompleteRef.current) {
         hasMarkedCompleteRef.current = true;
@@ -160,6 +157,21 @@ export default function PandavideoPlayerWithProgress({
   }, [handlePlayerMessage]);
 
   const embedUrl = getEmbedUrl(videoUrl);
+
+  // Show locked state
+  if (isLocked) {
+    return (
+      <div className={`aspect-video bg-foreground/90 flex flex-col items-center justify-center rounded-lg ${className}`}>
+        <div className="text-center text-background">
+          <Lock className="h-16 w-16 mx-auto mb-4" />
+          <p className="text-lg font-medium">Aula Bloqueada</p>
+          <p className="text-sm opacity-80 mt-2">
+            Complete a aula anterior para desbloquear
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!embedUrl) {
     return (

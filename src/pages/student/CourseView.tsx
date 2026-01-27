@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,8 @@ import {
   FileText, 
   Download,
   Clock,
-  BookOpen
+  BookOpen,
+  Lock
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -26,6 +27,7 @@ interface Course {
   title: string;
   description: string;
   thumbnail_url: string;
+  is_sequential: boolean;
 }
 
 interface LessonMaterial {
@@ -49,7 +51,6 @@ interface Lesson {
   materials: LessonMaterial[];
   thumbnail_url: string | null;
 }
-
 export default function CourseView() {
   const { courseId } = useParams();
   const { user } = useAuth();
@@ -291,6 +292,35 @@ export default function CourseView() {
   const completedCount = lessons.filter(l => l.completed).length;
   const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
 
+  // Calculate which lessons are unlocked based on sequential progress
+  const unlockedLessonIds = useMemo(() => {
+    if (!course?.is_sequential) {
+      // All lessons unlocked if course is not sequential
+      return new Set(lessons.map(l => l.id));
+    }
+
+    const unlocked = new Set<string>();
+    for (let i = 0; i < lessons.length; i++) {
+      const lesson = lessons[i];
+      if (i === 0) {
+        // First lesson is always unlocked
+        unlocked.add(lesson.id);
+      } else {
+        // Check if previous lesson is completed
+        const prevLesson = lessons[i - 1];
+        if (prevLesson.completed) {
+          unlocked.add(lesson.id);
+        } else {
+          // Stop unlocking further lessons
+          break;
+        }
+      }
+    }
+    return unlocked;
+  }, [lessons, course?.is_sequential]);
+
+  const isLessonLocked = (lessonId: string) => !unlockedLessonIds.has(lessonId);
+
   // Not enrolled - show course details and enrollment button
   if (!isEnrolled) {
     return (
@@ -387,6 +417,7 @@ export default function CourseView() {
                 lessonId={selectedLesson.id}
                 title={selectedLesson.title}
                 durationMinutes={selectedLesson.duration_minutes}
+                isLocked={isLessonLocked(selectedLesson.id)}
                 onComplete={() => {
                   // Update local state when auto-completed
                   const updatedLessons = lessons.map(l => 
@@ -511,64 +542,78 @@ export default function CourseView() {
             <CardContent className="p-0">
               <div className="max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
-                  {lessons.map((lesson, index) => (
-                    <button
-                      key={lesson.id}
-                      className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
-                        selectedLesson?.id === lesson.id 
-                          ? 'bg-primary/10 ring-1 ring-primary' 
-                          : 'hover:bg-muted'
-                      }`}
-                      onClick={() => setSelectedLesson(lesson)}
-                    >
-                      {/* Thumbnail */}
-                      <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
-                        {lesson.thumbnail_url ? (
-                          <img 
-                            src={lesson.thumbnail_url} 
-                            alt={lesson.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Play className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        )}
-                        {selectedLesson?.id === lesson.id && (
-                          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                            <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Status icon */}
-                      <div className="shrink-0">
-                        {lesson.completed ? (
-                          <CheckCircle className="h-4 w-4 text-success" />
-                        ) : (
-                          <Circle className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-2 leading-tight">
-                          {index + 1}. {lesson.title}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                          {lesson.duration_minutes && (
-                            <span>{formatDuration(lesson.duration_minutes)}</span>
+                  {lessons.map((lesson, index) => {
+                    const locked = isLessonLocked(lesson.id);
+                    return (
+                      <button
+                        key={lesson.id}
+                        className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
+                          selectedLesson?.id === lesson.id 
+                            ? 'bg-primary/10 ring-1 ring-primary' 
+                            : locked 
+                              ? 'opacity-60 cursor-not-allowed' 
+                              : 'hover:bg-muted'
+                        }`}
+                        onClick={() => setSelectedLesson(lesson)}
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
+                          {lesson.thumbnail_url ? (
+                            <img 
+                              src={lesson.thumbnail_url} 
+                              alt={lesson.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="h-3 w-3 text-muted-foreground" />
+                            </div>
                           )}
-                          {lesson.materials.length > 0 && (
-                            <span className="flex items-center gap-0.5">
-                              <FileText className="h-3 w-3" />
-                              {lesson.materials.length}
-                            </span>
+                          {/* Lock overlay for locked lessons */}
+                          {locked && (
+                            <div className="absolute inset-0 bg-foreground/70 flex items-center justify-center">
+                              <Lock className="h-3 w-3 text-background" />
+                            </div>
+                          )}
+                          {/* Playing indicator for current lesson */}
+                          {selectedLesson?.id === lesson.id && !locked && (
+                            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+                              <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                        
+                        {/* Status icon */}
+                        <div className="shrink-0">
+                          {locked ? (
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                          ) : lesson.completed ? (
+                            <CheckCircle className="h-4 w-4 text-success" />
+                          ) : (
+                            <Circle className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2 leading-tight">
+                            {index + 1}. {lesson.title}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                            {lesson.duration_minutes && (
+                              <span>{formatDuration(lesson.duration_minutes)}</span>
+                            )}
+                            {lesson.materials.length > 0 && (
+                              <span className="flex items-center gap-0.5">
+                                <FileText className="h-3 w-3" />
+                                {lesson.materials.length}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </CardContent>
