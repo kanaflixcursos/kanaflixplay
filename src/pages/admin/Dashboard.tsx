@@ -96,10 +96,12 @@ export default function AdminDashboard() {
       {/* Active Users Chart */}
       <DashboardActiveUsersChart />
 
-      {/* Grid - 1 col on mobile, 2 on tablet+ */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
+      {/* Grid - 2x2 layout */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         <DashboardManageCourses />
         <DashboardManageUsers />
+      </div>
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         <DashboardRecentComments />
         <DashboardRecentSignups />
       </div>
