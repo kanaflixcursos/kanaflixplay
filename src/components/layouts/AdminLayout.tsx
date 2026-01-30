@@ -15,11 +15,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, User } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
@@ -93,50 +98,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-
-            {/* User Profile Section */}
-            <div className="mt-auto">
-              <Separator className="my-2" />
-              <SidebarGroup>
-                <SidebarGroupLabel>Conta</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  {/* User Info */}
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{userInitials}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{user?.email}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Theme Toggle */}
-                  <div className="py-1">
-                    <ThemeToggle />
-                  </div>
-                  
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <button
-                          onClick={handleSignOut}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors w-full text-left text-destructive hover:bg-destructive/10"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          <span>Sair</span>
-                        </button>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </div>
           </SidebarContent>
         </Sidebar>
 
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b flex items-center px-4">
+          <header className="h-14 border-b flex items-center justify-between px-4">
             <SidebarTrigger />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="text-sm text-muted-foreground">
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </header>
 
           <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">
