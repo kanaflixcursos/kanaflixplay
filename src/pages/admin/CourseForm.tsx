@@ -728,11 +728,17 @@ export default function CourseForm() {
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-                            <SelectItem key={n} value={n.toString()}>
-                              {n === 1 ? 'À vista apenas' : `Até ${n}x sem juros`}
-                            </SelectItem>
-                          ))}
+                          {paymentConfig?.payment_methods
+                            .find(m => m.id === 'credit_card')
+                            ?.installments?.options.map((option) => (
+                              <SelectItem key={option.number} value={option.number.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            )) || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                              <SelectItem key={n} value={n.toString()}>
+                                {n === 1 ? 'À vista apenas' : `Até ${n}x`}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
@@ -826,19 +832,81 @@ export default function CourseForm() {
 
                   {/* Price Preview */}
                   {formData.price && parseFloat(formData.price) > 0 && (
-                    <div className="p-4 rounded-xl bg-muted/50 border">
-                      <p className="text-sm text-muted-foreground mb-2">Prévia do valor</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-foreground">
-                          R$ {parseFloat(formData.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                        {parseInt(formData.installments) > 1 && (
-                          <span className="text-sm text-muted-foreground">
-                            ou {formData.installments}x de R$ {(parseFloat(formData.price) / parseInt(formData.installments)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    (() => {
+                      const basePrice = parseFloat(formData.price);
+                      const installmentCount = parseInt(formData.installments);
+                      const installmentOption = paymentConfig?.payment_methods
+                        .find(m => m.id === 'credit_card')
+                        ?.installments?.options
+                        .find(o => o.number === installmentCount);
+                      
+                      const interestRate = installmentOption?.interest_rate || 0;
+                      const hasInterest = interestRate > 0;
+                      
+                      // Calculate total with compound interest if applicable
+                      const totalWithInterest = hasInterest 
+                        ? basePrice * Math.pow(1 + interestRate / 100, installmentCount)
+                        : basePrice;
+                      const installmentValue = totalWithInterest / installmentCount;
+                      
+                      // PIX discount
+                      const pixMethod = paymentConfig?.payment_methods.find(m => m.id === 'pix');
+                      const pixDiscount = pixMethod?.discount_percentage || 0;
+                      const pixPrice = basePrice * (1 - pixDiscount / 100);
+
+                      return (
+                        <div className="p-5 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+                          <p className="text-sm font-medium text-foreground mb-4">Prévia do valor para o aluno</p>
+                          
+                          {/* Main price */}
+                          <div className="flex items-baseline gap-2 mb-4">
+                            <span className="text-3xl font-bold text-foreground">
+                              R$ {basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-sm text-muted-foreground">à vista</span>
+                          </div>
+
+                          {/* Installment options */}
+                          {installmentCount > 1 && (
+                            <div className="space-y-2 pt-3 border-t border-primary/10">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">
+                                  {installmentCount}x no cartão
+                                </span>
+                                <div className="text-right">
+                                  <span className="text-lg font-semibold text-foreground">
+                                    R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                  {hasInterest && (
+                                    <span className="text-xs text-warning-foreground ml-2">
+                                      ({interestRate}% a.m.)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {hasInterest && (
+                                <p className="text-xs text-muted-foreground">
+                                  Total parcelado: R$ {totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* PIX discount */}
+                          {formData.payment_methods.includes('pix') && pixDiscount > 0 && (
+                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-primary/10">
+                              <div className="flex items-center gap-2">
+                                <QrCode className="h-4 w-4 text-primary" />
+                                <span className="text-sm text-muted-foreground">PIX ({pixDiscount}% off)</span>
+                              </div>
+                              <span className="text-lg font-semibold text-success">
+                                R$ {pixPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               )}
