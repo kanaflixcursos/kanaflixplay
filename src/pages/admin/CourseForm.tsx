@@ -10,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -21,7 +23,11 @@ import {
   Video,
   DollarSign,
   ClipboardCheck,
-  Sparkles
+  Sparkles,
+  CreditCard,
+  QrCode,
+  Barcode,
+  Info
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
@@ -33,6 +39,49 @@ interface VideoItem {
   original_title: string;
   duration: number;
   status: string;
+}
+
+interface CardBrand {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+interface InstallmentOption {
+  number: number;
+  interest_rate: number;
+  label: string;
+}
+
+interface PaymentMethodConfig {
+  id: string;
+  name: string;
+  enabled: boolean;
+  icon: string;
+  card_brands?: CardBrand[];
+  installments?: {
+    max: number;
+    min_amount_per_installment: number;
+    options: InstallmentOption[];
+  };
+  description?: string;
+  discount_percentage?: number;
+  expires_in_minutes?: number;
+  expires_in_days?: number;
+}
+
+interface PaymentConfig {
+  payment_methods: PaymentMethodConfig[];
+  currency: {
+    code: string;
+    symbol: string;
+    decimal_separator: string;
+    thousands_separator: string;
+  };
+  limits: {
+    min_amount: number;
+    max_amount: number;
+  };
 }
 
 interface FormData {
@@ -63,12 +112,6 @@ const initialFormData: FormData = {
   installments: '1',
 };
 
-const PAYMENT_METHODS = [
-  { id: 'pix', label: 'PIX' },
-  { id: 'credit_card', label: 'Cartão de Crédito' },
-  { id: 'boleto', label: 'Boleto Bancário' },
-];
-
 const STEPS = [
   { id: 1, title: 'Informações Básicas', icon: ImageIcon },
   { id: 2, title: 'Aulas do Curso', icon: Video },
@@ -88,11 +131,14 @@ export default function CourseForm() {
   const [saving, setSaving] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(isEditing);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [loadingPaymentConfig, setLoadingPaymentConfig] = useState(false);
 
   useEffect(() => {
     if (courseId) {
       fetchCourse();
     }
+    fetchPaymentConfig();
   }, [courseId]);
 
   useEffect(() => {
@@ -100,6 +146,43 @@ export default function CourseForm() {
       fetchVideosFromFolder();
     }
   }, [formData.pandavideo_folder_id]);
+
+  const fetchPaymentConfig = async () => {
+    setLoadingPaymentConfig(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) return;
+
+      const response = await fetch(
+        'https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pagarme',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionData.session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action: 'get_payment_config' }),
+        }
+      );
+
+      if (response.ok) {
+        const config = await response.json();
+        setPaymentConfig(config);
+        
+        // Set default payment methods if not already set
+        if (formData.payment_methods.length === 0) {
+          const enabledMethods = config.payment_methods
+            .filter((m: PaymentMethodConfig) => m.enabled)
+            .map((m: PaymentMethodConfig) => m.id);
+          setFormData(prev => ({ ...prev, payment_methods: enabledMethods }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching payment config:', error);
+    } finally {
+      setLoadingPaymentConfig(false);
+    }
+  };
 
   const fetchCourse = async () => {
     const { data, error } = await supabase
@@ -661,30 +744,85 @@ export default function CourseForm() {
                   {/* Payment Methods */}
                   <div className="space-y-4">
                     <Label className="text-sm font-medium">Métodos de Pagamento Aceitos</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {PAYMENT_METHODS.map((method) => {
-                        const isSelected = formData.payment_methods.includes(method.id);
-                        return (
-                          <div
-                            key={method.id}
-                            onClick={() => togglePaymentMethod(method.id)}
-                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                              isSelected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                            }`}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => togglePaymentMethod(method.id)}
-                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                            />
-                            <span className="text-sm font-medium">{method.label}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    {loadingPaymentConfig ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-24 rounded-xl" />
+                        ))}
+                      </div>
+                    ) : paymentConfig ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {paymentConfig.payment_methods.map((method) => {
+                          const isSelected = formData.payment_methods.includes(method.id);
+                          const IconComponent = method.id === 'credit_card' ? CreditCard : 
+                                                method.id === 'pix' ? QrCode : Barcode;
+                          return (
+                            <div
+                              key={method.id}
+                              onClick={() => togglePaymentMethod(method.id)}
+                              className={`flex flex-col gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <IconComponent className="h-5 w-5 text-primary" />
+                                  <span className="text-sm font-semibold">{method.name}</span>
+                                </div>
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={() => togglePaymentMethod(method.id)}
+                                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                              </div>
+                              {method.description && (
+                                <p className="text-xs text-muted-foreground">{method.description}</p>
+                              )}
+                              {method.discount_percentage && method.discount_percentage > 0 && (
+                                <Badge variant="secondary" className="w-fit text-xs">
+                                  {method.discount_percentage}% de desconto
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </div>
+
+                  {/* Card Brands */}
+                  {formData.payment_methods.includes('credit_card') && paymentConfig && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">Bandeiras Aceitas</Label>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {paymentConfig.payment_methods
+                          .find(m => m.id === 'credit_card')
+                          ?.card_brands?.map((brand) => (
+                            <Badge key={brand.id} variant="outline" className="px-3 py-1.5">
+                              {brand.name}
+                            </Badge>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Installment Interest Info */}
+                  {formData.payment_methods.includes('credit_card') && paymentConfig && parseInt(formData.installments) > 6 && (
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
+                      <Info className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-warning-foreground">
+                        <p className="font-medium">Parcelas com juros</p>
+                        <p className="text-xs opacity-80">
+                          Parcelas acima de 6x podem ter juros de até 1.99% ao mês, dependendo da bandeira do cartão.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Price Preview */}
                   {formData.price && parseFloat(formData.price) > 0 && (
@@ -766,7 +904,7 @@ export default function CourseForm() {
                     {formData.pricing_type === 'paid' && formData.payment_methods.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
                         Pagamento: {formData.payment_methods.map(m => 
-                          PAYMENT_METHODS.find(pm => pm.id === m)?.label
+                          paymentConfig?.payment_methods.find(pm => pm.id === m)?.name || m
                         ).join(', ')}
                       </p>
                     )}

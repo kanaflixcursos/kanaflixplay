@@ -59,6 +59,8 @@ serve(async (req) => {
     switch (action) {
       case 'create_order':
         return handleCreateOrder(payload, userId, PAGARME_API_KEY, supabase);
+      case 'get_payment_config':
+        return handleGetPaymentConfig();
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -326,4 +328,76 @@ async function enrollUser(supabase: any, userId: string, courseId: string) {
       .from('course_enrollments')
       .insert({ user_id: userId, course_id: courseId });
   }
+}
+
+function handleGetPaymentConfig() {
+  // Pagar.me payment configuration - standard settings for Brazil
+  const config = {
+    payment_methods: [
+      {
+        id: 'credit_card',
+        name: 'Cartão de Crédito',
+        enabled: true,
+        icon: 'credit-card',
+        card_brands: [
+          { id: 'visa', name: 'Visa', icon: '💳' },
+          { id: 'mastercard', name: 'Mastercard', icon: '💳' },
+          { id: 'elo', name: 'Elo', icon: '💳' },
+          { id: 'amex', name: 'American Express', icon: '💳' },
+          { id: 'hipercard', name: 'Hipercard', icon: '💳' },
+          { id: 'diners', name: 'Diners Club', icon: '💳' },
+        ],
+        installments: {
+          max: 12,
+          min_amount_per_installment: 500, // R$ 5,00 in cents
+          options: [
+            { number: 1, interest_rate: 0, label: 'À vista' },
+            { number: 2, interest_rate: 0, label: '2x sem juros' },
+            { number: 3, interest_rate: 0, label: '3x sem juros' },
+            { number: 4, interest_rate: 0, label: '4x sem juros' },
+            { number: 5, interest_rate: 0, label: '5x sem juros' },
+            { number: 6, interest_rate: 0, label: '6x sem juros' },
+            { number: 7, interest_rate: 1.99, label: '7x com juros' },
+            { number: 8, interest_rate: 1.99, label: '8x com juros' },
+            { number: 9, interest_rate: 1.99, label: '9x com juros' },
+            { number: 10, interest_rate: 1.99, label: '10x com juros' },
+            { number: 11, interest_rate: 1.99, label: '11x com juros' },
+            { number: 12, interest_rate: 1.99, label: '12x com juros' },
+          ]
+        }
+      },
+      {
+        id: 'pix',
+        name: 'PIX',
+        enabled: true,
+        icon: 'qr-code',
+        description: 'Pagamento instantâneo',
+        discount_percentage: 5, // Optional discount for PIX
+        expires_in_minutes: 30
+      },
+      {
+        id: 'boleto',
+        name: 'Boleto Bancário',
+        enabled: true,
+        icon: 'barcode',
+        description: 'Vencimento em 3 dias úteis',
+        expires_in_days: 3
+      }
+    ],
+    currency: {
+      code: 'BRL',
+      symbol: 'R$',
+      decimal_separator: ',',
+      thousands_separator: '.'
+    },
+    limits: {
+      min_amount: 100, // R$ 1,00 in cents
+      max_amount: 99999900 // R$ 999.999,00 in cents
+    }
+  };
+
+  return new Response(JSON.stringify(config), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 }
