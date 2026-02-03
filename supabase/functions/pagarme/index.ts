@@ -25,12 +25,20 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     
-    const { action, ...payload } = await req.json();
-
-    // Webhook doesn't require auth - it comes from Pagar.me
-    if (action === 'webhook') {
-      return handleWebhook(payload, PAGARME_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const body = await req.json();
+    
+    // Auto-detect webhook from Pagar.me (has 'type' field with event name like 'charge.paid')
+    // Pagar.me webhooks have format: { "id": "...", "type": "charge.paid", "data": {...} }
+    const isWebhook = body.type && typeof body.type === 'string' && 
+                      (body.type.startsWith('charge.') || body.type.startsWith('order.'));
+    
+    if (isWebhook) {
+      console.log(`[Webhook] Auto-detected Pagar.me webhook: ${body.type}`);
+      return handleWebhook(body, PAGARME_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     }
+    
+    // For regular API calls, extract action
+    const { action, ...payload } = body;
 
     // Validate auth for other actions
     if (!authHeader?.startsWith('Bearer ')) {
