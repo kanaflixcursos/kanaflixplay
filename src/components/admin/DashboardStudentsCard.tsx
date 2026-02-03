@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, UserCheck, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Users, UserCheck } from 'lucide-react';
 import { subDays } from 'date-fns';
+
+function StatCardSkeleton() {
+  return (
+    <div className="space-y-2">
+      <Skeleton className="h-8 w-20" />
+      <Skeleton className="h-4 w-32" />
+    </div>
+  );
+}
 
 export default function DashboardStudentsCard() {
   const [totalStudents, setTotalStudents] = useState(0);
@@ -44,9 +54,7 @@ export default function DashboardStudentsCard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <StatCardSkeleton />
         ) : (
           <div className="space-y-1">
             <p className="text-2xl sm:text-3xl font-bold tracking-tight">

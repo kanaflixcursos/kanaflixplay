@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, TrendingUp, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DollarSign, TrendingUp } from 'lucide-react';
 import { subDays, subMonths, subYears, startOfDay } from 'date-fns';
 
 type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
@@ -16,6 +17,22 @@ const periodOptions: { value: Period; label: string }[] = [
   { value: '1y', label: '1A' },
   { value: 'all', label: 'Tudo' },
 ];
+
+function StatCardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <Skeleton key={i} className="h-7 w-8" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardRevenueCard() {
   const [period, setPeriod] = useState<Period>('1m');
@@ -63,7 +80,6 @@ export default function DashboardRevenueCard() {
     const { data } = await query;
 
     const gross = data?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
-    // Net revenue calculation: gross - platform fees (assuming ~3.5% for Pagar.me)
     const net = gross * 0.965;
 
     setGrossRevenue(gross);
@@ -93,9 +109,7 @@ export default function DashboardRevenueCard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <StatCardSkeleton />
         ) : (
           <>
             <div className="space-y-1 mb-4">
