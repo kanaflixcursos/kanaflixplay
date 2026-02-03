@@ -10,7 +10,7 @@ interface AuthContextType {
   role: UserRole;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, redirectTo?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -50,6 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(() => fetchUserRole(session.user.id), 0);
           setTimeout(() => updateLastSeen(session.user.id), 0);
+          
+          // Handle redirect after email confirmation
+          if (event === 'SIGNED_IN') {
+            const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
+            if (redirectAfterConfirm) {
+              localStorage.removeItem('kanaflix_redirect_after_confirm');
+              // Small delay to ensure everything is set up
+              setTimeout(() => {
+                window.location.href = redirectAfterConfirm;
+              }, 100);
+            }
+          }
         } else {
           setRole(null);
         }
@@ -78,18 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string) => {
     // Use the published URL for email confirmation redirect
-    const redirectUrl = import.meta.env.PROD 
+    const baseUrl = import.meta.env.PROD 
       ? 'https://kanaflixplay.lovable.app'
       : window.location.origin;
+    
+    // If there's a custom redirect, include it in the email link
+    const emailRedirectUrl = redirectTo && redirectTo !== '/' 
+      ? `${baseUrl}${redirectTo}`
+      : baseUrl;
     
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: emailRedirectUrl,
       },
     });
     return { error };

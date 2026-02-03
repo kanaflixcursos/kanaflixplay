@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 import StudentLayout from "@/components/layouts/StudentLayout";
@@ -37,6 +38,8 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
+            <Route path="/checkout/:courseId" element={<Checkout />} />
+            
             {/* Student Routes */}
             <Route path="/" element={<Index />} />
             <Route

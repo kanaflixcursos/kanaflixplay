@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,24 @@ import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
 export default function Login() {
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate(redirectTo);
+    }
+  }, [user, navigate, redirectTo]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +38,7 @@ export default function Login() {
       toast.error('Erro ao entrar: ' + error.message);
     } else {
       toast.success('Login realizado com sucesso!');
-      navigate('/');
+      navigate(redirectTo);
     }
     
     setIsLoading(false);
@@ -38,7 +48,12 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signUp(email, password, fullName);
+    // Store redirect URL before signup
+    if (redirectTo !== '/') {
+      localStorage.setItem('kanaflix_redirect_after_confirm', redirectTo);
+    }
+    
+    const { error } = await signUp(email, password, fullName, redirectTo);
     
     if (error) {
       toast.error('Erro ao criar conta: ' + error.message);
