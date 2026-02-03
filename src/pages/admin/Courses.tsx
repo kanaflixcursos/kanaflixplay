@@ -254,15 +254,15 @@ export default function AdminCourses() {
           <Eye className="h-4 w-4 mr-2" />
           Ver Aulas
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/edit`)}>
+          <Edit className="h-4 w-4 mr-2" />
+          Editar Curso
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setLinkDialog({ open: true, course })}>
           <Link2 className="h-4 w-4 mr-2" />
           Link de Compra
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/edit`)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar Curso
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
           {course.is_published ? (
             <>
