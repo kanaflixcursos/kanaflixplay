@@ -119,10 +119,10 @@ export default function CourseForm() {
       pandavideo_folder_name: '',
       is_sequential: data.is_sequential ?? true,
       save_as_draft: !data.is_published,
-      pricing_type: 'free',
-      price: '',
-      payment_methods: [],
-      installments: '1',
+      pricing_type: data.price && data.price > 0 ? 'paid' : 'free',
+      price: data.price ? (data.price / 100).toFixed(2) : '',
+      payment_methods: ['pix', 'credit_card', 'boleto'],
+      installments: '12',
     });
     setLoadingCourse(false);
   };
@@ -259,6 +259,10 @@ export default function CourseForm() {
     setSaving(true);
 
     try {
+      const priceInCents = formData.pricing_type === 'paid' && formData.price 
+        ? Math.round(parseFloat(formData.price) * 100) 
+        : 0;
+
       const courseData = {
         title: formData.title,
         description: formData.description,
@@ -266,6 +270,7 @@ export default function CourseForm() {
         pandavideo_folder_id: formData.pandavideo_folder_id || null,
         is_sequential: formData.is_sequential,
         is_published: !formData.save_as_draft,
+        price: priceInCents,
       };
 
       let savedCourseId = courseId;

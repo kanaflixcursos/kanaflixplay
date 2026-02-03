@@ -19,10 +19,12 @@ import {
   Clock,
   BookOpen,
   Lock,
-  Unlock
+  Unlock,
+  ShoppingCart
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
+import { CheckoutModal } from '@/components/checkout/CheckoutModal';
 
 interface Course {
   id: string;
@@ -30,6 +32,7 @@ interface Course {
   description: string;
   thumbnail_url: string;
   is_sequential: boolean;
+  price: number;
 }
 
 interface LessonMaterial {
@@ -65,6 +68,7 @@ export default function CourseView() {
   const [enrolling, setEnrolling] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [justUnlockedId, setJustUnlockedId] = useState<string | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const prevUnlockedCountRef = useRef<number>(0);
 
   useEffect(() => {
@@ -276,6 +280,13 @@ export default function CourseView() {
     return `${mins}min`;
   };
 
+  const formatPrice = (cents: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(cents / 100);
+  };
+
   const getTotalDuration = () => {
     const total = lessons.reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
     return formatDuration(total);
@@ -344,7 +355,14 @@ export default function CourseView() {
     return null;
   }
 
-  // Not enrolled - show course details and enrollment button
+  const isPaidCourse = course?.price && course.price > 0;
+  const handleEnrollmentSuccess = () => {
+    setIsEnrolled(true);
+    // Reload to get lessons
+    window.location.reload();
+  };
+
+  // Not enrolled - show course details and enrollment/purchase button
   if (!isEnrolled) {
     return (
       <div className="space-y-6">
@@ -376,36 +394,70 @@ export default function CourseView() {
           <div>
             <Card className="sticky top-6">
               <CardHeader>
-                <h3 className="card-title">Matricule-se agora</h3>
+                <h3 className="card-title">
+                  {isPaidCourse ? 'Adquira este curso' : 'Matricule-se agora'}
+                </h3>
                 <p className="card-description">
                   Tenha acesso completo a todo o conteúdo do curso
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
+                {isPaidCourse && (
+                  <div className="text-center py-2">
+                    <p className="text-3xl font-bold text-primary">
+                      {formatPrice(course.price)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      à vista ou em até 12x
+                    </p>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <BookOpen className="h-4 w-4" />
                   <span>{lessons.length || '—'} aulas</span>
                 </div>
                 
-                <Button 
-                  onClick={handleEnroll} 
-                  disabled={enrolling} 
-                  className="w-full"
-                  size="lg"
-                >
-                  {enrolling ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Matriculando...
-                    </>
-                  ) : (
-                    'Matricular-se Gratuitamente'
-                  )}
-                </Button>
+                {isPaidCourse ? (
+                  <Button 
+                    onClick={() => setCheckoutOpen(true)} 
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Comprar Agora
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={handleEnroll} 
+                    disabled={enrolling} 
+                    className="w-full"
+                    size="lg"
+                  >
+                    {enrolling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Matriculando...
+                      </>
+                    ) : (
+                      'Matricular-se Gratuitamente'
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Checkout Modal */}
+        {course && isPaidCourse && (
+          <CheckoutModal
+            open={checkoutOpen}
+            onOpenChange={setCheckoutOpen}
+            course={{ id: course.id, title: course.title, price: course.price }}
+            onSuccess={handleEnrollmentSuccess}
+          />
+        )}
       </div>
     );
   }
