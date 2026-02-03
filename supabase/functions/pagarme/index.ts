@@ -25,10 +25,9 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     
-    // Parse request
     const { action, ...payload } = await req.json();
 
-    // For webhook, skip auth
+    // Webhook doesn't require auth - it comes from Pagar.me
     if (action === 'webhook') {
       return handleWebhook(payload, PAGARME_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     }
@@ -85,7 +84,6 @@ async function handleCreateOrder(
 ) {
   const { courseId, paymentMethod, customer, card, installments = 1 } = payload;
 
-  // Get course info
   const { data: course, error: courseError } = await supabase
     .from('courses')
     .select('id, title, price')
@@ -106,7 +104,6 @@ async function handleCreateOrder(
     });
   }
 
-  // Build Pagar.me order payload
   const orderPayload: any = {
     items: [{
       amount: course.price,
@@ -131,7 +128,6 @@ async function handleCreateOrder(
     payments: []
   };
 
-  // Add payment method
   if (paymentMethod === 'credit_card') {
     orderPayload.payments.push({
       payment_method: 'credit_card',
@@ -179,7 +175,6 @@ async function handleCreateOrder(
     });
   }
 
-  // Create order in Pagar.me
   const authString = btoa(`${apiKey}:`);
   const pagarmeResponse = await fetch(`${PAGARME_API_URL}/orders`, {
     method: 'POST',
@@ -205,7 +200,6 @@ async function handleCreateOrder(
 
   const charge = pagarmeOrder.charges?.[0];
 
-  // Create order in our database
   const orderData: any = {
     user_id: userId,
     course_id: courseId,
@@ -216,7 +210,6 @@ async function handleCreateOrder(
     pagarme_charge_id: charge?.id
   };
 
-  // Add payment-specific data
   if (paymentMethod === 'pix' && charge?.last_transaction) {
     orderData.pix_qr_code = charge.last_transaction.qr_code;
     orderData.pix_qr_code_url = charge.last_transaction.qr_code_url;
@@ -243,7 +236,6 @@ async function handleCreateOrder(
     });
   }
 
-  // If paid immediately (credit card), enroll user
   if (orderData.status === 'paid') {
     await enrollUser(supabase, userId, courseId);
   }
@@ -271,6 +263,10 @@ async function handleCreateOrder(
   });
 }
 
+// ===========================================
+// WEBHOOK HANDLER - All Pagar.me Events
+// ===========================================
+
 async function handleWebhook(
   payload: any, 
   apiKey: string,
@@ -280,42 +276,323 @@ async function handleWebhook(
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   
   const { type, data } = payload;
+  
+  console.log(`[Webhook] Received event: ${type}`, JSON.stringify(data, null, 2));
 
-  if (type === 'charge.paid') {
-    const chargeId = data.id;
-    
-    // Find order by charge ID
-    const { data: order, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('pagarme_charge_id', chargeId)
-      .single();
-
-    if (order && order.status !== 'paid') {
-      // Update order status
-      await supabase
-        .from('orders')
-        .update({ 
-          status: 'paid', 
-          paid_at: new Date().toISOString() 
-        })
-        .eq('id', order.id);
-
-      // Enroll user in course
-      if (order.course_id) {
-        await enrollUser(supabase, order.user_id, order.course_id);
-      }
+  try {
+    switch (type) {
+      // Payment confirmed
+      case 'charge.paid':
+        await handleChargePaid(supabase, data);
+        break;
+      
+      // Payment failed
+      case 'charge.payment_failed':
+        await handleChargePaymentFailed(supabase, data);
+        break;
+      
+      // Payment refunded
+      case 'charge.refunded':
+        await handleChargeRefunded(supabase, data);
+        break;
+      
+      // Payment pending (awaiting confirmation)
+      case 'charge.pending':
+        await handleChargePending(supabase, data);
+        break;
+      
+      // Payment canceled
+      case 'charge.canceled':
+        await handleChargeCanceled(supabase, data);
+        break;
+      
+      // Chargeback received
+      case 'charge.chargedback':
+        await handleChargeChargedback(supabase, data);
+        break;
+      
+      // Order events
+      case 'order.paid':
+        console.log('[Webhook] Order paid - handled via charge.paid');
+        break;
+      
+      case 'order.canceled':
+        console.log('[Webhook] Order canceled');
+        break;
+      
+      default:
+        console.log(`[Webhook] Unhandled event type: ${type}`);
     }
+
+    return new Response(JSON.stringify({ received: true, event: type }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  } catch (error) {
+    console.error(`[Webhook] Error processing ${type}:`, error);
+    return new Response(JSON.stringify({ error: 'Webhook processing failed' }), { 
+      status: 500, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+}
+
+// Handle charge.paid event
+async function handleChargePaid(supabase: any, data: any) {
+  const chargeId = data.id;
+  console.log(`[Webhook] Processing charge.paid for charge: ${chargeId}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
   }
 
-  return new Response(JSON.stringify({ received: true }), { 
-    status: 200, 
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+  if (order.status === 'paid') {
+    console.log(`[Webhook] Order ${order.id} already paid, skipping`);
+    return;
+  }
+
+  // Update order status
+  await supabase
+    .from('orders')
+    .update({ 
+      status: 'paid', 
+      paid_at: new Date().toISOString() 
+    })
+    .eq('id', order.id);
+
+  console.log(`[Webhook] Order ${order.id} marked as paid`);
+
+  // Enroll user in course
+  if (order.course_id) {
+    await enrollUser(supabase, order.user_id, order.course_id);
+    console.log(`[Webhook] User ${order.user_id} enrolled in course ${order.course_id}`);
+    
+    // Send success notification
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_success',
+      title: 'Pagamento confirmado! 🎉',
+      message: `Seu pagamento para o curso "${order.courses?.title || 'curso'}" foi confirmado. Você já pode acessar o conteúdo!`,
+      link: `/courses/${order.course_id}`,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        amount: order.amount
+      }
+    });
+  }
+}
+
+// Handle charge.payment_failed event
+async function handleChargePaymentFailed(supabase: any, data: any) {
+  const chargeId = data.id;
+  const failureCode = data.last_transaction?.acquirer_return_code || 'unknown';
+  const failureMessage = data.last_transaction?.acquirer_message || 'Pagamento não autorizado';
+  
+  console.log(`[Webhook] Processing charge.payment_failed for charge: ${chargeId}`);
+  console.log(`[Webhook] Failure reason: ${failureCode} - ${failureMessage}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
+  }
+
+  // Update order status
+  await supabase
+    .from('orders')
+    .update({ status: 'failed' })
+    .eq('id', order.id);
+
+  console.log(`[Webhook] Order ${order.id} marked as failed`);
+
+  // Notify user about failed payment
+  await createNotification(supabase, {
+    user_id: order.user_id,
+    type: 'payment_failed',
+    title: 'Pagamento não aprovado',
+    message: `Seu pagamento para "${order.courses?.title || 'curso'}" não foi aprovado. Motivo: ${failureMessage}. Tente novamente com outro método de pagamento.`,
+    link: `/courses/${order.course_id}`,
+    metadata: {
+      order_id: order.id,
+      course_id: order.course_id,
+      failure_code: failureCode,
+      failure_message: failureMessage
+    }
   });
 }
 
+// Handle charge.refunded event
+async function handleChargeRefunded(supabase: any, data: any) {
+  const chargeId = data.id;
+  console.log(`[Webhook] Processing charge.refunded for charge: ${chargeId}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
+  }
+
+  // Update order status
+  await supabase
+    .from('orders')
+    .update({ status: 'refunded' })
+    .eq('id', order.id);
+
+  console.log(`[Webhook] Order ${order.id} marked as refunded`);
+
+  // Revoke course access
+  if (order.course_id) {
+    await revokeEnrollment(supabase, order.user_id, order.course_id);
+    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} from course ${order.course_id}`);
+  }
+
+  // Notify user
+  await createNotification(supabase, {
+    user_id: order.user_id,
+    type: 'payment_refunded',
+    title: 'Reembolso processado',
+    message: `O reembolso para "${order.courses?.title || 'curso'}" foi processado. O acesso ao curso foi revogado.`,
+    link: null,
+    metadata: {
+      order_id: order.id,
+      course_id: order.course_id,
+      amount: order.amount
+    }
+  });
+}
+
+// Handle charge.pending event
+async function handleChargePending(supabase: any, data: any) {
+  const chargeId = data.id;
+  console.log(`[Webhook] Processing charge.pending for charge: ${chargeId}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
+  }
+
+  // Update order status if not already paid
+  if (order.status !== 'paid') {
+    await supabase
+      .from('orders')
+      .update({ status: 'pending' })
+      .eq('id', order.id);
+    
+    console.log(`[Webhook] Order ${order.id} marked as pending`);
+  }
+}
+
+// Handle charge.canceled event
+async function handleChargeCanceled(supabase: any, data: any) {
+  const chargeId = data.id;
+  console.log(`[Webhook] Processing charge.canceled for charge: ${chargeId}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
+  }
+
+  // Update order status
+  await supabase
+    .from('orders')
+    .update({ status: 'canceled' })
+    .eq('id', order.id);
+
+  console.log(`[Webhook] Order ${order.id} marked as canceled`);
+
+  // Notify user
+  await createNotification(supabase, {
+    user_id: order.user_id,
+    type: 'payment_canceled',
+    title: 'Pagamento cancelado',
+    message: `Seu pagamento para "${order.courses?.title || 'curso'}" foi cancelado.`,
+    link: `/courses/${order.course_id}`,
+    metadata: {
+      order_id: order.id,
+      course_id: order.course_id
+    }
+  });
+}
+
+// Handle charge.chargedback event (dispute/chargeback)
+async function handleChargeChargedback(supabase: any, data: any) {
+  const chargeId = data.id;
+  console.log(`[Webhook] Processing charge.chargedback for charge: ${chargeId}`);
+  
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('pagarme_charge_id', chargeId)
+    .single();
+
+  if (error || !order) {
+    console.log(`[Webhook] Order not found for charge: ${chargeId}`);
+    return;
+  }
+
+  // Update order status
+  await supabase
+    .from('orders')
+    .update({ status: 'chargedback' })
+    .eq('id', order.id);
+
+  console.log(`[Webhook] Order ${order.id} marked as chargedback`);
+
+  // Revoke course access
+  if (order.course_id) {
+    await revokeEnrollment(supabase, order.user_id, order.course_id);
+    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} due to chargeback`);
+  }
+
+  // Notify user
+  await createNotification(supabase, {
+    user_id: order.user_id,
+    type: 'payment_chargedback',
+    title: 'Contestação de pagamento',
+    message: `O pagamento para "${order.courses?.title || 'curso'}" foi contestado. O acesso ao curso foi suspenso.`,
+    link: null,
+    metadata: {
+      order_id: order.id,
+      course_id: order.course_id
+    }
+  });
+}
+
+// ===========================================
+// HELPER FUNCTIONS
+// ===========================================
+
 async function enrollUser(supabase: any, userId: string, courseId: string) {
-  // Check if already enrolled
   const { data: existing } = await supabase
     .from('course_enrollments')
     .select('id')
@@ -330,8 +607,34 @@ async function enrollUser(supabase: any, userId: string, courseId: string) {
   }
 }
 
+async function revokeEnrollment(supabase: any, userId: string, courseId: string) {
+  await supabase
+    .from('course_enrollments')
+    .delete()
+    .eq('user_id', userId)
+    .eq('course_id', courseId);
+}
+
+async function createNotification(supabase: any, notification: {
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  metadata: any;
+}) {
+  const { error } = await supabase
+    .from('notifications')
+    .insert(notification);
+
+  if (error) {
+    console.error('[Webhook] Failed to create notification:', error);
+  } else {
+    console.log(`[Webhook] Notification created for user ${notification.user_id}: ${notification.type}`);
+  }
+}
+
 function handleGetPaymentConfig() {
-  // Pagar.me payment configuration - standard settings for Brazil
   const config = {
     payment_methods: [
       {
@@ -349,7 +652,7 @@ function handleGetPaymentConfig() {
         ],
         installments: {
           max: 12,
-          min_amount_per_installment: 500, // R$ 5,00 in cents
+          min_amount_per_installment: 500,
           options: [
             { number: 1, interest_rate: 0, label: 'À vista' },
             { number: 2, interest_rate: 0, label: '2x sem juros' },
@@ -372,7 +675,7 @@ function handleGetPaymentConfig() {
         enabled: true,
         icon: 'qr-code',
         description: 'Pagamento instantâneo',
-        discount_percentage: 5, // Optional discount for PIX
+        discount_percentage: 5,
         expires_in_minutes: 30
       },
       {
@@ -391,8 +694,8 @@ function handleGetPaymentConfig() {
       thousands_separator: '.'
     },
     limits: {
-      min_amount: 100, // R$ 1,00 in cents
-      max_amount: 99999900 // R$ 999.999,00 in cents
+      min_amount: 100,
+      max_amount: 99999900
     }
   };
 
