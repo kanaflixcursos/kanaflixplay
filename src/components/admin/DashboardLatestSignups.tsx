@@ -77,6 +77,8 @@ export default function DashboardLatestSignups() {
       icon={UserPlus}
       loading={loading}
       emptyMessage="Nenhum usuário cadastrado"
+      actionLabel="Ver Usuários"
+      actionLink="/admin/students"
     >
       {users.map((user) => (
         <DashboardListItem key={user.id}>

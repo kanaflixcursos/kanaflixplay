@@ -49,8 +49,8 @@ export default function DashboardListCard({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="dashboard-card-header items-center justify-between gap-2">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-left">
           <Icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
           <span className="truncate">{title}</span>
         </CardTitle>

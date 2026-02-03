@@ -57,7 +57,7 @@ export default function DashboardCourseConfig() {
       icon={Settings}
       loading={loading}
       emptyMessage="Nenhum curso cadastrado"
-      actionLabel="Ver Todos"
+      actionLabel="Ver Cursos"
       actionLink="/admin/courses"
     >
       {courses.map((course) => (
