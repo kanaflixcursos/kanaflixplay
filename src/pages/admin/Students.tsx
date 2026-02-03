@@ -326,22 +326,22 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
 
     setDeleting(true);
 
-    const userId = deletingStudent.user_id;
+    try {
+      // Call edge function to delete user completely (including from auth.users)
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: deletingStudent.user_id }
+      });
 
-    await supabase.from('course_enrollments').delete().eq('user_id', userId);
-    await supabase.from('lesson_progress').delete().eq('user_id', userId);
-    await supabase.from('lesson_comments').delete().eq('user_id', userId);
-    await supabase.from('notifications').delete().eq('user_id', userId);
-    await supabase.from('user_roles').delete().eq('user_id', userId);
-    
-    const { error } = await supabase.from('profiles').delete().eq('user_id', userId);
+      if (error) {
+        throw new Error(error.message || 'Erro ao excluir usuário');
+      }
 
-    if (error) {
-      toast.error('Erro ao excluir usuário');
-    } else {
-      toast.success('Usuário excluído com sucesso!');
+      toast.success('Usuário excluído completamente do sistema!');
       fetchData();
       setDeleteDialogOpen(false);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast.error(error.message || 'Erro ao excluir usuário');
     }
 
     setDeleting(false);
