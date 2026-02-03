@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
@@ -14,19 +14,14 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Home, BookOpen, LogOut, Shield, User, Compass, GraduationCap } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Home, LogOut, Shield, Compass, GraduationCap, Bell } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { supabase } from '@/integrations/supabase/client';
-import NotificationsDropdown from '@/components/NotificationsDropdown';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -43,13 +38,15 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const location = useLocation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
       const { data } = await supabase
         .from('profiles')
-        .select('avatar_url, full_name')
+        .select('avatar_url, full_name, email')
         .eq('user_id', user.id)
         .single();
       
@@ -59,16 +56,59 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
       if (data?.full_name) {
         setUserName(data.full_name);
       }
+      setUserEmail(data?.email || user?.email || null);
     };
     fetchProfile();
   }, [user]);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('id, is_read')
+      .eq('user_id', user.id)
+      .eq('is_read', false);
+
+    if (!error && data) {
+      setUnreadCount(data.length);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchNotifications();
+
+    if (!user) return;
+
+    const channel = supabase
+      .channel('notifications-sidebar')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchNotifications]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/login');
   };
 
-  const userInitials = user?.email?.slice(0, 2).toUpperCase() || 'U';
+  const userInitials = userName 
+    ? userName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+    : user?.email?.slice(0, 2).toUpperCase() || 'U';
 
   return (
     <SidebarProvider>
@@ -136,42 +176,75 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               </SidebarGroup>
             )}
           </SidebarContent>
+
+          {/* User Section at Bottom */}
+          <SidebarFooter className="border-t p-4">
+            {/* User Profile */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
+            >
+              <Avatar className="h-10 w-10 shrink-0">
+                <AvatarImage src={avatarUrl || undefined} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {userName || 'Usuário'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {userEmail}
+                </p>
+              </div>
+            </button>
+
+            <Separator className="my-2" />
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 h-9"
+                onClick={() => navigate('/')}
+              >
+                <GraduationCap className="h-4 w-4" />
+                Meus Cursos
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 h-9 relative"
+                onClick={() => navigate('/notifications')}
+              >
+                <Bell className="h-4 w-4" />
+                Notificações
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 h-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Sair da Conta
+              </Button>
+            </div>
+          </SidebarFooter>
         </Sidebar>
 
         <div className="flex-1 flex flex-col">
           <header className="h-14 border-b flex items-center justify-between px-4">
             <SidebarTrigger />
-            
-            <div className="flex items-center gap-2">
-              <NotificationsDropdown />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={avatarUrl || undefined} className="object-cover" />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <div className="px-2 py-1.5 text-sm font-medium">
-                  {userName || 'Usuário'}
-                </div>
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Meu Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/')}>
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  Meus Cursos
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            </div>
           </header>
 
           <main className="flex-1 p-4 md:p-6 overflow-auto">
