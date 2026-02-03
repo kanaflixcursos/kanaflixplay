@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +18,8 @@ import {
   Lock,
   Sparkles,
   Clock,
-  Zap
+  Zap,
+  AlertCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -50,11 +51,33 @@ interface PaymentResult {
   };
 }
 
+interface InstallmentOption {
+  number: number;
+  interest_rate: number;
+  label: string;
+}
+
+interface PaymentConfig {
+  payment_methods: Array<{
+    id: string;
+    name: string;
+    enabled: boolean;
+    discount_percentage?: number;
+    installments?: {
+      max: number;
+      min_amount_per_installment: number;
+      options: InstallmentOption[];
+    };
+  }>;
+}
+
 export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [loading, setLoading] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(true);
   const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   
   const [customer, setCustomer] = useState({
     name: '',
@@ -72,6 +95,84 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   });
 
   const [installments, setInstallments] = useState(1);
+
+  // Fetch payment config on mount
+  useEffect(() => {
+    fetchPaymentConfig();
+  }, []);
+
+  const fetchPaymentConfig = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await supabase.functions.invoke('pagarme', {
+        body: { action: 'get_payment_config' }
+      });
+
+      if (response.data) {
+        setPaymentConfig(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment config:', error);
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  // Get PIX discount percentage from config
+  const pixDiscount = useMemo(() => {
+    const pixMethod = paymentConfig?.payment_methods.find(m => m.id === 'pix');
+    return pixMethod?.discount_percentage || 5;
+  }, [paymentConfig]);
+
+  // Calculate available installment options based on course price and config
+  const availableInstallments = useMemo(() => {
+    const creditCardConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
+    if (!creditCardConfig?.installments) {
+      // Default fallback
+      return [{ number: 1, interest_rate: 0, label: 'À vista', totalAmount: course.price, installmentAmount: course.price }];
+    }
+
+    const { options, min_amount_per_installment } = creditCardConfig.installments;
+    
+    return options
+      .filter(opt => {
+        // Check if each installment meets the minimum amount
+        const baseInstallmentAmount = course.price / opt.number;
+        return baseInstallmentAmount >= min_amount_per_installment;
+      })
+      .map(opt => {
+        // Calculate total with interest
+        let totalAmount = course.price;
+        if (opt.interest_rate > 0) {
+          // Simple interest calculation (monthly rate applied to remaining balance)
+          // Using compound interest formula: M = C * (1 + i)^n
+          const monthlyRate = opt.interest_rate / 100;
+          totalAmount = Math.round(course.price * Math.pow(1 + monthlyRate, opt.number));
+        }
+        
+        const installmentAmount = Math.ceil(totalAmount / opt.number);
+        
+        return {
+          ...opt,
+          totalAmount,
+          installmentAmount
+        };
+      });
+  }, [course.price, paymentConfig]);
+
+  // Get the selected installment details
+  const selectedInstallment = useMemo(() => {
+    return availableInstallments.find(opt => opt.number === installments) || availableInstallments[0];
+  }, [availableInstallments, installments]);
+
+  // Reset installments when switching payment methods
+  useEffect(() => {
+    if (paymentMethod !== 'credit_card') {
+      setInstallments(1);
+    }
+  }, [paymentMethod]);
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -134,7 +235,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             phone: customer.phone?.replace(/\D/g, '')
           },
           card: paymentMethod === 'credit_card' ? {
-            number: card.number,
+            number: card.number.replace(/\s/g, ''),
             holderName: card.holderName,
             expMonth: card.expMonth,
             expYear: card.expYear,
@@ -184,7 +285,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       method: 'pix' as const, 
       icon: QrCode, 
       label: 'PIX',
-      badge: '5% OFF',
+      badge: `${pixDiscount}% OFF`,
       description: 'Aprovação imediata'
     },
     { 
@@ -202,6 +303,14 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       description: '3 dias úteis'
     },
   ];
+
+  // Calculate amounts
+  const pixAmount = Math.round(course.price * (1 - pixDiscount / 100));
+  const finalAmount = paymentMethod === 'pix' 
+    ? pixAmount 
+    : paymentMethod === 'credit_card' 
+      ? selectedInstallment?.totalAmount || course.price
+      : course.price;
 
   if (paymentResult) {
     return (
@@ -299,20 +408,41 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       <CardContent className="p-0">
         {/* Price Header */}
         <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 border-b">
-          <div className="flex items-baseline justify-between">
-            <div>
+          <div className="space-y-2">
+            {paymentMethod === 'pix' ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg text-muted-foreground line-through">{formatPrice(course.price)}</span>
+                  <Badge variant="default" className="gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    {pixDiscount}% OFF
+                  </Badge>
+                </div>
+                <span className="text-3xl font-bold text-success">{formatPrice(pixAmount)}</span>
+              </>
+            ) : paymentMethod === 'credit_card' && selectedInstallment ? (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-foreground">
+                    {selectedInstallment.number}x de {formatPrice(selectedInstallment.installmentAmount)}
+                  </span>
+                </div>
+                {selectedInstallment.interest_rate > 0 ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      Total: {formatPrice(selectedInstallment.totalAmount)} 
+                      <span className="text-xs ml-1">
+                        (juros de {selectedInstallment.interest_rate}% a.m.)
+                      </span>
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Sem juros</span>
+                )}
+              </>
+            ) : (
               <span className="text-3xl font-bold text-foreground">{formatPrice(course.price)}</span>
-              {paymentMethod === 'pix' && (
-                <Badge variant="default" className="ml-2 gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  5% OFF no PIX
-                </Badge>
-              )}
-            </div>
-            {paymentMethod === 'pix' && (
-              <span className="text-lg font-semibold text-success">
-                {formatPrice(Math.round(course.price * 0.95))}
-              </span>
             )}
           </div>
         </div>
@@ -478,26 +608,41 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                   />
                 </div>
               </div>
-              {course.price >= 10000 && (
+              
+              {/* Installments */}
+              {availableInstallments.length > 1 && (
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Parcelas</Label>
                   <RadioGroup 
                     value={installments.toString()} 
                     onValueChange={(v) => setInstallments(parseInt(v))}
-                    className="grid grid-cols-2 gap-2"
+                    className="grid gap-2"
                   >
-                    {[1, 2, 3, 6, 10, 12].filter(n => course.price / n >= 500).map((n) => (
+                    {availableInstallments.map((opt) => (
                       <div 
-                        key={n} 
-                        className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          installments === n ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                        key={opt.number} 
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                          installments === opt.number ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
                         }`}
-                        onClick={() => setInstallments(n)}
+                        onClick={() => setInstallments(opt.number)}
                       >
-                        <RadioGroupItem value={n.toString()} id={`inst-${n}`} />
-                        <Label htmlFor={`inst-${n}`} className="text-xs cursor-pointer flex-1">
-                          {n}x de {formatPrice(Math.ceil(course.price / n))}
-                        </Label>
+                        <div className="flex items-center gap-3">
+                          <RadioGroupItem value={opt.number.toString()} id={`inst-${opt.number}`} />
+                          <Label htmlFor={`inst-${opt.number}`} className="text-sm cursor-pointer">
+                            {opt.number}x de {formatPrice(opt.installmentAmount)}
+                            {opt.interest_rate === 0 && (
+                              <span className="text-xs text-success ml-2">sem juros</span>
+                            )}
+                          </Label>
+                        </div>
+                        <div className="text-right">
+                          {opt.interest_rate > 0 && (
+                            <div className="text-xs text-muted-foreground">
+                              <span className="text-warning">+{opt.interest_rate}% a.m.</span>
+                              <span className="block">Total: {formatPrice(opt.totalAmount)}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </RadioGroup>
@@ -526,7 +671,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           <Button 
             onClick={handleSubmit} 
             className="w-full h-12 text-base gap-2 shadow-lg" 
-            disabled={loading}
+            disabled={loading || loadingConfig}
           >
             {loading ? (
               <>
@@ -536,7 +681,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                Pagar {paymentMethod === 'pix' ? formatPrice(Math.round(course.price * 0.95)) : formatPrice(course.price)}
+                Pagar Agora
               </>
             )}
           </Button>
