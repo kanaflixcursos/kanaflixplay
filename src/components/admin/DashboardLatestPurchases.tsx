@@ -113,6 +113,8 @@ export default function DashboardLatestPurchases() {
         icon={ShoppingCart}
         loading={loading}
         emptyMessage="Nenhuma compra realizada"
+        actionLabel="Ver Compras"
+        actionLink="/admin/orders"
       >
         {purchases.map((purchase) => (
           <DashboardListItem key={purchase.id}>

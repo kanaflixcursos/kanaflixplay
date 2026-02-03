@@ -67,6 +67,8 @@ export default function DashboardRecentComments() {
       icon={MessageSquare}
       loading={loading}
       emptyMessage="Nenhum comentário ainda"
+      actionLabel="Ver Todos"
+      actionLink="/admin/comments"
     >
       {comments.map((comment) => (
         <DashboardListItem key={comment.id}>

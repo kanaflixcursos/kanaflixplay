@@ -20,6 +20,8 @@ import AdminCourses from "@/pages/admin/Courses";
 import CourseLessons from "@/pages/admin/CourseLessons";
 import CourseForm from "@/pages/admin/CourseForm";
 import AdminStudents from "@/pages/admin/Students";
+import AdminOrders from "@/pages/admin/Orders";
+import AdminComments from "@/pages/admin/Comments";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -121,6 +123,26 @@ const App = () => (
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <AdminStudents />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/orders"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <AdminOrders />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/comments"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <AdminComments />
                   </AdminLayout>
                 </ProtectedRoute>
               }
