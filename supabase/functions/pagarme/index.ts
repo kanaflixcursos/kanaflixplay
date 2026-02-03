@@ -60,6 +60,8 @@ serve(async (req) => {
         return handleCreateOrder(payload, userId, PAGARME_API_KEY, supabase);
       case 'get_payment_config':
         return handleGetPaymentConfig();
+      case 'get_order_stats':
+        return handleGetOrderStats(PAGARME_API_KEY, supabase);
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -703,4 +705,99 @@ function handleGetPaymentConfig() {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
+}
+
+async function handleGetOrderStats(apiKey: string, supabase: any) {
+  try {
+    // Fetch stats from Pagar.me API
+    const authString = btoa(`${apiKey}:`);
+    
+    // Get charges from Pagar.me with different statuses
+    const [paidRes, refundedRes, canceledRes, chargedbackRes] = await Promise.all([
+      fetch(`${PAGARME_API_URL}/charges?status=paid&size=1000`, {
+        headers: { 'Authorization': `Basic ${authString}` }
+      }),
+      fetch(`${PAGARME_API_URL}/charges?status=refunded&size=1000`, {
+        headers: { 'Authorization': `Basic ${authString}` }
+      }),
+      fetch(`${PAGARME_API_URL}/charges?status=canceled&size=1000`, {
+        headers: { 'Authorization': `Basic ${authString}` }
+      }),
+      fetch(`${PAGARME_API_URL}/charges?status=chargedback&size=1000`, {
+        headers: { 'Authorization': `Basic ${authString}` }
+      })
+    ]);
+
+    const [paidData, refundedData, canceledData, chargedbackData] = await Promise.all([
+      paidRes.json(),
+      refundedRes.json(),
+      canceledRes.json(),
+      chargedbackRes.json()
+    ]);
+
+    // Count orders from each response
+    const paidCount = paidData.data?.length || 0;
+    const refundedCount = refundedData.data?.length || 0;
+    const canceledCount = canceledData.data?.length || 0;
+    const chargedbackCount = chargedbackData.data?.length || 0;
+
+    // Also get local counts from our orders table for comparison
+    const { data: localOrders } = await supabase
+      .from('orders')
+      .select('status');
+
+    const localStats = {
+      total: localOrders?.length || 0,
+      paid: localOrders?.filter((o: any) => o.status === 'paid').length || 0,
+      refunded: localOrders?.filter((o: any) => o.status === 'refunded').length || 0,
+      canceled: localOrders?.filter((o: any) => o.status === 'canceled').length || 0,
+      chargedback: localOrders?.filter((o: any) => o.status === 'chargedback').length || 0,
+      pending: localOrders?.filter((o: any) => o.status === 'pending').length || 0,
+      failed: localOrders?.filter((o: any) => o.status === 'failed').length || 0,
+    };
+
+    return new Response(JSON.stringify({
+      pagarme: {
+        paid: paidCount,
+        refunded: refundedCount,
+        canceled: canceledCount,
+        chargedback: chargedbackCount
+      },
+      local: localStats,
+      // Use local stats as primary (more accurate for this app)
+      stats: {
+        total: localStats.total,
+        paid: localStats.paid,
+        refunded: localStats.refunded + localStats.chargedback,
+        canceled: localStats.canceled,
+        pending: localStats.pending,
+        failed: localStats.failed
+      }
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Error fetching order stats:', error);
+    
+    // Fallback to local stats only
+    const { data: localOrders } = await supabase
+      .from('orders')
+      .select('status');
+
+    const stats = {
+      total: localOrders?.length || 0,
+      paid: localOrders?.filter((o: any) => o.status === 'paid').length || 0,
+      refunded: (localOrders?.filter((o: any) => o.status === 'refunded').length || 0) + 
+                (localOrders?.filter((o: any) => o.status === 'chargedback').length || 0),
+      canceled: localOrders?.filter((o: any) => o.status === 'canceled').length || 0,
+      pending: localOrders?.filter((o: any) => o.status === 'pending').length || 0,
+      failed: localOrders?.filter((o: any) => o.status === 'failed').length || 0,
+    };
+
+    return new Response(JSON.stringify({ stats, error: 'Pagar.me API unavailable, using local data' }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
