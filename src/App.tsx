@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import StudentLayout from "@/components/layouts/StudentLayout";
 import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
+import NotificationsPage from "@/pages/student/Notifications";
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -50,9 +51,15 @@ const App = () => (
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <StudentLayout>
-                    <StudentProfile />
-                  </StudentLayout>
+                  <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
                 </ProtectedRoute>
               }
             />

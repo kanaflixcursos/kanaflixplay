@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import StudentLayout from '@/components/layouts/StudentLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PhoneInput from '@/components/PhoneInput';
@@ -266,13 +267,16 @@ export default function StudentProfile() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <StudentLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </StudentLayout>
     );
   }
 
   return (
+    <StudentLayout>
     <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
@@ -462,5 +466,6 @@ export default function StudentProfile() {
         </div>
       </div>
     </div>
+    </StudentLayout>
   );
 }
