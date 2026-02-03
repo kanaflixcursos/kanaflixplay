@@ -21,6 +21,7 @@ import AdminCourses from "@/pages/admin/Courses";
 import CourseLessons from "@/pages/admin/CourseLessons";
 import CourseForm from "@/pages/admin/CourseForm";
 import AdminStudents from "@/pages/admin/Students";
+import AdminStudentProfile from "@/pages/admin/StudentProfile";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminComments from "@/pages/admin/Comments";
 
@@ -126,6 +127,16 @@ const App = () => (
                 <ProtectedRoute requiredRole="admin">
                   <AdminLayout>
                     <AdminStudents />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students/:userId"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminLayout>
+                    <AdminStudentProfile />
                   </AdminLayout>
                 </ProtectedRoute>
               }
