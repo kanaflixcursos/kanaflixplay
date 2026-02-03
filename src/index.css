@@ -218,16 +218,16 @@ All colors MUST be HSL.
     @apply text-sm text-muted-foreground;
   }
 
-  /* Dashboard Cards - Padronização de headers e content */
+  /* Dashboard List Cards - Padronização definitiva */
   .dashboard-card-header {
-    @apply p-4 sm:p-6 pb-3;
+    @apply flex p-4 sm:p-6 pb-3 sm:pb-4;
   }
 
   .dashboard-card-content {
     @apply p-4 sm:p-6 pt-0;
   }
 
-  /* Sidebar Profile Section - Layout unificado */
+  /* Sidebar Profile Section - Layout unificado e alinhado à esquerda */
   .sidebar-profile-btn {
     @apply flex items-center gap-3 w-full p-2 rounded-lg hover:bg-accent/50 transition-colors text-left;
   }
@@ -237,7 +237,7 @@ All colors MUST be HSL.
   }
 
   .sidebar-profile-name {
-    @apply text-sm font-medium truncate;
+    @apply text-sm font-medium truncate text-foreground;
   }
 
   .sidebar-profile-email {
@@ -245,7 +245,7 @@ All colors MUST be HSL.
   }
 
   .sidebar-action-btn {
-    @apply w-full justify-start gap-2 h-9;
+    @apply w-full justify-start gap-2 h-9 px-3;
   }
 }
 

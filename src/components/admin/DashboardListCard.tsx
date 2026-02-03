@@ -17,7 +17,7 @@ interface DashboardListCardProps {
 
 export function DashboardListCardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-2 sm:space-y-3">
+    <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="p-3 rounded-lg border bg-card">
           <div className="flex items-center justify-between gap-2">
@@ -49,7 +49,7 @@ export default function DashboardListCard({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="dashboard-card-header flex-row items-center justify-between gap-2">
+      <CardHeader className="dashboard-card-header items-center justify-between gap-2">
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <Icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
           <span className="truncate">{title}</span>
@@ -64,7 +64,7 @@ export default function DashboardListCard({
         {loading ? (
           <DashboardListCardSkeleton />
         ) : hasItems ? (
-          <div className="space-y-2 sm:space-y-3">{children}</div>
+          <div className="space-y-3">{children}</div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
             {emptyMessage}
