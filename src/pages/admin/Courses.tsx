@@ -425,10 +425,10 @@ export default function AdminCourses() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => handleTogglePublish(course)}
-                        title={course.is_published ? 'Ocultar curso' : 'Publicar curso'}
+                        onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
+                        title="Editar curso"
                       >
-                        {course.is_published ? <EyeOff className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
