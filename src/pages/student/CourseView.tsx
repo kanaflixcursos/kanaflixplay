@@ -20,7 +20,8 @@ import {
   BookOpen,
   Lock,
   Unlock,
-  ShoppingCart
+  ShoppingCart,
+  Check
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -33,6 +34,8 @@ interface Course {
   thumbnail_url: string;
   is_sequential: boolean;
   price: number;
+  lessonCount?: number;
+  totalDuration?: number;
 }
 
 interface LessonMaterial {
@@ -92,7 +95,29 @@ export default function CourseView() {
         return;
       }
 
-      setCourse(courseData);
+      // Always fetch lesson count (for non-enrolled view)
+      const { count: lessonCount } = await supabase
+        .from('lessons')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', courseId)
+        .eq('is_hidden', false);
+
+      // Fetch total duration
+      const { data: durationData } = await supabase
+        .from('lessons')
+        .select('duration_minutes')
+        .eq('course_id', courseId)
+        .eq('is_hidden', false);
+
+      const totalDuration = (durationData || []).reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
+
+      if (!isMounted) return;
+
+      setCourse({
+        ...courseData,
+        lessonCount: lessonCount || 0,
+        totalDuration,
+      });
 
       // Check enrollment
       const { data: enrollment } = await supabase
@@ -365,87 +390,189 @@ export default function CourseView() {
   // Not enrolled - show course details and enrollment/purchase button
   if (!isEnrolled) {
     return (
-      <div className="space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
+      <div className="min-h-screen">
+        {/* Back Button */}
+        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 mb-6">
           <ArrowLeft className="h-4 w-4" />
           Voltar aos Cursos
         </Button>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Course Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {course.thumbnail_url && (
-              <div className="aspect-[4/5] max-w-md overflow-hidden rounded-lg">
-                <img 
-                  src={course.thumbnail_url} 
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+        <div className="grid gap-8 lg:grid-cols-5">
+          {/* Course Info - Takes 3 columns */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Hero Section */}
+            <div className="relative">
+              {course.thumbnail_url ? (
+                <div className="aspect-video md:aspect-[16/9] overflow-hidden rounded-2xl shadow-xl">
+                  <img 
+                    src={course.thumbnail_url} 
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                </div>
+              ) : (
+                <div className="aspect-video rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                  <BookOpen className="h-16 w-16 text-primary/50" />
+                </div>
+              )}
+            </div>
             
-            <div className="space-y-4">
-              <h1 className="text-3xl font-medium">{course.title}</h1>
-              <p className="text-muted-foreground text-lg">{course.description}</p>
+            {/* Course Details */}
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{course.title}</h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">{course.description}</p>
+              </div>
+
+              {/* Course Stats */}
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">{course.lessonCount || 0} aulas</span>
+                </div>
+                {course.totalDuration && course.totalDuration > 0 && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">{formatDuration(course.totalDuration)}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50">
+                  {course.is_sequential ? (
+                    <>
+                      <Lock className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Progressão sequencial</span>
+                    </>
+                  ) : (
+                    <>
+                      <Unlock className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Acesso livre</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* What you'll learn section */}
+              <Card className="border-0 bg-muted/30">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    O que você vai aprender
+                  </h3>
+                  <ul className="grid gap-3 sm:grid-cols-2">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">Acesso vitalício ao conteúdo completo</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">Materiais complementares para download</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">Acompanhamento de progresso</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">Acesso em qualquer dispositivo</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          {/* Enrollment Card */}
-          <div>
-            <Card className="sticky top-6">
-              <CardHeader>
-                <h3 className="card-title">
-                  {isPaidCourse ? 'Adquira este curso' : 'Matricule-se agora'}
-                </h3>
-                <p className="card-description">
-                  Tenha acesso completo a todo o conteúdo do curso
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isPaidCourse && (
-                  <div className="text-center py-2">
-                    <p className="text-3xl font-bold text-primary">
-                      {formatPrice(course.price)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      à vista ou em até 12x
-                    </p>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <BookOpen className="h-4 w-4" />
-                  <span>{lessons.length || '—'} aulas</span>
+          {/* Purchase Card - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <div className="sticky top-6">
+              <Card className="overflow-hidden border-2 border-primary/20 shadow-xl">
+                {/* Price Header */}
+                <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-6 text-center">
+                  {isPaidCourse ? (
+                    <>
+                      <p className="text-4xl font-bold text-foreground">
+                        {formatPrice(course.price)}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        ou em até 12x no cartão
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-4xl font-bold text-primary">Gratuito</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Comece agora mesmo
+                      </p>
+                    </>
+                  )}
                 </div>
                 
-                {isPaidCourse ? (
-                  <Button 
-                    onClick={() => setCheckoutOpen(true)} 
-                    className="w-full gap-2"
-                    size="lg"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    Comprar Agora
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={handleEnroll} 
-                    disabled={enrolling} 
-                    className="w-full"
-                    size="lg"
-                  >
-                    {enrolling ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Matriculando...
-                      </>
-                    ) : (
-                      'Matricular-se Gratuitamente'
+                <CardContent className="p-6 space-y-6">
+                  {/* Course info summary */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Aulas incluídas</span>
+                      <span className="font-medium">{course.lessonCount || 0}</span>
+                    </div>
+                    {course.totalDuration && course.totalDuration > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Duração total</span>
+                        <span className="font-medium">{formatDuration(course.totalDuration)}</span>
+                      </div>
                     )}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Acesso</span>
+                      <span className="font-medium">Vitalício</span>
+                    </div>
+                  </div>
+
+                  <Separator />
+                  
+                  {/* CTA Button */}
+                  {isPaidCourse ? (
+                    <Button 
+                      onClick={() => setCheckoutOpen(true)} 
+                      className="w-full gap-2 h-12 text-base font-semibold"
+                      size="lg"
+                    >
+                      <ShoppingCart className="h-5 w-5" />
+                      Comprar Agora
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleEnroll} 
+                      disabled={enrolling} 
+                      className="w-full h-12 text-base font-semibold"
+                      size="lg"
+                    >
+                      {enrolling ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Matriculando...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="mr-2 h-5 w-5" />
+                          Começar Agora
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Security badges */}
+                  <div className="flex items-center justify-center gap-4 pt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Lock className="h-3 w-3" />
+                      <span>Pagamento seguro</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Acesso imediato</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 

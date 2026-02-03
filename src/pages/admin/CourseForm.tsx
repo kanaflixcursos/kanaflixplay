@@ -241,7 +241,7 @@ export default function CourseForm() {
         id: v.id,
         title: v.title,
         original_title: v.title,
-        duration: v.video_player?.duration || 0,
+        duration: v.video_player?.duration || v.duration || v.video_external_duration || 0,
         status: v.status,
       }));
 
