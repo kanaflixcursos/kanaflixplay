@@ -187,7 +187,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="sidebar-action-btn"
+                className="w-full justify-start gap-2 h-9 px-3"
                 onClick={() => navigate('/admin/courses')}
               >
                 <GraduationCap className="h-4 w-4" />
@@ -197,7 +197,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="sidebar-action-btn relative"
+                className="w-full justify-start gap-2 h-9 px-3 relative"
                 onClick={() => navigate('/notifications')}
               >
                 <Bell className="h-4 w-4" />
@@ -212,7 +212,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="sidebar-action-btn text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="w-full justify-start gap-2 h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4" />
