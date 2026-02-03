@@ -1,20 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckoutModal } from '@/components/checkout/CheckoutModal';
+import { CheckoutForm } from '@/components/checkout/CheckoutForm';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { 
-  ShoppingCart, 
   Play, 
   Clock, 
   BookOpen, 
   Check, 
-  Shield, 
   Loader2,
   ArrowLeft
 } from 'lucide-react';
@@ -29,13 +26,8 @@ interface Course {
   is_published: boolean;
 }
 
-interface LessonCount {
-  count: number;
-}
-
 export default function Checkout() {
   const { courseId } = useParams<{ courseId: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   
@@ -43,15 +35,7 @@ export default function Checkout() {
   const [lessonCount, setLessonCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
-
-  // Auto-open checkout if query param is set (after redirect from login)
-  useEffect(() => {
-    if (searchParams.get('open') === 'checkout' && user && course && !isEnrolled) {
-      setCheckoutOpen(true);
-    }
-  }, [searchParams, user, course, isEnrolled]);
 
   useEffect(() => {
     if (courseId) {
@@ -111,50 +95,41 @@ export default function Checkout() {
     setCheckingEnrollment(false);
   };
 
-  const handleBuyClick = async () => {
+  const handleFreeEnrollment = async () => {
     if (!user) {
-      // Redirect to login with return URL
-      const returnUrl = `/checkout/${courseId}?open=checkout`;
+      const returnUrl = `/checkout/${courseId}`;
       navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
       return;
     }
     
-    // Handle free courses - enroll directly
-    if (course && course.price === 0) {
-      setCheckingEnrollment(true);
-      try {
-        const { error } = await supabase
-          .from('course_enrollments')
-          .insert({
-            user_id: user.id,
-            course_id: courseId
-          });
-        
-        if (error) {
-          if (error.code === '23505') {
-            // Already enrolled
-            setIsEnrolled(true);
-          } else {
-            throw error;
-          }
-        } else {
+    setCheckingEnrollment(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .insert({
+          user_id: user.id,
+          course_id: courseId
+        });
+      
+      if (error) {
+        if (error.code === '23505') {
           setIsEnrolled(true);
-          toast.success('Matrícula realizada com sucesso!');
+        } else {
+          throw error;
         }
-      } catch (error: any) {
-        toast.error('Erro ao realizar matrícula: ' + error.message);
-      } finally {
-        setCheckingEnrollment(false);
+      } else {
+        setIsEnrolled(true);
+        toast.success('Matrícula realizada com sucesso!');
       }
-      return;
+    } catch (error: any) {
+      toast.error('Erro ao realizar matrícula: ' + error.message);
+    } finally {
+      setCheckingEnrollment(false);
     }
-    
-    setCheckoutOpen(true);
   };
 
   const handlePaymentSuccess = () => {
     setIsEnrolled(true);
-    setCheckoutOpen(false);
   };
 
   const formatPrice = (cents: number) => {
@@ -163,6 +138,14 @@ export default function Checkout() {
       currency: 'BRL'
     }).format(cents / 100);
   };
+
+  // Redirect to login if not authenticated for paid courses
+  useEffect(() => {
+    if (!authLoading && !user && course && course.price > 0) {
+      const returnUrl = `/checkout/${courseId}`;
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+    }
+  }, [authLoading, user, course, courseId, navigate]);
 
   if (loading || authLoading) {
     return (
@@ -173,13 +156,13 @@ export default function Checkout() {
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+          <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
             <Skeleton className="aspect-[4/5] rounded-2xl" />
             <div className="space-y-4">
               <Skeleton className="h-8 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-12 w-full mt-8" />
+              <Skeleton className="h-64 w-full mt-8" />
             </div>
           </div>
         </main>
@@ -246,19 +229,17 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* Course Info */}
+            {/* Course Info & Checkout */}
             <div className="flex flex-col">
-              <div className="flex-1 space-y-6">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                    {course.title}
-                  </h1>
-                  {course.description && (
-                    <p className="text-muted-foreground leading-relaxed">
-                      {course.description}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-4 mb-6">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  {course.title}
+                </h1>
+                {course.description && (
+                  <p className="text-muted-foreground leading-relaxed">
+                    {course.description}
+                  </p>
+                )}
 
                 {/* Course Stats */}
                 <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -275,82 +256,49 @@ export default function Checkout() {
                     <span>Acesso vitalício</span>
                   </div>
                 </div>
-
-                {/* Features */}
-                <Card className="bg-muted/30 border-0">
-                  <CardContent className="p-4 space-y-3">
-                    <h3 className="font-medium text-sm text-foreground">O que está incluído:</h3>
-                    <ul className="space-y-2">
-                      {[
-                        'Acesso completo a todas as aulas',
-                        'Materiais complementares para download',
-                        'Certificado de conclusão',
-                        'Atualizações gratuitas do conteúdo',
-                        'Suporte via comentários nas aulas'
-                      ].map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Check className="h-4 w-4 text-success shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
               </div>
 
-              {/* Price & CTA */}
-              <div className="mt-8 space-y-4">
-                {isEnrolled ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-success">
-                      <Check className="h-5 w-5" />
-                      <span className="font-medium">Você já tem acesso a este curso!</span>
-                    </div>
-                    <Button 
-                      size="lg" 
-                      className="w-full h-14 text-lg gap-2"
-                      onClick={() => navigate(`/courses/${course.id}`)}
-                    >
-                      <Play className="h-5 w-5" />
-                      Acessar Curso
-                    </Button>
+              {/* Checkout or Enrolled State */}
+              {isEnrolled ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-success p-4 bg-success/10 rounded-xl">
+                    <Check className="h-5 w-5" />
+                    <span className="font-medium">Você já tem acesso a este curso!</span>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-4xl font-bold text-foreground">
-                        {course.price === 0 ? 'Grátis' : formatPrice(course.price)}
-                      </span>
-                      {course.price > 0 && (
-                        <span className="text-sm text-muted-foreground">
-                          ou em até 12x
-                        </span>
-                      )}
-                    </div>
-
-                    <Button 
-                      size="lg" 
-                      className="w-full h-14 text-lg gap-2"
-                      onClick={handleBuyClick}
-                      disabled={checkingEnrollment}
-                    >
-                      {checkingEnrollment ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <>
-                          <ShoppingCart className="h-5 w-5" />
-                          {course.price === 0 ? 'Matricular-se Gratuitamente' : 'Comprar Agora'}
-                        </>
-                      )}
-                    </Button>
-
-                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <Shield className="h-4 w-4" />
-                      <span>Pagamento 100% seguro</span>
-                    </div>
-                  </>
-                )}
-              </div>
+                  <Button 
+                    size="lg" 
+                    className="w-full h-14 text-lg gap-2"
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                  >
+                    <Play className="h-5 w-5" />
+                    Acessar Curso
+                  </Button>
+                </div>
+              ) : course.price === 0 ? (
+                <div className="space-y-4">
+                  <div className="text-3xl font-bold text-foreground">Grátis</div>
+                  <Button 
+                    size="lg" 
+                    className="w-full h-14 text-lg gap-2"
+                    onClick={handleFreeEnrollment}
+                    disabled={checkingEnrollment}
+                  >
+                    {checkingEnrollment ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="h-5 w-5" />
+                        Matricular-se Gratuitamente
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <CheckoutForm 
+                  course={course} 
+                  onSuccess={handlePaymentSuccess} 
+                />
+              )}
             </div>
           </div>
         </div>
@@ -362,16 +310,6 @@ export default function Checkout() {
           © {new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.
         </div>
       </footer>
-
-      {/* Checkout Modal */}
-      {course && (
-        <CheckoutModal
-          open={checkoutOpen}
-          onOpenChange={setCheckoutOpen}
-          course={course}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
     </div>
   );
 }
