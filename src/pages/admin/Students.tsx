@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +77,7 @@ interface Course {
 
 export default function AdminStudents() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -89,10 +90,6 @@ export default function AdminStudents() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [enrolling, setEnrolling] = useState(false);
-  
-  // View profile dialog
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   
   // Edit profile dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -231,9 +228,8 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     }
   };
 
-  const handleOpenViewDialog = (student: Student) => {
-    setViewingStudent(student);
-    setViewDialogOpen(true);
+  const handleViewProfile = (student: Student) => {
+    navigate(`/admin/students/${student.user_id}`);
   };
 
   const handleOpenEditDialog = (student: Student) => {
@@ -448,7 +444,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-popover">
-        <DropdownMenuItem onClick={() => handleOpenViewDialog(student)}>
+        <DropdownMenuItem onClick={() => handleViewProfile(student)}>
           <Eye className="h-4 w-4 mr-2" />
           Ver Perfil
         </DropdownMenuItem>
@@ -633,72 +629,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           </Table>
         </Card>
       )}
-
-      {/* View Profile Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Perfil do Usuário</DialogTitle>
-          </DialogHeader>
-          {viewingStudent && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                {viewingStudent.avatar_url ? (
-                  <img 
-                    src={viewingStudent.avatar_url} 
-                    alt={viewingStudent.full_name}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-xl font-medium">
-                      {viewingStudent.full_name.slice(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div>
-                  <h3 className="font-semibold text-lg">{viewingStudent.full_name}</h3>
-                  <Badge variant={viewingStudent.role === 'admin' ? 'default' : 'secondary'}>
-                    {viewingStudent.role === 'admin' ? 'Administrador' : 'Aluno'}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="grid gap-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span>{viewingStudent.email || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Telefone:</span>
-                  <span>{viewingStudent.phone || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Data de Nascimento:</span>
-                  <span>{formatDate(viewingStudent.birth_date)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cursos Matriculados:</span>
-                  <span>{viewingStudent.enrolledCourses}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Último Acesso:</span>
-                  <span>{formatDateTime(viewingStudent.last_seen_at)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cadastrado em:</span>
-                  <span>{formatDateTime(viewingStudent.created_at)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewDialogOpen(false)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Profile Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={(open) => !open && handleCloseEditDialog()}>
