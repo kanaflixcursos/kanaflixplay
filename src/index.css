@@ -217,6 +217,36 @@ All colors MUST be HSL.
   .action-card-description {
     @apply text-sm text-muted-foreground;
   }
+
+  /* Dashboard Cards - Padronização de headers e content */
+  .dashboard-card-header {
+    @apply p-4 sm:p-6 pb-3;
+  }
+
+  .dashboard-card-content {
+    @apply p-4 sm:p-6 pt-0;
+  }
+
+  /* Sidebar Profile Section - Layout unificado */
+  .sidebar-profile-btn {
+    @apply flex items-center gap-3 w-full p-2 rounded-lg hover:bg-accent/50 transition-colors text-left;
+  }
+
+  .sidebar-profile-avatar {
+    @apply h-10 w-10 border-2 border-primary/20 shrink-0;
+  }
+
+  .sidebar-profile-name {
+    @apply text-sm font-medium truncate;
+  }
+
+  .sidebar-profile-email {
+    @apply text-xs text-muted-foreground truncate;
+  }
+
+  .sidebar-action-btn {
+    @apply w-full justify-start gap-2 h-9;
+  }
 }
 
 /* Mesh gradient background */

@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import Footer from '@/components/Footer';
@@ -35,7 +35,6 @@ interface StudentLayoutProps {
 export default function StudentLayout({ children }: StudentLayoutProps) {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -177,26 +176,22 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             )}
           </SidebarContent>
 
-          {/* User Section at Bottom */}
+          {/* User Section at Bottom - Unified with AdminLayout */}
           <SidebarFooter className="border-t p-4">
             {/* User Profile */}
             <button
               onClick={() => navigate('/profile')}
-              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
+              className="sidebar-profile-btn"
             >
-              <Avatar className="h-10 w-10 shrink-0">
+              <Avatar className="sidebar-profile-avatar">
                 <AvatarImage src={avatarUrl || undefined} className="object-cover" />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                   {userInitials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {userName || 'Usuário'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {userEmail}
-                </p>
+                <p className="sidebar-profile-name">{userName || 'Usuário'}</p>
+                <p className="sidebar-profile-email">{userEmail}</p>
               </div>
             </button>
 
@@ -207,7 +202,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start gap-2 h-9"
+                className="sidebar-action-btn"
                 onClick={() => navigate('/')}
               >
                 <GraduationCap className="h-4 w-4" />
@@ -217,7 +212,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start gap-2 h-9 relative"
+                className="sidebar-action-btn relative"
                 onClick={() => navigate('/notifications')}
               >
                 <Bell className="h-4 w-4" />
@@ -232,7 +227,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start gap-2 h-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="sidebar-action-btn text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4" />

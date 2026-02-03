@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ShoppingCart, Eye, Loader2, CreditCard, QrCode, FileText } from 'lucide-react';
+import { ShoppingCart, Eye, CreditCard, QrCode, FileText } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import DashboardListCard, { DashboardListItem } from './DashboardListCard';
 
 interface Purchase {
   id: string;
@@ -70,13 +70,11 @@ export default function DashboardLatestPurchases() {
       .limit(5);
 
     if (orders && orders.length > 0) {
-      // Get course titles
       const courseIds = [...new Set(orders.map(o => o.course_id).filter(Boolean))];
       const { data: courses } = courseIds.length > 0
         ? await supabase.from('courses').select('id, title').in('id', courseIds)
         : { data: [] };
 
-      // Get user info
       const userIds = [...new Set(orders.map(o => o.user_id))];
       const { data: profiles } = await supabase
         .from('profiles')
@@ -108,91 +106,60 @@ export default function DashboardLatestPurchases() {
     }).format(value / 100);
   };
 
-  if (loading) {
-    return (
-      <Card className="overflow-hidden">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Últimas Compras</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <>
-      <Card className="overflow-hidden">
-        <CardHeader className="p-4 sm:p-6 pb-3">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Últimas Compras</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          {purchases.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Nenhuma compra realizada
-            </p>
-          ) : (
-            <div className="space-y-2 sm:space-y-3">
-              {purchases.map((purchase) => (
-                <div
-                  key={purchase.id}
-                  className="p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {purchase.course_title || 'Curso não encontrado'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {purchase.user_name || purchase.user_email || 'Usuário'}
-                      </p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-7 w-7 shrink-0"
-                      onClick={() => setSelectedPurchase(purchase)}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 mt-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-success">
-                        {formatCurrency(purchase.amount)}
-                      </span>
-                      {purchase.payment_method && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
-                          {paymentMethodIcons[purchase.payment_method]}
-                          {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
-                        </Badge>
-                      )}
-                    </div>
-                    <Badge 
-                      variant="outline" 
-                      className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
-                    >
-                      {statusLabels[purchase.status] || purchase.status}
-                    </Badge>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-1.5">
-                    {formatDistanceToNow(new Date(purchase.created_at), { addSuffix: true, locale: ptBR })}
-                  </p>
-                </div>
-              ))}
+      <DashboardListCard
+        title="Últimas Compras"
+        icon={ShoppingCart}
+        loading={loading}
+        emptyMessage="Nenhuma compra realizada"
+      >
+        {purchases.map((purchase) => (
+          <DashboardListItem key={purchase.id}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {purchase.course_title || 'Curso não encontrado'}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {purchase.user_name || purchase.user_email || 'Usuário'}
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 shrink-0"
+                onClick={() => setSelectedPurchase(purchase)}
+              >
+                <Eye className="h-3.5 w-3.5" />
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-success">
+                  {formatCurrency(purchase.amount)}
+                </span>
+                {purchase.payment_method && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                    {paymentMethodIcons[purchase.payment_method]}
+                    {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
+                  </Badge>
+                )}
+              </div>
+              <Badge 
+                variant="outline" 
+                className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
+              >
+                {statusLabels[purchase.status] || purchase.status}
+              </Badge>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              {formatDistanceToNow(new Date(purchase.created_at), { addSuffix: true, locale: ptBR })}
+            </p>
+          </DashboardListItem>
+        ))}
+      </DashboardListCard>
 
-      {/* Purchase Details Dialog */}
       <Dialog open={!!selectedPurchase} onOpenChange={() => setSelectedPurchase(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>

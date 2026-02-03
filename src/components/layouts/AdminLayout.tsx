@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,8 +19,8 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, Bell, GraduationCap, Settings } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, Bell, GraduationCap } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 const menuItems = [
@@ -46,7 +46,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     if (user) {
       fetchProfile();
-      fetchUnreadNotifications();
     }
   }, [user]);
 
@@ -63,7 +62,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
-  const fetchUnreadNotifications = async () => {
+  const fetchUnreadNotifications = useCallback(async () => {
     if (!user) return;
     const { count } = await supabase
       .from('notifications')
@@ -72,7 +71,33 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       .eq('is_read', false);
     
     setUnreadCount(count || 0);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchUnreadNotifications();
+
+    if (!user) return;
+
+    const channel = supabase
+      .channel('notifications-admin-sidebar')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchUnreadNotifications();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchUnreadNotifications]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -81,7 +106,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const userName = profile.full_name || 'Administrador';
   const userEmail = profile.email || user?.email || '';
-  const userInitials = userName.slice(0, 2).toUpperCase();
+  const userInitials = userName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
     <SidebarProvider>
@@ -136,68 +161,63 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </SidebarGroup>
           </SidebarContent>
 
-          {/* User Profile Section in Footer */}
+          {/* User Profile Section in Footer - Unified with StudentLayout */}
           <SidebarFooter className="border-t p-4">
-            <div className="space-y-3">
-              {/* User Info - Clickable to go to profile */}
-              <button
-                onClick={() => navigate('/profile')}
-                className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
-              >
-                <Avatar className="h-10 w-10 border-2 border-primary/20">
-                  <AvatarImage src={profile.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{userName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-                </div>
-              </button>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center gap-1 h-auto py-2 px-1"
-                  onClick={() => navigate('/admin/courses')}
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  <span className="text-[10px]">Cursos</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center gap-1 h-auto py-2 px-1 relative"
-                  onClick={() => navigate('/notifications')}
-                >
-                  <div className="relative">
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && (
-                      <Badge 
-                        variant="destructive" 
-                        className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center"
-                      >
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </Badge>
-                    )}
-                  </div>
-                  <span className="text-[10px]">Alertas</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex flex-col items-center gap-1 h-auto py-2 px-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="text-[10px]">Sair</span>
-                </Button>
+            {/* User Profile */}
+            <button
+              onClick={() => navigate('/profile')}
+              className="sidebar-profile-btn"
+            >
+              <Avatar className="sidebar-profile-avatar">
+                <AvatarImage src={profile.avatar_url || undefined} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="sidebar-profile-name">{userName}</p>
+                <p className="sidebar-profile-email">{userEmail}</p>
               </div>
+            </button>
+
+            <Separator className="my-2" />
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="sidebar-action-btn"
+                onClick={() => navigate('/admin/courses')}
+              >
+                <GraduationCap className="h-4 w-4" />
+                Meus Cursos
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="sidebar-action-btn relative"
+                onClick={() => navigate('/notifications')}
+              >
+                <Bell className="h-4 w-4" />
+                Notificações
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="sidebar-action-btn text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Sair da Conta
+              </Button>
             </div>
           </SidebarFooter>
         </Sidebar>
