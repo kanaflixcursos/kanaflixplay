@@ -42,7 +42,7 @@ export default function DashboardCoursesCard() {
   return (
     <Card className="overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-4 via-chart-5 to-chart-4" />
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="p-4 sm:p-6 text-left">
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-chart-4/20">

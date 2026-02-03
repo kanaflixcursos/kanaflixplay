@@ -97,7 +97,7 @@ export default function DashboardRevenueCard() {
   return (
     <Card className="overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-      <CardContent className="p-4 sm:p-6">
+      <CardContent className="p-4 sm:p-6 text-left">
         <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-primary/10">
