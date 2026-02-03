@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sync-pandavideo-lessons]
 verify_jwt = false
+
+[functions.pagarme]
+verify_jwt = false

@@ -52,6 +52,7 @@ export type Database = {
           is_sequential: boolean
           last_synced_at: string | null
           pandavideo_folder_id: string | null
+          price: number | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -64,6 +65,7 @@ export type Database = {
           is_sequential?: boolean
           last_synced_at?: string | null
           pandavideo_folder_id?: string | null
+          price?: number | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -76,6 +78,7 @@ export type Database = {
           is_sequential?: boolean
           last_synced_at?: string | null
           pandavideo_folder_id?: string | null
+          price?: number | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
@@ -291,6 +294,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      orders: {
+        Row: {
+          amount: number
+          boleto_barcode: string | null
+          boleto_due_date: string | null
+          boleto_url: string | null
+          course_id: string | null
+          created_at: string
+          id: string
+          pagarme_charge_id: string | null
+          pagarme_order_id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          pix_expires_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          boleto_barcode?: string | null
+          boleto_due_date?: string | null
+          boleto_url?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          pagarme_charge_id?: string | null
+          pagarme_order_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          boleto_barcode?: string | null
+          boleto_due_date?: string | null
+          boleto_url?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          pagarme_charge_id?: string | null
+          pagarme_order_id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
