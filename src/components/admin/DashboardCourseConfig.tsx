@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Pencil, Loader2, PlayCircle } from 'lucide-react';
@@ -57,31 +57,31 @@ export default function DashboardCourseConfig() {
   if (loading) {
     return (
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between gap-2 p-4 sm:p-6 pb-3">
-          <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-            <h3 className="text-base sm:text-lg font-semibold">Config. de Cursos</h3>
-          </div>
-        </div>
-        <div className="flex justify-center p-4 sm:p-6 pt-0 pb-8">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Config. de Cursos</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-2 p-4 sm:p-6 pb-3">
-        <div className="flex items-center gap-2">
-          <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-semibold">Config. de Cursos</h3>
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Settings className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+          <span className="truncate">Config. de Cursos</span>
+        </CardTitle>
         <Button variant="outline" size="sm" className="shrink-0 text-xs sm:text-sm h-8" asChild>
           <Link to="/admin/courses">Ver Todos</Link>
         </Button>
-      </div>
-      <div className="p-4 sm:p-6 pt-0">
+      </CardHeader>
+      <CardContent className="p-4 sm:p-6 pt-0">
         {courses.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhum curso cadastrado
@@ -127,7 +127,7 @@ export default function DashboardCourseConfig() {
             ))}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 }

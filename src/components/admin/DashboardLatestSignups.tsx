@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -74,24 +74,28 @@ export default function DashboardLatestSignups() {
   if (loading) {
     return (
       <Card className="overflow-hidden">
-        <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
-          <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-semibold">Últimos Cadastros</h3>
-        </div>
-        <div className="flex justify-center p-4 sm:p-6 pt-0 pb-8">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <UserPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Últimos Cadastros</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
-        <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-        <h3 className="text-base sm:text-lg font-semibold">Últimos Cadastros</h3>
-      </div>
-      <div className="p-4 sm:p-6 pt-0">
+      <CardHeader className="p-4 sm:p-6 pb-3">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <UserPlus className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="truncate">Últimos Cadastros</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 sm:p-6 pt-0">
         {users.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhum usuário cadastrado
@@ -178,7 +182,7 @@ export default function DashboardLatestSignups() {
             ))}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 }

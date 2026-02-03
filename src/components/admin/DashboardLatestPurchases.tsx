@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -111,13 +111,15 @@ export default function DashboardLatestPurchases() {
   if (loading) {
     return (
       <Card className="overflow-hidden">
-        <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
-          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-semibold">Últimas Compras</h3>
-        </div>
-        <div className="flex justify-center p-4 sm:p-6 pt-0 pb-8">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Últimas Compras</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        </CardContent>
       </Card>
     );
   }
@@ -125,11 +127,13 @@ export default function DashboardLatestPurchases() {
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
-          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-semibold">Últimas Compras</h3>
-        </div>
-        <div className="p-4 sm:p-6 pt-0">
+        <CardHeader className="p-4 sm:p-6 pb-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">Últimas Compras</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-0">
           {purchases.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               Nenhuma compra realizada
@@ -183,10 +187,10 @@ export default function DashboardLatestPurchases() {
                   </p>
                 </div>
               ))}
-          </div>
-        )}
-      </div>
-    </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Purchase Details Dialog */}
       <Dialog open={!!selectedPurchase} onOpenChange={() => setSelectedPurchase(null)}>
