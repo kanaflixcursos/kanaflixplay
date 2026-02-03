@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, 
@@ -19,10 +20,12 @@ import {
   Image as ImageIcon,
   Video,
   DollarSign,
-  ClipboardCheck
+  ClipboardCheck,
+  Sparkles
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
+import { CurrencyInput } from '@/components/ui/currency-input';
 
 interface VideoItem {
   id: string;
@@ -551,86 +554,154 @@ export default function CourseForm() {
 
           {/* Step 3: Pricing */}
           {currentStep === 3 && (
-            <div className="space-y-6">
+            <div className="space-y-8">
+              {/* Pricing Type Selection */}
               <div className="space-y-4">
-                <Label>Tipo de Conteúdo</Label>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  <Label className="text-base font-semibold">Modelo de Monetização</Label>
+                </div>
                 <RadioGroup
                   value={formData.pricing_type}
                   onValueChange={(value: 'free' | 'paid') => 
                     setFormData({ ...formData, pricing_type: value })
                   }
-                  className="flex gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="free" id="free" />
-                    <Label htmlFor="free" className="font-normal cursor-pointer">
-                      Conteúdo Gratuito
-                    </Label>
+                  <div 
+                    className={`relative flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.pricing_type === 'free' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => setFormData({ ...formData, pricing_type: 'free' })}
+                  >
+                    <RadioGroupItem value="free" id="free" className="mt-1" />
+                    <div className="space-y-1">
+                      <Label htmlFor="free" className="font-semibold cursor-pointer text-base">
+                        Conteúdo Gratuito
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Acesso livre para todos os alunos cadastrados
+                      </p>
+                    </div>
+                    {formData.pricing_type === 'free' && (
+                      <Sparkles className="absolute top-4 right-4 h-5 w-5 text-primary" />
+                    )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="paid" id="paid" />
-                    <Label htmlFor="paid" className="font-normal cursor-pointer">
-                      Conteúdo Pago
-                    </Label>
+                  <div 
+                    className={`relative flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.pricing_type === 'paid' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => setFormData({ ...formData, pricing_type: 'paid' })}
+                  >
+                    <RadioGroupItem value="paid" id="paid" className="mt-1" />
+                    <div className="space-y-1">
+                      <Label htmlFor="paid" className="font-semibold cursor-pointer text-base">
+                        Conteúdo Pago
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Defina um valor e aceite pagamentos online
+                      </p>
+                    </div>
+                    {formData.pricing_type === 'paid' && (
+                      <DollarSign className="absolute top-4 right-4 h-5 w-5 text-primary" />
+                    )}
                   </div>
                 </RadioGroup>
               </div>
 
               {formData.pricing_type === 'paid' && (
-                <div className="space-y-6 pt-4 border-t">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Valor do Curso (R$)</Label>
-                      <Input
+                <div className="space-y-6 pt-6 border-t">
+                  {/* Price and Installments */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="price" className="text-sm font-medium">
+                        Valor do Curso
+                      </Label>
+                      <CurrencyInput
                         id="price"
-                        type="number"
-                        min="0"
-                        step="0.01"
                         value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="0.00"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="installments">Parcelamento Máximo</Label>
-                      <Input
-                        id="installments"
-                        type="number"
-                        min="1"
-                        max="12"
-                        value={formData.installments}
-                        onChange={(e) => setFormData({ ...formData, installments: e.target.value })}
-                        placeholder="1"
+                        onChange={(value) => setFormData({ ...formData, price: value })}
+                        placeholder="0,00"
+                        className="h-12 text-lg"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Máximo de parcelas permitidas (1-12)
+                        Valor à vista que o aluno pagará
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label htmlFor="installments" className="text-sm font-medium">
+                        Parcelamento Máximo
+                      </Label>
+                      <Select
+                        value={formData.installments}
+                        onValueChange={(value) => setFormData({ ...formData, installments: value })}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                            <SelectItem key={n} value={n.toString()}>
+                              {n === 1 ? 'À vista apenas' : `Até ${n}x sem juros`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Quantidade de parcelas no cartão de crédito
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <Label>Métodos de Pagamento</Label>
+                  {/* Payment Methods */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-medium">Métodos de Pagamento Aceitos</Label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {PAYMENT_METHODS.map((method) => (
-                        <div
-                          key={method.id}
-                          onClick={() => togglePaymentMethod(method.id)}
-                          className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-colors ${
-                            formData.payment_methods.includes(method.id)
-                              ? 'border-primary bg-primary/5'
-                              : 'hover:bg-muted/50'
-                          }`}
-                        >
-                          <Checkbox
-                            checked={formData.payment_methods.includes(method.id)}
-                            onCheckedChange={() => togglePaymentMethod(method.id)}
-                          />
-                          <span className="text-sm">{method.label}</span>
-                        </div>
-                      ))}
+                      {PAYMENT_METHODS.map((method) => {
+                        const isSelected = formData.payment_methods.includes(method.id);
+                        return (
+                          <div
+                            key={method.id}
+                            onClick={() => togglePaymentMethod(method.id)}
+                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => togglePaymentMethod(method.id)}
+                              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                            />
+                            <span className="text-sm font-medium">{method.label}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
+
+                  {/* Price Preview */}
+                  {formData.price && parseFloat(formData.price) > 0 && (
+                    <div className="p-4 rounded-xl bg-muted/50 border">
+                      <p className="text-sm text-muted-foreground mb-2">Prévia do valor</p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-foreground">
+                          R$ {parseFloat(formData.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </span>
+                        {parseInt(formData.installments) > 1 && (
+                          <span className="text-sm text-muted-foreground">
+                            ou {formData.installments}x de R$ {(parseFloat(formData.price) / parseInt(formData.installments)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
