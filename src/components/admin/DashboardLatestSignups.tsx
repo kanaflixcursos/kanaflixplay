@@ -89,7 +89,7 @@ export default function DashboardLatestSignups() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="p-4 sm:p-6">
+      <CardHeader className="p-4 sm:p-6 pb-3">
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
           <UserPlus className="h-4 w-4 sm:h-5 sm:w-5" />
           <span className="truncate">Últimos Cadastros</span>
