@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, ExternalLink, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -67,28 +67,24 @@ export default function DashboardRecentComments() {
   if (loading) {
     return (
       <Card className="overflow-hidden">
-        <CardHeader className="space-y-0 p-4 sm:p-6 pb-3">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="truncate">Comentários Recentes</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center py-6 sm:py-8 p-4 sm:p-6 pt-0">
+        <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
+          <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+          <h3 className="text-base sm:text-lg font-semibold">Comentários Recentes</h3>
+        </div>
+        <div className="flex justify-center p-4 sm:p-6 pt-0 pb-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
+        </div>
       </Card>
     );
   }
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="space-y-0 p-4 sm:p-6 pb-3">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-          <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="truncate">Comentários Recentes</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 sm:p-6 pt-0">
+      <div className="flex items-center gap-2 p-4 sm:p-6 pb-3">
+        <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+        <h3 className="text-base sm:text-lg font-semibold">Comentários Recentes</h3>
+      </div>
+      <div className="p-4 sm:p-6 pt-0">
         {comments.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhum comentário ainda
@@ -128,7 +124,7 @@ export default function DashboardRecentComments() {
             ))}
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }
