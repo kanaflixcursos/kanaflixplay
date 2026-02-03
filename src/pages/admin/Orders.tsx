@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2 } from 'lucide-react';
+import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -71,16 +71,44 @@ const statusLabels: Record<string, string> = {
   canceled: 'Cancelado',
 };
 
+interface OrderStats {
+  total: number;
+  paid: number;
+  refunded: number;
+  canceled: number;
+  pending: number;
+  failed: number;
+}
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     fetchOrders();
+    fetchOrderStats();
   }, []);
+
+  const fetchOrderStats = async () => {
+    setStatsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'get_order_stats' }
+      });
+      
+      if (!error && data?.stats) {
+        setOrderStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching order stats:', error);
+    }
+    setStatsLoading(false);
+  };
 
   const fetchOrders = async () => {
     const { data: ordersData } = await supabase
@@ -136,7 +164,7 @@ export default function AdminOrders() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalRevenue = orders.filter(o => o.status === 'paid').reduce((sum, o) => sum + o.amount, 0);
+
 
   if (loading) {
     return (
@@ -154,29 +182,65 @@ export default function AdminOrders() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Pedidos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Total de Pedidos
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{orders.length}</p>
+            {statsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <p className="text-2xl font-bold">{orderStats?.total ?? orders.length}</p>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pedidos Pagos</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-success" />
+              Pedidos Pagos
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-success">{orders.filter(o => o.status === 'paid').length}</p>
+            {statsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <p className="text-2xl font-bold text-success">{orderStats?.paid ?? orders.filter(o => o.status === 'paid').length}</p>
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Receita Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <RotateCcw className="h-4 w-4 text-warning" />
+              Pedidos Estornados
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-success">{formatCurrency(totalRevenue)}</p>
+            {statsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <p className="text-2xl font-bold text-warning">{orderStats?.refunded ?? 0}</p>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-destructive" />
+              Pedidos Cancelados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {statsLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <p className="text-2xl font-bold text-destructive">{orderStats?.canceled ?? 0}</p>
+            )}
           </CardContent>
         </Card>
       </div>

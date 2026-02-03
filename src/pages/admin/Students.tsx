@@ -426,7 +426,8 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   };
 
   const filteredStudents = students.filter(student =>
-    student.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string | null) => {
