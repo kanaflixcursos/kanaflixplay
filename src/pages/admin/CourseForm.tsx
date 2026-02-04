@@ -32,6 +32,7 @@ import {
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { CardBrandIcon } from '@/components/CardBrandIcon';
 
 interface VideoItem {
   id: string;
@@ -781,8 +782,9 @@ export default function CourseForm() {
                       <Select
                         value={formData.installments}
                         onValueChange={(value) => setFormData({ ...formData, installments: value })}
+                        disabled={!formData.payment_methods.includes('credit_card')}
                       >
-                        <SelectTrigger className="h-12">
+                        <SelectTrigger className={`h-12 ${!formData.payment_methods.includes('credit_card') ? 'opacity-50 cursor-not-allowed' : ''}`}>
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
@@ -800,7 +802,9 @@ export default function CourseForm() {
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Quantidade de parcelas no cartão de crédito
+                        {formData.payment_methods.includes('credit_card') 
+                          ? 'Quantidade de parcelas no cartão de crédito'
+                          : 'Selecione Cartão de Crédito para habilitar parcelamento'}
                       </p>
                     </div>
                   </div>
@@ -863,13 +867,18 @@ export default function CourseForm() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <Label className="text-sm font-medium">Bandeiras Aceitas</Label>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-3">
                         {paymentConfig.payment_methods
                           .find(m => m.id === 'credit_card')
                           ?.card_brands?.map((brand) => (
-                            <Badge key={brand.id} variant="outline" className="px-3 py-1.5">
-                              {brand.name}
-                            </Badge>
+                            <div 
+                              key={brand.id} 
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card"
+                              title={brand.name}
+                            >
+                              <CardBrandIcon brand={brand.id} className="h-6 w-auto" />
+                              <span className="text-xs text-muted-foreground">{brand.name}</span>
+                            </div>
                           ))}
                       </div>
                     </div>
