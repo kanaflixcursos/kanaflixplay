@@ -250,8 +250,52 @@ async function handleCreateOrder(
     });
   }
 
+  // Get user profile for email
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('user_id', userId)
+    .single();
+
   if (orderData.status === 'paid') {
     await enrollUser(supabase, userId, courseId);
+    
+    // Send purchase confirmation email for instant card payments
+    if (profile?.email) {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+      await sendEmail(SUPABASE_URL, {
+        action: 'purchase_confirmation',
+        to: profile.email,
+        data: {
+          userName: profile.full_name || '',
+          courseName: course.title,
+          courseUrl: `https://kanaflixplay.lovable.app/courses/${courseId}`,
+          amount: course.price,
+          paymentMethod: 'Cartão de Crédito',
+          orderId: order.id,
+        }
+      });
+    }
+  } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && profile?.email) {
+    // Send payment pending email for PIX/Boleto
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    await sendEmail(SUPABASE_URL, {
+      action: 'payment_pending',
+      to: profile.email,
+      data: {
+        userName: profile.full_name || '',
+        courseName: course.title,
+        amount: course.price,
+        paymentMethod: paymentMethod as 'pix' | 'boleto',
+        pixQrCode: orderData.pix_qr_code,
+        pixQrCodeUrl: orderData.pix_qr_code_url,
+        boletoUrl: orderData.boleto_url,
+        boletoBarcode: orderData.boleto_barcode,
+        expiresAt: orderData.pix_expires_at 
+          ? new Date(orderData.pix_expires_at).toLocaleString('pt-BR')
+          : undefined,
+      }
+    });
   }
 
   return new Response(JSON.stringify({ 
@@ -388,6 +432,32 @@ async function handleChargePaid(supabase: any, data: any) {
     await enrollUser(supabase, order.user_id, order.course_id);
     console.log(`[Webhook] User ${order.user_id} enrolled in course ${order.course_id}`);
     
+    // Get user profile for email
+    const profile = await getUserProfile(supabase, order.user_id);
+    
+    // Send confirmation email
+    if (profile?.email) {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+      const paymentMethodLabel = order.payment_method === 'credit_card' 
+        ? 'Cartão de Crédito' 
+        : order.payment_method === 'pix' 
+          ? 'PIX' 
+          : 'Boleto';
+      
+      await sendEmail(SUPABASE_URL, {
+        action: 'purchase_confirmation',
+        to: profile.email,
+        data: {
+          userName: profile.full_name || '',
+          courseName: order.courses?.title || 'Curso',
+          courseUrl: `https://kanaflixplay.lovable.app/courses/${order.course_id}`,
+          amount: order.amount,
+          paymentMethod: paymentMethodLabel,
+          orderId: order.id,
+        }
+      });
+    }
+    
     // Send success notification
     await createNotification(supabase, {
       user_id: order.user_id,
@@ -476,6 +546,24 @@ async function handleChargeRefunded(supabase: any, data: any) {
   if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
     console.log(`[Webhook] Revoked enrollment for user ${order.user_id} from course ${order.course_id}`);
+  }
+
+  // Get user profile for email
+  const profile = await getUserProfile(supabase, order.user_id);
+  
+  // Send refund confirmation email
+  if (profile?.email) {
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    await sendEmail(SUPABASE_URL, {
+      action: 'refund_confirmation',
+      to: profile.email,
+      data: {
+        userName: profile.full_name || '',
+        courseName: order.courses?.title || 'Curso',
+        amount: order.amount,
+        orderId: order.id,
+      }
+    });
   }
 
   // Notify user
@@ -605,6 +693,49 @@ async function handleChargeChargedback(supabase: any, data: any) {
 // ===========================================
 // HELPER FUNCTIONS
 // ===========================================
+
+// Send email via send-email edge function
+async function sendEmail(supabaseUrl: string, data: {
+  action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation';
+  to: string;
+  data: Record<string, unknown>;
+}) {
+  try {
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      console.log('[Email] RESEND_API_KEY not configured, skipping email');
+      return;
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('[Email] Failed to send email:', error);
+    } else {
+      console.log(`[Email] Email sent successfully: ${data.action} to ${data.to}`);
+    }
+  } catch (error) {
+    console.error('[Email] Error sending email:', error);
+  }
+}
+
+// Get user profile with email
+async function getUserProfile(supabase: any, userId: string) {
+  const { data } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('user_id', userId)
+    .single();
+  return data;
+}
 
 async function enrollUser(supabase: any, userId: string, courseId: string) {
   const { data: existing } = await supabase
