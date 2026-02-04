@@ -20,13 +20,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, Bell, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, LogOut, Bell, GraduationCap, ShoppingCart } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
+  { title: 'Compras', url: '/admin/orders', icon: ShoppingCart },
 ];
 
 interface AdminLayoutProps {
