@@ -72,6 +72,8 @@ serve(async (req) => {
         return handleGetOrderStats(PAGARME_API_KEY, supabase);
       case 'refund_order':
         return handleRefundOrder(payload, PAGARME_API_KEY, supabase);
+      case 'cancel_order':
+        return handleCancelOrder(payload, PAGARME_API_KEY, supabase);
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -873,4 +875,99 @@ async function handleRefundOrder(
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
+}
+
+// ===========================================
+// CANCEL ORDER HANDLER
+// ===========================================
+
+async function handleCancelOrder(
+  payload: any,
+  apiKey: string,
+  supabase: any
+) {
+  const { orderId } = payload;
+
+  if (!orderId) {
+    return new Response(JSON.stringify({ error: 'Order ID is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Fetch order from database
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('id', orderId)
+    .single();
+
+  if (orderError || !order) {
+    return new Response(JSON.stringify({ error: 'Order not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (order.status !== 'pending') {
+    return new Response(JSON.stringify({ error: 'Only pending orders can be canceled' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // If there's a Pagar.me charge, try to cancel it
+  if (order.pagarme_charge_id) {
+    const authString = btoa(`${apiKey}:`);
+    
+    try {
+      const cancelResponse = await fetch(`${PAGARME_API_URL}/charges/${order.pagarme_charge_id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Basic ${authString}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!cancelResponse.ok) {
+        const cancelData = await cancelResponse.json();
+        console.log('Pagar.me cancel response:', cancelData);
+        // Continue even if Pagar.me cancel fails - we'll still update locally
+      }
+    } catch (error) {
+      console.log('Error canceling charge in Pagar.me:', error);
+      // Continue with local update
+    }
+  }
+
+  // Update order status in database
+  await supabase
+    .from('orders')
+    .update({ status: 'canceled' })
+    .eq('id', orderId);
+
+  // Create notification for user
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: order.user_id,
+      type: 'payment_canceled',
+      title: 'Pedido cancelado',
+      message: `O pedido para "${order.courses?.title || 'curso'}" foi cancelado pelo administrador.`,
+      link: null,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id
+      }
+    });
+
+  console.log(`[Cancel] Order ${orderId} canceled successfully`);
+
+  return new Response(JSON.stringify({ 
+    success: true,
+    message: 'Order canceled successfully'
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 }

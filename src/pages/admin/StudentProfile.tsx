@@ -79,34 +79,28 @@ const paymentMethodLabels: Record<string, string> = {
   boleto: 'Boleto Bancário',
 };
 
-const statusConfig: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
+const statusConfig: Record<string, { icon: React.ReactNode; className: string }> = {
   paid: { 
-    label: 'Aprovado', 
     icon: <CheckCircle className="h-4 w-4" />, 
     className: 'bg-success/20 text-success border-success/30' 
   },
   pending: { 
-    label: 'Pendente', 
     icon: <Hourglass className="h-4 w-4" />, 
     className: 'bg-warning/20 text-warning border-warning/30' 
   },
   failed: { 
-    label: 'Falhou', 
     icon: <AlertCircle className="h-4 w-4" />, 
     className: 'bg-destructive/20 text-destructive border-destructive/30' 
   },
   canceled: { 
-    label: 'Cancelado', 
     icon: <XCircle className="h-4 w-4" />, 
     className: 'bg-muted text-muted-foreground border-muted-foreground/30' 
   },
   refunded: { 
-    label: 'Reembolsado', 
     icon: <RotateCcw className="h-4 w-4" />, 
     className: 'bg-warning/20 text-warning border-warning/30' 
   },
   chargedback: { 
-    label: 'Estornado', 
     icon: <RotateCcw className="h-4 w-4" />, 
     className: 'bg-destructive/20 text-destructive border-destructive/30' 
   },
@@ -122,6 +116,9 @@ export default function StudentProfile() {
   const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
   const [refunding, setRefunding] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -230,6 +227,11 @@ export default function StudentProfile() {
     setRefundDialogOpen(true);
   };
 
+  const handleOpenCancelDialog = (order: Order) => {
+    setCancelingOrder(order);
+    setCancelDialogOpen(true);
+  };
+
   const handleRefund = async () => {
     if (!refundingOrder) return;
 
@@ -260,6 +262,38 @@ export default function StudentProfile() {
     }
 
     setRefunding(false);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelingOrder) return;
+
+    setCanceling(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'cancel_order', orderId: cancelingOrder.id }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success('Pedido cancelado com sucesso!');
+      setCancelDialogOpen(false);
+      
+      // Refresh data
+      setLoading(true);
+      await fetchStudentData();
+    } catch (error: any) {
+      console.error('Cancel error:', error);
+      toast.error(error.message || 'Erro ao cancelar pedido');
+    }
+
+    setCanceling(false);
   };
 
   if (loading) {
@@ -377,10 +411,9 @@ export default function StudentProfile() {
                 <p className="text-muted-foreground">Nenhuma compra realizada</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {orders.map((order) => {
                   const status = statusConfig[order.status] || {
-                    label: order.status,
                     icon: <AlertCircle className="h-4 w-4" />,
                     className: 'bg-muted text-muted-foreground',
                   };
@@ -388,49 +421,65 @@ export default function StudentProfile() {
                   return (
                     <div 
                       key={order.id} 
-                      className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      className="p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
+                      <div className="flex flex-col gap-3">
+                        {/* Top row: Course name and status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-medium text-sm sm:text-base line-clamp-2 flex-1">
                             {order.course_title || 'Curso não identificado'}
                           </p>
-                          <div className="flex flex-wrap items-center gap-2 mt-1">
-                            {order.payment_method && (
-                              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                {paymentMethodIcons[order.payment_method]}
-                                <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
-                              </div>
-                            )}
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <span className="text-xs text-muted-foreground">
-                              {order.status === 'paid' && order.paid_at 
-                                ? `Pago em ${formatDateTime(order.paid_at)}`
-                                : formatDateTime(order.created_at)
-                              }
-                            </span>
-                          </div>
+                          <Badge variant="outline" className={`${status.className} shrink-0 p-1.5`}>
+                            {status.icon}
+                          </Badge>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <span className="font-semibold text-lg">
+                        {/* Middle row: Payment info */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
+                          {order.payment_method && (
+                            <div className="flex items-center gap-1.5">
+                              {paymentMethodIcons[order.payment_method]}
+                              <span>{paymentMethodLabels[order.payment_method] || order.payment_method}</span>
+                            </div>
+                          )}
+                          <span className="hidden sm:inline">•</span>
+                          <span>
+                            {order.status === 'paid' && order.paid_at 
+                              ? `Pago em ${formatDateTime(order.paid_at)}`
+                              : formatDateTime(order.created_at)
+                            }
+                          </span>
+                        </div>
+
+                        {/* Bottom row: Amount and actions */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                          <span className="font-semibold text-base sm:text-lg">
                             {formatCurrency(order.amount)}
                           </span>
-                          <Badge variant="outline" className={`${status.className} flex items-center gap-1.5`}>
-                            {status.icon}
-                            {status.label}
-                          </Badge>
-                          {order.status === 'paid' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-warning border-warning/30 hover:bg-warning/10"
-                              onClick={() => handleOpenRefundDialog(order)}
-                            >
-                              <RotateCcw className="h-4 w-4 mr-1" />
-                              Reembolsar
-                            </Button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {order.status === 'paid' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-warning border-warning/30 hover:bg-warning/10 text-xs sm:text-sm h-8"
+                                onClick={() => handleOpenRefundDialog(order)}
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 sm:mr-1" />
+                                <span className="hidden sm:inline">Reembolsar</span>
+                              </Button>
+                            )}
+                            {order.status === 'pending' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs sm:text-sm h-8"
+                                onClick={() => handleOpenCancelDialog(order)}
+                              >
+                                <XCircle className="h-3.5 w-3.5 sm:mr-1" />
+                                <span className="hidden sm:inline">Cancelar</span>
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -463,7 +512,7 @@ export default function StudentProfile() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={refunding}>Voltar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRefund}
               disabled={refunding}
@@ -476,6 +525,46 @@ export default function StudentProfile() {
                 </>
               ) : (
                 'Confirmar Reembolso'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Cancelar Pedido
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a cancelar o pedido pendente do curso <strong>{cancelingOrder?.course_title}</strong>.
+              </p>
+              <p>
+                Valor: <strong>{cancelingOrder ? formatCurrency(cancelingOrder.amount) : ''}</strong>
+              </p>
+              <p className="text-muted-foreground">
+                O pagamento via {cancelingOrder?.payment_method === 'pix' ? 'PIX' : 'Boleto'} não será mais aceito.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={canceling}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancel}
+              disabled={canceling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {canceling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Confirmar Cancelamento'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
