@@ -18,6 +18,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -28,6 +38,7 @@ import {
 import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -62,6 +73,8 @@ const statusColors: Record<string, string> = {
   pending: 'bg-warning/20 text-warning border-warning/30',
   failed: 'bg-destructive/20 text-destructive border-destructive/30',
   canceled: 'bg-muted text-muted-foreground border-muted-foreground/30',
+  refunded: 'bg-warning/20 text-warning border-warning/30',
+  chargedback: 'bg-destructive/20 text-destructive border-destructive/30',
 };
 
 const statusLabels: Record<string, string> = {
@@ -69,6 +82,8 @@ const statusLabels: Record<string, string> = {
   pending: 'Pendente',
   failed: 'Falhou',
   canceled: 'Cancelado',
+  refunded: 'Reembolsado',
+  chargedback: 'Estornado',
 };
 
 interface OrderStats {
@@ -88,6 +103,12 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refunding, setRefunding] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -164,6 +185,67 @@ export default function AdminOrders() {
     return matchesSearch && matchesStatus;
   });
 
+  const handleOpenRefundDialog = (order: Order) => {
+    setRefundingOrder(order);
+    setRefundDialogOpen(true);
+  };
+
+  const handleOpenCancelDialog = (order: Order) => {
+    setCancelingOrder(order);
+    setCancelDialogOpen(true);
+  };
+
+  const handleRefund = async () => {
+    if (!refundingOrder) return;
+    setRefunding(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'refund_order', orderId: refundingOrder.id }
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('Reembolso processado com sucesso!');
+      setRefundDialogOpen(false);
+      setSelectedOrder(null);
+      setLoading(true);
+      await fetchOrders();
+      await fetchOrderStats();
+    } catch (error: any) {
+      console.error('Refund error:', error);
+      toast.error(error.message || 'Erro ao processar reembolso');
+    }
+
+    setRefunding(false);
+  };
+
+  const handleCancel = async () => {
+    if (!cancelingOrder) return;
+    setCanceling(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'cancel_order', orderId: cancelingOrder.id }
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      toast.success('Pedido cancelado com sucesso!');
+      setCancelDialogOpen(false);
+      setSelectedOrder(null);
+      setLoading(true);
+      await fetchOrders();
+      await fetchOrderStats();
+    } catch (error: any) {
+      console.error('Cancel error:', error);
+      toast.error(error.message || 'Erro ao cancelar pedido');
+    }
+
+    setCanceling(false);
+  };
 
 
   if (loading) {
@@ -324,9 +406,31 @@ export default function AdminOrders() {
                       {format(new Date(order.created_at), 'dd/MM/yyyy', { locale: ptBR })}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {order.status === 'paid' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-warning hover:text-warning hover:bg-warning/10"
+                            onClick={() => handleOpenRefundDialog(order)}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {order.status === 'pending' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleOpenCancelDialog(order)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -360,10 +464,32 @@ export default function AdminOrders() {
                       </Badge>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    Detalhes
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Detalhes
+                    </Button>
+                    {order.status === 'paid' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-warning hover:text-warning hover:bg-warning/10"
+                        onClick={() => handleOpenRefundDialog(order)}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {order.status === 'pending' && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleOpenCancelDialog(order)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(order.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -430,11 +556,124 @@ export default function AdminOrders() {
                   </div>
                 )}
               </div>
+              
+              {/* Action buttons in dialog */}
+              <div className="flex gap-2 pt-2 border-t">
+                {selectedOrder.status === 'paid' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-warning border-warning/30 hover:bg-warning/10"
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      handleOpenRefundDialog(selectedOrder);
+                    }}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reembolsar
+                  </Button>
+                )}
+                {selectedOrder.status === 'pending' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      handleOpenCancelDialog(selectedOrder);
+                    }}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancelar Pedido
+                  </Button>
+                )}
+              </div>
+
               <p className="text-[10px] text-muted-foreground">ID: {selectedOrder.id}</p>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-warning">
+              <RotateCcw className="h-5 w-5" />
+              Confirmar Reembolso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a reembolsar o pedido do curso <strong>{refundingOrder?.course_title}</strong>.
+              </p>
+              <p>
+                Valor: <strong>{refundingOrder ? formatCurrency(refundingOrder.amount) : ''}</strong>
+              </p>
+              <p className="text-destructive">
+                Esta ação irá devolver o valor ao cliente e revogar o acesso ao curso.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={refunding}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefund}
+              disabled={refunding}
+              className="bg-warning text-warning-foreground hover:bg-warning/90"
+            >
+              {refunding ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                'Confirmar Reembolso'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Cancelar Pedido
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a cancelar o pedido pendente do curso <strong>{cancelingOrder?.course_title}</strong>.
+              </p>
+              <p>
+                Valor: <strong>{cancelingOrder ? formatCurrency(cancelingOrder.amount) : ''}</strong>
+              </p>
+              <p className="text-muted-foreground">
+                O pagamento via {cancelingOrder?.payment_method === 'pix' ? 'PIX' : 'Boleto'} não será mais aceito.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={canceling}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancel}
+              disabled={canceling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {canceling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelando...
+                </>
+              ) : (
+                'Confirmar Cancelamento'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

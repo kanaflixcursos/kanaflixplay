@@ -1,10 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +37,8 @@ import {
   XCircle,
   AlertCircle,
   RotateCcw,
-  Hourglass
+  Hourglass,
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -119,6 +127,12 @@ export default function StudentProfile() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const filteredOrders = useMemo(() => {
+    if (statusFilter === 'all') return orders;
+    return orders.filter(order => order.status === statusFilter);
+  }, [orders, statusFilter]);
 
   useEffect(() => {
     if (userId) {
@@ -398,11 +412,27 @@ export default function StudentProfile() {
 
         {/* Orders Card */}
         <Card className="lg:col-span-2">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <CardTitle className="text-lg flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Histórico de Compras
             </CardTitle>
+            {orders.length > 0 && (
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px] h-8">
+                  <Filter className="h-3.5 w-3.5 mr-2" />
+                  <SelectValue placeholder="Filtrar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="paid">Pagos</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="failed">Falhou</SelectItem>
+                  <SelectItem value="canceled">Cancelados</SelectItem>
+                  <SelectItem value="refunded">Reembolsados</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </CardHeader>
           <CardContent>
             {orders.length === 0 ? (
@@ -410,9 +440,13 @@ export default function StudentProfile() {
                 <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">Nenhuma compra realizada</p>
               </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhuma compra com este status</p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {orders.map((order) => {
+                {filteredOrders.map((order) => {
                   const status = statusConfig[order.status] || {
                     icon: <AlertCircle className="h-4 w-4" />,
                     className: 'bg-muted text-muted-foreground',
