@@ -60,10 +60,16 @@ interface Course {
   is_published: boolean;
   created_at: string;
   pandavideo_folder_id: string | null;
+  pandavideo_folder_name?: string;
   last_synced_at: string | null;
   price: number | null;
   lessonCount: number;
   enrollmentCount: number;
+}
+
+interface PandaFolder {
+  id: string;
+  name: string;
 }
 
 export default function AdminCourses() {
@@ -73,6 +79,7 @@ export default function AdminCourses() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [pandaFolders, setPandaFolders] = useState<PandaFolder[]>([]);
   
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: Course | null }>({
@@ -88,6 +95,30 @@ export default function AdminCourses() {
     course: null,
   });
   const [copied, setCopied] = useState(false);
+
+  const fetchPandaFolders = async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) return;
+
+      const response = await fetch(
+        `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=folders`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionData.session.access_token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const folders = data.folders || data || [];
+        setPandaFolders(folders);
+      }
+    } catch (error) {
+      console.error('Error fetching panda folders:', error);
+    }
+  };
 
   const fetchCourses = async () => {
     const { data: coursesData, error } = await supabase
@@ -122,7 +153,14 @@ export default function AdminCourses() {
 
   useEffect(() => {
     fetchCourses();
+    fetchPandaFolders();
   }, []);
+
+  const getFolderName = (folderId: string | null) => {
+    if (!folderId) return null;
+    const folder = pandaFolders.find(f => f.id === folderId);
+    return folder?.name || 'Carregando...';
+  };
 
   const handleDelete = async () => {
     if (!deleteDialog.course) return;
@@ -375,9 +413,9 @@ export default function AdminCourses() {
                       <span>{course.enrollmentCount} alunos</span>
                       {course.pandavideo_folder_id && !isMobile && (
                         <>
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1" title={`ID: ${course.pandavideo_folder_id}`}>
                             <Folder className="h-3 w-3" />
-                            Pandavideo
+                            {getFolderName(course.pandavideo_folder_id)}
                           </span>
                           <span>{formatLastSync(course.last_synced_at)}</span>
                         </>
