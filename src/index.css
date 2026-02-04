@@ -122,9 +122,9 @@ All colors MUST be HSL.
     --secondary-foreground: 0 0% 89.8039%;
 
     --muted: 0 0% 14.902%;
-    --muted-foreground: 0 0% 100%;
+    --muted-foreground: 0 0% 55%;
 
-    --accent: 174 60% 40%;
+    --accent: 174 50% 25%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
