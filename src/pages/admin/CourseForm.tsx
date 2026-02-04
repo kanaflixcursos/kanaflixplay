@@ -237,13 +237,34 @@ export default function CourseForm() {
         throw new Error(data.error || 'Erro ao buscar vídeos');
       }
 
-      const videoList: VideoItem[] = (data.videos || []).map((v: any) => ({
-        id: v.id,
-        title: v.title,
-        original_title: v.title,
-        duration: v.video_player?.duration || v.duration || v.video_external_duration || 0,
-        status: v.status,
-      }));
+      const videoList: VideoItem[] = (data.videos || []).map((v: any) => {
+        // Duration can come from various fields - try all possible sources
+        let durationSeconds = 0;
+        if (v.video_player?.duration) {
+          durationSeconds = v.video_player.duration;
+        } else if (v.duration && typeof v.duration === 'number') {
+          durationSeconds = v.duration;
+        } else if (v.video_external_duration) {
+          durationSeconds = v.video_external_duration;
+        }
+        // If duration is still 0 but we have a duration_string, try to parse it
+        if (durationSeconds === 0 && v.duration_string) {
+          const parts = v.duration_string.split(':');
+          if (parts.length === 2) {
+            durationSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+          } else if (parts.length === 3) {
+            durationSeconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+          }
+        }
+        
+        return {
+          id: v.id,
+          title: v.title,
+          original_title: v.title,
+          duration: durationSeconds,
+          status: v.status,
+        };
+      });
 
       setVideos(videoList);
     } catch (error) {

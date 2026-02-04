@@ -269,13 +269,14 @@ Deno.serve(async (req) => {
           const thumbnailUrl = videoDetails?.thumbnail || video.thumbnail || video.thumbnail_url || video.cover || null;
 
           if (existingVideoIds.has(video.id)) {
-            // Update existing lesson - preserve order_index, update video_url, duration, and thumbnail
+            // Update existing lesson - preserve order_index and title, only update video_url, duration, and thumbnail
             const { error: updateError } = await supabase
               .from("lessons")
               .update({
                 video_url: embedUrl,
                 duration_minutes: durationMinutes,
                 thumbnail_url: thumbnailUrl,
+                // NOTE: We do NOT update order_index or title here to preserve manual ordering and custom titles
               })
               .eq("pandavideo_video_id", video.id)
               .eq("course_id", course.id);
