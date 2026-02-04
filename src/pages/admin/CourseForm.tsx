@@ -867,17 +867,16 @@ export default function CourseForm() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <Label className="text-sm font-medium">Bandeiras Aceitas</Label>
                       </div>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-2">
                         {paymentConfig.payment_methods
                           .find(m => m.id === 'credit_card')
                           ?.card_brands?.map((brand) => (
                             <div 
                               key={brand.id} 
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-card"
+                              className="p-1.5 rounded-md border bg-card"
                               title={brand.name}
                             >
-                              <CardBrandIcon brand={brand.id} className="h-6 w-auto" />
-                              <span className="text-xs text-muted-foreground">{brand.name}</span>
+                              <CardBrandIcon brand={brand.id} className="h-5 w-auto" />
                             </div>
                           ))}
                       </div>
