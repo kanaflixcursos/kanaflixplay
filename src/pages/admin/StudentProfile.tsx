@@ -5,6 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -24,6 +34,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface StudentData {
   id: string;
@@ -108,6 +119,9 @@ export default function StudentProfile() {
   const [student, setStudent] = useState<StudentData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -209,6 +223,43 @@ export default function StudentProfile() {
   const formatDateTime = (dateString: string | null) => {
     if (!dateString) return 'Nunca';
     return format(new Date(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  };
+
+  const handleOpenRefundDialog = (order: Order) => {
+    setRefundingOrder(order);
+    setRefundDialogOpen(true);
+  };
+
+  const handleRefund = async () => {
+    if (!refundingOrder) return;
+
+    setRefunding(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'refund_order', orderId: refundingOrder.id }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success('Reembolso processado com sucesso!');
+      setRefundDialogOpen(false);
+      
+      // Refresh data
+      setLoading(true);
+      await fetchStudentData();
+    } catch (error: any) {
+      console.error('Refund error:', error);
+      toast.error(error.message || 'Erro ao processar reembolso');
+    }
+
+    setRefunding(false);
   };
 
   if (loading) {
@@ -353,12 +404,15 @@ export default function StudentProfile() {
                             )}
                             <span className="text-xs text-muted-foreground">•</span>
                             <span className="text-xs text-muted-foreground">
-                              {formatDateTime(order.created_at)}
+                              {order.status === 'paid' && order.paid_at 
+                                ? `Pago em ${formatDateTime(order.paid_at)}`
+                                : formatDateTime(order.created_at)
+                              }
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <span className="font-semibold text-lg">
                             {formatCurrency(order.amount)}
                           </span>
@@ -366,40 +420,19 @@ export default function StudentProfile() {
                             {status.icon}
                             {status.label}
                           </Badge>
+                          {order.status === 'paid' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-warning border-warning/30 hover:bg-warning/10"
+                              onClick={() => handleOpenRefundDialog(order)}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Reembolsar
+                            </Button>
+                          )}
                         </div>
                       </div>
-
-                      {/* Additional info based on status */}
-                      {order.status === 'paid' && order.paid_at && (
-                        <p className="text-xs text-success mt-2">
-                          ✓ Pagamento confirmado em {formatDateTime(order.paid_at)}
-                        </p>
-                      )}
-                      {order.status === 'pending' && (
-                        <p className="text-xs text-warning mt-2">
-                          ⏳ Aguardando confirmação do pagamento
-                        </p>
-                      )}
-                      {order.status === 'failed' && (
-                        <p className="text-xs text-destructive mt-2">
-                          ✗ Pagamento não aprovado pela operadora
-                        </p>
-                      )}
-                      {order.status === 'refunded' && (
-                        <p className="text-xs text-warning mt-2">
-                          ↩ Valor devolvido ao cliente
-                        </p>
-                      )}
-                      {order.status === 'chargedback' && (
-                        <p className="text-xs text-destructive mt-2">
-                          ⚠ Contestação de pagamento (chargeback)
-                        </p>
-                      )}
-                      {order.status === 'canceled' && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Pedido cancelado
-                        </p>
-                      )}
                     </div>
                   );
                 })}
@@ -408,6 +441,46 @@ export default function StudentProfile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-warning">
+              <RotateCcw className="h-5 w-5" />
+              Confirmar Reembolso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a reembolsar o pedido do curso <strong>{refundingOrder?.course_title}</strong>.
+              </p>
+              <p>
+                Valor: <strong>{refundingOrder ? formatCurrency(refundingOrder.amount) : ''}</strong>
+              </p>
+              <p className="text-destructive">
+                Esta ação irá devolver o valor ao cliente e revogar o acesso ao curso.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefund}
+              disabled={refunding}
+              className="bg-warning text-warning-foreground hover:bg-warning/90"
+            >
+              {refunding ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                'Confirmar Reembolso'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -70,6 +70,8 @@ serve(async (req) => {
         return handleGetPaymentConfig();
       case 'get_order_stats':
         return handleGetOrderStats(PAGARME_API_KEY, supabase);
+      case 'refund_order':
+        return handleRefundOrder(payload, PAGARME_API_KEY, supabase);
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -748,6 +750,126 @@ async function handleGetOrderStats(apiKey: string, supabase: any) {
       error: 'Failed to fetch stats' 
     }), {
       status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// ===========================================
+// REFUND ORDER HANDLER
+// ===========================================
+
+async function handleRefundOrder(
+  payload: any,
+  apiKey: string,
+  supabase: any
+) {
+  const { orderId } = payload;
+
+  if (!orderId) {
+    return new Response(JSON.stringify({ error: 'Order ID is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Fetch order from database
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('id', orderId)
+    .single();
+
+  if (orderError || !order) {
+    return new Response(JSON.stringify({ error: 'Order not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (order.status !== 'paid') {
+    return new Response(JSON.stringify({ error: 'Only paid orders can be refunded' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (!order.pagarme_charge_id) {
+    return new Response(JSON.stringify({ error: 'No Pagar.me charge ID found for this order' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Call Pagar.me API to refund the charge
+  const authString = btoa(`${apiKey}:`);
+  
+  try {
+    const refundResponse = await fetch(`${PAGARME_API_URL}/charges/${order.pagarme_charge_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Basic ${authString}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const refundData = await refundResponse.json();
+
+    if (!refundResponse.ok) {
+      console.error('Pagar.me refund error:', refundData);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to process refund with Pagar.me',
+        details: refundData
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Update order status in database
+    await supabase
+      .from('orders')
+      .update({ status: 'refunded' })
+      .eq('id', orderId);
+
+    // Revoke course enrollment
+    if (order.course_id) {
+      await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('user_id', order.user_id)
+        .eq('course_id', order.course_id);
+    }
+
+    // Create notification for user
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: order.user_id,
+        type: 'payment_refunded',
+        title: 'Reembolso processado',
+        message: `O reembolso para "${order.courses?.title || 'curso'}" foi processado. O acesso ao curso foi revogado.`,
+        link: null,
+        metadata: {
+          order_id: order.id,
+          course_id: order.course_id,
+          amount: order.amount
+        }
+      });
+
+    console.log(`[Refund] Order ${orderId} refunded successfully`);
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Refund processed successfully'
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Refund error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to process refund' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
