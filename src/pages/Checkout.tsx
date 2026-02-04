@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import Logo from '@/components/Logo';
 import { 
   Play, 
   Clock, 
@@ -15,7 +16,6 @@ import {
   Loader2,
   ArrowLeft
 } from 'lucide-react';
-import logoKanaflix from '@/assets/logo-kanaflix.png';
 
 interface Course {
   id: string;
@@ -188,7 +188,7 @@ export default function Checkout() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <img src={logoKanaflix} alt="Kanaflix" className="h-8 w-auto" />
+            <Logo className="h-8 w-auto" />
           </div>
           
           {user ? (

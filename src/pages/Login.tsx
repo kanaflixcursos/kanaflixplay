@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import logoKanaflix from '@/assets/logo-kanaflix.png';
+import Logo from '@/components/Logo';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
 export default function Login() {
@@ -75,11 +75,7 @@ export default function Login() {
         </div>
         
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
-          <img 
-            src={logoKanaflix} 
-            alt="Kanaflix" 
-            className="h-16 w-auto mb-8" 
-          />
+          <Logo className="h-16 w-auto mb-8" />
           <h1 className="text-3xl font-bold text-foreground text-center mb-4">
             Bem-vindo ao Kanaflix Play
           </h1>
@@ -94,11 +90,7 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <img 
-              src={logoKanaflix} 
-              alt="Kanaflix" 
-              className="h-12 w-auto" 
-            />
+            <Logo className="h-12 w-auto" />
           </div>
 
           {/* Header */}
