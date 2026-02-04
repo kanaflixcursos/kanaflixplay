@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/components/ThemeProvider';
 import { NavLink } from '@/components/NavLink';
 import Footer from '@/components/Footer';
 import {
@@ -19,7 +20,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Home, LogOut, Shield, Compass, GraduationCap, Bell } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Home, LogOut, Shield, Compass, GraduationCap, Bell, Moon, ShoppingBag } from 'lucide-react';
 import logoKanaflix from '@/assets/logo-kanaflix.png';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,11 +36,14 @@ interface StudentLayoutProps {
 
 export default function StudentLayout({ children }: StudentLayoutProps) {
   const { user, role, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const isDarkMode = theme === 'dark';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -212,6 +217,16 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
+                className="w-full justify-start gap-2 h-9 px-3"
+                onClick={() => navigate('/purchases')}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Minhas Compras
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
                 className="w-full justify-start gap-2 h-9 px-3 relative"
                 onClick={() => navigate('/notifications')}
               >
@@ -223,6 +238,22 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                   </span>
                 )}
               </Button>
+
+              <Separator className="my-2" />
+
+              {/* Dark Mode Toggle */}
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Moon className="h-4 w-4" />
+                  <span className="text-sm">Modo Escuro</span>
+                </div>
+                <Switch
+                  checked={isDarkMode}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                />
+              </div>
+
+              <Separator className="my-2" />
 
               <Button
                 variant="ghost"
