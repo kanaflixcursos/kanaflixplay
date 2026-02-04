@@ -222,6 +222,7 @@ export default function CourseForm() {
         return;
       }
 
+      // Fetch videos from Pandavideo API
       const response = await fetch(
         `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=list&folder_id=${formData.pandavideo_folder_id}`,
         {
@@ -237,8 +238,8 @@ export default function CourseForm() {
         throw new Error(data.error || 'Erro ao buscar vídeos');
       }
 
-      const videoList: VideoItem[] = (data.videos || []).map((v: any) => {
-        // Duration comes from the 'length' field in the Pandavideo API (in seconds)
+      // Build video list from Pandavideo
+      const pandaVideos: VideoItem[] = (data.videos || []).map((v: any) => {
         let durationSeconds = 0;
         if (v.length && typeof v.length === 'number') {
           durationSeconds = v.length;
@@ -257,7 +258,52 @@ export default function CourseForm() {
         };
       });
 
-      setVideos(videoList);
+      // If editing, fetch saved lessons to preserve order and custom titles
+      if (isEditing && courseId) {
+        const { data: savedLessons } = await supabase
+          .from('lessons')
+          .select('pandavideo_video_id, title, order_index, duration_minutes')
+          .eq('course_id', courseId)
+          .order('order_index', { ascending: true });
+
+        if (savedLessons && savedLessons.length > 0) {
+          // Create a map of saved lessons by pandavideo_video_id
+          const savedLessonsMap = new Map(
+            savedLessons.map(lesson => [lesson.pandavideo_video_id, lesson])
+          );
+
+          // Separate videos that exist in saved lessons from new ones
+          const existingVideos: VideoItem[] = [];
+          const newVideos: VideoItem[] = [];
+
+          pandaVideos.forEach(video => {
+            const savedLesson = savedLessonsMap.get(video.id);
+            if (savedLesson) {
+              existingVideos.push({
+                ...video,
+                title: savedLesson.title || video.title, // Use saved title
+                duration: savedLesson.duration_minutes ? savedLesson.duration_minutes * 60 : video.duration,
+              });
+            } else {
+              newVideos.push(video);
+            }
+          });
+
+          // Sort existing videos by their saved order_index
+          existingVideos.sort((a, b) => {
+            const orderA = savedLessonsMap.get(a.id)?.order_index ?? 999;
+            const orderB = savedLessonsMap.get(b.id)?.order_index ?? 999;
+            return orderA - orderB;
+          });
+
+          // Append new videos at the end
+          setVideos([...existingVideos, ...newVideos]);
+        } else {
+          setVideos(pandaVideos);
+        }
+      } else {
+        setVideos(pandaVideos);
+      }
     } catch (error) {
       console.error('Error fetching videos:', error);
       toast.error('Erro ao carregar vídeos da pasta');
