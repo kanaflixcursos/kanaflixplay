@@ -13,6 +13,7 @@ interface PandaVideo {
   description?: string;
   status: string;
   duration?: number;
+  length?: number; // Duration in seconds from Pandavideo API
   folder_id?: string;
   player_url?: string;
   video_player?: string;
@@ -263,7 +264,9 @@ Deno.serve(async (req) => {
           
           console.log(`Video ${video.id} embed URL: ${embedUrl}`);
           
-          const durationMinutes = (videoDetails?.duration || video.duration) ? Math.ceil((videoDetails?.duration || video.duration || 0) / 60) : null;
+          // Duration comes from 'length' field in Pandavideo API (in seconds)
+          const durationSeconds = videoDetails?.length || video.length || videoDetails?.duration || video.duration || 0;
+          const durationMinutes = durationSeconds ? Math.ceil(durationSeconds / 60) : null;
           
           // Get thumbnail URL - try different possible fields from Pandavideo API
           const thumbnailUrl = videoDetails?.thumbnail || video.thumbnail || video.thumbnail_url || video.cover || null;

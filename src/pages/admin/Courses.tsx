@@ -65,6 +65,7 @@ interface Course {
   price: number | null;
   lessonCount: number;
   enrollmentCount: number;
+  totalDurationMinutes: number;
 }
 
 interface PandaFolder {
@@ -134,15 +135,20 @@ export default function AdminCourses() {
 
     const coursesWithStats = await Promise.all(
       (coursesData || []).map(async (course) => {
-        const [{ count: lessonCount }, { count: enrollmentCount }] = await Promise.all([
+        const [{ count: lessonCount }, { count: enrollmentCount }, { data: lessonDurations }] = await Promise.all([
           supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('course_id', course.id),
           supabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('course_id', course.id),
+          supabase.from('lessons').select('duration_minutes').eq('course_id', course.id),
         ]);
+
+        // Calculate total duration from all lessons
+        const totalDurationMinutes = (lessonDurations || []).reduce((sum, lesson) => sum + (lesson.duration_minutes || 0), 0);
 
         return {
           ...course,
           lessonCount: lessonCount || 0,
           enrollmentCount: enrollmentCount || 0,
+          totalDurationMinutes,
         };
       })
     );
@@ -247,10 +253,14 @@ export default function AdminCourses() {
     }
   };
 
-  const formatLastSync = (date: string | null) => {
-    if (!date) return 'Nunca sincronizado';
-    const d = new Date(date);
-    return `Sync: ${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  const formatTotalDuration = (minutes: number) => {
+    if (!minutes || minutes === 0) return null;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}min`;
+    }
+    return `${mins}min`;
   };
 
   const getCourseLink = (course: Course) => {
@@ -417,7 +427,9 @@ export default function AdminCourses() {
                             <Folder className="h-3 w-3" />
                             {getFolderName(course.pandavideo_folder_id)}
                           </span>
-                          <span>{formatLastSync(course.last_synced_at)}</span>
+                          {course.totalDurationMinutes > 0 && (
+                            <span>{formatTotalDuration(course.totalDurationMinutes)}</span>
+                          )}
                         </>
                       )}
                     </div>

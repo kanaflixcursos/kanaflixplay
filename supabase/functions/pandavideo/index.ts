@@ -99,6 +99,12 @@ Deno.serve(async (req) => {
         }
 
         const data = await response.json();
+        
+        // Log first video structure for debugging duration fields
+        if (data.videos && data.videos.length > 0) {
+          console.log("First video structure:", JSON.stringify(data.videos[0], null, 2));
+        }
+        
         return new Response(
           JSON.stringify(data),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
