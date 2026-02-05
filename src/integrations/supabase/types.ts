@@ -425,9 +425,96 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_orders: {
+        Row: {
+          amount: number | null
+          boleto_barcode: string | null
+          boleto_due_date: string | null
+          boleto_url: string | null
+          course_id: string | null
+          created_at: string | null
+          id: string | null
+          paid_at: string | null
+          payment_method: string | null
+          pix_expires_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          boleto_barcode?: never
+          boleto_due_date?: never
+          boleto_url?: never
+          course_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          pix_expires_at?: never
+          pix_qr_code?: never
+          pix_qr_code_url?: never
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          boleto_barcode?: never
+          boleto_due_date?: never
+          boleto_url?: never
+          course_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          pix_expires_at?: never
+          pix_qr_code?: never
+          pix_qr_code_url?: never
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      get_course_mate_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
