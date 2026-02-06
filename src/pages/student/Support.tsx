@@ -92,6 +92,8 @@ const categoryLabels: Record<string, string> = {
   other: 'Outro',
 };
 
+const MAX_OPEN_TICKETS = 2;
+
 export default function Support() {
   const { user, role } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -112,6 +114,10 @@ export default function Support() {
 
   const isAdmin = role === 'admin';
   const ticketIdFromUrl = searchParams.get('ticket');
+  
+  // Count open tickets (not closed/resolved)
+  const openTicketsCount = tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length;
+  const canCreateNewTicket = isAdmin || openTicketsCount < MAX_OPEN_TICKETS;
 
   const fetchTickets = useCallback(async () => {
     if (!user) return;
@@ -321,13 +327,19 @@ export default function Support() {
             <h1 className="text-2xl font-semibold tracking-tight">Suporte</h1>
             <p className="text-muted-foreground">Central de ajuda e atendimento</p>
           </div>
-          <Dialog open={isNewTicketOpen} onOpenChange={setIsNewTicketOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Solicitação
-              </Button>
-            </DialogTrigger>
+          <div className="flex items-center gap-3">
+            {!isAdmin && (
+              <span className="text-sm text-muted-foreground">
+                {openTicketsCount}/{MAX_OPEN_TICKETS} tickets abertos
+              </span>
+            )}
+            <Dialog open={isNewTicketOpen} onOpenChange={setIsNewTicketOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={!canCreateNewTicket}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Solicitação
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Nova Solicitação</DialogTitle>
@@ -386,7 +398,8 @@ export default function Support() {
                 </Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <Tabs defaultValue="tickets" className="space-y-4">
@@ -481,32 +494,50 @@ export default function Support() {
                     </div>
                   </ScrollArea>
 
-                  {/* Reply form */}
-                  {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (
-                    <div className="p-4 border-t">
-                      <div className="flex gap-2">
-                        <Textarea
-                          placeholder="Digite sua mensagem..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          rows={2}
-                          className="resize-none"
-                        />
-                        <Button
-                          onClick={handleSendMessage}
-                          disabled={!newMessage.trim() || submitting}
-                          size="icon"
-                          className="shrink-0 h-auto"
-                        >
-                          {submitting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
+                  {/* Reply form - Users can only reply after admin responds */}
+                  {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (() => {
+                    // Check if user can reply: admin always can, user only after admin replied
+                    const hasAdminReply = ticketMessages.some(m => m.is_admin_reply);
+                    const lastMessage = ticketMessages[ticketMessages.length - 1];
+                    const lastMessageIsFromAdmin = lastMessage?.is_admin_reply === true;
+                    const canUserReply = isAdmin || (hasAdminReply && lastMessageIsFromAdmin);
+                    
+                    if (!canUserReply && !isAdmin) {
+                      return (
+                        <div className="p-4 border-t bg-muted/30">
+                          <p className="text-sm text-muted-foreground text-center">
+                            Aguardando resposta do suporte...
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="p-4 border-t">
+                        <div className="flex gap-2">
+                          <Textarea
+                            placeholder="Digite sua mensagem..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            rows={2}
+                            className="resize-none"
+                          />
+                          <Button
+                            onClick={handleSendMessage}
+                            disabled={!newMessage.trim() || submitting}
+                            size="icon"
+                            className="shrink-0 h-auto"
+                          >
+                            {submitting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ) : tickets.length === 0 ? (
