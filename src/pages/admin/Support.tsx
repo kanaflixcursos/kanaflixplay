@@ -620,46 +620,48 @@ export default function AdminSupport() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-2">
+                  <div className="space-y-2">
                     {filteredTickets.map((ticket) => {
                       const status = statusConfig[ticket.status] || statusConfig.open;
                       const StatusIcon = status.icon;
 
                       return (
-                        <Card
+                        <div
                           key={ticket.id}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:bg-muted/50 transition-colors"
                           onClick={() => setSelectedTicket(ticket)}
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <Avatar className="h-10 w-10 shrink-0">
-                                  <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
-                                  <AvatarFallback>
-                                    {getInitials(ticket.user_profile?.full_name || 'U')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge variant="outline" className="text-xs shrink-0">
-                                      {categoryLabels[ticket.category] || ticket.category}
-                                    </Badge>
-                                    <Badge variant={status.variant} className="gap-1 shrink-0">
-                                      <StatusIcon className="h-3 w-3" />
-                                      {status.label}
-                                    </Badge>
-                                  </div>
-                                  <h4 className="font-medium truncate">{ticket.subject}</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {ticket.user_profile?.full_name || 'Usuário'} • {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
-                                  </p>
-                                </div>
-                              </div>
-                              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <Avatar className="h-9 w-9 shrink-0">
+                            <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {getInitials(ticket.user_profile?.full_name || 'U')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm truncate">
+                                {ticket.user_profile?.full_name || 'Usuário'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground truncate">
+                                {ticket.subject}
+                              </span>
                             </div>
-                          </CardContent>
-                        </Card>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={status.variant} className="gap-1 text-xs h-5">
+                                <StatusIcon className="h-3 w-3" />
+                                {status.label}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs h-5">
+                                {categoryLabels[ticket.category] || ticket.category}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
+                              </span>
+                            </div>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </div>
                       );
                     })}
                   </div>
