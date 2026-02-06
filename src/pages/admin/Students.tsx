@@ -52,7 +52,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, UserPlus, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -212,9 +212,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     setEnrolling(false);
   };
 
-  const handleToggleRole = async (student: Student) => {
-    const newRole = student.role === 'admin' ? 'student' : 'admin';
-    
+  const handleChangeRole = async (student: Student, newRole: 'student' | 'professor' | 'admin') => {
     const { error } = await supabase
       .from('user_roles')
       .update({ role: newRole })
@@ -223,7 +221,12 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     if (error) {
       toast.error('Erro ao alterar função');
     } else {
-      toast.success(`Função alterada para ${newRole}`);
+      const roleLabels: Record<string, string> = {
+        student: 'Aluno',
+        professor: 'Professor',
+        admin: 'Administrador'
+      };
+      toast.success(`Função alterada para ${roleLabels[newRole]}`);
       fetchData();
     }
   };
@@ -452,12 +455,24 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <Pencil className="h-4 w-4 mr-2" />
           Editar Perfil
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleOpenEnrollDialog(student)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Matricular em Curso
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => handleChangeRole(student, 'student')}
+          disabled={student.role === 'student'}
+        >
+          {student.role === 'student' ? '✓ ' : ''}Aluno
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleToggleRole(student)}>
-          {student.role === 'admin' ? 'Tornar Aluno' : 'Tornar Admin'}
+        <DropdownMenuItem 
+          onClick={() => handleChangeRole(student, 'professor')}
+          disabled={student.role === 'professor'}
+        >
+          {student.role === 'professor' ? '✓ ' : ''}Professor
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => handleChangeRole(student, 'admin')}
+          disabled={student.role === 'admin'}
+        >
+          {student.role === 'admin' ? '✓ ' : ''}Administrador
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>

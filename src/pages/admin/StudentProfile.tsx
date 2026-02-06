@@ -359,7 +359,7 @@ export default function StudentProfile() {
               )}
               <h2 className="text-xl font-semibold">{student.full_name || 'Sem nome'}</h2>
               <Badge variant={student.role === 'admin' ? 'default' : 'secondary'} className="mt-2">
-                {student.role === 'admin' ? 'Administrador' : 'Aluno'}
+                {student.role === 'admin' ? 'Administrador' : student.role === 'professor' ? 'Professor' : 'Aluno'}
               </Badge>
             </div>
 

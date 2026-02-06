@@ -264,8 +264,8 @@ export default function AdminCourses() {
   };
 
   const getCourseLink = (course: Course) => {
-    const baseUrl = 'https://kanaflixplay.lovable.app';
-    return `${baseUrl}/courses/${course.id}`;
+    const baseUrl = 'https://cursos.kanaflix.com.br';
+    return `${baseUrl}/checkout/${course.id}`;
   };
 
   const handleCopyLink = async (course: Course) => {
