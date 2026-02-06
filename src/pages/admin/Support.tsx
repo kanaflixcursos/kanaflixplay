@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { 
   MessageSquare, 
@@ -30,8 +32,12 @@ import {
   User,
   Mail,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Search,
+  Check
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -86,6 +92,13 @@ interface RefundRequest {
   };
 }
 
+interface UserOption {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
   open: { label: 'Aberto', variant: 'secondary', icon: Clock },
   in_progress: { label: 'Em Andamento', variant: 'default', icon: RefreshCcw },
@@ -125,7 +138,58 @@ export default function AdminSupport() {
   const [adminNotes, setAdminNotes] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
 
+  // New ticket modal state
+  const [showNewTicketModal, setShowNewTicketModal] = useState(false);
+  const [newTicketData, setNewTicketData] = useState({
+    subject: '',
+    message: '',
+    category: 'question',
+  });
+  const [creatingTicket, setCreatingTicket] = useState(false);
+  
+  // Client search state
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
+  const [selectedClient, setSelectedClient] = useState<UserOption | null>(null);
+  const [allClients, setAllClients] = useState<UserOption[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
+
   const ticketIdFromUrl = searchParams.get('ticket');
+  
+  // Fetch all clients once
+  const fetchClients = useCallback(async () => {
+    setLoadingClients(true);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, email, avatar_url')
+      .order('full_name', { ascending: true })
+      .limit(500);
+    
+    if (!error && data) {
+      setAllClients(data);
+    }
+    setLoadingClients(false);
+  }, []);
+
+  // Filtered clients based on search
+  const filteredClients = useMemo(() => {
+    if (!clientSearch.trim()) return allClients.slice(0, 20);
+    
+    const search = clientSearch.toLowerCase();
+    return allClients
+      .filter(c => 
+        (c.full_name?.toLowerCase().includes(search)) ||
+        (c.email?.toLowerCase().includes(search))
+      )
+      .slice(0, 20);
+  }, [allClients, clientSearch]);
+  
+  // Fetch clients when modal opens
+  useEffect(() => {
+    if (showNewTicketModal && allClients.length === 0) {
+      fetchClients();
+    }
+  }, [showNewTicketModal, allClients.length, fetchClients]);
 
   const fetchTickets = useCallback(async () => {
     const { data: ticketsData, error } = await supabase
@@ -302,6 +366,42 @@ export default function AdminSupport() {
       setSelectedTicket({ ...selectedTicket, status });
       fetchTickets();
     }
+  };
+
+  const handleCreateTicket = async () => {
+    if (!selectedClient || !newTicketData.subject.trim() || !newTicketData.message.trim()) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setCreatingTicket(true);
+    try {
+      // Create ticket on behalf of the selected client
+      const { data: ticket, error } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: selectedClient.user_id,
+          subject: newTicketData.subject.trim(),
+          message: newTicketData.message.trim(),
+          category: newTicketData.category,
+          status: 'open',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Ticket criado com sucesso!');
+      setShowNewTicketModal(false);
+      setNewTicketData({ subject: '', message: '', category: 'question' });
+      setSelectedClient(null);
+      setClientSearch('');
+      fetchTickets();
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      toast.error('Erro ao criar ticket');
+    }
+    setCreatingTicket(false);
   };
 
   const handleReviewRefund = async (approved: boolean) => {
@@ -593,8 +693,8 @@ export default function AdminSupport() {
               </Card>
             ) : (
               <>
-                {/* Filters */}
-                <div className="flex gap-2">
+                {/* Filters and New Ticket Button */}
+                <div className="flex items-center justify-between gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="Filtrar por status" />
@@ -607,6 +707,11 @@ export default function AdminSupport() {
                       <SelectItem value="closed">Fechados</SelectItem>
                     </SelectContent>
                   </Select>
+                  
+                  <Button onClick={() => setShowNewTicketModal(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Nova Solicitação
+                  </Button>
                 </div>
 
                 {filteredTickets.length === 0 ? (
@@ -813,6 +918,176 @@ export default function AdminSupport() {
               >
                 {processingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Aprovar Reembolso
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* New Ticket Modal */}
+        <Dialog open={showNewTicketModal} onOpenChange={(open) => {
+          if (!open) {
+            setShowNewTicketModal(false);
+            setNewTicketData({ subject: '', message: '', category: 'question' });
+            setSelectedClient(null);
+            setClientSearch('');
+          }
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Nova Solicitação</DialogTitle>
+              <DialogDescription>
+                Crie um ticket de suporte em nome de um cliente
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Client selector */}
+              <div className="space-y-2">
+                <Label>Cliente *</Label>
+                <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clientSearchOpen}
+                      className="w-full justify-between h-auto min-h-10"
+                    >
+                      {selectedClient ? (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={selectedClient.avatar_url || undefined} />
+                            <AvatarFallback className="text-xs">
+                              {getInitials(selectedClient.full_name || 'U')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="text-left">
+                            <p className="text-sm font-medium">{selectedClient.full_name || 'Usuário'}</p>
+                            <p className="text-xs text-muted-foreground">{selectedClient.email}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">Buscar por nome ou email...</span>
+                      )}
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput 
+                        placeholder="Digite o nome ou email do cliente..." 
+                        value={clientSearch}
+                        onValueChange={setClientSearch}
+                      />
+                      <CommandList>
+                        {loadingClients ? (
+                          <div className="flex items-center justify-center py-6">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : filteredClients.length === 0 ? (
+                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        ) : (
+                          <CommandGroup>
+                            {filteredClients.map((client) => (
+                              <CommandItem
+                                key={client.user_id}
+                                value={client.user_id}
+                                onSelect={() => {
+                                  setSelectedClient(client);
+                                  setClientSearchOpen(false);
+                                }}
+                                className="flex items-center gap-2 py-2"
+                              >
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={client.avatar_url || undefined} />
+                                  <AvatarFallback className="text-xs">
+                                    {getInitials(client.full_name || 'U')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    {client.full_name || 'Usuário sem nome'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {client.email}
+                                  </p>
+                                </div>
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4 shrink-0",
+                                    selectedClient?.user_id === client.user_id
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select
+                  value={newTicketData.category}
+                  onValueChange={(val) => setNewTicketData(prev => ({ ...prev, category: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="question">Dúvida</SelectItem>
+                    <SelectItem value="feedback">Feedback</SelectItem>
+                    <SelectItem value="bug">Problema Técnico</SelectItem>
+                    <SelectItem value="other">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Subject */}
+              <div className="space-y-2">
+                <Label htmlFor="new-ticket-subject">Assunto *</Label>
+                <Input
+                  id="new-ticket-subject"
+                  placeholder="Assunto do ticket"
+                  value={newTicketData.subject}
+                  onChange={(e) => setNewTicketData(prev => ({ ...prev, subject: e.target.value }))}
+                  maxLength={200}
+                />
+              </div>
+
+              {/* Message */}
+              <div className="space-y-2">
+                <Label htmlFor="new-ticket-message">Mensagem *</Label>
+                <Textarea
+                  id="new-ticket-message"
+                  placeholder="Descreva a solicitação..."
+                  value={newTicketData.message}
+                  onChange={(e) => setNewTicketData(prev => ({ ...prev, message: e.target.value }))}
+                  rows={4}
+                  maxLength={2000}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowNewTicketModal(false)}
+                disabled={creatingTicket}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateTicket}
+                disabled={creatingTicket || !selectedClient || !newTicketData.subject.trim() || !newTicketData.message.trim()}
+              >
+                {creatingTicket && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Criar Ticket
               </Button>
             </DialogFooter>
           </DialogContent>
