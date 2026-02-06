@@ -61,7 +61,7 @@ export default function SidebarProfileBox({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 h-9 px-3"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal"
           onClick={() => navigate(variant === 'admin' ? '/admin/courses' : '/')}
         >
           <GraduationCap className="h-4 w-4" />
@@ -72,7 +72,7 @@ export default function SidebarProfileBox({
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start gap-2 h-9 px-3"
+            className="w-full justify-start gap-2 h-9 px-3 font-normal"
             onClick={() => navigate('/purchases')}
           >
             <ShoppingBag className="h-4 w-4" />
@@ -83,7 +83,7 @@ export default function SidebarProfileBox({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 relative"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
           onClick={() => navigate('/notifications')}
         >
           <Bell className="h-4 w-4" />
@@ -98,7 +98,7 @@ export default function SidebarProfileBox({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 h-9 px-3"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal"
           onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
         >
           <HelpCircle className="h-4 w-4" />
@@ -111,7 +111,7 @@ export default function SidebarProfileBox({
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Moon className="h-4 w-4" />
-            <span className="text-sm">Modo Escuro</span>
+            <span className="text-sm font-normal">Modo Escuro</span>
           </div>
           <Switch
             checked={isDarkMode}
@@ -124,7 +124,7 @@ export default function SidebarProfileBox({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
           onClick={onSignOut}
         >
           <LogOut className="h-4 w-4" />
