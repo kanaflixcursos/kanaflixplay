@@ -19,9 +19,25 @@ const brand = {
   white: "#ffffff",
   border: "#e5e5e5",
   success: "#16a34a",
+  // Dark mode / mesh gradient colors
+  darkBg: "#141619",
+  darkCard: "#1c1f24",
+  accent: "#1f4d47",
 };
 
-// Simplified email template
+// Logo URL (dark version for dark header)
+const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix-white.png`;
+
+// Mesh gradient header for emails
+const meshGradientHeader = `
+  <td style="background: linear-gradient(135deg, ${brand.darkBg} 0%, ${brand.darkCard} 50%, ${brand.darkBg} 100%); padding: 32px; text-align: center; position: relative;">
+    <!-- Mesh gradient overlay effect -->
+    <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 20% 30%, rgba(230, 118, 53, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(31, 77, 71, 0.12) 0%, transparent 50%); pointer-events: none;"></div>
+    <img src="${LOGO_URL}" alt="Kanaflix Play" height="32" style="display: block; margin: 0 auto; position: relative; z-index: 1;">
+  </td>
+`;
+
+// Simplified email template with mesh gradient header
 const emailTemplate = (content: string, preheader = "") => `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -36,11 +52,9 @@ const emailTemplate = (content: string, preheader = "") => `
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; background-color: ${brand.white}; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <!-- Header -->
+          <!-- Mesh Gradient Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%); padding: 24px; text-align: center;">
-              <img src="${PRODUCTION_URL}/favicon.png" alt="Kanaflix" width="40" height="40" style="display: block; margin: 0 auto;">
-            </td>
+            ${meshGradientHeader}
           </tr>
           <!-- Content -->
           <tr>
@@ -55,7 +69,7 @@ const emailTemplate = (content: string, preheader = "") => `
                 © ${new Date().getFullYear()} Kanaflix Play
               </p>
               <p style="margin: 8px 0 0; font-size: 13px;">
-                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none;">kanaflixplay.lovable.app</a>
+                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none;">cursos.kanaflix.com.br</a>
               </p>
             </td>
           </tr>
