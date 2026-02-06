@@ -91,6 +91,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, redirectTo?: string) => {
+    // Check if email already exists in profiles
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingProfile) {
+      return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
+    }
+
     // Use the published URL for email confirmation redirect
     const baseUrl = import.meta.env.PROD 
       ? 'https://cursos.kanaflix.com.br'
@@ -101,14 +112,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? `${baseUrl}${redirectTo}`
       : baseUrl;
     
-    const { error } = await supabase.auth.signUp({
-      email,
+    const { data, error } = await supabase.auth.signUp({
+      email: email.toLowerCase().trim(),
       password,
       options: {
         data: { full_name: fullName },
         emailRedirectTo: emailRedirectUrl,
       },
     });
+
+    // Supabase returns a user with identities = [] if email already exists
+    if (data?.user && data.user.identities?.length === 0) {
+      return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
+    }
+
     return { error };
   };
 
