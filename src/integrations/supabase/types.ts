@@ -640,6 +640,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_public_lesson_count: {
+        Args: { course_id_param: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
