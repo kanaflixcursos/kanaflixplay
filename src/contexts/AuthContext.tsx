@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string, redirectTo?: string) => {
     // Use the published URL for email confirmation redirect
     const baseUrl = import.meta.env.PROD 
-      ? 'https://kanaflixplay.lovable.app'
+      ? 'https://cursos.kanaflix.com.br'
       : window.location.origin;
     
     // If there's a custom redirect, include it in the email link

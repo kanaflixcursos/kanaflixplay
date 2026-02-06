@@ -1,7 +1,7 @@
 import { Resend } from "npm:resend@2.0.0";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const PRODUCTION_URL = "https://kanaflixplay.lovable.app";
+const PRODUCTION_URL = "https://cursos.kanaflix.com.br";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
