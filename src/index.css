@@ -243,7 +243,7 @@ All colors MUST be HSL.
   }
 
   .sidebar-profile-name {
-    @apply text-sm font-medium truncate text-foreground;
+    @apply text-sm font-normal truncate text-foreground;
   }
 
   .sidebar-profile-email {
