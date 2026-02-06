@@ -42,6 +42,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     email: null,
   });
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingSupportCount, setPendingSupportCount] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -73,12 +74,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setUnreadCount(count || 0);
   }, [user]);
 
+  const fetchPendingSupportCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('support_tickets')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['open', 'in_progress']);
+    
+    setPendingSupportCount(count || 0);
+  }, []);
+
   useEffect(() => {
     fetchUnreadNotifications();
+    fetchPendingSupportCount();
 
     if (!user) return;
 
-    const channel = supabase
+    const notificationsChannel = supabase
       .channel('notifications-admin-sidebar')
       .on(
         'postgres_changes',
@@ -94,10 +105,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )
       .subscribe();
 
+    const ticketsChannel = supabase
+      .channel('tickets-admin-sidebar')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        () => {
+          fetchPendingSupportCount();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(ticketsChannel);
     };
-  }, [user, fetchUnreadNotifications]);
+  }, [user, fetchUnreadNotifications, fetchPendingSupportCount]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -161,6 +188,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               userEmail={userEmail}
               avatarUrl={profile.avatar_url}
               unreadCount={unreadCount}
+              pendingSupportCount={pendingSupportCount}
               onSignOut={handleSignOut}
               variant="admin"
             />

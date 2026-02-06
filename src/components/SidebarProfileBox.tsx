@@ -11,6 +11,7 @@ interface SidebarProfileBoxProps {
   userEmail: string;
   avatarUrl?: string | null;
   unreadCount?: number;
+  pendingSupportCount?: number;
   onSignOut: () => void;
   variant?: 'student' | 'admin';
 }
@@ -20,6 +21,7 @@ export default function SidebarProfileBox({
   userEmail,
   avatarUrl,
   unreadCount = 0,
+  pendingSupportCount = 0,
   onSignOut,
   variant = 'student',
 }: SidebarProfileBoxProps) {
@@ -98,11 +100,16 @@ export default function SidebarProfileBox({
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 font-normal"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
           onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
         >
           <HelpCircle className="h-4 w-4" />
           Suporte
+          {variant === 'admin' && pendingSupportCount > 0 && (
+            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+              {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
+            </span>
+          )}
         </Button>
 
         <Separator className="my-2" />
