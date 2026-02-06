@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,8 @@ export default function Login() {
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>('signin');
+  const [resetSent, setResetSent] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -65,6 +67,28 @@ export default function Login() {
     setIsLoading(false);
   };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const baseUrl = import.meta.env.PROD 
+      ? 'https://cursos.kanaflix.com.br'
+      : window.location.origin;
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
+      redirectTo: `${baseUrl}/reset-password`,
+    });
+    
+    if (error) {
+      toast.error('Erro ao enviar email: ' + error.message);
+    } else {
+      setResetSent(true);
+      toast.success('Email enviado! Verifique sua caixa de entrada.');
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex bg-background relative">
       {/* Theme Toggle - positioned absolutely */}
@@ -102,40 +126,56 @@ export default function Login() {
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-semibold text-foreground">
-              {activeTab === 'signin' ? 'Entre na sua conta' : 'Crie sua conta'}
+              {activeTab === 'signin' && 'Entre na sua conta'}
+              {activeTab === 'signup' && 'Crie sua conta'}
+              {activeTab === 'reset' && 'Recuperar senha'}
             </h2>
             <p className="text-muted-foreground">
-              {activeTab === 'signin' 
-                ? 'Acesse seus cursos e continue aprendendo' 
-                : 'Comece sua jornada de aprendizado hoje'}
+              {activeTab === 'signin' && 'Acesse seus cursos e continue aprendendo'}
+              {activeTab === 'signup' && 'Comece sua jornada de aprendizado hoje'}
+              {activeTab === 'reset' && 'Enviaremos um link para redefinir sua senha'}
             </p>
           </div>
 
-          {/* Tab Switcher */}
-          <div className="flex p-1 bg-muted rounded-lg">
+          {/* Tab Switcher - only show when not in reset mode */}
+          {activeTab !== 'reset' && (
+            <div className="flex p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                onClick={() => setActiveTab('signin')}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'signin'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('signup')}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'signup'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Criar Conta
+              </button>
+            </div>
+          )}
+
+          {/* Back button for reset mode */}
+          {activeTab === 'reset' && (
             <button
               type="button"
-              onClick={() => setActiveTab('signin')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                activeTab === 'signin'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              onClick={() => { setActiveTab('signin'); setResetSent(false); }}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Entrar
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para login
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('signup')}
-              className={`flex-1 py-2.5 text-sm font-medium rounded-md transition-all duration-200 ${
-                activeTab === 'signup'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Criar Conta
-            </button>
-          </div>
+          )}
 
           {/* Sign In Form */}
           {activeTab === 'signin' && (
@@ -194,7 +234,69 @@ export default function Login() {
               >
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('reset')}
+                className="w-full text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Esqueceu sua senha?
+              </button>
             </form>
+          )}
+
+          {/* Reset Password Form */}
+          {activeTab === 'reset' && (
+            <div className="space-y-5">
+              {resetSent ? (
+                <div className="text-center space-y-4 py-4">
+                  <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <Mail className="h-8 w-8 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground">Email enviado!</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    className="w-full h-11"
+                    onClick={() => { setActiveTab('signin'); setResetSent(false); }}
+                  >
+                    Voltar para login
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleResetPassword} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="resetEmail" className="text-sm font-medium">
+                      Email
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="pl-10 h-11"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 text-base font-medium" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+                  </Button>
+                </form>
+              )}
+            </div>
           )}
 
           {/* Sign Up Form */}
