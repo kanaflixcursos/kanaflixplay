@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, MessageCircle, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, MessageCircle, Reply, Trash2, ChevronDown, ChevronUp, GraduationCap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -18,6 +19,7 @@ interface Comment {
   created_at: string;
   user_name?: string;
   user_avatar?: string;
+  user_role?: 'admin' | 'student' | 'professor';
   replies?: Comment[];
 }
 
@@ -54,8 +56,18 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
       .select('user_id, full_name, avatar_url')
       .in('user_id', userIds);
 
+    // Fetch user roles
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('user_id', userIds);
+
     const profileMap = new Map<string, { name: string | null; avatar: string | null }>(
       (profiles || []).map(p => [p.user_id, { name: p.full_name, avatar: p.avatar_url }])
+    );
+
+    const roleMap = new Map<string, string>(
+      (roles || []).map(r => [r.user_id, r.role])
     );
 
     // Organize comments into tree structure
@@ -63,6 +75,7 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
       ...c,
       user_name: profileMap.get(c.user_id)?.name || 'Usuário',
       user_avatar: profileMap.get(c.user_id)?.avatar || undefined,
+      user_role: roleMap.get(c.user_id) as 'admin' | 'student' | 'professor' | undefined,
     }));
 
     // Separate root comments and replies
@@ -231,8 +244,19 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
                   <AvatarFallback>{getInitials(comment.user_name || 'U')}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm">{comment.user_name}</span>
+                    {comment.user_role === 'professor' && (
+                      <Badge variant="secondary" className="gap-1 text-xs h-5">
+                        <GraduationCap className="h-3 w-3" />
+                        Professor
+                      </Badge>
+                    )}
+                    {comment.user_role === 'admin' && (
+                      <Badge variant="default" className="text-xs h-5">
+                        Admin
+                      </Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.created_at), {
                         addSuffix: true,
@@ -329,8 +353,19 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm">{reply.user_name}</span>
+                          {reply.user_role === 'professor' && (
+                            <Badge variant="secondary" className="gap-1 text-xs h-5">
+                              <GraduationCap className="h-3 w-3" />
+                              Professor
+                            </Badge>
+                          )}
+                          {reply.user_role === 'admin' && (
+                            <Badge variant="default" className="text-xs h-5">
+                              Admin
+                            </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(reply.created_at), {
                               addSuffix: true,

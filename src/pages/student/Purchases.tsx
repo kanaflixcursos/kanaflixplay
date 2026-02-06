@@ -3,7 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { 
   CreditCard, 
   QrCode, 
@@ -14,11 +18,14 @@ import {
   XCircle, 
   AlertCircle,
   Receipt,
-  ShoppingBag
+  ShoppingBag,
+  RefreshCcw,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StudentLayout from '@/components/layouts/StudentLayout';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -35,6 +42,10 @@ interface Order {
   course?: {
     title: string;
     thumbnail_url: string | null;
+  } | null;
+  refund_request?: {
+    id: string;
+    status: string;
   } | null;
 }
 
@@ -56,28 +67,78 @@ export default function Purchases() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [submittingRefund, setSubmittingRefund] = useState(false);
+
+  const fetchOrders = async () => {
+    if (!user) return;
+
+    // Fetch orders
+    const { data: ordersData, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        course:courses(title, thumbnail_url)
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching orders:', error);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch refund requests for these orders
+    const orderIds = (ordersData || []).map(o => o.id);
+    const { data: refundRequests } = await supabase
+      .from('refund_requests')
+      .select('id, order_id, status')
+      .in('order_id', orderIds);
+
+    const refundMap = new Map(
+      (refundRequests || []).map(r => [r.order_id, r])
+    );
+
+    const ordersWithRefunds = (ordersData || []).map(o => ({
+      ...o,
+      refund_request: refundMap.get(o.id) || null,
+    }));
+
+    setOrders(ordersWithRefunds);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          course:courses(title, thumbnail_url)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setOrders(data);
-      }
-      setLoading(false);
-    };
-
     fetchOrders();
   }, [user]);
+
+  const handleRequestRefund = async () => {
+    if (!user || !refundingOrder || !refundReason.trim()) return;
+
+    setSubmittingRefund(true);
+
+    const { error } = await supabase
+      .from('refund_requests')
+      .insert({
+        order_id: refundingOrder.id,
+        user_id: user.id,
+        reason: refundReason.trim(),
+      });
+
+    if (error) {
+      console.error('Error creating refund request:', error);
+      toast.error('Erro ao solicitar reembolso');
+    } else {
+      toast.success('Solicitação de reembolso enviada! Você será notificado quando for analisada.');
+      setRefundingOrder(null);
+      setRefundReason('');
+      fetchOrders();
+    }
+
+    setSubmittingRefund(false);
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -222,7 +283,7 @@ export default function Purchases() {
                             </div>
                           )}
 
-                          {/* Boleto due date */}
+                        {/* Boleto due date */}
                           {order.payment_method === 'boleto' && order.status === 'pending' && order.boleto_due_date && (
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Vencimento</p>
@@ -233,11 +294,43 @@ export default function Purchases() {
                           )}
                         </div>
 
-                        {/* Order ID */}
-                        <div className="pt-2 border-t">
+                        {/* Actions */}
+                        <div className="flex items-center justify-between pt-2 border-t">
                           <p className="text-xs text-muted-foreground">
                             Pedido #{order.id.slice(0, 8).toUpperCase()}
                           </p>
+                          
+                          {order.status === 'paid' && !order.refund_request && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setRefundingOrder(order);
+                                setRefundReason('');
+                              }}
+                            >
+                              <RefreshCcw className="h-4 w-4 mr-1" />
+                              Solicitar Reembolso
+                            </Button>
+                          )}
+
+                          {order.refund_request && (
+                            <Badge 
+                              variant={
+                                order.refund_request.status === 'approved' ? 'default' :
+                                order.refund_request.status === 'rejected' ? 'destructive' : 'secondary'
+                              }
+                              className="gap-1"
+                            >
+                              {order.refund_request.status === 'pending' && <Clock className="h-3 w-3" />}
+                              {order.refund_request.status === 'approved' && <CheckCircle2 className="h-3 w-3" />}
+                              {order.refund_request.status === 'rejected' && <XCircle className="h-3 w-3" />}
+                              Reembolso {
+                                order.refund_request.status === 'pending' ? 'Solicitado' :
+                                order.refund_request.status === 'approved' ? 'Aprovado' : 'Recusado'
+                              }
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -247,6 +340,54 @@ export default function Purchases() {
             })}
           </div>
         )}
+
+        {/* Refund request dialog */}
+        <Dialog open={!!refundingOrder} onOpenChange={(open) => !open && setRefundingOrder(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Solicitar Reembolso</DialogTitle>
+              <DialogDescription>
+                Descreva o motivo da sua solicitação de reembolso
+              </DialogDescription>
+            </DialogHeader>
+
+            {refundingOrder && (
+              <div className="space-y-4">
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm font-medium">{refundingOrder.course?.title}</p>
+                  <p className="text-lg font-semibold">{formatCurrency(refundingOrder.amount)}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="refund-reason">Motivo da solicitação *</Label>
+                  <Textarea
+                    id="refund-reason"
+                    placeholder="Explique por que você deseja o reembolso..."
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Sua solicitação será analisada pela nossa equipe e você será notificado sobre a decisão.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRefundingOrder(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleRequestRefund}
+                disabled={!refundReason.trim() || submittingRefund}
+              >
+                {submittingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Enviar Solicitação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </StudentLayout>
   );

@@ -19,13 +19,14 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, ShoppingCart, HelpCircle } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
   { title: 'Compras', url: '/admin/orders', icon: ShoppingCart },
+  { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
 ];
 
 interface AdminLayoutProps {

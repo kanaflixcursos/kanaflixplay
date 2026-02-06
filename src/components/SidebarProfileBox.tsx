@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon, Bell, GraduationCap, ShoppingBag } from 'lucide-react';
+import { LogOut, Moon, Bell, GraduationCap, ShoppingBag, HelpCircle } from 'lucide-react';
 
 interface SidebarProfileBoxProps {
   userName: string;
@@ -93,6 +93,16 @@ export default function SidebarProfileBox({
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 h-9 px-3"
+          onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
+        >
+          <HelpCircle className="h-4 w-4" />
+          Suporte
         </Button>
 
         <Separator className="my-2" />
