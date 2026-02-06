@@ -16,6 +16,7 @@ import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
 import NotificationsPage from "@/pages/student/Notifications";
 import PurchasesPage from "@/pages/student/Purchases";
+import SupportPage from "@/pages/student/Support";
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -26,6 +27,7 @@ import AdminStudents from "@/pages/admin/Students";
 import AdminStudentProfile from "@/pages/admin/StudentProfile";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminComments from "@/pages/admin/Comments";
+import AdminSupport from "@/pages/admin/Support";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -77,6 +79,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <PurchasesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/suporte"
+                element={
+                  <ProtectedRoute>
+                    <SupportPage />
                   </ProtectedRoute>
                 }
               />
@@ -169,6 +179,14 @@ const App = () => (
                     <AdminLayout>
                       <AdminComments />
                     </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/suporte"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminSupport />
                   </ProtectedRoute>
                 }
               />
