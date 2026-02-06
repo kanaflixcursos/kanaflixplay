@@ -68,12 +68,9 @@ export default function Checkout() {
 
     setCourse(courseData);
 
-    // Fetch lesson count
-    const { count } = await supabase
-      .from('lessons')
-      .select('*', { count: 'exact', head: true })
-      .eq('course_id', courseId)
-      .eq('is_hidden', false);
+    // Fetch lesson count using RPC (bypasses RLS for public checkout)
+    const { data: count } = await supabase
+      .rpc('get_public_lesson_count', { course_id_param: courseId });
 
     setLessonCount(count || 0);
     setLoading(false);
