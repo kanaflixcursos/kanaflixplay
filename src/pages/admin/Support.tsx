@@ -130,7 +130,7 @@ export default function AdminSupport() {
   const [newMessage, setNewMessage] = useState('');
   
   // Filter states
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [contentSearch, setContentSearch] = useState('');
   
@@ -173,16 +173,7 @@ export default function AdminSupport() {
     }));
 
     setTickets(ticketsWithProfiles);
-
-    // Select ticket from URL if present
-    if (ticketIdFromUrl && !selectedTicket) {
-      const ticket = ticketsWithProfiles.find(t => t.id === ticketIdFromUrl);
-      if (ticket) {
-        setSelectedTicket(ticket);
-        setExpandedTickets(prev => new Set([...prev, ticket.id]));
-      }
-    }
-  }, [ticketIdFromUrl, selectedTicket]);
+  }, []);
 
   const fetchRefundRequests = useCallback(async () => {
     const { data: refundsData, error } = await supabase
@@ -270,7 +261,7 @@ export default function AdminSupport() {
       setSearchParams({ ticket: selectedTicket.id });
     } else {
       setTicketMessages([]);
-      setSearchParams({});
+      // setSearchParams is handled when collapsing the selected ticket (to avoid loops)
     }
   }, [selectedTicket, setSearchParams]);
 
@@ -423,7 +414,11 @@ export default function AdminSupport() {
 
     setSelectedTicket((prev) => {
       if (open) return ticket;
-      if (prev?.id === ticket.id) return null;
+      if (prev?.id === ticket.id) {
+        // remove ?ticket=... to avoid auto-reselect loops
+        setSearchParams({});
+        return null;
+      }
       return prev;
     });
   };
