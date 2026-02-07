@@ -413,18 +413,19 @@ export default function AdminSupport() {
     }).format(value / 100);
   };
 
-  const toggleTicketExpand = (ticket: SupportTicket) => {
-    const newExpanded = new Set(expandedTickets);
-    if (newExpanded.has(ticket.id)) {
-      newExpanded.delete(ticket.id);
-      if (selectedTicket?.id === ticket.id) {
-        setSelectedTicket(null);
-      }
-    } else {
-      newExpanded.add(ticket.id);
-      setSelectedTicket(ticket);
-    }
-    setExpandedTickets(newExpanded);
+  const setTicketExpanded = (ticket: SupportTicket, open: boolean) => {
+    setExpandedTickets((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(ticket.id);
+      else next.delete(ticket.id);
+      return next;
+    });
+
+    setSelectedTicket((prev) => {
+      if (open) return ticket;
+      if (prev?.id === ticket.id) return null;
+      return prev;
+    });
   };
 
   // Filter tickets based on status and search
@@ -583,11 +584,11 @@ export default function AdminSupport() {
                   const isPending = ticket.status === 'open' || ticket.status === 'in_progress';
 
                   return (
-                    <Collapsible
-                      key={ticket.id}
-                      open={isExpanded}
-                      onOpenChange={() => toggleTicketExpand(ticket)}
-                    >
+                     <Collapsible
+                       key={ticket.id}
+                       open={isExpanded}
+                       onOpenChange={(open) => setTicketExpanded(ticket, open)}
+                     >
                       <div className="bg-card rounded-xl border overflow-hidden">
                         {/* Clickable Header */}
                         <CollapsibleTrigger asChild>
