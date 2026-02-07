@@ -91,7 +91,7 @@ export function RefundInfoBox({ refundRequest, isAdmin, onStatusChange }: Refund
       if (approved && refundRequest.order?.pagarme_charge_id) {
         const { error: refundError } = await supabase.functions.invoke('pagarme', {
           body: {
-            action: 'refund',
+            action: 'refund_order',
             chargeId: refundRequest.order.pagarme_charge_id,
             orderId: refundRequest.order_id,
           },
