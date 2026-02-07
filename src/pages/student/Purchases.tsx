@@ -119,22 +119,41 @@ export default function Purchases() {
 
     setSubmittingRefund(true);
 
-    const { error } = await supabase
-      .from('refund_requests')
-      .insert({
-        order_id: refundingOrder.id,
-        user_id: user.id,
-        reason: refundReason.trim(),
-      });
+    try {
+      // 1. Create support ticket for refund
+      const { data: ticket, error: ticketError } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: user.id,
+          subject: `Solicitação de Reembolso - ${refundingOrder.course?.title || 'Pedido'}`,
+          message: refundReason.trim(),
+          category: 'refund',
+          priority: 'high',
+        })
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error creating refund request:', error);
-      toast.error('Erro ao solicitar reembolso');
-    } else {
-      toast.success('Solicitação de reembolso enviada! Você será notificado quando for analisada.');
+      if (ticketError) throw ticketError;
+
+      // 2. Create refund request linked to ticket
+      const { error: refundError } = await supabase
+        .from('refund_requests')
+        .insert({
+          order_id: refundingOrder.id,
+          user_id: user.id,
+          reason: refundReason.trim(),
+          ticket_id: ticket.id,
+        });
+
+      if (refundError) throw refundError;
+
+      toast.success('Solicitação de reembolso enviada! Acompanhe pelo Suporte.');
       setRefundingOrder(null);
       setRefundReason('');
       fetchOrders();
+    } catch (error) {
+      console.error('Error creating refund request:', error);
+      toast.error('Erro ao solicitar reembolso');
     }
 
     setSubmittingRefund(false);

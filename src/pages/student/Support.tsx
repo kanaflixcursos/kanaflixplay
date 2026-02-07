@@ -78,6 +78,7 @@ const categoryLabels: Record<string, string> = {
   question: 'Dúvida',
   bug: 'Problema Técnico',
   other: 'Outro',
+  refund: 'Reembolso',
 };
 
 const MAX_OPEN_TICKETS = 2;
