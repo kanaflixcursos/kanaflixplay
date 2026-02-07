@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,8 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { 
   MessageSquare, 
@@ -28,14 +27,13 @@ import {
   RefreshCcw,
   HelpCircle,
   MessageCircle,
-  ChevronRight,
   User,
   Mail,
-  ExternalLink,
   AlertCircle,
-  Plus,
   Search,
-  Check
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -92,18 +90,12 @@ interface RefundRequest {
   };
 }
 
-interface UserOption {
-  user_id: string;
-  full_name: string | null;
-  email: string | null;
-  avatar_url: string | null;
-}
-
+// Simplified status for admin view: pending (open, in_progress) and resolved (resolved, closed)
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
-  open: { label: 'Aberto', variant: 'secondary', icon: Clock },
-  in_progress: { label: 'Em Andamento', variant: 'default', icon: RefreshCcw },
-  resolved: { label: 'Resolvido', variant: 'outline', icon: CheckCircle2 },
-  closed: { label: 'Fechado', variant: 'outline', icon: XCircle },
+  open: { label: 'Pendente', variant: 'secondary', icon: Clock },
+  in_progress: { label: 'Pendente', variant: 'secondary', icon: Clock },
+  resolved: { label: 'Concluído', variant: 'default', icon: CheckCircle2 },
+  closed: { label: 'Concluído', variant: 'default', icon: CheckCircle2 },
 };
 
 const refundStatusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
@@ -119,6 +111,11 @@ const categoryLabels: Record<string, string> = {
   other: 'Outro',
 };
 
+// Generate short ticket code from UUID
+const getTicketCode = (id: string) => {
+  return `#${id.slice(0, 6).toUpperCase()}`;
+};
+
 export default function AdminSupport() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -131,65 +128,22 @@ export default function AdminSupport() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newMessage, setNewMessage] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Filter states
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [contentSearch, setContentSearch] = useState('');
+  
+  // Expanded tickets for chat view
+  const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   
   // Refund review modal
   const [reviewingRefund, setReviewingRefund] = useState<RefundRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
 
-  // New ticket modal state
-  const [showNewTicketModal, setShowNewTicketModal] = useState(false);
-  const [newTicketData, setNewTicketData] = useState({
-    subject: '',
-    message: '',
-    category: 'question',
-  });
-  const [creatingTicket, setCreatingTicket] = useState(false);
-  
-  // Client search state
-  const [clientSearchOpen, setClientSearchOpen] = useState(false);
-  const [clientSearch, setClientSearch] = useState('');
-  const [selectedClient, setSelectedClient] = useState<UserOption | null>(null);
-  const [allClients, setAllClients] = useState<UserOption[]>([]);
-  const [loadingClients, setLoadingClients] = useState(false);
-
   const ticketIdFromUrl = searchParams.get('ticket');
-  
-  // Fetch all clients once
-  const fetchClients = useCallback(async () => {
-    setLoadingClients(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, email, avatar_url')
-      .order('full_name', { ascending: true })
-      .limit(500);
-    
-    if (!error && data) {
-      setAllClients(data);
-    }
-    setLoadingClients(false);
-  }, []);
-
-  // Filtered clients based on search
-  const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return allClients.slice(0, 20);
-    
-    const search = clientSearch.toLowerCase();
-    return allClients
-      .filter(c => 
-        (c.full_name?.toLowerCase().includes(search)) ||
-        (c.email?.toLowerCase().includes(search))
-      )
-      .slice(0, 20);
-  }, [allClients, clientSearch]);
-  
-  // Fetch clients when modal opens
-  useEffect(() => {
-    if (showNewTicketModal && allClients.length === 0) {
-      fetchClients();
-    }
-  }, [showNewTicketModal, allClients.length, fetchClients]);
+  const scrollAreaRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const fetchTickets = useCallback(async () => {
     const { data: ticketsData, error } = await supabase
@@ -225,6 +179,7 @@ export default function AdminSupport() {
       const ticket = ticketsWithProfiles.find(t => t.id === ticketIdFromUrl);
       if (ticket) {
         setSelectedTicket(ticket);
+        setExpandedTickets(prev => new Set([...prev, ticket.id]));
       }
     }
   }, [ticketIdFromUrl, selectedTicket]);
@@ -319,6 +274,19 @@ export default function AdminSupport() {
     }
   }, [selectedTicket, setSearchParams]);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    if (selectedTicket) {
+      const scrollRef = scrollAreaRefs.current.get(selectedTicket.id);
+      if (scrollRef) {
+        const scrollContainer = scrollRef.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+      }
+    }
+  }, [ticketMessages, selectedTicket]);
+
   const handleSendMessage = async () => {
     if (!user || !selectedTicket || !newMessage.trim()) return;
 
@@ -339,7 +307,7 @@ export default function AdminSupport() {
       setNewMessage('');
       fetchTicketMessages(selectedTicket.id);
       
-      // Update ticket status
+      // Update ticket status to in_progress if it was open
       if (selectedTicket.status === 'open') {
         await supabase
           .from('support_tickets')
@@ -351,57 +319,30 @@ export default function AdminSupport() {
     setSubmitting(false);
   };
 
-  const handleUpdateTicketStatus = async (status: string) => {
-    if (!selectedTicket) return;
-
+  const handleUpdateTicketStatus = async (ticketId: string, newStatus: 'resolved' | 'open') => {
     const { error } = await supabase
       .from('support_tickets')
-      .update({ status })
-      .eq('id', selectedTicket.id);
+      .update({ status: newStatus })
+      .eq('id', ticketId);
 
     if (error) {
       toast.error('Erro ao atualizar status');
     } else {
-      toast.success('Status atualizado');
-      setSelectedTicket({ ...selectedTicket, status });
+      toast.success(newStatus === 'resolved' ? 'Ticket marcado como concluído' : 'Ticket reaberto');
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket({ ...selectedTicket, status: newStatus });
+      }
       fetchTickets();
     }
   };
 
-  const handleCreateTicket = async () => {
-    if (!selectedClient || !newTicketData.subject.trim() || !newTicketData.message.trim()) {
-      toast.error('Preencha todos os campos obrigatórios');
-      return;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (newMessage.trim() && !submitting) {
+        handleSendMessage();
+      }
     }
-
-    setCreatingTicket(true);
-    try {
-      // Create ticket on behalf of the selected client
-      const { data: ticket, error } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: selectedClient.user_id,
-          subject: newTicketData.subject.trim(),
-          message: newTicketData.message.trim(),
-          category: newTicketData.category,
-          status: 'open',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success('Ticket criado com sucesso!');
-      setShowNewTicketModal(false);
-      setNewTicketData({ subject: '', message: '', category: 'question' });
-      setSelectedClient(null);
-      setClientSearch('');
-      fetchTickets();
-    } catch (error) {
-      console.error('Error creating ticket:', error);
-      toast.error('Erro ao criar ticket');
-    }
-    setCreatingTicket(false);
   };
 
   const handleReviewRefund = async (approved: boolean) => {
@@ -472,9 +413,61 @@ export default function AdminSupport() {
     }).format(value / 100);
   };
 
-  const filteredTickets = statusFilter === 'all' 
-    ? tickets 
-    : tickets.filter(t => t.status === statusFilter);
+  const toggleTicketExpand = (ticket: SupportTicket) => {
+    const newExpanded = new Set(expandedTickets);
+    if (newExpanded.has(ticket.id)) {
+      newExpanded.delete(ticket.id);
+      if (selectedTicket?.id === ticket.id) {
+        setSelectedTicket(null);
+      }
+    } else {
+      newExpanded.add(ticket.id);
+      setSelectedTicket(ticket);
+    }
+    setExpandedTickets(newExpanded);
+  };
+
+  // Filter tickets based on status and search
+  const filteredTickets = useMemo(() => {
+    let filtered = tickets;
+
+    // Status filter
+    if (statusFilter === 'pending') {
+      filtered = filtered.filter(t => t.status === 'open' || t.status === 'in_progress');
+    } else if (statusFilter === 'resolved') {
+      filtered = filtered.filter(t => t.status === 'resolved' || t.status === 'closed');
+    }
+
+    // Search filter (name, email, ticket code)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(t => {
+        const ticketCode = getTicketCode(t.id).toLowerCase();
+        const name = t.user_profile?.full_name?.toLowerCase() || '';
+        const email = t.user_profile?.email?.toLowerCase() || '';
+        const subject = t.subject.toLowerCase();
+        
+        return (
+          ticketCode.includes(query) ||
+          name.includes(query) ||
+          email.includes(query) ||
+          subject.includes(query)
+        );
+      });
+    }
+
+    // Content search (searches inside ticket message and subject)
+    if (contentSearch.trim()) {
+      const query = contentSearch.toLowerCase().trim();
+      filtered = filtered.filter(t => {
+        const subject = t.subject.toLowerCase();
+        const message = t.message.toLowerCase();
+        return subject.includes(query) || message.includes(query);
+      });
+    }
+
+    return filtered;
+  }, [tickets, statusFilter, searchQuery, contentSearch]);
 
   const pendingRefunds = refundRequests.filter(r => r.status === 'pending');
 
@@ -534,244 +527,299 @@ export default function AdminSupport() {
           </TabsList>
 
           <TabsContent value="tickets" className="space-y-4">
-            {selectedTicket ? (
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'pending' | 'resolved')}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendentes</SelectItem>
+                  <SelectItem value="resolved">Concluídos</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, email ou código do ticket..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar palavra no conteúdo..."
+                  value={contentSearch}
+                  onChange={(e) => setContentSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {filteredTickets.length === 0 ? (
               <Card>
-                <CardHeader className="border-b">
-                  <div className="flex items-center justify-between">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setSelectedTicket(null)}
-                    >
-                      ← Voltar
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={selectedTicket.status}
-                        onValueChange={handleUpdateTicketStatus}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Aberto</SelectItem>
-                          <SelectItem value="in_progress">Em Andamento</SelectItem>
-                          <SelectItem value="resolved">Resolvido</SelectItem>
-                          <SelectItem value="closed">Fechado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {/* User info */}
-                  {selectedTicket.user_profile && (
-                    <div className="flex items-center gap-3 mt-3 p-3 bg-muted rounded-lg">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={selectedTicket.user_profile.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {getInitials(selectedTicket.user_profile.full_name || 'U')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-medium">{selectedTicket.user_profile.full_name || 'Usuário'}</p>
-                        <p className="text-sm text-muted-foreground">{selectedTicket.user_profile.email}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/admin/students/${selectedTicket.user_id}`)}
-                        >
-                          <User className="h-4 w-4 mr-1" />
-                          Ver Perfil
-                        </Button>
-                        {selectedTicket.user_profile.email && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                          >
-                            <a href={`mailto:${selectedTicket.user_profile.email}`}>
-                              <Mail className="h-4 w-4 mr-1" />
-                              Email
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <CardTitle className="text-lg mt-3">{selectedTicket.subject}</CardTitle>
-                  <CardDescription>
-                    {categoryLabels[selectedTicket.category] || selectedTicket.category} • 
-                    Criado em {format(new Date(selectedTicket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {/* Original message */}
-                  <div className="p-4 border-b bg-muted/30">
-                    <p className="text-sm whitespace-pre-wrap">{selectedTicket.message}</p>
-                  </div>
-
-                  {/* Messages */}
-                  <ScrollArea className="h-[300px]">
-                    <div className="p-4 space-y-4">
-                      {loadingMessages ? (
-                        <div className="flex justify-center py-8">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : ticketMessages.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Nenhuma resposta ainda</p>
-                        </div>
-                      ) : (
-                        ticketMessages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
-                          >
-                            <Avatar className="h-8 w-8 shrink-0">
-                              <AvatarImage src={msg.user_avatar || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(msg.user_name || 'U')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className={`flex-1 max-w-[80%] ${msg.is_admin_reply ? 'text-right' : ''}`}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium">
-                                  {msg.is_admin_reply ? 'Suporte' : msg.user_name}
-                                </span>
-                                {msg.is_admin_reply && (
-                                  <Badge variant="outline" className="text-xs">Admin</Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                                </span>
-                              </div>
-                              <div
-                                className={`rounded-lg px-3 py-2 text-sm ${
-                                  msg.is_admin_reply
-                                    ? 'bg-primary text-primary-foreground ml-auto'
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                <p className="whitespace-pre-wrap">{msg.message}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-
-                  {/* Reply form */}
-                  <div className="p-4 border-t">
-                    <div className="flex gap-2">
-                      <Textarea
-                        placeholder="Digite sua resposta..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        rows={2}
-                        className="resize-none"
-                      />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim() || submitting}
-                        size="icon"
-                        className="shrink-0 h-auto"
-                      >
-                        {submitting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium">Nenhuma solicitação</h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {searchQuery || contentSearch 
+                      ? 'Nenhum ticket encontrado com os filtros aplicados'
+                      : 'Não há solicitações de suporte no momento'
+                    }
+                  </p>
                 </CardContent>
               </Card>
             ) : (
-              <>
-                {/* Filters and New Ticket Button */}
-                <div className="flex items-center justify-between gap-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Filtrar por status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="open">Abertos</SelectItem>
-                      <SelectItem value="in_progress">Em Andamento</SelectItem>
-                      <SelectItem value="resolved">Resolvidos</SelectItem>
-                      <SelectItem value="closed">Fechados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Button onClick={() => setShowNewTicketModal(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Nova Solicitação
-                  </Button>
-                </div>
+              <div className="space-y-3">
+                {filteredTickets.map((ticket) => {
+                  const isExpanded = expandedTickets.has(ticket.id);
+                  const status = statusConfig[ticket.status] || statusConfig.open;
+                  const StatusIcon = status.icon;
+                  const isPending = ticket.status === 'open' || ticket.status === 'in_progress';
 
-                {filteredTickets.length === 0 ? (
-                  <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                      <h3 className="text-lg font-medium">Nenhuma solicitação</h3>
-                      <p className="text-muted-foreground text-sm mt-1">
-                        Não há solicitações de suporte no momento
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredTickets.map((ticket) => {
-                      const status = statusConfig[ticket.status] || statusConfig.open;
-                      const StatusIcon = status.icon;
-
-                      return (
-                        <div
-                          key={ticket.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border bg-card cursor-pointer hover:bg-muted/50 transition-colors"
-                          onClick={() => setSelectedTicket(ticket)}
-                        >
-                          <Avatar className="h-9 w-9 shrink-0">
-                            <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(ticket.user_profile?.full_name || 'U')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm truncate">
-                                {ticket.user_profile?.full_name || 'Usuário'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground truncate">
-                                {ticket.subject}
-                              </span>
+                  return (
+                    <Collapsible
+                      key={ticket.id}
+                      open={isExpanded}
+                      onOpenChange={() => toggleTicketExpand(ticket)}
+                    >
+                      <div className="bg-card rounded-xl border overflow-hidden">
+                        {/* Clickable Header */}
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs bg-primary/10">
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-mono text-muted-foreground">
+                                  {getTicketCode(ticket.id)}
+                                </span>
+                                <span className="text-sm font-medium text-primary">
+                                  {ticket.user_profile?.email || 'sem email'}
+                                </span>
+                                <span className="text-sm text-muted-foreground">
+                                  ({ticket.user_profile?.full_name || 'Usuário'})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                <span className="font-medium text-sm truncate max-w-[300px]">
+                                  {ticket.subject}
+                                </span>
+                                <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
+                                  <StatusIcon className="h-3 w-3" />
+                                  {status.label}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs h-5">
+                                  {categoryLabels[ticket.category] || ticket.category}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant={status.variant} className="gap-1 text-xs h-5">
-                                <StatusIcon className="h-3 w-3" />
-                                {status.label}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs h-5">
-                                {categoryLabels[ticket.category] || ticket.category}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs text-muted-foreground hidden sm:inline">
                                 {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
                               </span>
+                              {isExpanded ? (
+                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                              )}
                             </div>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                          {/* User info and actions */}
+                          <div className="px-4 pb-3 flex items-center justify-between gap-2 border-b">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/students/${ticket.user_id}`);
+                                }}
+                              >
+                                <User className="h-4 w-4 mr-1" />
+                                Ver Perfil
+                              </Button>
+                              {ticket.user_profile?.email && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <a href={`mailto:${ticket.user_profile.email}`}>
+                                    <Mail className="h-4 w-4 mr-1" />
+                                    Email
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                            <Button
+                              variant={isPending ? "default" : "outline"}
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateTicketStatus(ticket.id, isPending ? 'resolved' : 'open');
+                              }}
+                            >
+                              {isPending ? (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Marcar Concluído
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  Reabrir
+                                </>
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* Original ticket message */}
+                          <div className="p-4 bg-muted/10 border-b">
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Aberto em {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
+                          </div>
+
+                          {/* Messages Area */}
+                          <ScrollArea 
+                            ref={(el) => {
+                              if (el) scrollAreaRefs.current.set(ticket.id, el);
+                            }}
+                            className="h-[300px]"
+                          >
+                            <div className="flex flex-col justify-end min-h-full">
+                              <div className="p-4 space-y-4">
+                                {selectedTicket?.id === ticket.id && loadingMessages ? (
+                                  <div className="flex justify-center py-12">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                  </div>
+                                ) : selectedTicket?.id === ticket.id && ticketMessages.length === 0 ? (
+                                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                                      <MessageCircle className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      Nenhuma resposta ainda
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Envie uma resposta para o usuário
+                                    </p>
+                                  </div>
+                                ) : selectedTicket?.id === ticket.id ? (
+                                  ticketMessages.map((msg) => (
+                                    <div
+                                      key={msg.id}
+                                      className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
+                                    >
+                                      <Avatar className="h-9 w-9 shrink-0 ring-2 ring-background">
+                                        <AvatarImage src={msg.user_avatar || undefined} />
+                                        <AvatarFallback className={`text-xs ${msg.is_admin_reply ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                          {msg.is_admin_reply ? (
+                                            <ShieldCheck className="h-4 w-4" />
+                                          ) : (
+                                            getInitials(msg.user_name || 'U')
+                                          )}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className={`flex-1 max-w-[75%] ${msg.is_admin_reply ? 'items-end' : 'items-start'}`}>
+                                        <div className={`flex items-center gap-2 mb-1 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
+                                          <span className="text-sm font-medium">
+                                            {msg.is_admin_reply ? 'Suporte Kanaflix' : msg.user_name}
+                                          </span>
+                                          {msg.is_admin_reply && (
+                                            <Badge variant="default" className="text-[10px] h-4 px-1.5 bg-primary/90">
+                                              Equipe
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        <div
+                                          className={`rounded-2xl px-4 py-2.5 text-sm ${
+                                            msg.is_admin_reply
+                                              ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                                              : 'bg-muted rounded-tl-sm'
+                                          }`}
+                                        >
+                                          <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                                        </div>
+                                        <span className={`text-[11px] text-muted-foreground mt-1 block ${msg.is_admin_reply ? 'text-right' : ''}`}>
+                                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="flex justify-center py-12">
+                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </ScrollArea>
+
+                          {/* Reply Input */}
+                          {isPending && (
+                            <div className="p-4 border-t bg-background">
+                              <div className="flex gap-3">
+                                <Textarea
+                                  placeholder="Digite sua resposta... (Enter para enviar, Shift+Enter para nova linha)"
+                                  value={selectedTicket?.id === ticket.id ? newMessage : ''}
+                                  onChange={(e) => setNewMessage(e.target.value)}
+                                  onKeyDown={handleKeyDown}
+                                  onFocus={() => setSelectedTicket(ticket)}
+                                  rows={2}
+                                  className="resize-none flex-1 min-h-[52px]"
+                                  disabled={submitting}
+                                />
+                                <Button
+                                  onClick={handleSendMessage}
+                                  disabled={!newMessage.trim() || submitting || selectedTicket?.id !== ticket.id}
+                                  size="icon"
+                                  className="shrink-0 h-[52px] w-[52px]"
+                                >
+                                  {submitting ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                  ) : (
+                                    <Send className="h-5 w-5" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Resolved state */}
+                          {!isPending && (
+                            <div className="p-4 border-t bg-muted/30">
+                              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span className="text-sm">
+                                  Este ticket foi concluído
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
 
@@ -804,8 +852,12 @@ export default function AdminSupport() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-medium">{request.user_profile?.full_name || 'Usuário'}</p>
-                                <p className="text-sm text-muted-foreground">{request.user_profile?.email}</p>
+                                <p className="text-sm text-primary font-medium">
+                                  {request.user_profile?.email}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {request.user_profile?.full_name || 'Usuário'}
+                                </p>
                               </div>
                               <Badge variant={status.variant} className="gap-1 ml-auto md:ml-0">
                                 <StatusIcon className="h-3 w-3" />
@@ -918,176 +970,6 @@ export default function AdminSupport() {
               >
                 {processingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Aprovar Reembolso
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* New Ticket Modal */}
-        <Dialog open={showNewTicketModal} onOpenChange={(open) => {
-          if (!open) {
-            setShowNewTicketModal(false);
-            setNewTicketData({ subject: '', message: '', category: 'question' });
-            setSelectedClient(null);
-            setClientSearch('');
-          }
-        }}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Nova Solicitação</DialogTitle>
-              <DialogDescription>
-                Crie um ticket de suporte em nome de um cliente
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Client selector */}
-              <div className="space-y-2">
-                <Label>Cliente *</Label>
-                <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={clientSearchOpen}
-                      className="w-full justify-between h-auto min-h-10"
-                    >
-                      {selectedClient ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={selectedClient.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(selectedClient.full_name || 'U')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="text-left">
-                            <p className="text-sm font-medium">{selectedClient.full_name || 'Usuário'}</p>
-                            <p className="text-xs text-muted-foreground">{selectedClient.email}</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Buscar por nome ou email...</span>
-                      )}
-                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0" align="start">
-                    <Command shouldFilter={false}>
-                      <CommandInput 
-                        placeholder="Digite o nome ou email do cliente..." 
-                        value={clientSearch}
-                        onValueChange={setClientSearch}
-                      />
-                      <CommandList>
-                        {loadingClients ? (
-                          <div className="flex items-center justify-center py-6">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          </div>
-                        ) : filteredClients.length === 0 ? (
-                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                        ) : (
-                          <CommandGroup>
-                            {filteredClients.map((client) => (
-                              <CommandItem
-                                key={client.user_id}
-                                value={client.user_id}
-                                onSelect={() => {
-                                  setSelectedClient(client);
-                                  setClientSearchOpen(false);
-                                }}
-                                className="flex items-center gap-2 py-2"
-                              >
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src={client.avatar_url || undefined} />
-                                  <AvatarFallback className="text-xs">
-                                    {getInitials(client.full_name || 'U')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">
-                                    {client.full_name || 'Usuário sem nome'}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {client.email}
-                                  </p>
-                                </div>
-                                <Check
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    selectedClient?.user_id === client.user_id
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Category */}
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select
-                  value={newTicketData.category}
-                  onValueChange={(val) => setNewTicketData(prev => ({ ...prev, category: val }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="question">Dúvida</SelectItem>
-                    <SelectItem value="feedback">Feedback</SelectItem>
-                    <SelectItem value="bug">Problema Técnico</SelectItem>
-                    <SelectItem value="other">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Subject */}
-              <div className="space-y-2">
-                <Label htmlFor="new-ticket-subject">Assunto *</Label>
-                <Input
-                  id="new-ticket-subject"
-                  placeholder="Assunto do ticket"
-                  value={newTicketData.subject}
-                  onChange={(e) => setNewTicketData(prev => ({ ...prev, subject: e.target.value }))}
-                  maxLength={200}
-                />
-              </div>
-
-              {/* Message */}
-              <div className="space-y-2">
-                <Label htmlFor="new-ticket-message">Mensagem *</Label>
-                <Textarea
-                  id="new-ticket-message"
-                  placeholder="Descreva a solicitação..."
-                  value={newTicketData.message}
-                  onChange={(e) => setNewTicketData(prev => ({ ...prev, message: e.target.value }))}
-                  rows={4}
-                  maxLength={2000}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowNewTicketModal(false)}
-                disabled={creatingTicket}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreateTicket}
-                disabled={creatingTicket || !selectedClient || !newTicketData.subject.trim() || !newTicketData.message.trim()}
-              >
-                {creatingTicket && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Criar Ticket
               </Button>
             </DialogFooter>
           </DialogContent>
