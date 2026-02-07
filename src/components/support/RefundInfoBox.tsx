@@ -2,12 +2,9 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { 
   CreditCard, 
-  ShoppingBag, 
   CheckCircle2, 
   XCircle, 
   Clock,
@@ -61,7 +58,6 @@ const paymentMethodLabels: Record<string, string> = {
 
 export function RefundInfoBox({ refundRequest, isAdmin, onStatusChange }: RefundInfoBoxProps) {
   const [expanded, setExpanded] = useState(true);
-  const [adminNotes, setAdminNotes] = useState(refundRequest.admin_notes || '');
   const [processing, setProcessing] = useState(false);
 
   const status = statusConfig[refundRequest.status] || statusConfig.pending;
@@ -85,7 +81,6 @@ export function RefundInfoBox({ refundRequest, isAdmin, onStatusChange }: Refund
         .from('refund_requests')
         .update({
           status: approved ? 'approved' : 'rejected',
-          admin_notes: adminNotes.trim() || null,
           reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
         })
@@ -191,56 +186,32 @@ export function RefundInfoBox({ refundRequest, isAdmin, onStatusChange }: Refund
 
           {/* Admin Section */}
           {isAdmin && isPending && (
-            <div className="space-y-3 pt-2 border-t">
-              <div className="space-y-2">
-                <Label htmlFor="admin-notes" className="text-sm">
-                  Observações (opcional)
-                </Label>
-                <Textarea
-                  id="admin-notes"
-                  placeholder="Adicione uma observação para o usuário..."
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={2}
-                  className="resize-none"
-                  disabled={processing}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={() => handleReviewRefund(false)}
-                  disabled={processing}
-                >
-                  {processing ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <XCircle className="h-4 w-4 mr-2" />
-                  )}
-                  Recusar
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => handleReviewRefund(true)}
-                  disabled={processing}
-                >
-                  {processing ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Aprovar Reembolso
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Admin Notes (if already reviewed) */}
-          {refundRequest.admin_notes && refundRequest.status !== 'pending' && (
-            <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-              <p className="text-xs font-medium text-primary mb-1">Resposta do Suporte</p>
-              <p className="text-sm">{refundRequest.admin_notes}</p>
+            <div className="flex gap-2 pt-2 border-t">
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => handleReviewRefund(false)}
+                disabled={processing}
+              >
+                {processing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Recusar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => handleReviewRefund(true)}
+                disabled={processing}
+              >
+                {processing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                )}
+                Aprovar Reembolso
+              </Button>
             </div>
           )}
 
