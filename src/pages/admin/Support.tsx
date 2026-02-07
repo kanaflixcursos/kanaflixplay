@@ -116,6 +116,30 @@ const getTicketCode = (id: string) => {
   return `#${id.slice(0, 6).toUpperCase()}`;
 };
 
+// Email copy button component
+function EmailCopyButton({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(email);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleCopy}
+      className="min-w-[90px]"
+    >
+      <Mail className="h-4 w-4 mr-1" />
+      {copied ? 'Email Copiado' : 'Email'}
+    </Button>
+  );
+};
+
 export default function AdminSupport() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -650,17 +674,7 @@ export default function AdminSupport() {
                                 Ver Perfil
                               </Button>
                               {ticket.user_profile?.email && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <a href={`mailto:${ticket.user_profile.email}`}>
-                                    <Mail className="h-4 w-4 mr-1" />
-                                    Email
-                                  </a>
-                                </Button>
+                                <EmailCopyButton email={ticket.user_profile.email} />
                               )}
                             </div>
                             <Button
@@ -722,41 +736,36 @@ export default function AdminSupport() {
                                   ticketMessages.map((msg) => (
                                     <div
                                       key={msg.id}
-                                      className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
+                                      className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
                                     >
-                                      <Avatar className="h-9 w-9 shrink-0 ring-2 ring-background">
+                                      <Avatar className="h-7 w-7 shrink-0">
                                         <AvatarImage src={msg.user_avatar || undefined} />
-                                        <AvatarFallback className={`text-xs ${msg.is_admin_reply ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                        <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-muted-foreground/20' : 'bg-muted'}`}>
                                           {msg.is_admin_reply ? (
-                                            <ShieldCheck className="h-4 w-4" />
+                                            <ShieldCheck className="h-3.5 w-3.5" />
                                           ) : (
                                             getInitials(msg.user_name || 'U')
                                           )}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <div className={`flex-1 max-w-[75%] ${msg.is_admin_reply ? 'items-end' : 'items-start'}`}>
-                                        <div className={`flex items-center gap-2 mb-1 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
-                                          <span className="text-sm font-medium">
-                                            {msg.is_admin_reply ? 'Suporte Kanaflix' : msg.user_name}
+                                      <div className={`flex-1 max-w-[80%]`}>
+                                        <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
+                                          <span className="text-xs font-medium text-muted-foreground">
+                                            {msg.is_admin_reply ? 'Suporte' : msg.user_name}
                                           </span>
-                                          {msg.is_admin_reply && (
-                                            <Badge variant="default" className="text-[10px] h-4 px-1.5 bg-primary/90">
-                                              Equipe
-                                            </Badge>
-                                          )}
+                                          <span className="text-[10px] text-muted-foreground/70">
+                                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
+                                          </span>
                                         </div>
                                         <div
-                                          className={`rounded-2xl px-4 py-2.5 text-sm ${
+                                          className={`rounded-lg px-3 py-1.5 text-sm ${
                                             msg.is_admin_reply
-                                              ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                                              : 'bg-muted rounded-tl-sm'
+                                              ? 'bg-muted/80 rounded-tr-sm'
+                                              : 'bg-muted/50 rounded-tl-sm'
                                           }`}
                                         >
-                                          <p className="whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                                          <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
                                         </div>
-                                        <span className={`text-[11px] text-muted-foreground mt-1 block ${msg.is_admin_reply ? 'text-right' : ''}`}>
-                                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                                        </span>
                                       </div>
                                     </div>
                                   ))
