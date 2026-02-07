@@ -312,7 +312,7 @@ export default function Support() {
           </TabsList>
 
           <TabsContent value="tickets" className="space-y-3">
-            {tickets.length === 0 ? (
+            {tickets.filter(t => t.category !== 'refund').length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -323,7 +323,7 @@ export default function Support() {
                 </CardContent>
               </Card>
             ) : (
-              tickets.map((ticket) => {
+              tickets.filter(t => t.category !== 'refund').map((ticket) => {
                 const status = statusConfig[ticket.status] || statusConfig.open;
                 const StatusIcon = status.icon;
                 const hasUnread = unreadTicketIds.includes(ticket.id);
