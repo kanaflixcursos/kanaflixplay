@@ -62,6 +62,9 @@ Deno.serve(async (req) => {
 
     const userId = userData.user.id;
 
+    // Create admin client for operations that need elevated permissions
+    const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
     switch (action) {
       case 'create_order':
         return handleCreateOrder(payload, userId, PAGARME_API_KEY, supabase);
@@ -70,9 +73,9 @@ Deno.serve(async (req) => {
       case 'get_order_stats':
         return handleGetOrderStats(PAGARME_API_KEY, supabase);
       case 'refund_order':
-        return handleRefundOrder(payload, PAGARME_API_KEY, supabase);
+        return handleRefundOrder(payload, PAGARME_API_KEY, adminSupabase);
       case 'cancel_order':
-        return handleCancelOrder(payload, PAGARME_API_KEY, supabase);
+        return handleCancelOrder(payload, PAGARME_API_KEY, adminSupabase);
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
