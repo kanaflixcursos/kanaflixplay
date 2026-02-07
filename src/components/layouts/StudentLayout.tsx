@@ -37,6 +37,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadSupportNotifications, setUnreadSupportNotifications] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -63,12 +64,15 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
     const { data, error } = await supabase
       .from('notifications')
-      .select('id, is_read')
+      .select('id, is_read, type')
       .eq('user_id', user.id)
       .eq('is_read', false);
 
     if (!error && data) {
       setUnreadCount(data.length);
+      // Count support-related notifications specifically
+      const supportNotifs = data.filter(n => n.type === 'ticket_reply');
+      setUnreadSupportNotifications(supportNotifs.length);
     }
   }, [user]);
 
@@ -177,6 +181,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               userEmail={displayEmail}
               avatarUrl={avatarUrl}
               unreadCount={unreadCount}
+              unreadSupportNotifications={unreadSupportNotifications}
               onSignOut={handleSignOut}
               variant="student"
             />
