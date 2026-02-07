@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { RefundInfoBox } from '@/components/support/RefundInfoBox';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +58,29 @@ interface UserProfile {
   avatar_url: string | null;
 }
 
+interface RefundRequestData {
+  id: string;
+  order_id: string;
+  user_id: string;
+  reason: string;
+  status: string;
+  admin_notes: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  order?: {
+    id: string;
+    amount: number;
+    payment_method: string | null;
+    paid_at: string | null;
+    pagarme_charge_id: string | null;
+    course?: {
+      title: string;
+      thumbnail_url: string | null;
+    } | null;
+  } | null;
+}
+
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   open: { label: 'Pendente', variant: 'secondary' },
   in_progress: { label: 'Pendente', variant: 'secondary' },
@@ -69,6 +93,7 @@ const categoryLabels: Record<string, string> = {
   question: 'Dúvida',
   bug: 'Problema Técnico',
   other: 'Outro',
+  refund: 'Reembolso',
 };
 
 export default function AdminTicketChat() {
@@ -78,6 +103,7 @@ export default function AdminTicketChat() {
   
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [ticketOwner, setTicketOwner] = useState<UserProfile | null>(null);
+  const [refundRequest, setRefundRequest] = useState<RefundRequestData | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -125,8 +151,57 @@ export default function AdminTicketChat() {
       setTicketOwner(profile);
     }
 
+    // Check if this is a refund ticket
+    if (data.category === 'refund') {
+      const { data: refundData } = await supabase
+        .from('refund_requests')
+        .select(`
+          *,
+          order:orders(
+            id,
+            amount,
+            payment_method,
+            paid_at,
+            pagarme_charge_id,
+            course:courses(title, thumbnail_url)
+          )
+        `)
+        .eq('ticket_id', ticketId)
+        .single();
+
+      if (refundData) {
+        setRefundRequest(refundData as unknown as RefundRequestData);
+      }
+    } else {
+      setRefundRequest(null);
+    }
+
     setLoading(false);
   }, [ticketId, navigate]);
+
+  const fetchRefundRequest = useCallback(async () => {
+    if (!ticketId || !ticket || ticket.category !== 'refund') return;
+    
+    const { data: refundData } = await supabase
+      .from('refund_requests')
+      .select(`
+        *,
+        order:orders(
+          id,
+          amount,
+          payment_method,
+          paid_at,
+          pagarme_charge_id,
+          course:courses(title, thumbnail_url)
+        )
+      `)
+      .eq('ticket_id', ticketId)
+      .single();
+
+    if (refundData) {
+      setRefundRequest(refundData as unknown as RefundRequestData);
+    }
+  }, [ticketId, ticket]);
 
   const fetchMessages = useCallback(async () => {
     if (!ticketId) return;
@@ -395,8 +470,22 @@ export default function AdminTicketChat() {
           </div>
         </div>
 
+        {/* Refund Info Box (for refund tickets) */}
+        {ticket.category === 'refund' && refundRequest && (
+          <RefundInfoBox
+            refundRequest={refundRequest}
+            isAdmin={true}
+            onStatusChange={() => {
+              fetchRefundRequest();
+              fetchTicket();
+            }}
+          />
+        )}
+
         {/* Chat Container */}
-        <div className="bg-card rounded-xl border overflow-hidden flex flex-col h-[calc(100vh-340px)] min-h-[400px]">
+        <div className={`bg-card rounded-xl border overflow-hidden flex flex-col ${
+          refundRequest ? 'h-[calc(100vh-520px)]' : 'h-[calc(100vh-340px)]'
+        } min-h-[300px]`}>
           {/* Original Message */}
           <div className="p-4 bg-muted/30 border-b shrink-0">
             <p className="text-xs text-muted-foreground mb-2">Mensagem original</p>

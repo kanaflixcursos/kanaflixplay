@@ -4,24 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
 import { 
   MessageSquare, 
-  Loader2, 
   Clock, 
   CheckCircle2, 
-  XCircle,
   RefreshCcw,
   HelpCircle,
   User,
@@ -52,29 +45,6 @@ interface SupportTicket {
   has_unread_message?: boolean;
 }
 
-interface RefundRequest {
-  id: string;
-  order_id: string;
-  user_id: string;
-  reason: string;
-  status: string;
-  admin_notes: string | null;
-  created_at: string;
-  reviewed_at: string | null;
-  order?: {
-    id: string;
-    amount: number;
-    pagarme_charge_id: string | null;
-    course?: {
-      title: string;
-    } | null;
-  };
-  user_profile?: {
-    full_name: string | null;
-    email: string | null;
-  };
-}
-
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
   open: { label: 'Pendente', variant: 'secondary', icon: Clock },
   in_progress: { label: 'Pendente', variant: 'secondary', icon: Clock },
@@ -82,17 +52,13 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   closed: { label: 'Concluído', variant: 'default', icon: CheckCircle2 },
 };
 
-const refundStatusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock },
-  approved: { label: 'Aprovado', variant: 'default', icon: CheckCircle2 },
-  rejected: { label: 'Recusado', variant: 'destructive', icon: XCircle },
-};
 
 const categoryLabels: Record<string, string> = {
   feedback: 'Feedback',
   question: 'Dúvida',
   bug: 'Problema Técnico',
   other: 'Outro',
+  refund: 'Reembolso',
 };
 
 const getTicketCode = (id: string) => `#${id.slice(0, 6).toUpperCase()}`;
@@ -101,7 +67,6 @@ export default function AdminSupport() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Filters
@@ -113,11 +78,6 @@ export default function AdminSupport() {
     userId: user?.id,
     isAdmin: true,
   });
-  
-  // Refund review modal
-  const [reviewingRefund, setReviewingRefund] = useState<RefundRequest | null>(null);
-  const [adminNotes, setAdminNotes] = useState('');
-  const [processingRefund, setProcessingRefund] = useState(false);
 
   const fetchTickets = useCallback(async () => {
     const { data: ticketsData, error } = await supabase
@@ -177,46 +137,8 @@ export default function AdminSupport() {
     setTickets(ticketsWithProfiles);
   }, []);
 
-  const fetchRefundRequests = useCallback(async () => {
-    const { data: refundsData, error } = await supabase
-      .from('refund_requests')
-      .select(`
-        *,
-        order:orders(
-          id,
-          amount,
-          pagarme_charge_id,
-          course:courses(title)
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching refunds:', error);
-      return;
-    }
-
-    // Fetch user profiles
-    const userIds = [...new Set((refundsData || []).map(r => r.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, email')
-      .in('user_id', userIds);
-
-    const profileMap = new Map(
-      (profiles || []).map(p => [p.user_id, p])
-    );
-
-    const refundsWithProfiles = (refundsData || []).map(r => ({
-      ...r,
-      user_profile: profileMap.get(r.user_id) || null,
-    })) as unknown as RefundRequest[];
-
-    setRefundRequests(refundsWithProfiles);
-  }, []);
-
   useEffect(() => {
-    Promise.all([fetchTickets(), fetchRefundRequests()]).then(() => {
+    fetchTickets().then(() => {
       setLoading(false);
     });
 
@@ -239,69 +161,11 @@ export default function AdminSupport() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchTickets, fetchRefundRequests]);
+  }, [fetchTickets]);
 
-  const handleReviewRefund = async (approved: boolean) => {
-    if (!reviewingRefund) return;
-
-    setProcessingRefund(true);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error: updateError } = await supabase
-        .from('refund_requests')
-        .update({
-          status: approved ? 'approved' : 'rejected',
-          admin_notes: adminNotes.trim() || null,
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', reviewingRefund.id);
-
-      if (updateError) throw updateError;
-
-      if (approved && reviewingRefund.order?.pagarme_charge_id) {
-        const { error: refundError } = await supabase.functions.invoke('pagarme', {
-          body: {
-            action: 'refund',
-            chargeId: reviewingRefund.order.pagarme_charge_id,
-            orderId: reviewingRefund.order_id,
-          },
-        });
-
-        if (refundError) {
-          toast.error('Reembolso aprovado, mas houve erro no processamento. Verifique manualmente.');
-        } else {
-          toast.success('Reembolso aprovado e processado com sucesso!');
-        }
-      } else if (approved) {
-        toast.success('Reembolso aprovado! Processe manualmente no gateway de pagamento.');
-      } else {
-        toast.success('Solicitação de reembolso recusada');
-      }
-
-      setReviewingRefund(null);
-      setAdminNotes('');
-      fetchRefundRequests();
-    } catch (error) {
-      console.error('Error reviewing refund:', error);
-      toast.error('Erro ao processar solicitação');
-    }
-
-    setProcessingRefund(false);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value / 100);
-  };
-
-  // Filter tickets
+  // Filter tickets (exclude refund tickets from main list)
   const filteredTickets = useMemo(() => {
-    let filtered = tickets;
+    let filtered = tickets.filter(t => t.category !== 'refund');
 
     if (statusFilter === 'pending') {
       filtered = filtered.filter(t => t.status === 'open' || t.status === 'in_progress');
@@ -329,7 +193,12 @@ export default function AdminSupport() {
     return filtered;
   }, [tickets, statusFilter, searchQuery]);
 
-  const pendingRefunds = refundRequests.filter(r => r.status === 'pending');
+  // Filter refund tickets
+  const refundTickets = useMemo(() => {
+    return tickets.filter(t => t.category === 'refund');
+  }, [tickets]);
+
+  const pendingRefundTickets = refundTickets.filter(t => t.status === 'open' || t.status === 'in_progress');
 
   if (loading) {
     return (
@@ -358,12 +227,12 @@ export default function AdminSupport() {
         </div>
 
         {/* Pending refunds alert */}
-        {pendingRefunds.length > 0 && (
+        {pendingRefundTickets.length > 0 && (
           <Card className="border-warning bg-warning/10">
             <CardContent className="flex items-center gap-3 py-3">
               <AlertCircle className="h-5 w-5 text-warning" />
               <span className="font-medium">
-                {pendingRefunds.length} solicitação(ões) de reembolso aguardando análise
+                {pendingRefundTickets.length} solicitação(ões) de reembolso aguardando análise
               </span>
             </CardContent>
           </Card>
@@ -373,14 +242,14 @@ export default function AdminSupport() {
           <TabsList>
             <TabsTrigger value="tickets" className="gap-2">
               <MessageSquare className="h-4 w-4" />
-              Solicitações ({tickets.length})
+              Solicitações ({filteredTickets.length})
             </TabsTrigger>
             <TabsTrigger value="refunds" className="gap-2">
               <RefreshCcw className="h-4 w-4" />
-              Reembolsos ({refundRequests.length})
-              {pendingRefunds.length > 0 && (
+              Reembolsos ({refundTickets.length})
+              {pendingRefundTickets.length > 0 && (
                 <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {pendingRefunds.length}
+                  {pendingRefundTickets.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -497,8 +366,8 @@ export default function AdminSupport() {
             )}
           </TabsContent>
 
-          <TabsContent value="refunds" className="space-y-3">
-            {refundRequests.length === 0 ? (
+          <TabsContent value="refunds" className="space-y-2">
+            {refundTickets.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <RefreshCcw className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -509,109 +378,78 @@ export default function AdminSupport() {
                 </CardContent>
               </Card>
             ) : (
-              refundRequests.map((refund) => {
-                const status = refundStatusConfig[refund.status] || refundStatusConfig.pending;
-                const StatusIcon = status.icon;
+              <div className="space-y-2">
+                {refundTickets.map((ticket) => {
+                  const status = statusConfig[ticket.status] || statusConfig.open;
+                  const StatusIcon = status.icon;
+                  const hasUnread = unreadTicketIds.includes(ticket.id);
 
-                return (
-                  <Card key={refund.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="font-medium truncate">
-                              {refund.order?.course?.title || 'Curso'}
-                            </span>
-                            <Badge variant={status.variant} className="gap-1 text-xs h-5">
-                              <StatusIcon className="h-3 w-3" />
-                              {status.label}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {refund.user_profile?.full_name || 'Usuário'} • {refund.user_profile?.email}
-                          </p>
-                          <p className="text-sm line-clamp-2">{refund.reason}</p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {formatDistanceToNow(new Date(refund.created_at), { addSuffix: true, locale: ptBR })}
-                          </p>
+                  return (
+                    <div
+                      key={ticket.id}
+                      className={`flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors ${
+                        hasUnread ? 'border-primary/50 bg-primary/5' : ''
+                      }`}
+                      onClick={() => navigate(`/admin/suporte/${ticket.id}`)}
+                    >
+                      <div className="relative">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        {hasUnread && (
+                          <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {getTicketCode(ticket.id)}
+                          </span>
+                          <span className="text-sm font-medium text-primary truncate">
+                            {ticket.user_profile?.email || 'sem email'}
+                          </span>
+                          <span className="text-sm text-muted-foreground hidden sm:inline">
+                            ({ticket.user_profile?.full_name || 'Usuário'})
+                          </span>
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-semibold text-lg">
-                            {refund.order?.amount ? formatCurrency(refund.order.amount) : '-'}
-                          </p>
-                          {refund.status === 'pending' && (
-                            <Button
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => {
-                                setReviewingRefund(refund);
-                                setAdminNotes('');
-                              }}
-                            >
-                              Analisar
-                            </Button>
-                          )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`font-medium text-sm truncate max-w-[200px] sm:max-w-[300px] ${
+                            hasUnread ? 'text-foreground' : ''
+                          }`}>
+                            {ticket.subject}
+                          </span>
+                          <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
+                            <StatusIcon className="h-3 w-3" />
+                            {status.label}
+                          </Badge>
                         </div>
                       </div>
-                      {refund.admin_notes && (
-                        <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
-                          <p className="text-sm">{refund.admin_notes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {ticket.message_count && ticket.message_count > 0 && (
+                          <span className={`flex items-center gap-1 text-xs ${
+                            hasUnread ? 'text-primary font-medium' : 'text-muted-foreground'
+                          }`}>
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {ticket.message_count}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
+                        </span>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
         </Tabs>
-
-        {/* Refund Review Dialog */}
-        <Dialog open={!!reviewingRefund} onOpenChange={(open) => !open && setReviewingRefund(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Analisar Solicitação de Reembolso</DialogTitle>
-              <DialogDescription>
-                {reviewingRefund?.order?.course?.title} • {reviewingRefund?.order?.amount ? formatCurrency(reviewingRefund.order.amount) : '-'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium mb-1">Motivo do cliente:</p>
-                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                  {reviewingRefund?.reason}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Observações (opcional)</Label>
-                <Textarea
-                  placeholder="Adicione observações sobre a decisão..."
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="destructive"
-                onClick={() => handleReviewRefund(false)}
-                disabled={processingRefund}
-              >
-                {processingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Recusar
-              </Button>
-              <Button
-                onClick={() => handleReviewRefund(true)}
-                disabled={processingRefund}
-              >
-                {processingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Aprovar Reembolso
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </AdminLayout>
   );

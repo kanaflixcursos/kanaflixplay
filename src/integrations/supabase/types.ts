@@ -412,6 +412,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
+          ticket_id: string | null
           updated_at: string
           user_id: string
         }
@@ -424,6 +425,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          ticket_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -436,6 +438,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -452,6 +455,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "user_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
             referencedColumns: ["id"]
           },
         ]
