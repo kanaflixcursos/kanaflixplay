@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { AttachmentUpload } from './AttachmentUpload';
+import { FileViewer, FilePreview, type AttachmentFile } from './FileViewer';
 
 interface TicketMessage {
   id: string;
@@ -30,6 +32,7 @@ interface TicketMessage {
   created_at: string;
   user_name?: string;
   user_avatar?: string;
+  attachments?: AttachmentFile[];
 }
 
 interface SupportTicket {
@@ -53,10 +56,11 @@ interface TicketChatProps {
   submitting: boolean;
   newMessage: string;
   onMessageChange: (value: string) => void;
-  onSendMessage: () => void;
+  onSendMessage: (attachments?: AttachmentFile[]) => void;
   onBack: () => void;
   ticketOwnerName?: string;
   ticketOwnerAvatar?: string;
+  userId?: string;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType; color: string }> = {
@@ -85,8 +89,13 @@ export function TicketChat({
   onSendMessage,
   ticketOwnerName,
   ticketOwnerAvatar,
+  userId,
 }: TicketChatProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFiles, setViewerFiles] = useState<AttachmentFile[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const status = statusConfig[ticket.status] || statusConfig.open;
   const StatusIcon = status.icon;
@@ -113,10 +122,21 @@ export function TicketChat({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (newMessage.trim() && !submitting) {
-        onSendMessage();
+      if ((newMessage.trim() || attachments.length > 0) && !submitting) {
+        handleSend();
       }
     }
+  };
+
+  const handleSend = () => {
+    onSendMessage(attachments.length > 0 ? attachments : undefined);
+    setAttachments([]);
+  };
+
+  const openViewer = (files: AttachmentFile[], index: number) => {
+    setViewerFiles(files);
+    setViewerIndex(index);
+    setViewerOpen(true);
   };
 
   return (
@@ -194,42 +214,51 @@ export function TicketChat({
                     </p>
                   </div>
                 ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
-                    >
-                      <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarImage src={msg.user_avatar || undefined} />
-                        <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-muted-foreground/20' : 'bg-muted'}`}>
-                          {msg.is_admin_reply ? (
-                            <ShieldCheck className="h-3.5 w-3.5" />
-                          ) : (
-                            getInitials(msg.user_name || 'U')
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`flex-1 max-w-[80%]`}>
-                        <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
-                          <span className="text-xs font-medium text-muted-foreground">
-                            {msg.is_admin_reply ? 'Suporte' : msg.user_name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground/70">
-                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                          </span>
-                        </div>
-                        <div
-                          className={`rounded-lg px-3 py-1.5 text-sm ${
-                            msg.is_admin_reply
-                              ? 'bg-muted/80 rounded-tr-sm'
-                              : 'bg-muted/50 rounded-tl-sm'
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
+                  messages.map((msg) => {
+                    const msgAttachments = msg.attachments || [];
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
+                      >
+                        <Avatar className="h-7 w-7 shrink-0">
+                          <AvatarImage src={msg.user_avatar || undefined} />
+                          <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-foreground text-background' : 'bg-muted'}`}>
+                            {msg.is_admin_reply ? (
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                            ) : (
+                              getInitials(msg.user_name || 'U')
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className={`flex-1 max-w-[80%]`}>
+                          <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {msg.is_admin_reply ? 'Suporte' : msg.user_name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/70">
+                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
+                            </span>
+                          </div>
+                          <div
+                            className={`rounded-lg px-3 py-1.5 text-sm ${
+                              msg.is_admin_reply
+                                ? 'bg-foreground text-background rounded-tr-sm'
+                                : 'bg-muted/50 rounded-tl-sm'
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
+                            {msgAttachments.length > 0 && (
+                              <FilePreview 
+                                files={msgAttachments} 
+                                onViewFile={(index) => openViewer(msgAttachments, index)} 
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -237,31 +266,43 @@ export function TicketChat({
 
           {/* Reply Input */}
           {ticket.status !== 'closed' && ticket.status !== 'resolved' && (
-            <div className="p-4 border-t bg-background">
+            <div className="p-4 border-t bg-background space-y-3">
               {canReply ? (
-                <div className="flex gap-3">
-                  <Textarea
-                    placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"
-                    value={newMessage}
-                    onChange={(e) => onMessageChange(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows={2}
-                    className="resize-none flex-1 min-h-[52px]"
-                    disabled={submitting}
-                  />
-                  <Button
-                    onClick={onSendMessage}
-                    disabled={!newMessage.trim() || submitting}
-                    size="icon"
-                    className="shrink-0 h-[52px] w-[52px]"
-                  >
-                    {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </Button>
-                </div>
+                <>
+                  {/* Attachments */}
+                  {userId && (
+                    <AttachmentUpload
+                      userId={userId}
+                      ticketId={ticket.id}
+                      attachments={attachments}
+                      onAttachmentsChange={setAttachments}
+                      disabled={submitting}
+                    />
+                  )}
+                  <div className="flex gap-3">
+                    <Textarea
+                      placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"
+                      value={newMessage}
+                      onChange={(e) => onMessageChange(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      rows={2}
+                      className="resize-none flex-1 min-h-[52px]"
+                      disabled={submitting}
+                    />
+                    <Button
+                      onClick={handleSend}
+                      disabled={(!newMessage.trim() && attachments.length === 0) || submitting}
+                      size="icon"
+                      className="shrink-0 h-[52px] w-[52px]"
+                    >
+                      {submitting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <div className="flex items-center justify-center gap-2 py-3 text-muted-foreground bg-muted/50 rounded-lg">
                   <Clock className="h-4 w-4" />
@@ -270,6 +311,14 @@ export function TicketChat({
               )}
             </div>
           )}
+
+          {/* File Viewer Modal */}
+          <FileViewer
+            files={viewerFiles}
+            initialIndex={viewerIndex}
+            open={viewerOpen}
+            onOpenChange={setViewerOpen}
+          />
 
           {/* Closed/Resolved state */}
           {(ticket.status === 'closed' || ticket.status === 'resolved') && (

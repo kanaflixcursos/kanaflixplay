@@ -12,6 +12,7 @@ interface SidebarProfileBoxProps {
   avatarUrl?: string | null;
   unreadCount?: number;
   pendingSupportCount?: number;
+  unreadSupportNotifications?: number;
   onSignOut: () => void;
   variant?: 'student' | 'admin';
 }
@@ -22,6 +23,7 @@ export default function SidebarProfileBox({
   avatarUrl,
   unreadCount = 0,
   pendingSupportCount = 0,
+  unreadSupportNotifications = 0,
   onSignOut,
   variant = 'student',
 }: SidebarProfileBoxProps) {
@@ -108,6 +110,11 @@ export default function SidebarProfileBox({
           {variant === 'admin' && pendingSupportCount > 0 && (
             <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
               {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
+            </span>
+          )}
+          {variant === 'student' && unreadSupportNotifications > 0 && (
+            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+              {unreadSupportNotifications > 99 ? '99+' : unreadSupportNotifications}
             </span>
           )}
         </Button>

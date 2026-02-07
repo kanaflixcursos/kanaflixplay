@@ -50,6 +50,7 @@ interface TicketMessage {
   created_at: string;
   user_name?: string;
   user_avatar?: string;
+  attachments?: Array<{ name: string; url: string; type: string; size: number }>;
 }
 
 interface RefundRequest {
@@ -210,10 +211,21 @@ export default function Support() {
       ...m,
       user_name: profileMap.get(m.user_id)?.name || 'Usuário',
       user_avatar: profileMap.get(m.user_id)?.avatar || undefined,
+      attachments: (m.attachments as Array<{ name: string; url: string; type: string; size: number }>) || [],
     }));
 
     setTicketMessages(messagesWithUsers);
     setLoadingMessages(false);
+    
+    // Mark notifications for this ticket as read
+    if (user) {
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('type', 'ticket_reply')
+        .filter('metadata->ticket_id', 'eq', ticketId);
+    }
   };
 
   useEffect(() => {
@@ -263,8 +275,8 @@ export default function Support() {
     setSubmitting(false);
   };
 
-  const handleSendMessage = async () => {
-    if (!user || !selectedTicket || !newMessage.trim()) return;
+  const handleSendMessage = async (attachments?: Array<{ name: string; url: string; type: string; size: number }>) => {
+    if (!user || !selectedTicket || (!newMessage.trim() && (!attachments || attachments.length === 0))) return;
 
     setSubmitting(true);
     const { error } = await supabase
@@ -274,6 +286,7 @@ export default function Support() {
         user_id: user.id,
         message: newMessage.trim(),
         is_admin_reply: isAdmin,
+        attachments: attachments || [],
       });
 
     if (error) {
@@ -436,6 +449,7 @@ export default function Support() {
                 onBack={() => setSelectedTicket(null)}
                 ticketOwnerName={ticketOwner?.name}
                 ticketOwnerAvatar={ticketOwner?.avatar}
+                userId={user?.id}
               />
             ) : tickets.length === 0 ? (
               <Card>

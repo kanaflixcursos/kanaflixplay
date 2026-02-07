@@ -458,6 +458,7 @@ export type Database = {
       }
       support_ticket_messages: {
         Row: {
+          attachments: Json | null
           created_at: string
           id: string
           is_admin_reply: boolean
@@ -466,6 +467,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachments?: Json | null
           created_at?: string
           id?: string
           is_admin_reply?: boolean
@@ -474,6 +476,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachments?: Json | null
           created_at?: string
           id?: string
           is_admin_reply?: boolean

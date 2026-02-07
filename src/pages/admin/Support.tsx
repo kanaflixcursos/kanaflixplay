@@ -17,6 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
+import { AttachmentUpload } from '@/components/support/AttachmentUpload';
+import { FileViewer, FilePreview, type AttachmentFile } from '@/components/support/FileViewer';
 import { 
   MessageSquare, 
   Loader2, 
@@ -65,6 +67,7 @@ interface TicketMessage {
   created_at: string;
   user_name?: string;
   user_avatar?: string;
+  attachments?: Array<{ name: string; url: string; type: string; size: number }>;
 }
 
 interface RefundRequest {
@@ -161,6 +164,12 @@ export default function AdminSupport() {
   // Expanded tickets for chat view
   const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
   
+  // Attachments for current message
+  const [pendingAttachments, setPendingAttachments] = useState<AttachmentFile[]>([]);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerFiles, setViewerFiles] = useState<AttachmentFile[]>([]);
+  const [viewerIndex, setViewerIndex] = useState(0);
+  
   // Refund review modal
   const [reviewingRefund, setReviewingRefund] = useState<RefundRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
@@ -168,6 +177,12 @@ export default function AdminSupport() {
 
   const ticketIdFromUrl = searchParams.get('ticket');
   const scrollAreaRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const openViewer = (files: AttachmentFile[], index: number) => {
+    setViewerFiles(files);
+    setViewerIndex(index);
+    setViewerOpen(true);
+  };
 
   const fetchTickets = useCallback(async () => {
     const { data: ticketsData, error } = await supabase
@@ -267,6 +282,7 @@ export default function AdminSupport() {
       ...m,
       user_name: profileMap.get(m.user_id)?.name || 'Usuário',
       user_avatar: profileMap.get(m.user_id)?.avatar || undefined,
+      attachments: (m.attachments as Array<{ name: string; url: string; type: string; size: number }>) || [],
     }));
 
     setTicketMessages(messagesWithUsers);
@@ -302,8 +318,8 @@ export default function AdminSupport() {
     }
   }, [ticketMessages, selectedTicket]);
 
-  const handleSendMessage = async () => {
-    if (!user || !selectedTicket || !newMessage.trim()) return;
+  const handleSendMessage = async (attachments?: Array<{ name: string; url: string; type: string; size: number }>) => {
+    if (!user || !selectedTicket || (!newMessage.trim() && (!attachments || attachments.length === 0))) return;
 
     setSubmitting(true);
     const { error } = await supabase
@@ -313,6 +329,7 @@ export default function AdminSupport() {
         user_id: user.id,
         message: newMessage.trim(),
         is_admin_reply: true,
+        attachments: attachments || [],
       });
 
     if (error) {
@@ -354,10 +371,15 @@ export default function AdminSupport() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (newMessage.trim() && !submitting) {
-        handleSendMessage();
+      if ((newMessage.trim() || pendingAttachments.length > 0) && !submitting) {
+        handleSend();
       }
     }
+  };
+
+  const handleSend = () => {
+    handleSendMessage(pendingAttachments.length > 0 ? pendingAttachments : undefined);
+    setPendingAttachments([]);
   };
 
   const handleReviewRefund = async (approved: boolean) => {
@@ -733,42 +755,51 @@ export default function AdminSupport() {
                                     </p>
                                   </div>
                                 ) : selectedTicket?.id === ticket.id ? (
-                                  ticketMessages.map((msg) => (
-                                    <div
-                                      key={msg.id}
-                                      className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
-                                    >
-                                      <Avatar className="h-7 w-7 shrink-0">
-                                        <AvatarImage src={msg.user_avatar || undefined} />
-                                        <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-muted-foreground/20' : 'bg-muted'}`}>
-                                          {msg.is_admin_reply ? (
-                                            <ShieldCheck className="h-3.5 w-3.5" />
-                                          ) : (
-                                            getInitials(msg.user_name || 'U')
-                                          )}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className={`flex-1 max-w-[80%]`}>
-                                        <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
-                                          <span className="text-xs font-medium text-muted-foreground">
-                                            {msg.is_admin_reply ? 'Suporte' : msg.user_name}
-                                          </span>
-                                          <span className="text-[10px] text-muted-foreground/70">
-                                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                                          </span>
-                                        </div>
-                                        <div
-                                          className={`rounded-lg px-3 py-1.5 text-sm ${
-                                            msg.is_admin_reply
-                                              ? 'bg-muted/80 rounded-tr-sm'
-                                              : 'bg-muted/50 rounded-tl-sm'
-                                          }`}
-                                        >
-                                          <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
+                                  ticketMessages.map((msg) => {
+                                    const msgAttachments = msg.attachments || [];
+                                    return (
+                                      <div
+                                        key={msg.id}
+                                        className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
+                                      >
+                                        <Avatar className="h-7 w-7 shrink-0">
+                                          <AvatarImage src={msg.user_avatar || undefined} />
+                                          <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-foreground text-background' : 'bg-muted'}`}>
+                                            {msg.is_admin_reply ? (
+                                              <ShieldCheck className="h-3.5 w-3.5" />
+                                            ) : (
+                                              getInitials(msg.user_name || 'U')
+                                            )}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className={`flex-1 max-w-[80%]`}>
+                                          <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
+                                            <span className="text-xs font-medium text-muted-foreground">
+                                              {msg.is_admin_reply ? 'Suporte' : msg.user_name}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground/70">
+                                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
+                                            </span>
+                                          </div>
+                                          <div
+                                            className={`rounded-lg px-3 py-1.5 text-sm ${
+                                              msg.is_admin_reply
+                                                ? 'bg-foreground text-background rounded-tr-sm'
+                                                : 'bg-muted/50 rounded-tl-sm'
+                                            }`}
+                                          >
+                                            <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
+                                            {msgAttachments.length > 0 && (
+                                              <FilePreview 
+                                                files={msgAttachments} 
+                                                onViewFile={(index) => openViewer(msgAttachments, index)} 
+                                              />
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  ))
+                                    );
+                                  })
                                 ) : (
                                   <div className="flex justify-center py-12">
                                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -780,7 +811,17 @@ export default function AdminSupport() {
 
                           {/* Reply Input */}
                           {isPending && (
-                            <div className="p-4 border-t bg-background">
+                            <div className="p-4 border-t bg-background space-y-3">
+                              {/* Attachments */}
+                              {user && selectedTicket?.id === ticket.id && (
+                                <AttachmentUpload
+                                  userId={user.id}
+                                  ticketId={ticket.id}
+                                  attachments={pendingAttachments}
+                                  onAttachmentsChange={setPendingAttachments}
+                                  disabled={submitting}
+                                />
+                              )}
                               <div className="flex gap-3">
                                 <Textarea
                                   placeholder="Digite sua resposta... (Enter para enviar, Shift+Enter para nova linha)"
@@ -793,8 +834,8 @@ export default function AdminSupport() {
                                   disabled={submitting}
                                 />
                                 <Button
-                                  onClick={handleSendMessage}
-                                  disabled={!newMessage.trim() || submitting || selectedTicket?.id !== ticket.id}
+                                  onClick={handleSend}
+                                  disabled={(!newMessage.trim() && pendingAttachments.length === 0) || submitting || selectedTicket?.id !== ticket.id}
                                   size="icon"
                                   className="shrink-0 h-[52px] w-[52px]"
                                 >
@@ -979,6 +1020,14 @@ export default function AdminSupport() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* File Viewer Modal */}
+        <FileViewer
+          files={viewerFiles}
+          initialIndex={viewerIndex}
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+        />
       </div>
     </AdminLayout>
   );
