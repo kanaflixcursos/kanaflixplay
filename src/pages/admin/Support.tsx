@@ -47,6 +47,7 @@ interface SupportTicket {
     avatar_url: string | null;
   };
   message_count?: number;
+  has_unread_message?: boolean;
 }
 
 interface RefundRequest {
@@ -131,23 +132,38 @@ export default function AdminSupport() {
       (profiles || []).map(p => [p.user_id, p])
     );
 
-    // Get message counts
+    // Get all messages for tickets
     const ticketIds = (ticketsData || []).map(t => t.id);
-    const { data: messageCounts } = await supabase
+    const { data: allMessages } = await supabase
       .from('support_ticket_messages')
-      .select('ticket_id')
-      .in('ticket_id', ticketIds);
+      .select('ticket_id, is_admin_reply, created_at')
+      .in('ticket_id', ticketIds)
+      .order('created_at', { ascending: false });
 
+    // Count messages and check for unread (last message is from user)
     const countMap = new Map<string, number>();
-    (messageCounts || []).forEach(m => {
+    const lastMessageByTicket = new Map<string, boolean>();
+    
+    (allMessages || []).forEach(m => {
       countMap.set(m.ticket_id, (countMap.get(m.ticket_id) || 0) + 1);
+      if (!lastMessageByTicket.has(m.ticket_id)) {
+        lastMessageByTicket.set(m.ticket_id, m.is_admin_reply);
+      }
     });
 
-    const ticketsWithProfiles = (ticketsData || []).map(t => ({
-      ...t,
-      user_profile: profileMap.get(t.user_id) || null,
-      message_count: countMap.get(t.id) || 0,
-    }));
+    const ticketsWithProfiles = (ticketsData || []).map(t => {
+      const lastIsAdmin = lastMessageByTicket.get(t.id);
+      // Has unread if open/in_progress and last message is from user (not admin)
+      const isPending = t.status === 'open' || t.status === 'in_progress';
+      const hasUnread = isPending && (lastIsAdmin === false || (lastIsAdmin === undefined && isPending));
+      
+      return {
+        ...t,
+        user_profile: profileMap.get(t.user_id) || null,
+        message_count: countMap.get(t.id) || 0,
+        has_unread_message: hasUnread,
+      };
+    });
 
     setTickets(ticketsWithProfiles);
   }, []);
@@ -405,15 +421,22 @@ export default function AdminSupport() {
                   return (
                     <div
                       key={ticket.id}
-                      className="flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+                      className={`flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors ${
+                        ticket.has_unread_message ? 'border-primary/50 bg-primary/5' : ''
+                      }`}
                       onClick={() => navigate(`/admin/suporte/${ticket.id}`)}
                     >
-                      <Avatar className="h-10 w-10 shrink-0">
-                        <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10">
-                          <User className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        {ticket.has_unread_message && (
+                          <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
+                        )}
+                      </div>
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -428,7 +451,9 @@ export default function AdminSupport() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate max-w-[200px] sm:max-w-[300px]">
+                          <span className={`font-medium text-sm truncate max-w-[200px] sm:max-w-[300px] ${
+                            ticket.has_unread_message ? 'text-foreground' : ''
+                          }`}>
                             {ticket.subject}
                           </span>
                           <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
@@ -443,7 +468,9 @@ export default function AdminSupport() {
 
                       <div className="flex items-center gap-3 shrink-0">
                         {ticket.message_count > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span className={`flex items-center gap-1 text-xs ${
+                            ticket.has_unread_message ? 'text-primary font-medium' : 'text-muted-foreground'
+                          }`}>
                             <MessageCircle className="h-3.5 w-3.5" />
                             {ticket.message_count}
                           </span>

@@ -40,6 +40,7 @@ interface SupportTicket {
   created_at: string;
   updated_at: string;
   message_count?: number;
+  has_unread_reply?: boolean;
 }
 
 interface RefundRequest {
@@ -120,9 +121,24 @@ export default function Support() {
         countMap.set(m.ticket_id, (countMap.get(m.ticket_id) || 0) + 1);
       });
 
+      // Check for unread notifications per ticket
+      const { data: unreadNotifications } = await supabase
+        .from('notifications')
+        .select('metadata')
+        .eq('user_id', user.id)
+        .eq('type', 'ticket_reply')
+        .eq('is_read', false);
+
+      const ticketsWithUnread = new Set<string>();
+      (unreadNotifications || []).forEach(n => {
+        const ticketId = (n.metadata as { ticket_id?: string })?.ticket_id;
+        if (ticketId) ticketsWithUnread.add(ticketId);
+      });
+
       const ticketsWithCounts = data.map(t => ({
         ...t,
         message_count: countMap.get(t.id) || 0,
+        has_unread_reply: ticketsWithUnread.has(t.id),
       }));
 
       setTickets(ticketsWithCounts);
@@ -322,16 +338,25 @@ export default function Support() {
                 return (
                   <div
                     key={ticket.id}
-                    className="flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+                    className={`flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors ${
+                      ticket.has_unread_reply ? 'border-primary/50 bg-primary/5' : ''
+                    }`}
                     onClick={() => navigate(`/suporte/${ticket.id}`)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-sm truncate">{ticket.subject}</h4>
+                        <h4 className={`font-medium text-sm truncate ${ticket.has_unread_reply ? 'text-foreground' : ''}`}>
+                          {ticket.subject}
+                        </h4>
                         <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </Badge>
+                        {ticket.has_unread_reply && (
+                          <Badge variant="destructive" className="text-xs h-5 shrink-0">
+                            Nova resposta
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline" className="text-xs h-5">
@@ -344,7 +369,7 @@ export default function Support() {
                         {ticket.message_count && ticket.message_count > 0 && (
                           <>
                             <span>•</span>
-                            <span className="flex items-center gap-1">
+                            <span className={`flex items-center gap-1 ${ticket.has_unread_reply ? 'text-primary font-medium' : ''}`}>
                               <MessageCircle className="h-3 w-3" />
                               {ticket.message_count}
                             </span>

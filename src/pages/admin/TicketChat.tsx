@@ -165,15 +165,18 @@ export default function AdminTicketChat() {
     fetchMessages();
   }, [fetchTicket, fetchMessages]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom on initial load and new messages
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && !loadingMessages) {
       const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        // Use setTimeout to ensure scroll happens after render
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }, 100);
       }
     }
-  }, [messages]);
+  }, [messages, loadingMessages]);
 
   // Real-time subscription
   useEffect(() => {
