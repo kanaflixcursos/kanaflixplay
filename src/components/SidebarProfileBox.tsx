@@ -13,6 +13,7 @@ interface SidebarProfileBoxProps {
   unreadCount?: number;
   pendingSupportCount?: number;
   unreadSupportNotifications?: number;
+  isAdmin?: boolean;
   onSignOut: () => void;
   variant?: 'student' | 'admin';
 }
@@ -24,6 +25,7 @@ export default function SidebarProfileBox({
   unreadCount = 0,
   pendingSupportCount = 0,
   unreadSupportNotifications = 0,
+  isAdmin = false,
   onSignOut,
   variant = 'student',
 }: SidebarProfileBoxProps) {
@@ -99,25 +101,28 @@ export default function SidebarProfileBox({
           )}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
-          onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
-        >
-          <HelpCircle className="h-4 w-4" />
-          Suporte
-          {variant === 'admin' && pendingSupportCount > 0 && (
-            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-              {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
-            </span>
-          )}
-          {variant === 'student' && unreadSupportNotifications > 0 && (
-            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-              {unreadSupportNotifications > 99 ? '99+' : unreadSupportNotifications}
-            </span>
-          )}
-        </Button>
+        {/* Hide support button for admins in student layout - they use /admin/suporte */}
+        {!(variant === 'student' && isAdmin) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
+            onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
+          >
+            <HelpCircle className="h-4 w-4" />
+            Suporte
+            {variant === 'admin' && pendingSupportCount > 0 && (
+              <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
+              </span>
+            )}
+            {variant === 'student' && unreadSupportNotifications > 0 && (
+              <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                {unreadSupportNotifications > 99 ? '99+' : unreadSupportNotifications}
+              </span>
+            )}
+          </Button>
+        )}
 
         <Separator className="my-2" />
 

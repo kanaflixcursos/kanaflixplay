@@ -1,6 +1,5 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,31 +13,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { AttachmentUpload } from '@/components/support/AttachmentUpload';
-import { FileViewer, FilePreview, type AttachmentFile } from '@/components/support/FileViewer';
 import { 
   MessageSquare, 
   Loader2, 
   Clock, 
   CheckCircle2, 
   XCircle,
-  Send,
   RefreshCcw,
   HelpCircle,
-  MessageCircle,
   User,
-  Mail,
   AlertCircle,
   Search,
-  ChevronDown,
-  ChevronUp,
-  ShieldCheck
+  ChevronRight,
+  MessageCircle
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface SupportTicket {
@@ -56,18 +46,7 @@ interface SupportTicket {
     email: string | null;
     avatar_url: string | null;
   };
-}
-
-interface TicketMessage {
-  id: string;
-  ticket_id: string;
-  user_id: string;
-  message: string;
-  is_admin_reply: boolean;
-  created_at: string;
-  user_name?: string;
-  user_avatar?: string;
-  attachments?: Array<{ name: string; url: string; type: string; size: number }>;
+  message_count?: number;
 }
 
 interface RefundRequest {
@@ -93,7 +72,6 @@ interface RefundRequest {
   };
 }
 
-// Simplified status for admin view: pending (open, in_progress) and resolved (resolved, closed)
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
   open: { label: 'Pendente', variant: 'secondary', icon: Clock },
   in_progress: { label: 'Pendente', variant: 'secondary', icon: Clock },
@@ -114,75 +92,22 @@ const categoryLabels: Record<string, string> = {
   other: 'Outro',
 };
 
-// Generate short ticket code from UUID
-const getTicketCode = (id: string) => {
-  return `#${id.slice(0, 6).toUpperCase()}`;
-};
-
-// Email copy button component
-function EmailCopyButton({ email }: { email: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleCopy}
-      className="min-w-[90px]"
-    >
-      <Mail className="h-4 w-4 mr-1" />
-      {copied ? 'Email Copiado' : 'Email'}
-    </Button>
-  );
-};
+const getTicketCode = (id: string) => `#${id.slice(0, 6).toUpperCase()}`;
 
 export default function AdminSupport() {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
   
-  // Filter states
+  // Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
-  const [contentSearch, setContentSearch] = useState('');
-  
-  // Expanded tickets for chat view
-  const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
-  
-  // Attachments for current message
-  const [pendingAttachments, setPendingAttachments] = useState<AttachmentFile[]>([]);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerFiles, setViewerFiles] = useState<AttachmentFile[]>([]);
-  const [viewerIndex, setViewerIndex] = useState(0);
   
   // Refund review modal
   const [reviewingRefund, setReviewingRefund] = useState<RefundRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [processingRefund, setProcessingRefund] = useState(false);
-
-  const ticketIdFromUrl = searchParams.get('ticket');
-  const scrollAreaRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-
-  const openViewer = (files: AttachmentFile[], index: number) => {
-    setViewerFiles(files);
-    setViewerIndex(index);
-    setViewerOpen(true);
-  };
 
   const fetchTickets = useCallback(async () => {
     const { data: ticketsData, error } = await supabase
@@ -206,9 +131,22 @@ export default function AdminSupport() {
       (profiles || []).map(p => [p.user_id, p])
     );
 
+    // Get message counts
+    const ticketIds = (ticketsData || []).map(t => t.id);
+    const { data: messageCounts } = await supabase
+      .from('support_ticket_messages')
+      .select('ticket_id')
+      .in('ticket_id', ticketIds);
+
+    const countMap = new Map<string, number>();
+    (messageCounts || []).forEach(m => {
+      countMap.set(m.ticket_id, (countMap.get(m.ticket_id) || 0) + 1);
+    });
+
     const ticketsWithProfiles = (ticketsData || []).map(t => ({
       ...t,
       user_profile: profileMap.get(t.user_id) || null,
+      message_count: countMap.get(t.id) || 0,
     }));
 
     setTickets(ticketsWithProfiles);
@@ -252,156 +190,52 @@ export default function AdminSupport() {
     setRefundRequests(refundsWithProfiles);
   }, []);
 
-  const fetchTicketMessages = async (ticketId: string) => {
-    setLoadingMessages(true);
-    
-    const { data: messages, error } = await supabase
-      .from('support_ticket_messages')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching messages:', error);
-      setLoadingMessages(false);
-      return;
-    }
-
-    // Fetch user profiles
-    const userIds = [...new Set((messages || []).map(m => m.user_id))];
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, avatar_url')
-      .in('user_id', userIds);
-
-    const profileMap = new Map(
-      (profiles || []).map(p => [p.user_id, { name: p.full_name, avatar: p.avatar_url }])
-    );
-
-    const messagesWithUsers = (messages || []).map(m => ({
-      ...m,
-      user_name: profileMap.get(m.user_id)?.name || 'Usuário',
-      user_avatar: profileMap.get(m.user_id)?.avatar || undefined,
-      attachments: (m.attachments as Array<{ name: string; url: string; type: string; size: number }>) || [],
-    }));
-
-    setTicketMessages(messagesWithUsers);
-    setLoadingMessages(false);
-  };
-
   useEffect(() => {
     Promise.all([fetchTickets(), fetchRefundRequests()]).then(() => {
       setLoading(false);
     });
+
+    // Real-time subscription for new tickets
+    const channel = supabase
+      .channel('admin-tickets')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'support_tickets',
+        },
+        () => {
+          fetchTickets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchTickets, fetchRefundRequests]);
 
-  useEffect(() => {
-    if (selectedTicket) {
-      fetchTicketMessages(selectedTicket.id);
-      setSearchParams({ ticket: selectedTicket.id });
-    } else {
-      setTicketMessages([]);
-      // setSearchParams is handled when collapsing the selected ticket (to avoid loops)
-    }
-  }, [selectedTicket, setSearchParams]);
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (selectedTicket) {
-      const scrollRef = scrollAreaRefs.current.get(selectedTicket.id);
-      if (scrollRef) {
-        const scrollContainer = scrollRef.querySelector('[data-radix-scroll-area-viewport]');
-        if (scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-      }
-    }
-  }, [ticketMessages, selectedTicket]);
-
-  const handleSendMessage = async (attachments?: Array<{ name: string; url: string; type: string; size: number }>) => {
-    if (!user || !selectedTicket || (!newMessage.trim() && (!attachments || attachments.length === 0))) return;
-
-    setSubmitting(true);
-    const { error } = await supabase
-      .from('support_ticket_messages')
-      .insert({
-        ticket_id: selectedTicket.id,
-        user_id: user.id,
-        message: newMessage.trim(),
-        is_admin_reply: true,
-        attachments: attachments || [],
-      });
-
-    if (error) {
-      toast.error('Erro ao enviar mensagem');
-      console.error(error);
-    } else {
-      setNewMessage('');
-      fetchTicketMessages(selectedTicket.id);
-      
-      // Update ticket status to in_progress if it was open
-      if (selectedTicket.status === 'open') {
-        await supabase
-          .from('support_tickets')
-          .update({ status: 'in_progress' })
-          .eq('id', selectedTicket.id);
-        fetchTickets();
-      }
-    }
-    setSubmitting(false);
-  };
-
-  const handleUpdateTicketStatus = async (ticketId: string, newStatus: 'resolved' | 'open') => {
-    const { error } = await supabase
-      .from('support_tickets')
-      .update({ status: newStatus })
-      .eq('id', ticketId);
-
-    if (error) {
-      toast.error('Erro ao atualizar status');
-    } else {
-      toast.success(newStatus === 'resolved' ? 'Ticket marcado como concluído' : 'Ticket reaberto');
-      if (selectedTicket?.id === ticketId) {
-        setSelectedTicket({ ...selectedTicket, status: newStatus });
-      }
-      fetchTickets();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if ((newMessage.trim() || pendingAttachments.length > 0) && !submitting) {
-        handleSend();
-      }
-    }
-  };
-
-  const handleSend = () => {
-    handleSendMessage(pendingAttachments.length > 0 ? pendingAttachments : undefined);
-    setPendingAttachments([]);
-  };
-
   const handleReviewRefund = async (approved: boolean) => {
-    if (!reviewingRefund || !user) return;
+    if (!reviewingRefund) return;
 
     setProcessingRefund(true);
 
     try {
-      // Update refund request status
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error: updateError } = await supabase
         .from('refund_requests')
         .update({
           status: approved ? 'approved' : 'rejected',
           admin_notes: adminNotes.trim() || null,
-          reviewed_by: user.id,
+          reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
         })
         .eq('id', reviewingRefund.id);
 
       if (updateError) throw updateError;
 
-      // If approved, process the actual refund via edge function
       if (approved && reviewingRefund.order?.pagarme_charge_id) {
         const { error: refundError } = await supabase.functions.invoke('pagarme', {
           body: {
@@ -412,7 +246,6 @@ export default function AdminSupport() {
         });
 
         if (refundError) {
-          console.error('Refund processing error:', refundError);
           toast.error('Reembolso aprovado, mas houve erro no processamento. Verifique manualmente.');
         } else {
           toast.success('Reembolso aprovado e processado com sucesso!');
@@ -434,15 +267,6 @@ export default function AdminSupport() {
     setProcessingRefund(false);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -450,37 +274,16 @@ export default function AdminSupport() {
     }).format(value / 100);
   };
 
-  const setTicketExpanded = (ticket: SupportTicket, open: boolean) => {
-    setExpandedTickets((prev) => {
-      const next = new Set(prev);
-      if (open) next.add(ticket.id);
-      else next.delete(ticket.id);
-      return next;
-    });
-
-    setSelectedTicket((prev) => {
-      if (open) return ticket;
-      if (prev?.id === ticket.id) {
-        // remove ?ticket=... to avoid auto-reselect loops
-        setSearchParams({});
-        return null;
-      }
-      return prev;
-    });
-  };
-
-  // Filter tickets based on status and search
+  // Filter tickets
   const filteredTickets = useMemo(() => {
     let filtered = tickets;
 
-    // Status filter
     if (statusFilter === 'pending') {
       filtered = filtered.filter(t => t.status === 'open' || t.status === 'in_progress');
     } else if (statusFilter === 'resolved') {
       filtered = filtered.filter(t => t.status === 'resolved' || t.status === 'closed');
     }
 
-    // Search filter (name, email, ticket code)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(t => {
@@ -498,18 +301,8 @@ export default function AdminSupport() {
       });
     }
 
-    // Content search (searches inside ticket message and subject)
-    if (contentSearch.trim()) {
-      const query = contentSearch.toLowerCase().trim();
-      filtered = filtered.filter(t => {
-        const subject = t.subject.toLowerCase();
-        const message = t.message.toLowerCase();
-        return subject.includes(query) || message.includes(query);
-      });
-    }
-
     return filtered;
-  }, [tickets, statusFilter, searchQuery, contentSearch]);
+  }, [tickets, statusFilter, searchQuery]);
 
   const pendingRefunds = refundRequests.filter(r => r.status === 'pending');
 
@@ -521,9 +314,9 @@ export default function AdminSupport() {
             <h1 className="text-2xl font-semibold tracking-tight">Suporte</h1>
             <p className="text-muted-foreground">Gerenciamento de solicitações e reembolsos</p>
           </div>
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+              <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
         </div>
@@ -585,19 +378,9 @@ export default function AdminSupport() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome, email ou código do ticket..."
+                  placeholder="Buscar por nome, email ou código..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar palavra no conteúdo..."
-                  value={contentSearch}
-                  onChange={(e) => setContentSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -609,267 +392,75 @@ export default function AdminSupport() {
                   <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <h3 className="text-lg font-medium">Nenhuma solicitação</h3>
                   <p className="text-muted-foreground text-sm mt-1">
-                    {searchQuery || contentSearch 
-                      ? 'Nenhum ticket encontrado com os filtros aplicados'
-                      : 'Não há solicitações de suporte no momento'
-                    }
+                    {searchQuery ? 'Nenhum ticket encontrado com os filtros aplicados' : 'Não há solicitações no momento'}
                   </p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredTickets.map((ticket) => {
-                  const isExpanded = expandedTickets.has(ticket.id);
                   const status = statusConfig[ticket.status] || statusConfig.open;
                   const StatusIcon = status.icon;
-                  const isPending = ticket.status === 'open' || ticket.status === 'in_progress';
 
                   return (
-                     <Collapsible
-                       key={ticket.id}
-                       open={isExpanded}
-                       onOpenChange={(open) => setTicketExpanded(ticket, open)}
-                     >
-                      <div className="bg-card rounded-xl border overflow-hidden">
-                        {/* Clickable Header */}
-                        <CollapsibleTrigger asChild>
-                          <div className="flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                            <Avatar className="h-10 w-10 shrink-0">
-                              <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
-                              <AvatarFallback className="text-xs bg-primary/10">
-                                <User className="h-5 w-5" />
-                              </AvatarFallback>
-                            </Avatar>
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-mono text-muted-foreground">
-                                  {getTicketCode(ticket.id)}
-                                </span>
-                                <span className="text-sm font-medium text-primary">
-                                  {ticket.user_profile?.email || 'sem email'}
-                                </span>
-                                <span className="text-sm text-muted-foreground">
-                                  ({ticket.user_profile?.full_name || 'Usuário'})
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <span className="font-medium text-sm truncate max-w-[300px]">
-                                  {ticket.subject}
-                                </span>
-                                <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
-                                  <StatusIcon className="h-3 w-3" />
-                                  {status.label}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs h-5">
-                                  {categoryLabels[ticket.category] || ticket.category}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-xs text-muted-foreground hidden sm:inline">
-                                {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
-                              </span>
-                              {isExpanded ? (
-                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                              ) : (
-                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </div>
-                          </div>
-                        </CollapsibleTrigger>
-
-                        <CollapsibleContent>
-                          {/* User info and actions */}
-                          <div className="px-4 pb-3 flex items-center justify-between gap-2 border-b">
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/admin/students/${ticket.user_id}`);
-                                }}
-                              >
-                                <User className="h-4 w-4 mr-1" />
-                                Ver Perfil
-                              </Button>
-                              {ticket.user_profile?.email && (
-                                <EmailCopyButton email={ticket.user_profile.email} />
-                              )}
-                            </div>
-                            <Button
-                              variant={isPending ? "default" : "outline"}
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleUpdateTicketStatus(ticket.id, isPending ? 'resolved' : 'open');
-                              }}
-                            >
-                              {isPending ? (
-                                <>
-                                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                                  Marcar Concluído
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  Reabrir
-                                </>
-                              )}
-                            </Button>
-                          </div>
-
-                          {/* Original ticket message */}
-                          <div className="p-4 bg-muted/10 border-b">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Aberto em {format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
-                          </div>
-
-                          {/* Messages Area */}
-                          <ScrollArea 
-                            ref={(el) => {
-                              if (el) scrollAreaRefs.current.set(ticket.id, el);
-                            }}
-                            className="h-[300px]"
-                          >
-                            <div className="flex flex-col justify-end min-h-full">
-                              <div className="p-4 space-y-4">
-                                {selectedTicket?.id === ticket.id && loadingMessages ? (
-                                  <div className="flex justify-center py-12">
-                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                                  </div>
-                                ) : selectedTicket?.id === ticket.id && ticketMessages.length === 0 ? (
-                                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                                      <MessageCircle className="h-6 w-6 text-muted-foreground" />
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                      Nenhuma resposta ainda
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Envie uma resposta para o usuário
-                                    </p>
-                                  </div>
-                                ) : selectedTicket?.id === ticket.id ? (
-                                  ticketMessages.map((msg) => {
-                                    const msgAttachments = msg.attachments || [];
-                                    return (
-                                      <div
-                                        key={msg.id}
-                                        className={`flex gap-2 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
-                                      >
-                                        <Avatar className="h-7 w-7 shrink-0">
-                                          <AvatarImage src={msg.user_avatar || undefined} />
-                                          <AvatarFallback className={`text-[10px] ${msg.is_admin_reply ? 'bg-foreground text-background' : 'bg-muted'}`}>
-                                            {msg.is_admin_reply ? (
-                                              <ShieldCheck className="h-3.5 w-3.5" />
-                                            ) : (
-                                              getInitials(msg.user_name || 'U')
-                                            )}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <div className={`flex-1 max-w-[80%]`}>
-                                          <div className={`flex items-center gap-1.5 mb-0.5 ${msg.is_admin_reply ? 'justify-end' : ''}`}>
-                                            <span className="text-xs font-medium text-muted-foreground">
-                                              {msg.is_admin_reply ? 'Suporte' : msg.user_name}
-                                            </span>
-                                            <span className="text-[10px] text-muted-foreground/70">
-                                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                                            </span>
-                                          </div>
-                                          <div
-                                            className={`rounded-lg px-3 py-1.5 text-sm ${
-                                              msg.is_admin_reply
-                                                ? 'bg-foreground text-background rounded-tr-sm'
-                                                : 'bg-muted/50 rounded-tl-sm'
-                                            }`}
-                                          >
-                                            <p className="whitespace-pre-wrap leading-normal">{msg.message}</p>
-                                            {msgAttachments.length > 0 && (
-                                              <FilePreview 
-                                                files={msgAttachments} 
-                                                onViewFile={(index) => openViewer(msgAttachments, index)} 
-                                              />
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })
-                                ) : (
-                                  <div className="flex justify-center py-12">
-                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </ScrollArea>
-
-                          {/* Reply Input */}
-                          {isPending && (
-                            <div className="p-4 border-t bg-background space-y-3">
-                              {/* Attachments */}
-                              {user && selectedTicket?.id === ticket.id && (
-                                <AttachmentUpload
-                                  userId={user.id}
-                                  ticketId={ticket.id}
-                                  attachments={pendingAttachments}
-                                  onAttachmentsChange={setPendingAttachments}
-                                  disabled={submitting}
-                                />
-                              )}
-                              <div className="flex gap-3">
-                                <Textarea
-                                  placeholder="Digite sua resposta... (Enter para enviar, Shift+Enter para nova linha)"
-                                  value={selectedTicket?.id === ticket.id ? newMessage : ''}
-                                  onChange={(e) => setNewMessage(e.target.value)}
-                                  onKeyDown={handleKeyDown}
-                                  onFocus={() => setSelectedTicket(ticket)}
-                                  rows={2}
-                                  className="resize-none flex-1 min-h-[52px]"
-                                  disabled={submitting}
-                                />
-                                <Button
-                                  onClick={handleSend}
-                                  disabled={(!newMessage.trim() && pendingAttachments.length === 0) || submitting || selectedTicket?.id !== ticket.id}
-                                  size="icon"
-                                  className="shrink-0 h-[52px] w-[52px]"
-                                >
-                                  {submitting ? (
-                                    <Loader2 className="h-5 w-5 animate-spin" />
-                                  ) : (
-                                    <Send className="h-5 w-5" />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Resolved state */}
-                          {!isPending && (
-                            <div className="p-4 border-t bg-muted/30">
-                              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                                <CheckCircle2 className="h-4 w-4" />
-                                <span className="text-sm">
-                                  Este ticket foi concluído
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </CollapsibleContent>
+                    <div
+                      key={ticket.id}
+                      className="flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => navigate(`/admin/suporte/${ticket.id}`)}
+                    >
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage src={ticket.user_profile?.avatar_url || undefined} />
+                        <AvatarFallback className="bg-primary/10">
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            {getTicketCode(ticket.id)}
+                          </span>
+                          <span className="text-sm font-medium text-primary truncate">
+                            {ticket.user_profile?.email || 'sem email'}
+                          </span>
+                          <span className="text-sm text-muted-foreground hidden sm:inline">
+                            ({ticket.user_profile?.full_name || 'Usuário'})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm truncate max-w-[200px] sm:max-w-[300px]">
+                            {ticket.subject}
+                          </span>
+                          <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
+                            <StatusIcon className="h-3 w-3" />
+                            {status.label}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs h-5 hidden sm:flex">
+                            {categoryLabels[ticket.category] || ticket.category}
+                          </Badge>
+                        </div>
                       </div>
-                    </Collapsible>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {ticket.message_count > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            {ticket.message_count}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          {formatDistanceToNow(new Date(ticket.updated_at), { addSuffix: true, locale: ptBR })}
+                        </span>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="refunds" className="space-y-4">
+          <TabsContent value="refunds" className="space-y-3">
             {refundRequests.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -881,129 +472,93 @@ export default function AdminSupport() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {refundRequests.map((request) => {
-                  const status = refundStatusConfig[request.status] || refundStatusConfig.pending;
-                  const StatusIcon = status.icon;
+              refundRequests.map((refund) => {
+                const status = refundStatusConfig[refund.status] || refundStatusConfig.pending;
+                const StatusIcon = status.icon;
 
-                  return (
-                    <Card key={request.id}>
-                      <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <Avatar className="h-10 w-10">
-                                <AvatarFallback>
-                                  {getInitials(request.user_profile?.full_name || 'U')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="text-sm text-primary font-medium">
-                                  {request.user_profile?.email}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {request.user_profile?.full_name || 'Usuário'}
-                                </p>
-                              </div>
-                              <Badge variant={status.variant} className="gap-1 ml-auto md:ml-0">
-                                <StatusIcon className="h-3 w-3" />
-                                {status.label}
-                              </Badge>
-                            </div>
-
-                            <h4 className="font-medium">
-                              {request.order?.course?.title || 'Curso'}
-                            </h4>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Valor: {formatCurrency(request.order?.amount || 0)}
-                            </p>
-
-                            <div className="mt-3 p-3 bg-muted rounded-lg">
-                              <p className="text-xs text-muted-foreground mb-1">Motivo da solicitação:</p>
-                              <p className="text-sm">{request.reason}</p>
-                            </div>
-
-                            {request.admin_notes && (
-                              <div className="mt-3 p-3 bg-primary/10 rounded-lg">
-                                <p className="text-xs text-muted-foreground mb-1">Notas do administrador:</p>
-                                <p className="text-sm">{request.admin_notes}</p>
-                              </div>
-                            )}
-
-                            <p className="text-xs text-muted-foreground mt-3">
-                              Solicitado em {format(new Date(request.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                            </p>
+                return (
+                  <Card key={refund.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="font-medium truncate">
+                              {refund.order?.course?.title || 'Curso'}
+                            </span>
+                            <Badge variant={status.variant} className="gap-1 text-xs h-5">
+                              <StatusIcon className="h-3 w-3" />
+                              {status.label}
+                            </Badge>
                           </div>
-
-                          {request.status === 'pending' && (
-                            <div className="flex flex-col gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => navigate(`/admin/students/${request.user_id}`)}
-                              >
-                                <User className="h-4 w-4 mr-1" />
-                                Ver Perfil
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setReviewingRefund(request);
-                                  setAdminNotes('');
-                                }}
-                              >
-                                Analisar
-                              </Button>
-                            </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {refund.user_profile?.full_name || 'Usuário'} • {refund.user_profile?.email}
+                          </p>
+                          <p className="text-sm line-clamp-2">{refund.reason}</p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {formatDistanceToNow(new Date(refund.created_at), { addSuffix: true, locale: ptBR })}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-semibold text-lg">
+                            {refund.order?.amount ? formatCurrency(refund.order.amount) : '-'}
+                          </p>
+                          {refund.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                setReviewingRefund(refund);
+                                setAdminNotes('');
+                              }}
+                            >
+                              Analisar
+                            </Button>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                      </div>
+                      {refund.admin_notes && (
+                        <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Observações:</p>
+                          <p className="text-sm">{refund.admin_notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
 
-        {/* Refund review dialog */}
+        {/* Refund Review Dialog */}
         <Dialog open={!!reviewingRefund} onOpenChange={(open) => !open && setReviewingRefund(null)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Analisar Solicitação de Reembolso</DialogTitle>
               <DialogDescription>
-                Revise os detalhes e decida sobre a solicitação
+                {reviewingRefund?.order?.course?.title} • {reviewingRefund?.order?.amount ? formatCurrency(reviewingRefund.order.amount) : '-'}
               </DialogDescription>
             </DialogHeader>
-
-            {reviewingRefund && (
-              <div className="space-y-4">
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">{reviewingRefund.order?.course?.title}</p>
-                  <p className="text-lg font-semibold">{formatCurrency(reviewingRefund.order?.amount || 0)}</p>
-                </div>
-
-                <div>
-                  <Label className="text-muted-foreground text-xs">Motivo do usuário:</Label>
-                  <p className="text-sm mt-1">{reviewingRefund.reason}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="admin-notes">Notas (opcional)</Label>
-                  <Textarea
-                    id="admin-notes"
-                    placeholder="Adicione uma mensagem para o usuário..."
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                    rows={3}
-                  />
-                </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-1">Motivo do cliente:</p>
+                <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+                  {reviewingRefund?.reason}
+                </p>
               </div>
-            )}
-
+              <div className="space-y-2">
+                <Label>Observações (opcional)</Label>
+                <Textarea
+                  placeholder="Adicione observações sobre a decisão..."
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
-                variant="outline"
+                variant="destructive"
                 onClick={() => handleReviewRefund(false)}
                 disabled={processingRefund}
               >
@@ -1020,14 +575,6 @@ export default function AdminSupport() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* File Viewer Modal */}
-        <FileViewer
-          files={viewerFiles}
-          initialIndex={viewerIndex}
-          open={viewerOpen}
-          onOpenChange={setViewerOpen}
-        />
       </div>
     </AdminLayout>
   );
