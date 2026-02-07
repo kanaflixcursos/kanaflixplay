@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -96,6 +98,7 @@ const categoryLabels: Record<string, string> = {
 const getTicketCode = (id: string) => `#${id.slice(0, 6).toUpperCase()}`;
 
 export default function AdminSupport() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
@@ -104,6 +107,12 @@ export default function AdminSupport() {
   // Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Use the unified support notifications hook
+  const { unreadTicketIds } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: true,
+  });
   
   // Refund review modal
   const [reviewingRefund, setReviewingRefund] = useState<RefundRequest | null>(null);
@@ -417,12 +426,13 @@ export default function AdminSupport() {
                 {filteredTickets.map((ticket) => {
                   const status = statusConfig[ticket.status] || statusConfig.open;
                   const StatusIcon = status.icon;
+                  const hasUnread = unreadTicketIds.includes(ticket.id);
 
                   return (
                     <div
                       key={ticket.id}
                       className={`flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors ${
-                        ticket.has_unread_message ? 'border-primary/50 bg-primary/5' : ''
+                        hasUnread ? 'border-primary/50 bg-primary/5' : ''
                       }`}
                       onClick={() => navigate(`/admin/suporte/${ticket.id}`)}
                     >
@@ -433,7 +443,7 @@ export default function AdminSupport() {
                             <User className="h-5 w-5" />
                           </AvatarFallback>
                         </Avatar>
-                        {ticket.has_unread_message && (
+                        {hasUnread && (
                           <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-destructive border-2 border-background" />
                         )}
                       </div>
@@ -452,7 +462,7 @@ export default function AdminSupport() {
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`font-medium text-sm truncate max-w-[200px] sm:max-w-[300px] ${
-                            ticket.has_unread_message ? 'text-foreground' : ''
+                            hasUnread ? 'text-foreground' : ''
                           }`}>
                             {ticket.subject}
                           </span>
@@ -467,9 +477,9 @@ export default function AdminSupport() {
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        {ticket.message_count > 0 && (
+                        {ticket.message_count && ticket.message_count > 0 && (
                           <span className={`flex items-center gap-1 text-xs ${
-                            ticket.has_unread_message ? 'text-primary font-medium' : 'text-muted-foreground'
+                            hasUnread ? 'text-primary font-medium' : 'text-muted-foreground'
                           }`}>
                             <MessageCircle className="h-3.5 w-3.5" />
                             {ticket.message_count}

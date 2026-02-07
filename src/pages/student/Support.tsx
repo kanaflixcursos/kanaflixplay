@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,6 @@ interface SupportTicket {
   created_at: string;
   updated_at: string;
   message_count?: number;
-  has_unread_reply?: boolean;
 }
 
 interface RefundRequest {
@@ -96,6 +96,12 @@ export default function Support() {
     category: 'question',
   });
 
+  // Use the unified support notifications hook
+  const { unreadTicketIds } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: false,
+  });
+
   const openTicketsCount = tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length;
   const canCreateNewTicket = openTicketsCount < MAX_OPEN_TICKETS;
 
@@ -121,24 +127,9 @@ export default function Support() {
         countMap.set(m.ticket_id, (countMap.get(m.ticket_id) || 0) + 1);
       });
 
-      // Check for unread notifications per ticket
-      const { data: unreadNotifications } = await supabase
-        .from('notifications')
-        .select('metadata')
-        .eq('user_id', user.id)
-        .eq('type', 'ticket_reply')
-        .eq('is_read', false);
-
-      const ticketsWithUnread = new Set<string>();
-      (unreadNotifications || []).forEach(n => {
-        const ticketId = (n.metadata as { ticket_id?: string })?.ticket_id;
-        if (ticketId) ticketsWithUnread.add(ticketId);
-      });
-
       const ticketsWithCounts = data.map(t => ({
         ...t,
         message_count: countMap.get(t.id) || 0,
-        has_unread_reply: ticketsWithUnread.has(t.id),
       }));
 
       setTickets(ticketsWithCounts);
@@ -334,25 +325,26 @@ export default function Support() {
               tickets.map((ticket) => {
                 const status = statusConfig[ticket.status] || statusConfig.open;
                 const StatusIcon = status.icon;
+                const hasUnread = unreadTicketIds.includes(ticket.id);
 
                 return (
                   <div
                     key={ticket.id}
                     className={`flex items-center gap-3 p-4 rounded-xl border bg-card cursor-pointer hover:bg-muted/50 transition-colors ${
-                      ticket.has_unread_reply ? 'border-primary/50 bg-primary/5' : ''
+                      hasUnread ? 'border-primary/50 bg-primary/5' : ''
                     }`}
                     onClick={() => navigate(`/suporte/${ticket.id}`)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className={`font-medium text-sm truncate ${ticket.has_unread_reply ? 'text-foreground' : ''}`}>
+                        <h4 className={`font-medium text-sm truncate ${hasUnread ? 'text-foreground' : ''}`}>
                           {ticket.subject}
                         </h4>
                         <Badge variant={status.variant} className="gap-1 text-xs h-5 shrink-0">
                           <StatusIcon className="h-3 w-3" />
                           {status.label}
                         </Badge>
-                        {ticket.has_unread_reply && (
+                        {hasUnread && (
                           <Badge variant="destructive" className="text-xs h-5 shrink-0">
                             Nova resposta
                           </Badge>
@@ -369,7 +361,7 @@ export default function Support() {
                         {ticket.message_count && ticket.message_count > 0 && (
                           <>
                             <span>•</span>
-                            <span className={`flex items-center gap-1 ${ticket.has_unread_reply ? 'text-primary font-medium' : ''}`}>
+                            <span className={`flex items-center gap-1 ${hasUnread ? 'text-primary font-medium' : ''}`}>
                               <MessageCircle className="h-3 w-3" />
                               {ticket.message_count}
                             </span>
