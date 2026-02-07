@@ -89,6 +89,17 @@ export default function NotificationsPage() {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
+  const deleteAllNotifications = async () => {
+    if (!user) return;
+
+    await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', user.id);
+
+    setNotifications([]);
+  };
+
   const deleteNotification = async (notificationId: string) => {
     await supabase
       .from('notifications')
@@ -134,6 +145,12 @@ export default function NotificationsPage() {
             <Button variant="outline" size="sm" onClick={markAllAsRead} className="gap-2">
               <Check className="h-4 w-4" />
               Marcar todas como lidas
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button variant="outline" size="sm" onClick={deleteAllNotifications} className="gap-2 text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+              Excluir todas
             </Button>
           )}
         </div>
