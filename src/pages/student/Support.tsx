@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSearchParams } from 'react-router-dom';
 import StudentLayout from '@/components/layouts/StudentLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,8 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { TicketChat } from '@/components/support/TicketChat';
 import { toast } from 'sonner';
 import { 
   MessageSquare, 
@@ -23,10 +22,8 @@ import {
   Clock, 
   CheckCircle2, 
   XCircle,
-  Send,
   RefreshCcw,
   HelpCircle,
-  MessageCircle,
   ChevronRight
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -101,6 +98,7 @@ export default function Support() {
   const [refundRequests, setRefundRequests] = useState<RefundRequest[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
+  const [ticketOwner, setTicketOwner] = useState<{ name: string; avatar?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -171,8 +169,19 @@ export default function Support() {
     }
   }, [user, isAdmin]);
 
-  const fetchTicketMessages = async (ticketId: string) => {
+  const fetchTicketMessages = async (ticketId: string, ticketUserId: string) => {
     setLoadingMessages(true);
+    
+    // Fetch ticket owner profile
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('user_id', ticketUserId)
+      .single();
+    
+    if (ownerProfile) {
+      setTicketOwner({ name: ownerProfile.full_name || 'Usuário', avatar: ownerProfile.avatar_url || undefined });
+    }
     
     const { data: messages, error } = await supabase
       .from('support_ticket_messages')
@@ -186,7 +195,7 @@ export default function Support() {
       return;
     }
 
-    // Fetch user profiles
+    // Fetch user profiles for messages
     const userIds = [...new Set((messages || []).map(m => m.user_id))];
     const { data: profiles } = await supabase
       .from('profiles')
@@ -215,10 +224,11 @@ export default function Support() {
 
   useEffect(() => {
     if (selectedTicket) {
-      fetchTicketMessages(selectedTicket.id);
+      fetchTicketMessages(selectedTicket.id, selectedTicket.user_id);
       setSearchParams({ ticket: selectedTicket.id });
     } else {
       setTicketMessages([]);
+      setTicketOwner(null);
       setSearchParams({});
     }
   }, [selectedTicket, setSearchParams]);
@@ -271,7 +281,7 @@ export default function Support() {
       console.error(error);
     } else {
       setNewMessage('');
-      fetchTicketMessages(selectedTicket.id);
+      fetchTicketMessages(selectedTicket.id, selectedTicket.user_id);
       
       // Update ticket status if admin is replying
       if (isAdmin && selectedTicket.status === 'open') {
@@ -285,14 +295,6 @@ export default function Support() {
     setSubmitting(false);
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -416,130 +418,25 @@ export default function Support() {
 
           <TabsContent value="tickets" className="space-y-4">
             {selectedTicket ? (
-              <Card>
-                <CardHeader className="border-b">
-                  <div className="flex items-center justify-between">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setSelectedTicket(null)}
-                    >
-                      ← Voltar
-                    </Button>
-                    <Badge variant={statusConfig[selectedTicket.status]?.variant || 'secondary'}>
-                      {statusConfig[selectedTicket.status]?.label || selectedTicket.status}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-lg mt-2">{selectedTicket.subject}</CardTitle>
-                  <CardDescription>
-                    {categoryLabels[selectedTicket.category] || selectedTicket.category} • 
-                    Criado em {format(new Date(selectedTicket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {/* Original message */}
-                  <div className="p-4 border-b bg-muted/30">
-                    <p className="text-sm whitespace-pre-wrap">{selectedTicket.message}</p>
-                  </div>
-
-                  {/* Messages */}
-                  <ScrollArea className="h-[300px]">
-                    <div className="p-4 space-y-4">
-                      {loadingMessages ? (
-                        <div className="flex justify-center py-8">
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : ticketMessages.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">Nenhuma resposta ainda</p>
-                        </div>
-                      ) : (
-                        ticketMessages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex gap-3 ${msg.is_admin_reply ? 'flex-row-reverse' : ''}`}
-                          >
-                            <Avatar className="h-8 w-8 shrink-0">
-                              <AvatarImage src={msg.user_avatar || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(msg.user_name || 'U')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className={`flex-1 max-w-[80%] ${msg.is_admin_reply ? 'text-right' : ''}`}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium">
-                                  {msg.is_admin_reply ? 'Suporte' : msg.user_name}
-                                </span>
-                                {msg.is_admin_reply && (
-                                  <Badge variant="outline" className="text-xs">Admin</Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: ptBR })}
-                                </span>
-                              </div>
-                              <div
-                                className={`rounded-lg px-3 py-2 text-sm ${
-                                  msg.is_admin_reply
-                                    ? 'bg-primary text-primary-foreground ml-auto'
-                                    : 'bg-muted'
-                                }`}
-                              >
-                                <p className="whitespace-pre-wrap">{msg.message}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-
-                  {/* Reply form - Users can only reply after admin responds */}
-                  {selectedTicket.status !== 'closed' && selectedTicket.status !== 'resolved' && (() => {
-                    // Check if user can reply: admin always can, user only after admin replied
-                    const hasAdminReply = ticketMessages.some(m => m.is_admin_reply);
-                    const lastMessage = ticketMessages[ticketMessages.length - 1];
-                    const lastMessageIsFromAdmin = lastMessage?.is_admin_reply === true;
-                    const canUserReply = isAdmin || (hasAdminReply && lastMessageIsFromAdmin);
-                    
-                    if (!canUserReply && !isAdmin) {
-                      return (
-                        <div className="p-4 border-t bg-muted/30">
-                          <p className="text-sm text-muted-foreground text-center">
-                            Aguardando resposta do suporte...
-                          </p>
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <div className="p-4 border-t">
-                        <div className="flex gap-2">
-                          <Textarea
-                            placeholder="Digite sua mensagem..."
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            rows={2}
-                            className="resize-none"
-                          />
-                          <Button
-                            onClick={handleSendMessage}
-                            disabled={!newMessage.trim() || submitting}
-                            size="icon"
-                            className="shrink-0 h-auto"
-                          >
-                            {submitting ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Send className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
+              <TicketChat
+                ticket={selectedTicket}
+                messages={ticketMessages}
+                loadingMessages={loadingMessages}
+                isAdmin={isAdmin}
+                canReply={(() => {
+                  const hasAdminReply = ticketMessages.some(m => m.is_admin_reply);
+                  const lastMessage = ticketMessages[ticketMessages.length - 1];
+                  const lastMessageIsFromAdmin = lastMessage?.is_admin_reply === true;
+                  return isAdmin || (hasAdminReply && lastMessageIsFromAdmin);
+                })()}
+                submitting={submitting}
+                newMessage={newMessage}
+                onMessageChange={setNewMessage}
+                onSendMessage={handleSendMessage}
+                onBack={() => setSelectedTicket(null)}
+                ticketOwnerName={ticketOwner?.name}
+                ticketOwnerAvatar={ticketOwner?.avatar}
+              />
             ) : tickets.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
