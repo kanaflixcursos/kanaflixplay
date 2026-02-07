@@ -483,9 +483,7 @@ export default function AdminTicketChat() {
         )}
 
         {/* Chat Container */}
-        <div className={`bg-card rounded-xl border overflow-hidden flex flex-col ${
-          refundRequest ? 'h-[calc(100vh-520px)]' : 'h-[calc(100vh-340px)]'
-        } min-h-[300px]`}>
+        <div className="bg-card rounded-xl border overflow-hidden flex flex-col h-[calc(100vh-340px)] min-h-[400px]">
           {/* Original Message */}
           <div className="p-4 bg-muted/30 border-b shrink-0">
             <p className="text-xs text-muted-foreground mb-2">Mensagem original</p>
