@@ -182,6 +182,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               avatarUrl={avatarUrl}
               unreadCount={unreadCount}
               unreadSupportNotifications={unreadSupportNotifications}
+              isAdmin={role === 'admin'}
               onSignOut={handleSignOut}
               variant="student"
             />
