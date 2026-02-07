@@ -11,22 +11,21 @@ const corsHeaders = {
 
 // Brand colors matching design system
 const brand = {
-  primary: "#e67635",
+  primary: "#e67635", // hsl(21, 90%, 48%)
   primaryDark: "#c55a1e",
   text: "#171717",
   textMuted: "#737373",
-  bg: "#fafafa",
+  bg: "#ffffff", // White background
   white: "#ffffff",
   border: "#e5e5e5",
   success: "#16a34a",
-  // Dark header colors
-  darkBg: "#0f1215",
-  darkCard: "#1a1d21",
-  accent: "#1f4d47",
+  // Light mesh gradient colors (matching system)
+  meshPrimary: "rgba(230, 118, 53, 0.06)", // primary with 6% opacity
+  meshAccent: "rgba(31, 77, 71, 0.05)", // accent with 5% opacity
 };
 
-// Logo URL (white version for dark header)
-const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix-white.png`;
+// Logo URL (dark version for light header)
+const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
 
 // Google Sans font import for emails
 const fontImport = `
@@ -39,10 +38,10 @@ const fontImport = `
 // Font family stack
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
-// Dark mesh gradient header with proper styling
+// Light mesh gradient header matching system background
 const meshGradientHeader = `
-  <td style="background: linear-gradient(135deg, ${brand.darkBg} 0%, ${brand.darkCard} 40%, ${brand.accent} 100%); padding: 40px 32px; text-align: center;">
-    <img src="${LOGO_URL}" alt="Kanaflix Play" height="36" style="display: block; margin: 0 auto;">
+  <td style="background: linear-gradient(135deg, rgba(230, 118, 53, 0.08) 0%, rgba(255, 255, 255, 0.9) 35%, rgba(31, 77, 71, 0.06) 70%, rgba(230, 118, 53, 0.04) 100%); padding: 48px 32px; text-align: center; border-bottom: 1px solid #f0f0f0;">
+    <img src="${LOGO_URL}" alt="Kanaflix Play" height="40" style="display: block; margin: 0 auto;">
   </td>
 `;
 
