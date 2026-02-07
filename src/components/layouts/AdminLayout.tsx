@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import { NavLink } from '@/components/NavLink';
 import Footer from '@/components/Footer';
 import SidebarLogo from '@/components/SidebarLogo';
@@ -41,7 +42,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     email: null,
   });
   const [unreadCount, setUnreadCount] = useState(0);
-  const [ticketsWithUnreadMessages, setTicketsWithUnreadMessages] = useState<string[]>([]);
+
+  // Use the unified support notifications hook
+  const { unreadCount: pendingSupportCount } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: true,
+  });
 
   useEffect(() => {
     if (user) {
@@ -73,48 +79,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setUnreadCount(count || 0);
   }, [user]);
 
-  const fetchTicketsWithUnreadMessages = useCallback(async () => {
-    // Get all open/in_progress tickets
-    const { data: tickets } = await supabase
-      .from('support_tickets')
-      .select('id')
-      .in('status', ['open', 'in_progress']);
-
-    if (!tickets || tickets.length === 0) {
-      setTicketsWithUnreadMessages([]);
-      return;
-    }
-
-    const ticketIds = tickets.map(t => t.id);
-    
-    // For each ticket, check if the last message is from user (not admin)
-    const { data: messages } = await supabase
-      .from('support_ticket_messages')
-      .select('ticket_id, is_admin_reply, created_at')
-      .in('ticket_id', ticketIds)
-      .order('created_at', { ascending: false });
-
-    // Group by ticket and get the last message
-    const lastMessageByTicket = new Map<string, boolean>();
-    (messages || []).forEach(m => {
-      if (!lastMessageByTicket.has(m.ticket_id)) {
-        lastMessageByTicket.set(m.ticket_id, m.is_admin_reply);
-      }
-    });
-
-    // Tickets where last message is NOT from admin (user replied and waiting for admin response)
-    const ticketsNeedingAttention = ticketIds.filter(id => {
-      const lastIsAdmin = lastMessageByTicket.get(id);
-      // If no messages or last message is from user, it needs attention
-      return lastIsAdmin === false || lastIsAdmin === undefined;
-    });
-
-    setTicketsWithUnreadMessages(ticketsNeedingAttention);
-  }, []);
-
   useEffect(() => {
     fetchUnreadNotifications();
-    fetchTicketsWithUnreadMessages();
 
     if (!user) return;
 
@@ -134,42 +100,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )
       .subscribe();
 
-    const ticketsChannel = supabase
-      .channel('tickets-admin-sidebar')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'support_tickets',
-        },
-        () => {
-          fetchTicketsWithUnreadMessages();
-        }
-      )
-      .subscribe();
-
-    const messagesChannel = supabase
-      .channel('messages-admin-sidebar')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_ticket_messages',
-        },
-        () => {
-          fetchTicketsWithUnreadMessages();
-        }
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(ticketsChannel);
-      supabase.removeChannel(messagesChannel);
     };
-  }, [user, fetchUnreadNotifications, fetchTicketsWithUnreadMessages]);
+  }, [user, fetchUnreadNotifications]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -233,7 +167,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               userEmail={userEmail}
               avatarUrl={profile.avatar_url}
               unreadCount={unreadCount}
-              pendingSupportCount={ticketsWithUnreadMessages.length}
+              pendingSupportCount={pendingSupportCount}
               onSignOut={handleSignOut}
               variant="admin"
             />

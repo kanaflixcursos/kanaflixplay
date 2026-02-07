@@ -1,6 +1,8 @@
-import { ReactNode, useEffect, useState, useCallback } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import { NavLink } from '@/components/NavLink';
 import Footer from '@/components/Footer';
 import SidebarLogo from '@/components/SidebarLogo';
@@ -19,7 +21,6 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Home, Shield, Compass } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -36,8 +37,13 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [unreadSupportNotifications, setUnreadSupportNotifications] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
+  // Use the unified support notifications hook
+  const { unreadCount: unreadSupportNotifications } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: false,
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,30 +65,25 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     fetchProfile();
   }, [user]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('id, is_read, type')
-      .eq('user_id', user.id)
-      .eq('is_read', false);
-
-    if (!error && data) {
-      setUnreadCount(data.length);
-      // Count support-related notifications specifically
-      const supportNotifs = data.filter(n => n.type === 'ticket_reply');
-      setUnreadSupportNotifications(supportNotifs.length);
-    }
-  }, [user]);
-
   useEffect(() => {
-    fetchNotifications();
+    const fetchUnreadNotifications = async () => {
+      if (!user) return;
+
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      setUnreadNotificationCount(count || 0);
+    };
+
+    fetchUnreadNotifications();
 
     if (!user) return;
 
     const channel = supabase
-      .channel('notifications-sidebar')
+      .channel('notifications-student-sidebar')
       .on(
         'postgres_changes',
         {
@@ -92,7 +93,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          fetchNotifications();
+          fetchUnreadNotifications();
         }
       )
       .subscribe();
@@ -100,7 +101,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications]);
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -180,7 +181,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               userName={displayName}
               userEmail={displayEmail}
               avatarUrl={avatarUrl}
-              unreadCount={unreadCount}
+              unreadCount={unreadNotificationCount}
               unreadSupportNotifications={unreadSupportNotifications}
               isAdmin={role === 'admin'}
               onSignOut={handleSignOut}

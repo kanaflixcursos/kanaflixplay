@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import StudentLayout from '@/components/layouts/StudentLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,8 +19,7 @@ import {
   Loader2, 
   Clock, 
   CheckCircle2,
-  ShieldCheck,
-  User
+  ShieldCheck
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -80,6 +80,12 @@ export default function TicketChatPage() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Get the markTicketAsRead function from the hook
+  const { markTicketAsRead } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: false,
+  });
+
   const fetchTicket = useCallback(async () => {
     if (!ticketId || !user) return;
 
@@ -137,17 +143,14 @@ export default function TicketChatPage() {
 
     setMessages(messagesWithUsers);
     setLoadingMessages(false);
-    
-    // Mark notifications as read
-    if (user) {
-      await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('type', 'ticket_reply')
-        .filter('metadata->ticket_id', 'eq', ticketId);
+  }, [ticketId]);
+
+  // Mark ticket as read when entering the chat
+  useEffect(() => {
+    if (ticketId && user) {
+      markTicketAsRead(ticketId);
     }
-  }, [ticketId, user]);
+  }, [ticketId, user, markTicketAsRead]);
 
   useEffect(() => {
     fetchTicket();
@@ -159,7 +162,6 @@ export default function TicketChatPage() {
     if (scrollRef.current && !loadingMessages) {
       const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        // Use setTimeout to ensure scroll happens after render
         setTimeout(() => {
           scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 100);
@@ -183,6 +185,10 @@ export default function TicketChatPage() {
         },
         () => {
           fetchMessages();
+          // Mark as read when new message arrives while viewing
+          if (user) {
+            markTicketAsRead(ticketId);
+          }
         }
       )
       .subscribe();
@@ -190,7 +196,7 @@ export default function TicketChatPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ticketId, fetchMessages]);
+  }, [ticketId, fetchMessages, user, markTicketAsRead]);
 
   const handleSendMessage = async () => {
     if (!user || !ticket || (!newMessage.trim() && attachments.length === 0)) return;

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -90,6 +91,12 @@ export default function AdminTicketChat() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Get the markTicketAsRead and refreshUnreadState from the hook
+  const { markTicketAsRead, refreshUnreadState } = useSupportNotifications({
+    userId: user?.id,
+    isAdmin: true,
+  });
+
   const fetchTicket = useCallback(async () => {
     if (!ticketId) return;
 
@@ -160,6 +167,13 @@ export default function AdminTicketChat() {
     setLoadingMessages(false);
   }, [ticketId]);
 
+  // Mark ticket as read when entering the chat
+  useEffect(() => {
+    if (ticketId && user) {
+      markTicketAsRead(ticketId);
+    }
+  }, [ticketId, user, markTicketAsRead]);
+
   useEffect(() => {
     fetchTicket();
     fetchMessages();
@@ -170,7 +184,6 @@ export default function AdminTicketChat() {
     if (scrollRef.current && !loadingMessages) {
       const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (scrollContainer) {
-        // Use setTimeout to ensure scroll happens after render
         setTimeout(() => {
           scrollContainer.scrollTop = scrollContainer.scrollHeight;
         }, 100);
@@ -194,6 +207,10 @@ export default function AdminTicketChat() {
         },
         () => {
           fetchMessages();
+          // Mark as read and refresh state when new message arrives while viewing
+          if (user) {
+            markTicketAsRead(ticketId);
+          }
         }
       )
       .subscribe();
@@ -201,7 +218,7 @@ export default function AdminTicketChat() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ticketId, fetchMessages]);
+  }, [ticketId, fetchMessages, user, markTicketAsRead]);
 
   const handleSendMessage = async () => {
     if (!user || !ticket || (!newMessage.trim() && attachments.length === 0)) return;
@@ -237,6 +254,9 @@ export default function AdminTicketChat() {
           .eq('id', ticket.id);
         fetchTicket();
       }
+
+      // Refresh unread state after sending (this ticket will now be "read" from admin perspective)
+      refreshUnreadState();
     }
     setSubmitting(false);
   };
