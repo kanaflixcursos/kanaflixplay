@@ -41,6 +41,12 @@ interface LessonMaterial {
   file_size: number;
 }
 
+interface Module {
+  id: string;
+  title: string;
+  order_index: number;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -52,6 +58,7 @@ interface Lesson {
   completed: boolean;
   materials: LessonMaterial[];
   thumbnail_url: string | null;
+  module_id: string | null;
 }
 
 export default function CourseView() {
@@ -64,6 +71,7 @@ export default function CourseView() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [modules, setModules] = useState<Module[]>([]);
   const [justUnlockedId, setJustUnlockedId] = useState<string | null>(null);
   const prevUnlockedCountRef = useRef<number>(0);
 
@@ -104,12 +112,21 @@ export default function CourseView() {
 
       // Fetch lessons if enrolled (excluding hidden ones for students)
       if (enrollment) {
-        const { data: lessonsData } = await supabase
-          .from('lessons')
-          .select('*')
-          .eq('course_id', courseId)
-          .eq('is_hidden', false)
-          .order('order_index');
+        const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
+          supabase
+            .from('lessons')
+            .select('*')
+            .eq('course_id', courseId)
+            .eq('is_hidden', false)
+            .order('order_index'),
+          supabase
+            .from('course_modules')
+            .select('*')
+            .eq('course_id', courseId)
+            .order('order_index'),
+        ]);
+
+        setModules((modulesData || []) as Module[]);
 
         // Fetch progress
         const { data: progressData } = await supabase
@@ -285,6 +302,70 @@ export default function CourseView() {
     }
     prevUnlockedCountRef.current = unlockedCount;
   }, [unlockedCount, unlockedLessonIds, course?.is_sequential]);
+
+  const LessonSidebarItem = ({ lesson, index }: { lesson: Lesson; index: number }) => {
+    const locked = isLessonLocked(lesson.id);
+    const isJustUnlocked = justUnlockedId === lesson.id;
+    return (
+      <button
+        className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
+          isJustUnlocked
+            ? 'bg-success/20 ring-2 ring-success animate-pulse'
+            : selectedLesson?.id === lesson.id 
+              ? 'bg-primary/10 ring-1 ring-primary' 
+              : locked 
+                ? 'opacity-60 cursor-not-allowed' 
+                : 'hover:bg-muted'
+        }`}
+        onClick={() => setSelectedLesson(lesson)}
+      >
+        <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
+          {lesson.thumbnail_url ? (
+            <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Play className="h-3 w-3 text-muted-foreground" />
+            </div>
+          )}
+          {locked && (
+            <div className="absolute inset-0 bg-foreground/70 flex items-center justify-center">
+              <Lock className="h-3 w-3 text-background" />
+            </div>
+          )}
+          {selectedLesson?.id === lesson.id && !locked && (
+            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+              <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
+            </div>
+          )}
+        </div>
+        <div className="shrink-0">
+          {isJustUnlocked ? (
+            <Unlock className="h-4 w-4 text-success animate-bounce" />
+          ) : locked ? (
+            <Lock className="h-4 w-4 text-muted-foreground" />
+          ) : lesson.completed ? (
+            <CheckCircle className="h-4 w-4 text-success" />
+          ) : (
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium line-clamp-2 leading-tight">
+            {index + 1}. {lesson.title}
+          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+            {lesson.duration_minutes && <span>{formatDuration(lesson.duration_minutes)}</span>}
+            {lesson.materials.length > 0 && (
+              <span className="flex items-center gap-0.5">
+                <FileText className="h-3 w-3" />
+                {lesson.materials.length}
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  };
 
   if (loading) {
     return (
@@ -490,83 +571,33 @@ export default function CourseView() {
             <CardContent className="p-0">
               <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
-                  {lessons.map((lesson, index) => {
-                    const locked = isLessonLocked(lesson.id);
-                    const isJustUnlocked = justUnlockedId === lesson.id;
-                    return (
-                      <button
-                        key={lesson.id}
-                        className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
-                          isJustUnlocked
-                            ? 'bg-success/20 ring-2 ring-success animate-pulse'
-                            : selectedLesson?.id === lesson.id 
-                              ? 'bg-primary/10 ring-1 ring-primary' 
-                              : locked 
-                                ? 'opacity-60 cursor-not-allowed' 
-                                : 'hover:bg-muted'
-                        }`}
-                        onClick={() => setSelectedLesson(lesson)}
-                      >
-                        {/* Thumbnail */}
-                        <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
-                          {lesson.thumbnail_url ? (
-                            <img 
-                              src={lesson.thumbnail_url} 
-                              alt={lesson.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                          )}
-                          {/* Lock overlay for locked lessons */}
-                          {locked && (
-                            <div className="absolute inset-0 bg-foreground/70 flex items-center justify-center">
-                              <Lock className="h-3 w-3 text-background" />
-                            </div>
-                          )}
-                          {/* Playing indicator for current lesson */}
-                          {selectedLesson?.id === lesson.id && !locked && (
-                            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
-                              <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Status icon */}
-                        <div className="shrink-0">
-                          {isJustUnlocked ? (
-                            <Unlock className="h-4 w-4 text-success animate-bounce" />
-                          ) : locked ? (
-                            <Lock className="h-4 w-4 text-muted-foreground" />
-                          ) : lesson.completed ? (
-                            <CheckCircle className="h-4 w-4 text-success" />
-                          ) : (
-                            <Circle className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium line-clamp-2 leading-tight">
-                            {index + 1}. {lesson.title}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            {lesson.duration_minutes && (
-                              <span>{formatDuration(lesson.duration_minutes)}</span>
-                            )}
-                            {lesson.materials.length > 0 && (
-                              <span className="flex items-center gap-0.5">
-                                <FileText className="h-3 w-3" />
-                                {lesson.materials.length}
-                              </span>
-                            )}
+                  {modules.length > 0 ? (
+                    <>
+                      {/* Lessons without module */}
+                      {lessons.filter(l => !l.module_id).map((lesson, i) => (
+                        <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                      ))}
+                      {/* Grouped by module */}
+                      {modules.map((mod) => {
+                        const moduleLessons = lessons.filter(l => l.module_id === mod.id);
+                        if (moduleLessons.length === 0) return null;
+                        return (
+                          <div key={mod.id} className="pt-3 first:pt-0">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-3 pb-1">
+                              {mod.title}
+                            </p>
+                            {moduleLessons.map((lesson) => (
+                              <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                            ))}
                           </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+                        );
+                      })}
+                    </>
+                  ) : (
+                    lessons.map((lesson, index) => (
+                      <LessonSidebarItem key={lesson.id} lesson={lesson} index={index} />
+                    ))
+                  )}
                 </div>
               </div>
             </CardContent>

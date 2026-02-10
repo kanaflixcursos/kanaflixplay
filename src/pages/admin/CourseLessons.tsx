@@ -33,6 +33,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import LessonMaterialUpload from '@/components/LessonMaterialUpload';
+import ModuleManagerModal from '@/components/admin/ModuleManagerModal';
 import {
   DndContext,
   closestCenter,
@@ -61,6 +62,13 @@ interface LessonMaterial {
   order_index: number;
 }
 
+interface Module {
+  id: string;
+  title: string;
+  order_index: number;
+  course_id: string;
+}
+
 interface Lesson {
   id: string;
   title: string;
@@ -71,6 +79,7 @@ interface Lesson {
   pandavideo_video_id: string | null;
   is_hidden: boolean;
   thumbnail_url: string | null;
+  module_id: string | null;
 }
 
 interface Course {
@@ -294,6 +303,8 @@ export default function CourseLessons() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [moduleModalOpen, setModuleModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -331,6 +342,14 @@ export default function CourseLessons() {
 
     const lessonsList = (lessonsData || []) as Lesson[];
     setLessons(lessonsList);
+
+    // Fetch modules
+    const { data: modulesData } = await supabase
+      .from('course_modules')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('order_index');
+    setModules((modulesData || []) as Module[]);
 
     // Fetch materials for all lessons
     if (lessonsList.length > 0) {
@@ -508,12 +527,17 @@ export default function CourseLessons() {
               : 'Nenhuma pasta do Pandavideo vinculada'}
           </p>
         </div>
-        {course?.pandavideo_folder_id && (
-          <Button onClick={handleSync} disabled={syncing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            Sincronizar
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setModuleModalOpen(true)}>
+            Módulos
           </Button>
-        )}
+          {course?.pandavideo_folder_id && (
+            <Button onClick={handleSync} disabled={syncing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </Button>
+          )}
+        </div>
       </div>
 
       {course?.last_synced_at && (
@@ -546,27 +570,95 @@ export default function CourseLessons() {
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-2">
-              {lessons.map((lesson, index) => (
-                <SortableLessonCard
-                  key={lesson.id}
-                  lesson={lesson}
-                  index={index}
-                  materials={materials[lesson.id] || []}
-                  isExpanded={expandedLessons.has(lesson.id)}
-                  isEditing={editingLessonId === lesson.id}
-                  editingTitle={editingTitle}
-                  savingId={savingId}
-                  onToggleExpand={() => toggleExpanded(lesson.id)}
-                  onStartEdit={() => handleStartEdit(lesson)}
-                  onCancelEdit={handleCancelEdit}
-                  onSaveTitle={() => handleSaveTitle(lesson.id)}
-                  onEditingTitleChange={setEditingTitle}
-                  onToggleVisibility={() => handleToggleVisibility(lesson)}
-                  onMaterialsChange={fetchData}
-                  onPreview={() => setPreviewLesson(lesson)}
-                  formatDuration={formatDuration}
-                />
-              ))}
+              {modules.length > 0 ? (
+                <>
+                  {/* Lessons without module */}
+                  {lessons.filter(l => !l.module_id).length > 0 && (
+                    <>
+                      <h3 className="text-sm font-medium text-muted-foreground pt-2">Sem módulo</h3>
+                      {lessons.filter(l => !l.module_id).map((lesson) => (
+                        <SortableLessonCard
+                          key={lesson.id}
+                          lesson={lesson}
+                          index={lessons.indexOf(lesson)}
+                          materials={materials[lesson.id] || []}
+                          isExpanded={expandedLessons.has(lesson.id)}
+                          isEditing={editingLessonId === lesson.id}
+                          editingTitle={editingTitle}
+                          savingId={savingId}
+                          onToggleExpand={() => toggleExpanded(lesson.id)}
+                          onStartEdit={() => handleStartEdit(lesson)}
+                          onCancelEdit={handleCancelEdit}
+                          onSaveTitle={() => handleSaveTitle(lesson.id)}
+                          onEditingTitleChange={setEditingTitle}
+                          onToggleVisibility={() => handleToggleVisibility(lesson)}
+                          onMaterialsChange={fetchData}
+                          onPreview={() => setPreviewLesson(lesson)}
+                          formatDuration={formatDuration}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {/* Lessons grouped by module */}
+                  {modules.map((mod) => {
+                    const moduleLessons = lessons.filter(l => l.module_id === mod.id);
+                    return (
+                      <div key={mod.id} className="pt-4">
+                        <h3 className="text-sm font-medium text-primary border-b pb-2 mb-2">
+                          {mod.title}
+                          {moduleLessons.length === 0 && (
+                            <span className="text-muted-foreground font-normal ml-2">(vazio)</span>
+                          )}
+                        </h3>
+                        {moduleLessons.map((lesson) => (
+                          <div key={lesson.id} className="mb-2">
+                            <SortableLessonCard
+                              lesson={lesson}
+                              index={lessons.indexOf(lesson)}
+                              materials={materials[lesson.id] || []}
+                              isExpanded={expandedLessons.has(lesson.id)}
+                              isEditing={editingLessonId === lesson.id}
+                              editingTitle={editingTitle}
+                              savingId={savingId}
+                              onToggleExpand={() => toggleExpanded(lesson.id)}
+                              onStartEdit={() => handleStartEdit(lesson)}
+                              onCancelEdit={handleCancelEdit}
+                              onSaveTitle={() => handleSaveTitle(lesson.id)}
+                              onEditingTitleChange={setEditingTitle}
+                              onToggleVisibility={() => handleToggleVisibility(lesson)}
+                              onMaterialsChange={fetchData}
+                              onPreview={() => setPreviewLesson(lesson)}
+                              formatDuration={formatDuration}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                lessons.map((lesson, index) => (
+                  <SortableLessonCard
+                    key={lesson.id}
+                    lesson={lesson}
+                    index={index}
+                    materials={materials[lesson.id] || []}
+                    isExpanded={expandedLessons.has(lesson.id)}
+                    isEditing={editingLessonId === lesson.id}
+                    editingTitle={editingTitle}
+                    savingId={savingId}
+                    onToggleExpand={() => toggleExpanded(lesson.id)}
+                    onStartEdit={() => handleStartEdit(lesson)}
+                    onCancelEdit={handleCancelEdit}
+                    onSaveTitle={() => handleSaveTitle(lesson.id)}
+                    onEditingTitleChange={setEditingTitle}
+                    onToggleVisibility={() => handleToggleVisibility(lesson)}
+                    onMaterialsChange={fetchData}
+                    onPreview={() => setPreviewLesson(lesson)}
+                    formatDuration={formatDuration}
+                  />
+                ))
+              )}
             </div>
           </SortableContext>
         </DndContext>
@@ -590,6 +682,16 @@ export default function CourseLessons() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Module Manager Modal */}
+      {courseId && (
+        <ModuleManagerModal
+          open={moduleModalOpen}
+          onOpenChange={setModuleModalOpen}
+          courseId={courseId}
+          onModulesChanged={fetchData}
+        />
+      )}
     </div>
   );
 }
