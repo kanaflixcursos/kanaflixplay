@@ -162,12 +162,25 @@ export default function CourseView() {
           materials: materialsByLesson[lesson.id] || [],
         }));
 
-        setLessons(lessonsWithProgress);
+        // Sort lessons to match module display order:
+        // 1. Lessons without module (by order_index)
+        // 2. Lessons grouped by module order_index, then by lesson order_index
+        const mods = (modulesData || []) as Module[];
+        const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
+        
+        const sortedLessons = [...lessonsWithProgress].sort((a, b) => {
+          const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
+          const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+          if (aModOrder !== bModOrder) return aModOrder - bModOrder;
+          return a.order_index - b.order_index;
+        });
+
+        setLessons(sortedLessons);
         
         // Auto-select first incomplete or first lesson only on initial load
         if (!selectedLesson) {
-          const firstIncomplete = lessonsWithProgress.find(l => !l.completed);
-          setSelectedLesson(firstIncomplete || lessonsWithProgress[0] || null);
+          const firstIncomplete = sortedLessons.find(l => !l.completed);
+          setSelectedLesson(firstIncomplete || sortedLessons[0] || null);
         }
       }
 
