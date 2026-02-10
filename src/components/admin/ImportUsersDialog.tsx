@@ -52,32 +52,76 @@ export default function ImportUsersDialog({ open, onOpenChange, onImported }: Im
     reader.readAsText(file);
   };
 
+  const normalizeHeader = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[_\s]+/g, " ")
+      .trim();
+  };
+
+  const findColumnIndex = (headers: string[], possibleNames: string[]): number => {
+    const normalized = headers.map(h => normalizeHeader(h));
+    const targets = possibleNames.map(normalizeHeader);
+    for (const t of targets) {
+      const idx = normalized.indexOf(t);
+      if (idx !== -1) return idx;
+    }
+    for (const t of targets) {
+      const idx = normalized.findIndex(h => h.includes(t));
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
+
+  const detectDelimiter = (line: string): string => {
+    const semicolons = (line.match(/;/g) || []).length;
+    const commas = (line.match(/,/g) || []).length;
+    return semicolons >= commas ? ';' : ',';
+  };
+
   const parseCSV = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    
-    // Skip header if it looks like one
-    const startIdx = lines[0]?.toLowerCase().includes('nome') || lines[0]?.toLowerCase().includes('email') ? 1 : 0;
-    
-    const users: ParsedUser[] = [];
+    if (lines.length === 0) return;
+
+    const delimiter = detectDelimiter(lines[0]);
+    const firstRowParts = lines[0].split(delimiter).map(p => p.trim());
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasHeader = firstRowParts.some(p => {
+      const n = normalizeHeader(p);
+      return ['nome', 'name', 'email', 'e-mail', 'curso', 'course'].some(k => n.includes(k));
+    });
+
+    let nameIdx = 0, emailIdx = 1, courseIdx = 2;
+
+    if (hasHeader) {
+      const ni = findColumnIndex(firstRowParts, ['nome', 'name', 'full_name', 'nome completo']);
+      const ei = findColumnIndex(firstRowParts, ['email', 'e-mail']);
+      const ci = findColumnIndex(firstRowParts, ['curso', 'course', 'course_id', 'course_ids', 'cursos']);
+      if (ni !== -1) nameIdx = ni;
+      if (ei !== -1) emailIdx = ei;
+      if (ci !== -1) courseIdx = ci;
+    }
+
+    const startIdx = hasHeader ? 1 : 0;
+    const users: ParsedUser[] = [];
 
     for (let i = startIdx; i < lines.length; i++) {
-      // Support both comma and semicolon as delimiters
-      const parts = lines[i].includes(';') 
-        ? lines[i].split(';').map(p => p.trim())
-        : lines[i].split(',').map(p => p.trim());
+      const parts = lines[i].split(delimiter).map(p => p.trim());
 
       if (parts.length < 2) {
         users.push({ full_name: parts[0] || '', email: '', course_ids: [], valid: false, error: 'Formato inválido' });
         continue;
       }
 
-      const full_name = parts[0];
-      const email = parts[1].toLowerCase();
-      // Course IDs are in the 3rd column, separated by semicolons or pipes
-      const courseIdsRaw = parts[2] || '';
+      const full_name = parts[nameIdx] || '';
+      const email = (parts[emailIdx] || '').toLowerCase();
+      const courseIdsRaw = parts[courseIdx] || '';
+      const courseDelimiter = delimiter === ';' ? /[|]/ : /[;|]/;
       const course_ids = courseIdsRaw
-        .split(/[;|]/)
+        .split(courseDelimiter)
         .map(id => id.trim())
         .filter(id => id.length > 0);
 
