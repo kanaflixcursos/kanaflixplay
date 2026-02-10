@@ -7,6 +7,25 @@ const corsHeaders = {
 
 const PANDAVIDEO_API_URL = "https://api-v2.pandavideo.com.br";
 
+async function getSubfolderIds(folderId: string, apiKey: string): Promise<string[]> {
+  const ids: string[] = [folderId];
+  try {
+    const res = await fetch(`${PANDAVIDEO_API_URL}/folders?parent_folder_id=${folderId}`, {
+      headers: { Authorization: apiKey, Accept: "application/json" },
+    });
+    if (!res.ok) return ids;
+    const data = await res.json();
+    const folders = Array.isArray(data) ? data : (data.folders || data.data || []);
+    for (const f of folders) {
+      const childIds = await getSubfolderIds(f.id, apiKey);
+      ids.push(...childIds);
+    }
+  } catch (e) {
+    console.error("Error fetching subfolders:", e);
+  }
+  return ids;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -78,8 +97,36 @@ Deno.serve(async (req) => {
         if (search) {
           apiUrl += `&title=${encodeURIComponent(search)}`;
         }
+
+        // If folder_id is provided, fetch videos from it and all subfolders
         if (folderId) {
-          apiUrl += `&folder_id=${encodeURIComponent(folderId)}`;
+          const allFolderIds = await getSubfolderIds(folderId, pandaApiKey);
+          console.log(`Fetching videos from ${allFolderIds.length} folders (including subfolders)`);
+          
+          const allVideos: any[] = [];
+          for (const fId of allFolderIds) {
+            let folderUrl = `${PANDAVIDEO_API_URL}/videos?folder_id=${encodeURIComponent(fId)}&limit=100`;
+            if (search) {
+              folderUrl += `&title=${encodeURIComponent(search)}`;
+            }
+            const res = await fetch(folderUrl, {
+              headers: { Authorization: pandaApiKey, Accept: "application/json" },
+            });
+            if (res.ok) {
+              const d = await res.json();
+              const vids = Array.isArray(d) ? d : (d.videos || d.data || []);
+              allVideos.push(...vids);
+            }
+          }
+
+          if (allVideos.length > 0) {
+            console.log("First video structure:", JSON.stringify(allVideos[0], null, 2));
+          }
+
+          return new Response(
+            JSON.stringify({ videos: allVideos }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
 
         const response = await fetch(apiUrl, {
@@ -100,7 +147,6 @@ Deno.serve(async (req) => {
 
         const data = await response.json();
         
-        // Log first video structure for debugging duration fields
         if (data.videos && data.videos.length > 0) {
           console.log("First video structure:", JSON.stringify(data.videos[0], null, 2));
         }
