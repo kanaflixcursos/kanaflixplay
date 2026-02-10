@@ -743,6 +743,64 @@ export default function CourseForm() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Modules Section - inside videos block */}
+                  <div className="space-y-3 border-t pt-6 mt-4">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-5 w-5 text-primary" />
+                      <Label className="text-base font-semibold">Módulos (opcional)</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Crie módulos para organizar as aulas em seções. Você pode atribuir aulas aos módulos depois na tela de aulas.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Nome do novo módulo..."
+                        value={newModuleTitle}
+                        onChange={(e) => setNewModuleTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddLocalModule();
+                          }
+                        }}
+                      />
+                      <Button type="button" onClick={handleAddLocalModule} disabled={!newModuleTitle.trim()} variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar
+                      </Button>
+                    </div>
+                    {localModules.length > 0 && (
+                      <div className="space-y-2">
+                        {localModules.map((mod) => (
+                          <div key={mod.id} className="flex items-center gap-2 p-3 rounded-lg border bg-card">
+                            <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <Input
+                              defaultValue={mod.title}
+                              className="flex-1"
+                              onBlur={(e) => {
+                                if (e.target.value !== mod.title) {
+                                  handleUpdateLocalModuleTitle(mod.id, e.target.value);
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteLocalModule(mod.id)}
+                              className="shrink-0 text-destructive hover:text-destructive"
+                              type="button"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : formData.pandavideo_folder_id ? (
                 <div className="text-center py-12 text-muted-foreground">
@@ -755,64 +813,6 @@ export default function CourseForm() {
                   <p>Selecione uma pasta para ver os vídeos disponíveis</p>
                 </div>
               )}
-
-              {/* Modules Section */}
-              <div className="space-y-3 border-t pt-6">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-primary" />
-                  <Label className="text-base font-semibold">Módulos (opcional)</Label>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Crie módulos para organizar as aulas em seções. Você pode atribuir aulas aos módulos depois na tela de aulas.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nome do novo módulo..."
-                    value={newModuleTitle}
-                    onChange={(e) => setNewModuleTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddLocalModule();
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={handleAddLocalModule} disabled={!newModuleTitle.trim()} variant="outline">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar
-                  </Button>
-                </div>
-                {localModules.length > 0 && (
-                  <div className="space-y-2">
-                    {localModules.map((mod) => (
-                      <div key={mod.id} className="flex items-center gap-2 p-3 rounded-lg border bg-card">
-                        <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <Input
-                          defaultValue={mod.title}
-                          className="flex-1"
-                          onBlur={(e) => {
-                            if (e.target.value !== mod.title) {
-                              handleUpdateLocalModuleTitle(mod.id, e.target.value);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteLocalModule(mod.id)}
-                          className="shrink-0 text-destructive hover:text-destructive"
-                          type="button"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
