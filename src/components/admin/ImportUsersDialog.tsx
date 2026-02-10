@@ -81,12 +81,37 @@ export default function ImportUsersDialog({ open, onOpenChange, onImported }: Im
     return semicolons >= commas ? ';' : ',';
   };
 
+  const parseCSVLine = (line: string, delimiter: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
   const parseCSV = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length === 0) return;
 
     const delimiter = detectDelimiter(lines[0]);
-    const firstRowParts = lines[0].split(delimiter).map(p => p.trim());
+    const firstRowParts = parseCSVLine(lines[0], delimiter);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasHeader = firstRowParts.some(p => {
@@ -109,7 +134,7 @@ export default function ImportUsersDialog({ open, onOpenChange, onImported }: Im
     const users: ParsedUser[] = [];
 
     for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(delimiter).map(p => p.trim());
+      const parts = parseCSVLine(lines[i], delimiter);
 
       if (parts.length < 2) {
         users.push({ full_name: parts[0] || '', email: '', course_ids: [], valid: false, error: 'Formato inválido' });
@@ -118,10 +143,9 @@ export default function ImportUsersDialog({ open, onOpenChange, onImported }: Im
 
       const full_name = parts[nameIdx] || '';
       const email = (parts[emailIdx] || '').toLowerCase();
-      const courseIdsRaw = parts[courseIdx] || '';
-      const courseDelimiter = delimiter === ';' ? /[|]/ : /[;|]/;
+      const courseIdsRaw = (parts[courseIdx] || '').replace(/^"|"$/g, '');
       const course_ids = courseIdsRaw
-        .split(courseDelimiter)
+        .split(/[;|,]/)
         .map(id => id.trim())
         .filter(id => id.length > 0);
 
