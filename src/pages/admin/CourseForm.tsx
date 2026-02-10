@@ -32,8 +32,18 @@ import {
   Trash2,
   Layers,
   Play,
-  Clock
+  Clock,
+  Eye,
+  Pencil,
+  X
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import PandavideoPlayer from '@/components/PandavideoPlayer';
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -148,7 +158,8 @@ export default function CourseForm() {
   const [loadingPaymentConfig, setLoadingPaymentConfig] = useState(false);
   const [localModules, setLocalModules] = useState<LocalModule[]>([]);
   const [newModuleTitle, setNewModuleTitle] = useState('');
-
+  const [previewVideo, setPreviewVideo] = useState<VideoItem | null>(null);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   useEffect(() => {
     if (courseId) {
       fetchCourse();
@@ -424,6 +435,67 @@ export default function CourseForm() {
     setLocalModules(localModules.map(m => m.id === moduleId ? { ...m, title } : m));
   };
 
+  const renderLessonRow = (video: VideoItem, index: number) => {
+    const isEditing = editingLessonId === video.id;
+    return (
+      <div
+        key={video.id}
+        draggable
+        onDragStart={(e) => handleDragStart(e, index)}
+        onDragOver={(e) => handleDragOver(e, index)}
+        onDragEnd={handleDragEnd}
+        className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors group ${
+          draggedIndex === index ? 'opacity-50 border-primary' : ''
+        }`}
+      >
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+        <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        {isEditing ? (
+          <Input
+            autoFocus
+            defaultValue={video.title}
+            className="h-6 text-sm flex-1 py-0 px-1"
+            onBlur={(e) => {
+              handleVideoTitleChange(index, e.target.value);
+              setEditingLessonId(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') setEditingLessonId(null);
+            }}
+          />
+        ) : (
+          <span className="flex-1 truncate text-sm">{video.title}</span>
+        )}
+        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setEditingLessonId(isEditing ? null : video.id)}
+            title="Editar nome"
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setPreviewVideo(video)}
+            title="Preview"
+          >
+            <Eye className="h-3 w-3" />
+          </Button>
+        </div>
+        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatDuration(video.duration)}
+        </span>
+      </div>
+    );
+  };
   const togglePaymentMethod = (methodId: string) => {
     const current = formData.payment_methods;
     if (current.includes(methodId)) {
@@ -781,26 +853,7 @@ export default function CourseForm() {
                         <div className="space-y-1 pl-3 border-l-2 border-muted min-h-[32px]">
                           {videos.map((video, index) => {
                             if (video.module_id) return null;
-                            return (
-                              <div
-                                key={video.id}
-                                draggable
-                                onDragStart={(e) => handleDragStart(e, index)}
-                                onDragOver={(e) => handleDragOver(e, index)}
-                                onDragEnd={handleDragEnd}
-                                className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
-                                  draggedIndex === index ? 'opacity-50 border-primary' : ''
-                                }`}
-                              >
-                                <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                                <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                <span className="flex-1 truncate text-sm">{video.title}</span>
-                                <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatDuration(video.duration)}
-                                </span>
-                              </div>
-                            );
+                            return renderLessonRow(video, index);
                           })}
                         </div>
                       </div>
@@ -850,26 +903,7 @@ export default function CourseForm() {
                               ) : (
                                 moduleLessons.map((video) => {
                                   const globalIndex = videos.indexOf(video);
-                                  return (
-                                    <div
-                                      key={video.id}
-                                      draggable
-                                      onDragStart={(e) => handleDragStart(e, globalIndex)}
-                                      onDragOver={(e) => handleDragOver(e, globalIndex)}
-                                      onDragEnd={handleDragEnd}
-                                      className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
-                                        draggedIndex === globalIndex ? 'opacity-50 border-primary' : ''
-                                      }`}
-                                    >
-                                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                                      <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      <span className="flex-1 truncate text-sm">{video.title}</span>
-                                      <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {formatDuration(video.duration)}
-                                      </span>
-                                    </div>
-                                  );
+                                  return renderLessonRow(video, globalIndex);
                                 })
                               )}
                             </div>
@@ -883,26 +917,7 @@ export default function CourseForm() {
                       <p className="text-xs text-muted-foreground pb-1">
                         {videos.length} aulas • Arraste para reordenar
                       </p>
-                      {videos.map((video, index) => (
-                        <div
-                          key={video.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, index)}
-                          onDragOver={(e) => handleDragOver(e, index)}
-                          onDragEnd={handleDragEnd}
-                          className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
-                            draggedIndex === index ? 'opacity-50 border-primary' : ''
-                          }`}
-                        >
-                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-                          <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="flex-1 truncate text-sm">{video.title}</span>
-                          <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDuration(video.duration)}
-                          </span>
-                        </div>
-                      ))}
+                      {videos.map((video, index) => renderLessonRow(video, index))}
                     </div>
                   )}
                 </div>
@@ -917,6 +932,25 @@ export default function CourseForm() {
                   <p>Selecione uma pasta para ver os vídeos disponíveis</p>
                 </div>
               )}
+
+              {/* Video Preview Dialog */}
+              <Dialog open={!!previewVideo} onOpenChange={(open) => !open && setPreviewVideo(null)}>
+                <DialogContent className="max-w-3xl p-0 overflow-hidden">
+                  <DialogHeader className="p-4 pb-0">
+                    <DialogTitle className="text-sm font-medium truncate pr-8">
+                      {previewVideo?.title}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="p-4 pt-2">
+                    {previewVideo && (
+                      <PandavideoPlayer
+                        videoUrl={`https://player-vz-82493b0a-26d.tv.pandavideo.com.br/embed/?v=${previewVideo.id}`}
+                        title={previewVideo.title}
+                      />
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
