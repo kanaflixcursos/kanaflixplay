@@ -22,6 +22,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
     return <Navigate to="/login" replace />;
   }
 
+  // Redirect imported users to onboarding
+  if (user.user_metadata?.needs_onboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   if (requiredRole && role !== requiredRole) {
     return <Navigate to="/" replace />;
   }

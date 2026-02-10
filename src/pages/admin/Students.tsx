@@ -52,8 +52,9 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
+import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Student {
@@ -111,6 +112,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   const [resetCourseId, setResetCourseId] = useState<string>('');
   const [resetting, setResetting] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -560,14 +562,20 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <h1 className="text-2xl md:text-3xl font-bold">Alunos</h1>
           <p className="text-muted-foreground text-sm md:text-base">Gerencie os alunos da plataforma</p>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 w-full sm:w-64"
-          />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar CSV
+          </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full sm:w-64"
+            />
+          </div>
         </div>
       </div>
 
@@ -912,6 +920,13 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Import Users Dialog */}
+      <ImportUsersDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImported={fetchData}
+      />
     </div>
   );
 }

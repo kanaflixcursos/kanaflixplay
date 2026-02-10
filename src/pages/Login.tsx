@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [searchParams] = useSearchParams();
@@ -21,15 +22,59 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [resetSent, setResetSent] = useState(false);
+  const [hotmartEmail, setHotmartEmail] = useState('');
+  const [hotmartLoading, setHotmartLoading] = useState(false);
+  const [hotmartSent, setHotmartSent] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate(redirectTo);
+      if (user.user_metadata?.needs_onboarding) {
+        navigate('/onboarding');
+      } else {
+        navigate(redirectTo);
+      }
     }
   }, [user, navigate, redirectTo]);
+
+  const handleHotmartAccess = async () => {
+    if (!hotmartEmail) {
+      toast.error('Digite seu email');
+      return;
+    }
+    setHotmartLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('hotmart-access', {
+        body: { action: 'check', email: hotmartEmail },
+      });
+      if (error) throw error;
+      if (!data.found) {
+        toast.error('Email não encontrado na lista de acesso Hotmart.');
+        setHotmartLoading(false);
+        return;
+      }
+      if (data.completed) {
+        toast.info('Você já completou o cadastro. Faça login normalmente.');
+        setActiveTab('signin');
+        setEmail(hotmartEmail);
+        setHotmartLoading(false);
+        return;
+      }
+      // Send magic link
+      const { error: linkError } = await supabase.functions.invoke('hotmart-access', {
+        body: { action: 'send_magic_link', email: hotmartEmail },
+      });
+      if (linkError) throw linkError;
+      setHotmartSent(true);
+      toast.success('Link de acesso enviado para seu email!');
+    } catch (error: any) {
+      const msg = error?.message || 'Erro ao processar acesso';
+      toast.error(msg);
+    }
+    setHotmartLoading(false);
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,6 +287,57 @@ export default function Login() {
               >
                 Esqueceu sua senha?
               </button>
+
+              {/* Hotmart Access */}
+              <div className="relative my-2">
+                <Separator />
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
+                  ou
+                </span>
+              </div>
+
+              {hotmartSent ? (
+                <div className="text-center space-y-3 py-2">
+                  <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                    <Mail className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Link de acesso enviado para <strong className="text-foreground">{hotmartEmail}</strong>. Verifique seu email.
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={() => setHotmartSent(false)}>
+                    Tentar outro email
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={hotmartEmail}
+                      onChange={(e) => setHotmartEmail(e.target.value)}
+                      placeholder="Email cadastrado na Hotmart"
+                      className="pl-10 h-11"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-11"
+                    onClick={handleHotmartAccess}
+                    disabled={hotmartLoading}
+                  >
+                    {hotmartLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      '🔥 Acesso Hotmart'
+                    )}
+                  </Button>
+                </div>
+              )}
             </form>
           )}
 
