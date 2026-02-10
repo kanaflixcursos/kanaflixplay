@@ -253,7 +253,7 @@ export default function ModuleManagerModal({
                 <div className="space-y-2">
                   {lessons.map((lesson) => (
                     <div key={lesson.id} className="flex items-center gap-3 text-sm">
-                      <span className="flex-1 truncate">{lesson.order_index}. {lesson.title}</span>
+                      <span className="flex-1 truncate">{lesson.title}</span>
                       <Select
                         value={lesson.module_id || '__none__'}
                         onValueChange={(value) =>
