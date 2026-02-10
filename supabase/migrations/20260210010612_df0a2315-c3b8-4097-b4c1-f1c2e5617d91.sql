@@ -1,0 +1,1 @@
+ALTER TABLE public.course_modules ADD COLUMN is_optional boolean NOT NULL DEFAULT false;

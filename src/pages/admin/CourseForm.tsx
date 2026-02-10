@@ -62,6 +62,7 @@ interface LocalModule {
   id: string;
   title: string;
   order_index: number;
+  is_optional: boolean;
 }
 
 interface CardBrand {
@@ -245,7 +246,7 @@ export default function CourseForm() {
       .order('order_index');
 
     if (modulesData && modulesData.length > 0) {
-      setLocalModules(modulesData.map(m => ({ id: m.id, title: m.title, order_index: m.order_index })));
+      setLocalModules(modulesData.map(m => ({ id: m.id, title: m.title, order_index: m.order_index, is_optional: m.is_optional ?? false })));
     }
 
     setLoadingCourse(false);
@@ -422,6 +423,7 @@ export default function CourseForm() {
       id: `local-${Date.now()}`,
       title: newModuleTitle.trim(),
       order_index: nextIndex,
+      is_optional: false,
     }]);
     setNewModuleTitle('');
   };
@@ -588,7 +590,7 @@ export default function CourseForm() {
           if (isExistingModule) {
             await supabase
               .from('course_modules')
-              .update({ title: mod.title, order_index: mod.order_index })
+              .update({ title: mod.title, order_index: mod.order_index, is_optional: mod.is_optional })
               .eq('id', mod.id);
             moduleIdMap.set(mod.id, mod.id);
           } else {
@@ -598,6 +600,7 @@ export default function CourseForm() {
                 course_id: savedCourseId,
                 title: mod.title,
                 order_index: mod.order_index,
+                is_optional: mod.is_optional,
               })
               .select('id')
               .single();
@@ -882,6 +885,13 @@ export default function CourseForm() {
                                   if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                                 }}
                               />
+                              <Badge 
+                                variant={mod.is_optional ? "outline" : "secondary"} 
+                                className={`text-xs shrink-0 cursor-pointer select-none ${mod.is_optional ? 'text-muted-foreground' : ''}`}
+                                onClick={() => setLocalModules(localModules.map(m => m.id === mod.id ? { ...m, is_optional: !m.is_optional } : m))}
+                              >
+                                {mod.is_optional ? 'Opcional' : 'Obrigatório'}
+                              </Badge>
                               <Badge variant="secondary" className="text-xs shrink-0">
                                 {moduleLessons.length}
                               </Badge>
