@@ -123,6 +123,39 @@ export type Database = {
         }
         Relationships: []
       }
+      imported_users: {
+        Row: {
+          auth_user_id: string | null
+          course_ids: string[]
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          course_ids?: string[]
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          course_ids?: string[]
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_comments: {
         Row: {
           content: string
