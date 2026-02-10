@@ -30,7 +30,9 @@ import {
   Info,
   Plus,
   Trash2,
-  Layers
+  Layers,
+  Play,
+  Clock
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
@@ -359,8 +361,9 @@ export default function CourseForm() {
     setVideos(updated);
   };
 
-  const handleDragStart = (index: number) => {
+  const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -373,6 +376,20 @@ export default function CourseForm() {
     newVideos.splice(index, 0, draggedItem);
     setVideos(newVideos);
     setDraggedIndex(index);
+  };
+
+  const handleDropOnModule = (e: React.DragEvent, moduleId: string | null) => {
+    e.preventDefault();
+    if (draggedIndex === null) return;
+    const updated = [...videos];
+    updated[draggedIndex].module_id = moduleId;
+    setVideos(updated);
+    setDraggedIndex(null);
+  };
+
+  const handleModuleZoneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnd = () => {
@@ -749,72 +766,60 @@ export default function CourseForm() {
                   {localModules.length > 0 ? (
                     <div className="space-y-4">
                       {/* Unassigned lessons */}
-                      {videos.filter(v => !v.module_id).length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span className="font-medium">Sem módulo</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {videos.filter(v => !v.module_id).length}
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 pl-3 border-l-2 border-muted">
-                            {videos.map((video, index) => {
-                              if (video.module_id) return null;
-                              return (
-                                <div
-                                  key={video.id}
-                                  draggable
-                                  onDragStart={() => handleDragStart(index)}
-                                  onDragOver={(e) => handleDragOver(e, index)}
-                                  onDragEnd={handleDragEnd}
-                                  className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
-                                    draggedIndex === index ? 'opacity-50 border-primary' : ''
-                                  }`}
-                                >
-                                  <div className="cursor-grab active:cursor-grabbing">
-                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                  <Input
-                                    value={video.title}
-                                    onChange={(e) => handleVideoTitleChange(index, e.target.value)}
-                                    className="flex-1 h-8 text-sm"
-                                  />
-                                  <Select
-                                    value="__none__"
-                                    onValueChange={(value) =>
-                                      handleVideoModuleChange(index, value === '__none__' ? null : value)
-                                    }
-                                  >
-                                    <SelectTrigger className="w-36 h-8 text-xs shrink-0">
-                                      <SelectValue placeholder="Mover para..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__none__">Sem módulo</SelectItem>
-                                      {localModules.map((m) => (
-                                        <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatDuration(video.duration)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
+                      <div
+                        className="space-y-1"
+                        onDragOver={handleModuleZoneDragOver}
+                        onDrop={(e) => handleDropOnModule(e, null)}
+                      >
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground pb-1">
+                          <Video className="h-4 w-4" />
+                          <span className="font-medium">Sem módulo</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {videos.filter(v => !v.module_id).length}
+                          </Badge>
                         </div>
-                      )}
+                        <div className="space-y-1 pl-3 border-l-2 border-muted min-h-[32px]">
+                          {videos.map((video, index) => {
+                            if (video.module_id) return null;
+                            return (
+                              <div
+                                key={video.id}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDragEnd={handleDragEnd}
+                                className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
+                                  draggedIndex === index ? 'opacity-50 border-primary' : ''
+                                }`}
+                              >
+                                <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                                <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                <span className="flex-1 truncate text-sm">{video.title}</span>
+                                <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDuration(video.duration)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
 
                       {/* Modules with their lessons */}
                       {localModules.map((mod) => {
                         const moduleLessons = videos.filter(v => v.module_id === mod.id);
                         return (
-                          <div key={mod.id} className="space-y-2">
+                          <div
+                            key={mod.id}
+                            className="space-y-1"
+                            onDragOver={handleModuleZoneDragOver}
+                            onDrop={(e) => handleDropOnModule(e, mod.id)}
+                          >
                             <div className="flex items-center gap-2">
                               <Layers className="h-4 w-4 text-primary shrink-0" />
                               <Input
                                 defaultValue={mod.title}
-                                className="h-8 text-sm font-medium flex-1"
+                                className="h-7 text-sm font-medium flex-1 border-transparent hover:border-border focus:border-border"
                                 onBlur={(e) => {
                                   if (e.target.value !== mod.title) {
                                     handleUpdateLocalModuleTitle(mod.id, e.target.value);
@@ -830,17 +835,17 @@ export default function CourseForm() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteLocalModule(mod.id)}
                                 type="button"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
-                            <div className="space-y-1 pl-3 border-l-2 border-primary/30">
+                            <div className="space-y-1 pl-3 border-l-2 border-primary/30 min-h-[32px]">
                               {moduleLessons.length === 0 ? (
-                                <p className="text-xs text-muted-foreground py-2 pl-2">
-                                  Nenhuma aula neste módulo. Use o seletor nas aulas para movê-las.
+                                <p className="text-xs text-muted-foreground py-3 pl-2 italic">
+                                  Arraste aulas para cá
                                 </p>
                               ) : (
                                 moduleLessons.map((video) => {
@@ -849,37 +854,17 @@ export default function CourseForm() {
                                     <div
                                       key={video.id}
                                       draggable
-                                      onDragStart={() => handleDragStart(globalIndex)}
+                                      onDragStart={(e) => handleDragStart(e, globalIndex)}
                                       onDragOver={(e) => handleDragOver(e, globalIndex)}
                                       onDragEnd={handleDragEnd}
-                                      className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
+                                      className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
                                         draggedIndex === globalIndex ? 'opacity-50 border-primary' : ''
                                       }`}
                                     >
-                                      <div className="cursor-grab active:cursor-grabbing">
-                                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                      </div>
-                                      <Input
-                                        value={video.title}
-                                        onChange={(e) => handleVideoTitleChange(globalIndex, e.target.value)}
-                                        className="flex-1 h-8 text-sm"
-                                      />
-                                      <Select
-                                        value={video.module_id || '__none__'}
-                                        onValueChange={(value) =>
-                                          handleVideoModuleChange(globalIndex, value === '__none__' ? null : value)
-                                        }
-                                      >
-                                        <SelectTrigger className="w-36 h-8 text-xs shrink-0">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="__none__">Sem módulo</SelectItem>
-                                          {localModules.map((m) => (
-                                            <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
+                                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                                      <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      <span className="flex-1 truncate text-sm">{video.title}</span>
+                                      <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                                       <span className="text-xs text-muted-foreground whitespace-nowrap">
                                         {formatDuration(video.duration)}
                                       </span>
@@ -894,38 +879,27 @@ export default function CourseForm() {
                     </div>
                   ) : (
                     /* No modules - flat lesson list */
-                    <div className="space-y-2">
-                      <p className="text-xs text-muted-foreground">
-                        {videos.length} aulas • Arraste para reordenar, edite os títulos
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground pb-1">
+                        {videos.length} aulas • Arraste para reordenar
                       </p>
                       {videos.map((video, index) => (
                         <div
                           key={video.id}
                           draggable
-                          onDragStart={() => handleDragStart(index)}
+                          onDragStart={(e) => handleDragStart(e, index)}
                           onDragOver={(e) => handleDragOver(e, index)}
                           onDragEnd={handleDragEnd}
-                          className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
+                          className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors ${
                             draggedIndex === index ? 'opacity-50 border-primary' : ''
                           }`}
                         >
-                          <div className="cursor-grab active:cursor-grabbing">
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <Input
-                            value={video.title}
-                            onChange={(e) => handleVideoTitleChange(index, e.target.value)}
-                            className="flex-1 h-8 text-sm"
-                          />
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
+                          <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="flex-1 truncate text-sm">{video.title}</span>
+                          <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                           <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {formatDuration(video.duration)}
-                          </span>
-                          <span className={`text-xs px-2 py-0.5 rounded ${
-                            video.status === 'CONVERTED' 
-                              ? 'bg-success/10 text-success' 
-                              : 'bg-warning/10 text-warning-foreground'
-                          }`}>
-                            {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
                           </span>
                         </div>
                       ))}
