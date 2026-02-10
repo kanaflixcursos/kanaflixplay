@@ -886,11 +886,15 @@ export default function CourseForm() {
                                 }}
                               />
                               <Badge 
-                                variant={mod.is_optional ? "outline" : "secondary"} 
-                                className={`text-xs shrink-0 cursor-pointer select-none ${mod.is_optional ? 'text-muted-foreground' : ''}`}
+                                variant={mod.is_optional ? "outline" : "default"} 
+                                className={`text-xs shrink-0 cursor-pointer select-none transition-colors ${
+                                  mod.is_optional 
+                                    ? 'border-dashed text-muted-foreground hover:border-solid' 
+                                    : 'bg-primary text-primary-foreground'
+                                }`}
                                 onClick={() => setLocalModules(localModules.map(m => m.id === mod.id ? { ...m, is_optional: !m.is_optional } : m))}
                               >
-                                {mod.is_optional ? 'Opcional' : 'Obrigatório'}
+                                {mod.is_optional ? '○ Opcional' : '● Obrigatório'}
                               </Badge>
                               <Badge variant="secondary" className="text-xs shrink-0">
                                 {moduleLessons.length}
