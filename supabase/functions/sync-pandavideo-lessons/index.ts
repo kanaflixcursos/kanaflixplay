@@ -7,6 +7,25 @@ const corsHeaders = {
 
 const PANDAVIDEO_API_URL = "https://api-v2.pandavideo.com.br";
 
+async function getSubfolderIds(folderId: string, apiKey: string): Promise<string[]> {
+  const ids: string[] = [folderId];
+  try {
+    const res = await fetch(`${PANDAVIDEO_API_URL}/folders?parent_folder_id=${folderId}`, {
+      headers: { Authorization: apiKey, Accept: "application/json" },
+    });
+    if (!res.ok) return ids;
+    const data = await res.json();
+    const folders = Array.isArray(data) ? data : (data.folders || data.data || []);
+    for (const f of folders) {
+      const childIds = await getSubfolderIds(f.id, apiKey);
+      ids.push(...childIds);
+    }
+  } catch (e) {
+    console.error("Error fetching subfolders:", e);
+  }
+  return ids;
+}
+
 interface PandaVideo {
   id: string;
   title: string;
@@ -168,38 +187,40 @@ Deno.serve(async (req) => {
       try {
         console.log(`Syncing course ${course.id} with folder ${course.pandavideo_folder_id}`);
         
-        // Fetch videos from Pandavideo folder
-        const pandaUrl = `${PANDAVIDEO_API_URL}/videos?folder_id=${course.pandavideo_folder_id}&limit=100`;
-        console.log(`Fetching from: ${pandaUrl}`);
+        // Fetch all subfolder IDs recursively
+        const allFolderIds = await getSubfolderIds(course.pandavideo_folder_id, pandaApiKey);
+        console.log(`Found ${allFolderIds.length} folders (including subfolders) for course ${course.id}`);
         
-        const response = await fetch(pandaUrl, {
-          headers: {
-            Authorization: pandaApiKey,
-            Accept: "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Pandavideo API error for course ${course.id}:`, response.status, errorText);
-          results.errors.push(`Course ${course.id}: Pandavideo API error ${response.status}`);
-          continue;
-        }
-
-        const data = await response.json();
-        console.log(`Pandavideo response structure:`, JSON.stringify(Object.keys(data)));
-        
-        // Handle different response formats
+        // Fetch videos from all folders
         let videos: PandaVideo[] = [];
-        if (Array.isArray(data)) {
-          videos = data;
-        } else if (data.videos && Array.isArray(data.videos)) {
-          videos = data.videos;
-        } else if (data.data && Array.isArray(data.data)) {
-          videos = data.data;
+        for (const fId of allFolderIds) {
+          const pandaUrl = `${PANDAVIDEO_API_URL}/videos?folder_id=${fId}&limit=100`;
+          const response = await fetch(pandaUrl, {
+            headers: {
+              Authorization: pandaApiKey,
+              Accept: "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Pandavideo API error for folder ${fId}:`, response.status, errorText);
+            continue;
+          }
+
+          const data = await response.json();
+          let folderVideos: PandaVideo[] = [];
+          if (Array.isArray(data)) {
+            folderVideos = data;
+          } else if (data.videos && Array.isArray(data.videos)) {
+            folderVideos = data.videos;
+          } else if (data.data && Array.isArray(data.data)) {
+            folderVideos = data.data;
+          }
+          videos.push(...folderVideos);
         }
         
-        console.log(`Found ${videos.length} videos in folder`);
+        console.log(`Found ${videos.length} total videos across all folders`);
         
         if (videos.length > 0) {
           console.log(`First video sample:`, JSON.stringify({
