@@ -143,7 +143,18 @@ export default function ImportUsersDialog({ open, onOpenChange, onImported }: Im
 
       const full_name = parts[nameIdx] || '';
       const email = (parts[emailIdx] || '').toLowerCase();
-      const courseIdsRaw = (parts[courseIdx] || '').replace(/^"|"$/g, '');
+      
+      // Collect all course IDs: if courses aren't quoted and delimiter splits them
+      // into separate columns, gather everything from courseIdx onward
+      const maxKnownIdx = Math.max(nameIdx, emailIdx, courseIdx);
+      let courseIdsRaw: string;
+      if (courseIdx >= 0 && maxKnownIdx === courseIdx && parts.length > courseIdx + 1) {
+        // Extra columns after courseIdx likely are course IDs split by delimiter
+        courseIdsRaw = parts.slice(courseIdx).join(';');
+      } else {
+        courseIdsRaw = parts[courseIdx] || '';
+      }
+      courseIdsRaw = courseIdsRaw.replace(/^"|"$/g, '');
       const course_ids = courseIdsRaw
         .split(/[;|,]/)
         .map(id => id.trim())
