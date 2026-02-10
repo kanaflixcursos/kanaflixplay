@@ -619,9 +619,6 @@ export default function CourseView() {
                       {optionalLessons.length > 0 && (
                         <>
                           <Separator className="my-3" />
-                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pb-1">
-                            Conteúdo Opcional
-                          </p>
                           {modules.filter(m => m.is_optional).map((mod) => {
                             const moduleLessons = lessons.filter(l => l.module_id === mod.id);
                             if (moduleLessons.length === 0) return null;
