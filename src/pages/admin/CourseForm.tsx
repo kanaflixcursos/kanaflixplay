@@ -287,7 +287,7 @@ export default function CourseForm() {
       if (isEditing && courseId) {
         const { data: savedLessons } = await supabase
           .from('lessons')
-          .select('pandavideo_video_id, title, order_index, duration_minutes')
+          .select('pandavideo_video_id, title, order_index, duration_minutes, module_id')
           .eq('course_id', courseId)
           .order('order_index', { ascending: true });
 
@@ -306,8 +306,9 @@ export default function CourseForm() {
             if (savedLesson) {
               existingVideos.push({
                 ...video,
-                title: savedLesson.title || video.title, // Use saved title
+                title: savedLesson.title || video.title,
                 duration: savedLesson.duration_minutes ? savedLesson.duration_minutes * 60 : video.duration,
+                module_id: savedLesson.module_id,
               });
             } else {
               newVideos.push(video);
@@ -349,6 +350,12 @@ export default function CourseForm() {
   const handleVideoTitleChange = (index: number, newTitle: string) => {
     const updated = [...videos];
     updated[index].title = newTitle;
+    setVideos(updated);
+  };
+
+  const handleVideoModuleChange = (index: number, moduleId: string | null) => {
+    const updated = [...videos];
+    updated[index].module_id = moduleId;
     setVideos(updated);
   };
 
@@ -484,25 +491,8 @@ export default function CourseForm() {
         savedCourseId = data.id;
       }
 
-      // Save lesson order and custom titles
-      if (videos.length > 0 && savedCourseId) {
-        for (let i = 0; i < videos.length; i++) {
-          const video = videos[i];
-          await supabase
-            .from('lessons')
-            .upsert({
-              course_id: savedCourseId,
-              pandavideo_video_id: video.id,
-              title: video.title,
-              order_index: i,
-              duration_minutes: Math.ceil(video.duration / 60),
-            }, {
-              onConflict: 'pandavideo_video_id',
-            });
-        }
-      }
-
-      // Save modules
+      // Save modules first (to get real IDs for local modules)
+      const moduleIdMap = new Map<string, string>(); // local-id -> real-id
       if (localModules.length > 0 && savedCourseId) {
         for (const mod of localModules) {
           const isExistingModule = !mod.id.startsWith('local-');
@@ -511,15 +501,43 @@ export default function CourseForm() {
               .from('course_modules')
               .update({ title: mod.title, order_index: mod.order_index })
               .eq('id', mod.id);
+            moduleIdMap.set(mod.id, mod.id);
           } else {
-            await supabase
+            const { data: newMod } = await supabase
               .from('course_modules')
               .insert({
                 course_id: savedCourseId,
                 title: mod.title,
                 order_index: mod.order_index,
-              });
+              })
+              .select('id')
+              .single();
+            if (newMod) {
+              moduleIdMap.set(mod.id, newMod.id);
+            }
           }
+        }
+      }
+
+      // Save lesson order, custom titles, and module assignments
+      if (videos.length > 0 && savedCourseId) {
+        for (let i = 0; i < videos.length; i++) {
+          const video = videos[i];
+          const resolvedModuleId = video.module_id
+            ? (moduleIdMap.get(video.module_id) || video.module_id)
+            : null;
+          await supabase
+            .from('lessons')
+            .upsert({
+              course_id: savedCourseId,
+              pandavideo_video_id: video.id,
+              title: video.title,
+              order_index: i,
+              duration_minutes: Math.ceil(video.duration / 60),
+              module_id: resolvedModuleId,
+            }, {
+              onConflict: 'pandavideo_video_id',
+            });
         }
       }
 
@@ -705,53 +723,15 @@ export default function CourseForm() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : videos.length > 0 ? (
-                <div className="space-y-2">
-                  <Label>Aulas disponíveis ({videos.length})</Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Arraste para reordenar e edite os títulos se necessário
-                  </p>
-                  <div className="space-y-2">
-                    {videos.map((video, index) => (
-                      <div
-                        key={video.id}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                        className={`flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors ${
-                          draggedIndex === index ? 'opacity-50 border-primary' : ''
-                        }`}
-                      >
-                        <div className="cursor-grab active:cursor-grabbing">
-                          <GripVertical className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <Input
-                          value={video.title}
-                          onChange={(e) => handleVideoTitleChange(index, e.target.value)}
-                          className="flex-1"
-                        />
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDuration(video.duration)}
-                        </span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          video.status === 'CONVERTED' 
-                            ? 'bg-success/10 text-success' 
-                            : 'bg-warning/10 text-warning-foreground'
-                        }`}>
-                          {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Modules Section - inside videos block */}
-                  <div className="space-y-3 border-t pt-6 mt-4">
+                <div className="space-y-4">
+                  {/* Modules Section */}
+                  <div className="space-y-3 border-b pb-6">
                     <div className="flex items-center gap-2">
                       <Layers className="h-5 w-5 text-primary" />
                       <Label className="text-base font-semibold">Módulos (opcional)</Label>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Crie módulos para organizar as aulas em seções. Você pode atribuir aulas aos módulos depois na tela de aulas.
+                      Crie módulos para organizar as aulas em seções. Após criar, atribua cada aula ao módulo desejado.
                     </p>
                     <div className="flex gap-2">
                       <Input
@@ -800,6 +780,65 @@ export default function CourseForm() {
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  {/* Lessons list */}
+                  <Label>Aulas disponíveis ({videos.length})</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Arraste para reordenar{localModules.length > 0 ? ', atribua módulos' : ''} e edite os títulos se necessário
+                  </p>
+                  <div className="space-y-2">
+                    {videos.map((video, index) => (
+                      <div
+                        key={video.id}
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onDragOver={(e) => handleDragOver(e, index)}
+                        onDragEnd={handleDragEnd}
+                        className={`flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors ${
+                          draggedIndex === index ? 'opacity-50 border-primary' : ''
+                        }`}
+                      >
+                        <div className="cursor-grab active:cursor-grabbing">
+                          <GripVertical className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <Input
+                          value={video.title}
+                          onChange={(e) => handleVideoTitleChange(index, e.target.value)}
+                          className="flex-1"
+                        />
+                        {localModules.length > 0 && (
+                          <Select
+                            value={video.module_id || '__none__'}
+                            onValueChange={(value) =>
+                              handleVideoModuleChange(index, value === '__none__' ? null : value)
+                            }
+                          >
+                            <SelectTrigger className="w-40 shrink-0">
+                              <SelectValue placeholder="Sem módulo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none__">Sem módulo</SelectItem>
+                              {localModules.map((m) => (
+                                <SelectItem key={m.id} value={m.id}>
+                                  {m.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatDuration(video.duration)}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          video.status === 'CONVERTED' 
+                            ? 'bg-success/10 text-success' 
+                            : 'bg-warning/10 text-warning-foreground'
+                        }`}>
+                          {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : formData.pandavideo_folder_id ? (
