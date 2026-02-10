@@ -694,6 +694,7 @@ export default function CourseForm() {
           {/* Step 2: Video Selection */}
           {currentStep === 2 && (
             <div className="space-y-6">
+              {/* Folder selector */}
               <div className="space-y-2">
                 <Label>Pasta de Vídeos (Pandavideo)</Label>
                 <div className="flex items-center gap-2">
@@ -723,123 +724,213 @@ export default function CourseForm() {
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : videos.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Modules Section */}
-                  <div className="space-y-3 border-b pb-6">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-primary" />
-                      <Label className="text-base font-semibold">Módulos (opcional)</Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Crie módulos para organizar as aulas em seções. Após criar, atribua cada aula ao módulo desejado.
-                    </p>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Nome do novo módulo..."
-                        value={newModuleTitle}
-                        onChange={(e) => setNewModuleTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddLocalModule();
-                          }
-                        }}
-                      />
-                      <Button type="button" onClick={handleAddLocalModule} disabled={!newModuleTitle.trim()} variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar
-                      </Button>
-                    </div>
-                    {localModules.length > 0 && (
-                      <div className="space-y-2">
-                        {localModules.map((mod) => (
-                          <div key={mod.id} className="flex items-center gap-2 p-3 rounded-lg border bg-card">
-                            <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <Input
-                              defaultValue={mod.title}
-                              className="flex-1"
-                              onBlur={(e) => {
-                                if (e.target.value !== mod.title) {
-                                  handleUpdateLocalModuleTitle(mod.id, e.target.value);
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                              }}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteLocalModule(mod.id)}
-                              className="shrink-0 text-destructive hover:text-destructive"
-                              type="button"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                <div className="space-y-6">
+                  {/* Add module inline */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Criar novo módulo..."
+                      value={newModuleTitle}
+                      onChange={(e) => setNewModuleTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddLocalModule();
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button type="button" onClick={handleAddLocalModule} disabled={!newModuleTitle.trim()} variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Módulo
+                    </Button>
                   </div>
 
-                  {/* Lessons list */}
-                  <Label>Aulas disponíveis ({videos.length})</Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Arraste para reordenar{localModules.length > 0 ? ', atribua módulos' : ''} e edite os títulos se necessário
-                  </p>
-                  <div className="space-y-2">
-                    {videos.map((video, index) => (
-                      <div
-                        key={video.id}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                        className={`flex items-center gap-3 p-3 rounded-lg border bg-card transition-colors ${
-                          draggedIndex === index ? 'opacity-50 border-primary' : ''
-                        }`}
-                      >
-                        <div className="cursor-grab active:cursor-grabbing">
-                          <GripVertical className="h-5 w-5 text-muted-foreground" />
+                  {/* Grouped lessons by module */}
+                  {localModules.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Unassigned lessons */}
+                      {videos.filter(v => !v.module_id).length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span className="font-medium">Sem módulo</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {videos.filter(v => !v.module_id).length}
+                            </Badge>
+                          </div>
+                          <div className="space-y-1 pl-3 border-l-2 border-muted">
+                            {videos.map((video, index) => {
+                              if (video.module_id) return null;
+                              return (
+                                <div
+                                  key={video.id}
+                                  draggable
+                                  onDragStart={() => handleDragStart(index)}
+                                  onDragOver={(e) => handleDragOver(e, index)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
+                                    draggedIndex === index ? 'opacity-50 border-primary' : ''
+                                  }`}
+                                >
+                                  <div className="cursor-grab active:cursor-grabbing">
+                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                  </div>
+                                  <Input
+                                    value={video.title}
+                                    onChange={(e) => handleVideoTitleChange(index, e.target.value)}
+                                    className="flex-1 h-8 text-sm"
+                                  />
+                                  <Select
+                                    value="__none__"
+                                    onValueChange={(value) =>
+                                      handleVideoModuleChange(index, value === '__none__' ? null : value)
+                                    }
+                                  >
+                                    <SelectTrigger className="w-36 h-8 text-xs shrink-0">
+                                      <SelectValue placeholder="Mover para..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__none__">Sem módulo</SelectItem>
+                                      {localModules.map((m) => (
+                                        <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {formatDuration(video.duration)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <Input
-                          value={video.title}
-                          onChange={(e) => handleVideoTitleChange(index, e.target.value)}
-                          className="flex-1"
-                        />
-                        {localModules.length > 0 && (
-                          <Select
-                            value={video.module_id || '__none__'}
-                            onValueChange={(value) =>
-                              handleVideoModuleChange(index, value === '__none__' ? null : value)
-                            }
-                          >
-                            <SelectTrigger className="w-40 shrink-0">
-                              <SelectValue placeholder="Sem módulo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">Sem módulo</SelectItem>
-                              {localModules.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDuration(video.duration)}
-                        </span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          video.status === 'CONVERTED' 
-                            ? 'bg-success/10 text-success' 
-                            : 'bg-warning/10 text-warning-foreground'
-                        }`}>
-                          {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+
+                      {/* Modules with their lessons */}
+                      {localModules.map((mod) => {
+                        const moduleLessons = videos.filter(v => v.module_id === mod.id);
+                        return (
+                          <div key={mod.id} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Layers className="h-4 w-4 text-primary shrink-0" />
+                              <Input
+                                defaultValue={mod.title}
+                                className="h-8 text-sm font-medium flex-1"
+                                onBlur={(e) => {
+                                  if (e.target.value !== mod.title) {
+                                    handleUpdateLocalModuleTitle(mod.id, e.target.value);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                }}
+                              />
+                              <Badge variant="secondary" className="text-xs shrink-0">
+                                {moduleLessons.length}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteLocalModule(mod.id)}
+                                type="button"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                            <div className="space-y-1 pl-3 border-l-2 border-primary/30">
+                              {moduleLessons.length === 0 ? (
+                                <p className="text-xs text-muted-foreground py-2 pl-2">
+                                  Nenhuma aula neste módulo. Use o seletor nas aulas para movê-las.
+                                </p>
+                              ) : (
+                                moduleLessons.map((video) => {
+                                  const globalIndex = videos.indexOf(video);
+                                  return (
+                                    <div
+                                      key={video.id}
+                                      draggable
+                                      onDragStart={() => handleDragStart(globalIndex)}
+                                      onDragOver={(e) => handleDragOver(e, globalIndex)}
+                                      onDragEnd={handleDragEnd}
+                                      className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
+                                        draggedIndex === globalIndex ? 'opacity-50 border-primary' : ''
+                                      }`}
+                                    >
+                                      <div className="cursor-grab active:cursor-grabbing">
+                                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                      <Input
+                                        value={video.title}
+                                        onChange={(e) => handleVideoTitleChange(globalIndex, e.target.value)}
+                                        className="flex-1 h-8 text-sm"
+                                      />
+                                      <Select
+                                        value={video.module_id || '__none__'}
+                                        onValueChange={(value) =>
+                                          handleVideoModuleChange(globalIndex, value === '__none__' ? null : value)
+                                        }
+                                      >
+                                        <SelectTrigger className="w-36 h-8 text-xs shrink-0">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="__none__">Sem módulo</SelectItem>
+                                          {localModules.map((m) => (
+                                            <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {formatDuration(video.duration)}
+                                      </span>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* No modules - flat lesson list */
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        {videos.length} aulas • Arraste para reordenar, edite os títulos
+                      </p>
+                      {videos.map((video, index) => (
+                        <div
+                          key={video.id}
+                          draggable
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          className={`flex items-center gap-2 p-2 rounded-lg border bg-card text-sm transition-colors ${
+                            draggedIndex === index ? 'opacity-50 border-primary' : ''
+                          }`}
+                        >
+                          <div className="cursor-grab active:cursor-grabbing">
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <Input
+                            value={video.title}
+                            onChange={(e) => handleVideoTitleChange(index, e.target.value)}
+                            className="flex-1 h-8 text-sm"
+                          />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDuration(video.duration)}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            video.status === 'CONVERTED' 
+                              ? 'bg-success/10 text-success' 
+                              : 'bg-warning/10 text-warning-foreground'
+                          }`}>
+                            {video.status === 'CONVERTED' ? 'Pronto' : 'Processando'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : formData.pandavideo_folder_id ? (
                 <div className="text-center py-12 text-muted-foreground">
