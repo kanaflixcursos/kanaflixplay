@@ -180,10 +180,6 @@ function SortableLessonCard({
               </div>
             </div>
 
-            {/* Order number */}
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium shrink-0">
-              {index + 1}
-            </div>
             
             {/* Title */}
             <div className="flex-1 min-w-0">
