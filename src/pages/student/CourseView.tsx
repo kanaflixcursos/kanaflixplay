@@ -351,7 +351,7 @@ export default function CourseView() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium line-clamp-2 leading-tight">
-            {index + 1}. {lesson.title}
+            {lesson.title}
           </p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
             {lesson.duration_minutes && <span>{formatDuration(lesson.duration_minutes)}</span>}
