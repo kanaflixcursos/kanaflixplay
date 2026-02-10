@@ -96,6 +96,7 @@ export default function AdminCourses() {
     course: null,
   });
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   const fetchPandaFolders = async () => {
     try {
@@ -542,6 +543,29 @@ export default function AdminCourses() {
                     variant={copied ? "default" : "outline"}
                   >
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Course ID</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    readOnly 
+                    value={linkDialog.course.id} 
+                    className="text-sm font-mono"
+                  />
+                  <Button 
+                    size="icon" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(linkDialog.course!.id);
+                      setCopiedId(true);
+                      toast.success('ID copiado!');
+                      setTimeout(() => setCopiedId(false), 2000);
+                    }}
+                    variant={copiedId ? "default" : "outline"}
+                  >
+                    {copiedId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
