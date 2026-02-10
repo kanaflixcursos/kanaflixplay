@@ -410,9 +410,8 @@ export default function CourseView() {
     <div className="space-y-4 md:space-y-6">
       {/* Header - Mobile optimized */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2 w-fit">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="w-fit">
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Voltar</span>
         </Button>
         <div className="flex-1">
           <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
@@ -467,6 +466,11 @@ export default function CourseView() {
             <div className="space-y-3 md:space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                 <div className="space-y-1 min-w-0">
+                  {selectedLesson.module_id && modules.find(m => m.id === selectedLesson.module_id) && (
+                    <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wide">
+                      {modules.find(m => m.id === selectedLesson.module_id)?.title}
+                    </p>
+                  )}
                   <h2 className="text-lg sm:text-2xl font-medium line-clamp-2">{selectedLesson.title}</h2>
                   {selectedLesson.duration_minutes && (
                     <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
