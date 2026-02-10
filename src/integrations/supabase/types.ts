@@ -48,6 +48,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          is_optional: boolean
           order_index: number
           title: string
           updated_at: string
@@ -56,6 +57,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          is_optional?: boolean
           order_index?: number
           title: string
           updated_at?: string
@@ -64,6 +66,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          is_optional?: boolean
           order_index?: number
           title?: string
           updated_at?: string

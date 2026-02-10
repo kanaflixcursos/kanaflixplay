@@ -45,6 +45,7 @@ interface Module {
   id: string;
   title: string;
   order_index: number;
+  is_optional: boolean;
 }
 
 interface Lesson {
@@ -261,7 +262,7 @@ export default function CourseView() {
   };
 
   const getTotalDuration = () => {
-    const total = lessons.reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
+    const total = requiredLessons.reduce((acc, l) => acc + (l.duration_minutes || 0), 0);
     return formatDuration(total);
   };
 
@@ -293,9 +294,14 @@ export default function CourseView() {
     return unlocked;
   }, [lessons, course?.is_sequential]);
 
+  // Separate required and optional lessons
+  const optionalModuleIds = new Set(modules.filter(m => m.is_optional).map(m => m.id));
+  const requiredLessons = lessons.filter(l => !l.module_id || !optionalModuleIds.has(l.module_id));
+  const optionalLessons = lessons.filter(l => l.module_id && optionalModuleIds.has(l.module_id));
+  
   const unlockedCount = unlockedLessonIds.size;
-  const completedCount = lessons.filter(l => l.completed).length;
-  const progressPercent = lessons.length > 0 ? Math.round((completedCount / lessons.length) * 100) : 0;
+  const completedCount = requiredLessons.filter(l => l.completed).length;
+  const progressPercent = requiredLessons.length > 0 ? Math.round((completedCount / requiredLessons.length) * 100) : 0;
   const isLessonLocked = (lessonId: string) => !unlockedLessonIds.has(lessonId);
 
   // Detect when a new lesson gets unlocked and trigger animation
@@ -416,7 +422,7 @@ export default function CourseView() {
         <div className="flex-1">
           <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-            <span>{completedCount}/{lessons.length} aulas</span>
+            <span>{completedCount}/{requiredLessons.length} aulas</span>
             <span>•</span>
             <span>{progressPercent}%</span>
           </div>
@@ -575,12 +581,12 @@ export default function CourseView() {
               <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
                 <span className="flex items-center gap-1">
                   <CheckCircle className="h-3 w-3" />
-                  {completedCount}/{lessons.length} concluídas
+                  {completedCount}/{requiredLessons.length} concluídas
                 </span>
                 {course?.is_sequential && (
                   <span className="flex items-center gap-1">
                     <Unlock className="h-3 w-3" />
-                    {unlockedCount}/{lessons.length} desbloqueadas
+                    {unlockedCount}/{requiredLessons.length} desbloqueadas
                   </span>
                 )}
               </div>
@@ -594,8 +600,8 @@ export default function CourseView() {
                       {lessons.filter(l => !l.module_id).map((lesson, i) => (
                         <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
                       ))}
-                      {/* Grouped by module */}
-                      {modules.map((mod) => {
+                      {/* Required modules */}
+                      {modules.filter(m => !m.is_optional).map((mod) => {
                         const moduleLessons = lessons.filter(l => l.module_id === mod.id);
                         if (moduleLessons.length === 0) return null;
                         return (
@@ -609,6 +615,29 @@ export default function CourseView() {
                           </div>
                         );
                       })}
+                      {/* Optional modules separator */}
+                      {optionalLessons.length > 0 && (
+                        <>
+                          <Separator className="my-3" />
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pb-1">
+                            Conteúdo Opcional
+                          </p>
+                          {modules.filter(m => m.is_optional).map((mod) => {
+                            const moduleLessons = lessons.filter(l => l.module_id === mod.id);
+                            if (moduleLessons.length === 0) return null;
+                            return (
+                              <div key={mod.id} className="pt-2">
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pb-1">
+                                  {mod.title}
+                                </p>
+                                {moduleLessons.map((lesson) => (
+                                  <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
                     </>
                   ) : (
                     lessons.map((lesson, index) => (
