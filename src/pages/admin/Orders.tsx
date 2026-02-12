@@ -388,8 +388,13 @@ export default function AdminOrders() {
                         <p className="text-xs text-muted-foreground truncate max-w-[150px]">{order.user_email}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold text-success">
-                      {formatCurrency(order.amount)}
+                    <TableCell className={order.payment_method === 'manual' ? '' : 'font-semibold text-success'}>
+                      {order.payment_method === 'manual' ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <UserCheck className="h-3 w-3" />
+                          Manual
+                        </Badge>
+                      ) : formatCurrency(order.amount)}
                     </TableCell>
                     <TableCell>
                       {order.payment_method && (
@@ -412,7 +417,7 @@ export default function AdminOrders() {
                         <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {order.status === 'paid' && (
+                        {order.status === 'paid' && order.payment_method !== 'manual' && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -422,7 +427,7 @@ export default function AdminOrders() {
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
-                        {order.status === 'pending' && (
+                        {order.status === 'pending' && order.payment_method !== 'manual' && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -458,7 +463,7 @@ export default function AdminOrders() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-success">{formatCurrency(order.amount)}</span>
+                    <span className={order.payment_method === 'manual' ? '' : 'font-semibold text-success'}>{order.payment_method === 'manual' ? '' : formatCurrency(order.amount)}</span>
                     {order.payment_method && (
                       <Badge variant="outline" className="gap-1">
                         {paymentMethodIcons[order.payment_method]}
@@ -471,7 +476,7 @@ export default function AdminOrders() {
                       <Eye className="h-4 w-4 mr-1" />
                       Detalhes
                     </Button>
-                    {order.status === 'paid' && (
+                    {order.status === 'paid' && order.payment_method !== 'manual' && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -481,7 +486,7 @@ export default function AdminOrders() {
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     )}
-                    {order.status === 'pending' && (
+                    {order.status === 'pending' && order.payment_method !== 'manual' && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -521,7 +526,14 @@ export default function AdminOrders() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Valor</p>
-                  <p className="font-medium text-success">{formatCurrency(selectedOrder.amount)}</p>
+                  {selectedOrder.payment_method === 'manual' ? (
+                    <Badge variant="secondary" className="gap-1 mt-1">
+                      <UserCheck className="h-3 w-3" />
+                      Acesso Manual
+                    </Badge>
+                  ) : (
+                    <p className="font-medium text-success">{formatCurrency(selectedOrder.amount)}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-muted-foreground">Comprador</p>
@@ -561,7 +573,7 @@ export default function AdminOrders() {
               
               {/* Action buttons in dialog */}
               <div className="flex gap-2 pt-2 border-t">
-                {selectedOrder.status === 'paid' && (
+                {selectedOrder.status === 'paid' && selectedOrder.payment_method !== 'manual' && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -575,7 +587,7 @@ export default function AdminOrders() {
                     Reembolsar
                   </Button>
                 )}
-                {selectedOrder.status === 'pending' && (
+                {selectedOrder.status === 'pending' && selectedOrder.payment_method !== 'manual' && (
                   <Button
                     variant="outline"
                     size="sm"

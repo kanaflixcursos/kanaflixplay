@@ -139,16 +139,25 @@ export default function DashboardLatestPurchases() {
               </Button>
             </div>
             <div className="flex items-center justify-between gap-2 mt-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-success">
-                  {formatCurrency(purchase.amount)}
-                </span>
-                {purchase.payment_method && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
-                    {paymentMethodIcons[purchase.payment_method]}
-                    {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
-                  </Badge>
-                )}
+            <div className="flex items-center gap-2">
+              {purchase.payment_method === 'manual' ? (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                  <UserCheck className="h-3 w-3" />
+                  Acesso Manual
+                </Badge>
+              ) : (
+                <>
+                  <span className="text-sm font-semibold text-success">
+                    {formatCurrency(purchase.amount)}
+                  </span>
+                  {purchase.payment_method && (
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                      {paymentMethodIcons[purchase.payment_method]}
+                      {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
+                    </Badge>
+                  )}
+                </>
+              )}
               </div>
               <Badge 
                 variant="outline" 
@@ -178,7 +187,14 @@ export default function DashboardLatestPurchases() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Valor</p>
-                  <p className="font-medium text-success">{formatCurrency(selectedPurchase.amount)}</p>
+                  {selectedPurchase.payment_method === 'manual' ? (
+                    <Badge variant="secondary" className="gap-1 mt-1">
+                      <UserCheck className="h-3 w-3" />
+                      Acesso Manual
+                    </Badge>
+                  ) : (
+                    <p className="font-medium text-success">{formatCurrency(selectedPurchase.amount)}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-muted-foreground">Comprador</p>
