@@ -288,111 +288,65 @@ export default function StudentCourses() {
         )}
       </section>
 
-      {/* Talvez você se interesse - Banner-based or Course-based */}
-      {!loading && (interesseBanners.length > 0 || suggestedCourses.length > 0) && (
+      {/* Talvez você se interesse - Course-based horizontal cards */}
+      {!loading && suggestedCourses.length > 0 && (
         <section>
           <h2 className="text-xl font-semibold mb-4">Talvez você se interesse</h2>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {/* Banner-based cards */}
-            {interesseBanners.length > 0
-              ? interesseBanners.map((banner, index) => {
-                  const content = (
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full overflow-hidden">
-                      <div className="flex h-full">
-                        <div className="w-28 md:w-32 flex-shrink-0">
+            {suggestedCourses.map((course, index) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
+              >
+                <Link to={`/checkout/${course.id}`}>
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                    <div className="flex h-full">
+                      <div className="w-28 md:w-32 flex-shrink-0">
+                        {course.thumbnail_url ? (
                           <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
                             <img
-                              src={banner.image_url}
-                              alt="Sugestão"
+                              src={course.thumbnail_url}
+                              alt={course.title}
                               className="w-full h-full object-cover"
                             />
                           </div>
-                        </div>
-                        <div className="flex-1 p-3 md:p-4 flex flex-col justify-center min-w-0">
-                          {banner.link_url && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              Saiba mais →
+                        ) : (
+                          <div className="aspect-[4/5] w-full bg-muted rounded-l-lg flex items-center justify-center">
+                            <BookOpen className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
+                        <div>
+                          <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-1">
+                            {course.title}
+                          </h3>
+                          {course.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                              {course.description}
                             </p>
                           )}
                         </div>
-                      </div>
-                    </Card>
-                  );
-
-                  return (
-                    <motion.div
-                      key={banner.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
-                    >
-                      {banner.link_url ? (
-                        <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
-                          {content}
-                        </a>
-                      ) : (
-                        content
-                      )}
-                    </motion.div>
-                  );
-                })
-              : suggestedCourses.map((course, index) => (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
-                  >
-                    <Link to={`/checkout/${course.id}`}>
-                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                        <div className="flex h-full">
-                          <div className="w-28 md:w-32 flex-shrink-0">
-                            {course.thumbnail_url ? (
-                              <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
-                                <img
-                                  src={course.thumbnail_url}
-                                  alt={course.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            ) : (
-                              <div className="aspect-[4/5] w-full bg-muted rounded-l-lg flex items-center justify-center">
-                                <BookOpen className="h-8 w-8 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
-                            <div>
-                              <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-1">
-                                {course.title}
-                              </h3>
-                              {course.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                  {course.description}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <PlayCircle className="h-3 w-3" />
-                                {course.lessonCount} {course.lessonCount === 1 ? 'aula' : 'aulas'}
-                              </span>
-                              {course.totalDurationMinutes > 0 && (
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {formatDuration(course.totalDurationMinutes)}
-                                </span>
-                              )}
-                              <Badge variant="outline" className="text-xs">
-                                {formatPrice(course.price)}
-                              </Badge>
-                            </div>
-                          </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <PlayCircle className="h-3 w-3" />
+                            {course.lessonCount} {course.lessonCount === 1 ? 'aula' : 'aulas'}
+                          </span>
+                          {course.totalDurationMinutes > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDuration(course.totalDurationMinutes)}
+                            </span>
+                          )}
                         </div>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                ))}
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </section>
       )}
