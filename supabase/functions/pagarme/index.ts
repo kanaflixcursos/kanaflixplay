@@ -303,7 +303,7 @@ async function handleCreateOrder(
         data: {
           userName: profile.full_name || '',
           courseName: course.title,
-          courseUrl: `https://kanaflixplay.lovable.app/courses/${courseId}`,
+          courseUrl: `https://cursos.kanaflix.com.br/courses/${courseId}`,
           amount: course.price,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
@@ -484,7 +484,7 @@ async function handleChargePaid(supabase: any, data: any) {
         data: {
           userName: profile.full_name || '',
           courseName: order.courses?.title || 'Curso',
-          courseUrl: `https://kanaflixplay.lovable.app/courses/${order.course_id}`,
+          courseUrl: `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
