@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
+import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 
 interface EnrolledCourse {
   id: string;
@@ -154,6 +155,9 @@ export default function StudentDashboard() {
           loading={loading}
         />
       </div>
+
+      {/* Continue Watching */}
+      {!loading && <ContinueWatchingCard />}
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>

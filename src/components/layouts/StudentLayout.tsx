@@ -20,7 +20,7 @@ import {
   SidebarTrigger,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Home, Shield, Compass, GraduationCap, ShoppingBag, Bell, HelpCircle } from 'lucide-react';
+import { Home, Shield, Compass, GraduationCap, ShoppingBag, HelpCircle } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -152,45 +152,6 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                     </SidebarMenuItem>
                   ))}
 
-                  {/* Notificações */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to="/notifications"
-                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
-                        activeClassName="bg-accent text-accent-foreground font-medium"
-                      >
-                        <Bell className="h-4 w-4" />
-                        <span className="flex-1">Notificações</span>
-                        {unreadNotificationCount > 0 && (
-                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-                            {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
-                          </span>
-                        )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  {/* Suporte - hide for admins in student layout */}
-                  {role !== 'admin' && (
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to="/suporte"
-                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
-                          activeClassName="bg-accent text-accent-foreground font-medium"
-                        >
-                          <HelpCircle className="h-4 w-4" />
-                          <span className="flex-1">Suporte</span>
-                          {unreadSupportNotifications > 0 && (
-                            <span className="h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-                              {unreadSupportNotifications > 99 ? '99+' : unreadSupportNotifications}
-                            </span>
-                          )}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -223,6 +184,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               userName={displayName}
               userEmail={displayEmail}
               avatarUrl={avatarUrl}
+              unreadCount={unreadNotificationCount}
               onSignOut={handleSignOut}
             />
           </SidebarFooter>

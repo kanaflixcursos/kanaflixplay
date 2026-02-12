@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon } from 'lucide-react';
+import { LogOut, Moon, Bell } from 'lucide-react';
 
 interface SidebarProfileBoxProps {
   userName: string;
   userEmail: string;
   avatarUrl?: string | null;
+  unreadCount?: number;
   onSignOut: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function SidebarProfileBox({
   userName,
   userEmail,
   avatarUrl,
+  unreadCount = 0,
   onSignOut,
 }: SidebarProfileBoxProps) {
   const navigate = useNavigate();
@@ -52,29 +54,47 @@ export default function SidebarProfileBox({
 
       <Separator className="my-2" />
 
-      {/* Dark Mode Toggle */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="flex items-center gap-2">
-          <Moon className="h-4 w-4" />
-          <span className="text-sm font-normal">Modo Escuro</span>
+      <div className="flex flex-col gap-1">
+        {/* Notificações */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
+          onClick={() => navigate('/notifications')}
+        >
+          <Bell className="h-4 w-4" />
+          Notificações
+          {unreadCount > 0 && (
+            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </Button>
+
+        {/* Dark Mode Toggle */}
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Moon className="h-4 w-4" />
+            <span className="text-sm font-normal">Modo Escuro</span>
+          </div>
+          <Switch
+            checked={isDarkMode}
+            onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+          />
         </div>
-        <Switch
-          checked={isDarkMode}
-          onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-        />
+
+        <Separator className="my-2" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 h-9 px-3 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+          onClick={onSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          Sair da Conta
+        </Button>
       </div>
-
-      <Separator className="my-2" />
-
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-full justify-start gap-2 h-9 px-3 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={onSignOut}
-      >
-        <LogOut className="h-4 w-4" />
-        Sair da Conta
-      </Button>
     </>
   );
 }
