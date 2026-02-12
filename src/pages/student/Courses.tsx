@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, ShoppingCart } from 'lucide-react';
+import { BookOpen, ShoppingCart, Clock, PlayCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface EnrolledCourse {
@@ -27,6 +27,8 @@ interface SuggestedCourse {
   description: string | null;
   thumbnail_url: string | null;
   price: number | null;
+  lessonCount: number;
+  totalDurationMinutes: number;
 }
 
 interface Banner {
@@ -71,13 +73,33 @@ export default function StudentCourses() {
         .from('courses')
         .select('id, title, description, thumbnail_url, price')
         .eq('is_published', true)
-        .eq('is_featured', true);
+        .eq('is_featured', true)
+        .limit(3);
 
       if (enrolledCourseIds.length > 0) {
         suggestedQuery.not('id', 'in', `(${enrolledCourseIds.join(',')})`);
       }
 
       const suggestedResult = await suggestedQuery;
+
+      // Fetch lesson count and duration for suggested courses
+      const suggestedWithMeta = await Promise.all(
+        (suggestedResult.data || []).map(async (course) => {
+          const { data: lessons } = await supabase
+            .from('lessons')
+            .select('id, duration_minutes')
+            .eq('course_id', course.id)
+            .eq('is_hidden', false);
+
+          const lessonCount = lessons?.length || 0;
+          const totalDurationMinutes = lessons?.reduce(
+            (sum, l) => sum + (l.duration_minutes || 0),
+            0
+          ) || 0;
+
+          return { ...course, lessonCount, totalDurationMinutes };
+        })
+      );
 
       // Fetch progress for enrolled courses
       const { data: allProgress } = await supabase
@@ -113,7 +135,7 @@ export default function StudentCourses() {
       );
 
       setEnrolledCourses(coursesWithProgress);
-      setSuggestedCourses(suggestedResult.data || []);
+      setSuggestedCourses(suggestedWithMeta);
       setBanners(bannersResult.data || []);
       setLoading(false);
     };
@@ -126,9 +148,15 @@ export default function StudentCourses() {
     return `R$ ${(price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+  };
+
   // Split banners for different slots
   const topBanner = banners[0];
-  const midBanner = banners[1];
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -139,7 +167,7 @@ export default function StudentCourses() {
         </p>
       </div>
 
-      {/* Top Banner Slot */}
+      {/* Top Banner - Cursos em destaque (1200x400 = 3:1) */}
       {topBanner && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -148,19 +176,19 @@ export default function StudentCourses() {
         >
           {topBanner.link_url ? (
             <a href={topBanner.link_url} target="_blank" rel="noopener noreferrer">
-              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
+              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '3/1' }}>
                 <img
                   src={topBanner.image_url}
-                  alt="Banner"
+                  alt="Cursos em destaque"
                   className="w-full h-full object-cover"
                 />
               </div>
             </a>
           ) : (
-            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
+            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '3/1' }}>
               <img
                 src={topBanner.image_url}
-                alt="Banner"
+                alt="Cursos em destaque"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -253,40 +281,11 @@ export default function StudentCourses() {
         )}
       </section>
 
-      {/* Mid Banner Slot */}
-      {midBanner && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
-        >
-          {midBanner.link_url ? (
-            <a href={midBanner.link_url} target="_blank" rel="noopener noreferrer">
-              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
-                <img
-                  src={midBanner.image_url}
-                  alt="Banner"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </a>
-          ) : (
-            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
-              <img
-                src={midBanner.image_url}
-                alt="Banner"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* Suggested Courses (Order Bump) */}
+      {/* Talvez você se interesse - Horizontal Cards */}
       {!loading && suggestedCourses.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold mb-4">Cursos Recomendados</h2>
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <h2 className="text-xl font-semibold mb-4">Talvez você se interesse</h2>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {suggestedCourses.map((course, index) => (
               <motion.div
                 key={course.id}
@@ -300,30 +299,54 @@ export default function StudentCourses() {
               >
                 <Link to={`/checkout/${course.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    {course.thumbnail_url ? (
-                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
-                        <img
-                          src={course.thumbnail_url}
-                          alt={course.title}
-                          className="w-full h-full object-cover"
-                        />
+                    <div className="flex h-full">
+                      {/* Left - 4:5 image */}
+                      <div className="w-28 md:w-32 flex-shrink-0">
+                        {course.thumbnail_url ? (
+                          <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
+                            <img
+                              src={course.thumbnail_url}
+                              alt={course.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="aspect-[4/5] w-full bg-muted rounded-l-lg flex items-center justify-center">
+                            <BookOpen className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
-                        <BookOpen className="h-12 w-12 text-muted-foreground" />
+
+                      {/* Right - Info */}
+                      <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
+                        <div>
+                          <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-1">
+                            {course.title}
+                          </h3>
+                          {course.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <PlayCircle className="h-3 w-3" />
+                            {course.lessonCount} {course.lessonCount === 1 ? 'aula' : 'aulas'}
+                          </span>
+                          {course.totalDurationMinutes > 0 && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDuration(course.totalDurationMinutes)}
+                            </span>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {formatPrice(course.price)}
+                          </Badge>
+                        </div>
                       </div>
-                    )}
-                    <CardHeader>
-                      <h3 className="card-title line-clamp-2">{course.title}</h3>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2">
-                        <ShoppingCart className="h-3 w-3 text-muted-foreground" />
-                        <Badge variant="outline" className="text-xs">
-                          {formatPrice(course.price)}
-                        </Badge>
-                      </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 </Link>
               </motion.div>
