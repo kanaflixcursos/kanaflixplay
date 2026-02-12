@@ -14,3 +14,12 @@ verify_jwt = false
 
 [functions.hotmart-access]
 verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = false
+
+[functions.assign-course]
+verify_jwt = false

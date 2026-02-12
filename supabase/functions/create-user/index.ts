@@ -36,19 +36,21 @@ serve(async (req) => {
     });
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
 
-    if (userError || !userData?.user) {
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    const callerUserId = claimsData.claims.sub;
+
     const { data: roleData } = await supabaseClient
       .from('user_roles')
       .select('role')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', callerUserId)
       .single();
 
     if (roleData?.role !== 'admin') {
@@ -115,7 +117,7 @@ serve(async (req) => {
       .update({ email, full_name })
       .eq('user_id', newUser.user.id);
 
-    console.log(`User ${newUser.user.id} created by admin ${userData.user.id}`);
+    console.log(`User ${newUser.user.id} created by admin ${callerUserId}`);
 
     return new Response(JSON.stringify({
       success: true,
