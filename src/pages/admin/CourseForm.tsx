@@ -613,28 +613,45 @@ export default function CourseForm() {
 
       // Save lesson order, custom titles, and module assignments
       if (videos.length > 0 && savedCourseId) {
+        // First, get existing lessons to know which ones to update vs create
+        const { data: existingLessons } = await supabase
+          .from('lessons')
+          .select('id, pandavideo_video_id')
+          .eq('course_id', savedCourseId)
+          .not('pandavideo_video_id', 'is', null);
+
+        const existingByVideoId = new Map(
+          (existingLessons || []).map(l => [l.pandavideo_video_id, l.id])
+        );
+
         for (let i = 0; i < videos.length; i++) {
           const video = videos[i];
           const resolvedModuleId = video.module_id
             ? (moduleIdMap.get(video.module_id) || video.module_id)
             : null;
-          await supabase
-            .from('lessons')
-            .upsert({
-              course_id: savedCourseId,
-              pandavideo_video_id: video.id,
-              title: video.title,
-              order_index: i,
-              duration_minutes: Math.ceil(video.duration / 60),
-              module_id: resolvedModuleId,
-            }, {
-              onConflict: 'pandavideo_video_id',
-            });
+          const existingLessonId = existingByVideoId.get(video.id);
+
+          if (existingLessonId) {
+            // Update existing lesson
+            const { error } = await supabase
+              .from('lessons')
+              .update({
+                title: video.title,
+                order_index: i,
+                duration_minutes: Math.ceil(video.duration / 60),
+                module_id: resolvedModuleId,
+              })
+              .eq('id', existingLessonId);
+
+            if (error) {
+              console.error(`Error updating lesson ${existingLessonId}:`, error);
+            }
+          }
         }
       }
 
-      // Auto-sync lessons from Pandavideo after creating/updating course
-      if (savedCourseId && formData.pandavideo_folder_id) {
+      // Auto-sync lessons from Pandavideo only for NEW courses (not edits)
+      if (!isEditing && savedCourseId && formData.pandavideo_folder_id) {
         try {
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData.session) {
@@ -647,7 +664,6 @@ export default function CourseForm() {
           }
         } catch (syncError) {
           console.error('Auto-sync error:', syncError);
-          // Don't fail the save operation if sync fails
         }
       }
 
