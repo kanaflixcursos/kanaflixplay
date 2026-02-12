@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Play } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { motion } from 'framer-motion';
 
 interface LastWatchedData {
   lessonId: string;
@@ -111,7 +112,7 @@ export default function ContinueWatchingCard() {
   }, [user]);
 
   if (loading) {
-    return <Skeleton className="h-36 w-full rounded-xl" />;
+    return <Skeleton className="h-36 w-full rounded-xl col-span-full" />;
   }
 
   if (!data) return null;
@@ -121,56 +122,55 @@ export default function ContinueWatchingCard() {
     : 0;
 
   return (
-    <Link to={`/courses/${data.courseId}?lesson=${data.lessonId}`}>
-      <Card className="relative overflow-hidden h-36 md:h-40 group cursor-pointer border-0 shadow-md">
-        {/* Content left side */}
-        <div className="absolute inset-0 z-10 flex items-center">
-          <div className="flex-1 p-5 md:p-6 pr-0 max-w-[60%]">
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
-              Continuar de onde parou
-            </p>
-            <h3 className="text-base md:text-lg font-medium text-foreground line-clamp-1 mb-1">
-              {data.lessonTitle}
-            </h3>
-            {data.moduleName && (
-              <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-                {data.moduleName}
-              </p>
+    <motion.div
+      className="col-span-full"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
+      <Link to={`/courses/${data.courseId}?lesson=${data.lessonId}`}>
+        <Card className="relative overflow-hidden h-36 md:h-40 group cursor-pointer border-0 shadow-md">
+          {/* Background: base + thumbnail + gradient */}
+          <div className="absolute inset-0 bg-card">
+            {data.courseThumbnail && (
+              <img
+                src={data.courseThumbnail}
+                alt={data.courseTitle}
+                className="absolute right-0 top-0 w-[60%] h-full object-cover"
+              />
             )}
-            <p className="text-xs text-muted-foreground">
-              {data.courseTitle} · {data.completedLessons}/{data.totalLessons} aulas ({progress}%)
-            </p>
+            {/* Gradient overlay covering full card */}
+            <div className="absolute inset-0 bg-gradient-to-r from-card from-35% via-card/80 via-55% to-card/20" />
           </div>
-        </div>
 
-        {/* Background gradient + thumbnail right side */}
-        <div className="absolute inset-0">
-          {/* Base background */}
-          <div className="absolute inset-0 bg-card" />
-
-          {/* Thumbnail with gradient fade */}
-          {data.courseThumbnail && (
-            <>
-              <div className="absolute right-0 top-0 bottom-0 w-[55%]">
-                <img
-                  src={data.courseThumbnail}
-                  alt={data.courseTitle}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Gradient overlay from left to right */}
-              <div className="absolute inset-0 bg-gradient-to-r from-card via-card/95 via-40% to-transparent" />
-            </>
-          )}
-        </div>
-
-        {/* Play button */}
-        <div className="absolute right-5 md:right-6 top-1/2 -translate-y-1/2 z-10">
-          <div className="h-12 w-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:bg-primary transition-colors group-hover:scale-105 duration-200">
-            <Play className="h-5 w-5 text-primary-foreground ml-0.5" fill="currentColor" />
+          {/* Content left side */}
+          <div className="absolute inset-0 z-10 flex items-center">
+            <div className="flex-1 p-5 md:p-6 pr-0 max-w-[60%]">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
+                Continuar de onde parou
+              </p>
+              <h3 className="text-base md:text-lg font-medium text-foreground line-clamp-1 mb-1">
+                {data.lessonTitle}
+              </h3>
+              {data.moduleName && (
+                <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+                  {data.moduleName}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {data.courseTitle} · {data.completedLessons}/{data.totalLessons} aulas ({progress}%)
+              </p>
+            </div>
           </div>
-        </div>
-      </Card>
-    </Link>
+
+          {/* Play button */}
+          <div className="absolute right-5 md:right-6 top-1/2 -translate-y-1/2 z-10">
+            <div className="h-12 w-12 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:bg-primary transition-colors group-hover:scale-105 duration-200">
+              <Play className="h-5 w-5 text-primary-foreground ml-0.5" fill="currentColor" />
+            </div>
+          </div>
+        </Card>
+      </Link>
+    </motion.div>
   );
 }

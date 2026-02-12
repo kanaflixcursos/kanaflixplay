@@ -154,10 +154,8 @@ export default function StudentDashboard() {
           icon={Trophy}
           loading={loading}
         />
+        {!loading && <ContinueWatchingCard />}
       </div>
-
-      {/* Continue Watching */}
-      {!loading && <ContinueWatchingCard />}
 
       <div>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
