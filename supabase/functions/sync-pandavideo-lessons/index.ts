@@ -1,8 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const PANDAVIDEO_API_URL = "https://api-v2.pandavideo.com.br";
@@ -32,7 +32,7 @@ interface PandaVideo {
   description?: string;
   status: string;
   duration?: number;
-  length?: number; // Duration in seconds from Pandavideo API
+  length?: number;
   folder_id?: string;
   player_url?: string;
   video_player?: string;
@@ -44,7 +44,6 @@ interface PandaVideo {
   created_at?: string;
 }
 
-// Helper to fetch individual video details to get player_url
 async function fetchVideoDetails(videoId: string, apiKey: string): Promise<PandaVideo | null> {
   try {
     const response = await fetch(`${PANDAVIDEO_API_URL}/videos/${videoId}`, {
@@ -121,14 +120,13 @@ Deno.serve(async (req) => {
           global: { headers: { Authorization: authHeader } }
         });
         
-        const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
         
-        if (!claimsError && claimsData?.claims) {
-          const userId = claimsData.claims.sub;
+        if (!userError && userData?.user) {
           const { data: roleData } = await supabaseClient
             .from("user_roles")
             .select("role")
-            .eq("user_id", userId)
+            .eq("user_id", userData.user.id)
             .single();
           
           isAuthorized = roleData?.role === "admin";
@@ -300,7 +298,6 @@ Deno.serve(async (req) => {
                 video_url: embedUrl,
                 duration_minutes: durationMinutes,
                 thumbnail_url: thumbnailUrl,
-                // NOTE: We do NOT update order_index or title here to preserve manual ordering and custom titles
               })
               .eq("pandavideo_video_id", video.id)
               .eq("course_id", course.id);
