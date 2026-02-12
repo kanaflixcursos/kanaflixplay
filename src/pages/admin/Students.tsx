@@ -52,9 +52,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
-import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Student {
@@ -86,11 +85,6 @@ export default function AdminStudents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   
-  // Enroll dialog
-  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
-  const [enrolling, setEnrolling] = useState(false);
   
   // Edit profile dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -112,7 +106,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   const [resetCourseId, setResetCourseId] = useState<string>('');
   const [resetting, setResetting] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -178,41 +171,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     fetchData();
   }, []);
 
-  const handleOpenEnrollDialog = (student: Student) => {
-    setSelectedStudent(student);
-    setSelectedCourse('');
-    setEnrollDialogOpen(true);
-  };
-
-  const handleEnroll = async () => {
-    if (!selectedStudent || !selectedCourse) {
-      toast.error('Selecione um curso');
-      return;
-    }
-
-    setEnrolling(true);
-
-    const { error } = await supabase
-      .from('course_enrollments')
-      .insert({
-        user_id: selectedStudent.user_id,
-        course_id: selectedCourse,
-      });
-
-    if (error) {
-      if (error.code === '23505') {
-        toast.error('Aluno já está matriculado neste curso');
-      } else {
-        toast.error('Erro ao matricular aluno');
-      }
-    } else {
-      toast.success('Aluno matriculado com sucesso!');
-      fetchData();
-      setEnrollDialogOpen(false);
-    }
-
-    setEnrolling(false);
-  };
 
   const handleChangeRole = async (student: Student, newRole: 'student' | 'professor' | 'admin') => {
     const { error } = await supabase
@@ -563,10 +521,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <p className="text-muted-foreground text-sm md:text-base">Gerencie os alunos da plataforma</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar CSV
-          </Button>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -722,46 +676,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         </DialogContent>
       </Dialog>
 
-      {/* Enroll Dialog */}
-      <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Matricular Aluno</DialogTitle>
-            <DialogDescription>
-              Matricule {selectedStudent?.full_name} em um curso.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um curso" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleEnroll} disabled={enrolling || !selectedCourse}>
-              {enrolling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Matriculando...
-                </>
-              ) : (
-                'Matricular'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -921,12 +836,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         </DialogContent>
       </Dialog>
 
-      {/* Import Users Dialog */}
-      <ImportUsersDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImported={fetchData}
-      />
     </div>
   );
 }
