@@ -135,14 +135,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background relative content-container overflow-hidden">
+    <div className="min-h-screen flex bg-background relative">
       {/* Theme Toggle - positioned absolutely */}
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle variant="outline" />
       </div>
 
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary/5 -ml-[50vw] pl-[50vw]">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary/5">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
