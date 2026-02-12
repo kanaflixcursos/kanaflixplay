@@ -314,7 +314,7 @@ export default function StudentCourses() {
                             {course.title}
                           </h3>
                           {course.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            <p className="text-xs text-muted-foreground line-clamp-4 mb-2">
                               {course.description}
                             </p>
                           )}
