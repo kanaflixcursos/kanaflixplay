@@ -148,11 +148,11 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card">
-          <div className="container mx-auto px-4 h-16 flex items-center">
+          <div className="max-w-[1200px] mx-auto px-4 h-16 flex items-center">
             <Skeleton className="h-10 w-32" />
           </div>
         </header>
-        <main className="container mx-auto px-4 py-8">
+        <main className="max-w-[1200px] mx-auto px-4 py-8">
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
             <Skeleton className="aspect-[4/5] rounded-2xl" />
             <div className="space-y-4">
@@ -175,7 +175,7 @@ export default function Checkout() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-[1200px] mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
@@ -201,7 +201,7 @@ export default function Checkout() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 max-w-[1200px] mx-auto px-4 py-8 w-full">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
             {/* Course Image */}
@@ -303,7 +303,7 @@ export default function Checkout() {
 
       {/* Footer */}
       <footer className="border-t py-6 mt-auto">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        <div className="max-w-[1200px] mx-auto px-4 text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.
         </div>
       </footer>
