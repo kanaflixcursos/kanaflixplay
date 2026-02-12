@@ -27,13 +27,6 @@ interface SuggestedCourse {
   thumbnail_url: string | null;
 }
 
-interface Banner {
-  id: string;
-  image_url: string;
-  link_url: string | null;
-  placement: string;
-}
-
 function SuggestedCarousel({ courses }: { courses: SuggestedCourse[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -114,27 +107,18 @@ export default function StudentCourses() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [suggestedCourses, setSuggestedCourses] = useState<SuggestedCourse[]>([]);
-  const [destaqueBanners, setDestaqueBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
 
-      const [enrollmentsResult, destaqueBannersResult] = await Promise.all([
-        supabase
-          .from('course_enrollments')
-          .select('id, course:courses(id, title, description, thumbnail_url, category_id)')
-          .eq('user_id', user.id),
-        supabase
-          .from('banners')
-          .select('id, image_url, link_url, placement')
-          .eq('is_active', true)
-          .eq('placement', 'cursos_destaque')
-          .order('order_index'),
-      ]);
+      const { data: enrollmentsData } = await supabase
+        .from('course_enrollments')
+        .select('id, course:courses(id, title, description, thumbnail_url, category_id)')
+        .eq('user_id', user.id);
 
-      const enrollments = enrollmentsResult.data || [];
+      const enrollments = enrollmentsData || [];
       const enrolledCourseIds = new Set(enrollments.map((e: any) => e.course.id));
       const categoryIds = [
         ...new Set(
@@ -190,14 +174,12 @@ export default function StudentCourses() {
       );
 
       setEnrolledCourses(coursesWithProgress);
-      setDestaqueBanners(destaqueBannersResult.data || []);
+      setLoading(false);
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
-
-  const topBanner = destaqueBanners[0];
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -207,35 +189,6 @@ export default function StudentCourses() {
           Seus cursos e sugestões para você
         </p>
       </div>
-
-      {/* Top Banner - Cursos em destaque (1200x200 = 6:1) */}
-      {topBanner && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-        >
-          {topBanner.link_url ? (
-            <a href={topBanner.link_url} target="_blank" rel="noopener noreferrer">
-              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '6/1' }}>
-                <img
-                  src={topBanner.image_url}
-                  alt="Cursos em destaque"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </a>
-          ) : (
-            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '6/1' }}>
-              <img
-                src={topBanner.image_url}
-                alt="Cursos em destaque"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-        </motion.div>
-      )}
 
       {/* Enrolled Courses */}
       <section>
