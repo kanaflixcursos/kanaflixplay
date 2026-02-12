@@ -295,38 +295,47 @@ export default function StudentCourses() {
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {/* Banner-based cards */}
             {interesseBanners.length > 0
-              ? interesseBanners.map((banner, index) => (
-                  <motion.div
-                    key={banner.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
-                  >
-                    {banner.link_url ? (
-                      <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full overflow-hidden">
-                          <div className="aspect-[4/5] w-full">
+              ? interesseBanners.map((banner, index) => {
+                  const content = (
+                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full overflow-hidden">
+                      <div className="flex h-full">
+                        <div className="w-28 md:w-32 flex-shrink-0">
+                          <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
                             <img
                               src={banner.image_url}
                               alt="Sugestão"
                               className="w-full h-full object-cover"
                             />
                           </div>
-                        </Card>
-                      </a>
-                    ) : (
-                      <Card className="overflow-hidden">
-                        <div className="aspect-[4/5] w-full">
-                          <img
-                            src={banner.image_url}
-                            alt="Sugestão"
-                            className="w-full h-full object-cover"
-                          />
                         </div>
-                      </Card>
-                    )}
-                  </motion.div>
-                ))
+                        <div className="flex-1 p-3 md:p-4 flex flex-col justify-center min-w-0">
+                          {banner.link_url && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              Saiba mais →
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+
+                  return (
+                    <motion.div
+                      key={banner.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
+                    >
+                      {banner.link_url ? (
+                        <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
+                          {content}
+                        </a>
+                      ) : (
+                        content
+                      )}
+                    </motion.div>
+                  );
+                })
               : suggestedCourses.map((course, index) => (
                   <motion.div
                     key={course.id}
