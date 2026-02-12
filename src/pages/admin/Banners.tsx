@@ -425,7 +425,7 @@ export default function AdminBanners() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingBanner ? 'Editar Banner' : 'Novo Banner'}
@@ -461,7 +461,7 @@ export default function AdminBanners() {
                 className="mt-1"
               />
               {imagePreview ? (
-                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: config.aspectRatio }}>
+                <div className="mt-2 w-full max-h-60 rounded overflow-hidden border" style={{ aspectRatio: config.aspectRatio }}>
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -470,7 +470,7 @@ export default function AdminBanners() {
                 </div>
               ) : (
                 <div
-                  className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm"
+                  className="mt-2 w-full max-h-60 rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm"
                   style={{ aspectRatio: config.aspectRatio }}
                 >
                   {config.dimensions}
