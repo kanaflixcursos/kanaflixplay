@@ -33,21 +33,19 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Image, Loader2, ExternalLink, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit, Image, Loader2, ExternalLink, Eye, BookOpen, PlayCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type BannerPlacement = 'cursos_destaque' | 'talvez_interesse';
 
-const PLACEMENT_CONFIG: Record<BannerPlacement, { label: string; ratio: string; dimensions: string; aspectRatio: string }> = {
+const PLACEMENT_CONFIG: Record<BannerPlacement, { label: string; dimensions: string; aspectRatio: string }> = {
   cursos_destaque: {
     label: 'Cursos em destaque',
-    ratio: '6/1',
     dimensions: '1200 × 200px',
     aspectRatio: '6/1',
   },
   talvez_interesse: {
     label: 'Talvez você se interesse',
-    ratio: '4/5',
     dimensions: '1080 × 1350px',
     aspectRatio: '4/5',
   },
@@ -61,10 +59,19 @@ interface Banner {
   placement: string;
   order_index: number;
   created_at: string;
+  course_id: string | null;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  thumbnail_url: string | null;
 }
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
@@ -79,6 +86,7 @@ export default function AdminBanners() {
   const [linkUrl, setLinkUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [placement, setPlacement] = useState<BannerPlacement>('cursos_destaque');
+  const [courseId, setCourseId] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -96,8 +104,18 @@ export default function AdminBanners() {
     setLoading(false);
   };
 
+  const fetchCourses = async () => {
+    const { data } = await supabase
+      .from('courses')
+      .select('id, title, description, thumbnail_url')
+      .eq('is_published', true)
+      .order('title');
+    setCourses(data || []);
+  };
+
   useEffect(() => {
     fetchBanners();
+    fetchCourses();
   }, []);
 
   const resetForm = () => {
@@ -105,6 +123,7 @@ export default function AdminBanners() {
     setLinkUrl('');
     setIsActive(true);
     setPlacement('cursos_destaque');
+    setCourseId('');
     setEditingBanner(null);
     setImagePreview(null);
   };
@@ -119,6 +138,7 @@ export default function AdminBanners() {
     setLinkUrl(banner.link_url || '');
     setIsActive(banner.is_active);
     setPlacement((banner.placement as BannerPlacement) || 'cursos_destaque');
+    setCourseId(banner.course_id || '');
     setImagePreview(banner.image_url);
     setFormOpen(true);
   };
@@ -132,7 +152,11 @@ export default function AdminBanners() {
   };
 
   const handleSave = async () => {
-    if (!editingBanner && !imageFile) {
+    if (placement === 'talvez_interesse' && !courseId) {
+      toast.error('Selecione um curso');
+      return;
+    }
+    if (placement === 'cursos_destaque' && !editingBanner && !imageFile) {
       toast.error('Selecione uma imagem');
       return;
     }
@@ -159,6 +183,12 @@ export default function AdminBanners() {
         imageUrl = publicUrl.publicUrl;
       }
 
+      // For talvez_interesse, use the course thumbnail if no image was uploaded
+      if (placement === 'talvez_interesse' && !imageFile && !editingBanner) {
+        const selectedCourse = courses.find(c => c.id === courseId);
+        imageUrl = selectedCourse?.thumbnail_url || '';
+      }
+
       if (editingBanner) {
         const { error } = await supabase
           .from('banners')
@@ -167,6 +197,7 @@ export default function AdminBanners() {
             link_url: linkUrl || null,
             is_active: isActive,
             placement,
+            course_id: placement === 'talvez_interesse' ? courseId : null,
           })
           .eq('id', editingBanner.id);
 
@@ -186,6 +217,7 @@ export default function AdminBanners() {
             is_active: isActive,
             order_index: maxOrder + 1,
             placement,
+            course_id: placement === 'talvez_interesse' ? courseId : null,
           });
 
         if (error) throw error;
@@ -234,12 +266,9 @@ export default function AdminBanners() {
     }
   };
 
-  const getPlacementLabel = (p: string) => {
-    return PLACEMENT_CONFIG[p as BannerPlacement]?.label || p;
-  };
-
-  const getPlacementBadgeVariant = (p: string) => {
-    return p === 'cursos_destaque' ? 'default' : 'secondary';
+  const getCourseName = (cId: string | null) => {
+    if (!cId) return null;
+    return courses.find(c => c.id === cId)?.title || 'Curso não encontrado';
   };
 
   const destaqueBanners = banners.filter(b => b.placement === 'cursos_destaque');
@@ -314,6 +343,7 @@ export default function AdminBanners() {
                         onDelete={(b) => setDeleteDialog({ open: true, banner: b })}
                         onToggle={handleToggleActive}
                         thumbnailRatio="6/1"
+                        courseName={null}
                       />
                     ))}
                   </div>
@@ -324,7 +354,7 @@ export default function AdminBanners() {
               <section>
                 <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                   Talvez você se interesse
-                  <Badge variant="outline" className="text-xs font-normal">1080×1350</Badge>
+                  <Badge variant="outline" className="text-xs font-normal">Cursos vinculados</Badge>
                 </h2>
                 {interesseBanners.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum banner nesta categoria.</p>
@@ -339,6 +369,7 @@ export default function AdminBanners() {
                         onDelete={(b) => setDeleteDialog({ open: true, banner: b })}
                         onToggle={handleToggleActive}
                         thumbnailRatio="4/5"
+                        courseName={getCourseName(banner.course_id)}
                       />
                     ))}
                   </div>
@@ -350,76 +381,11 @@ export default function AdminBanners() {
 
         {/* Preview Tab */}
         <TabsContent value="preview" className="mt-4">
-          <Card>
-            <CardHeader>
-              <p className="text-sm text-muted-foreground">
-                Visualize como os alunos veem os banners na página de cursos (somente banners ativos são exibidos).
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              {/* Cursos em destaque preview */}
-              <section>
-                <h3 className="text-base font-semibold mb-3">Cursos em destaque</h3>
-                {activeDestaqueBanners.length === 0 ? (
-                  <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
-                    Nenhum banner ativo nesta posição
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {activeDestaqueBanners.map((banner) => (
-                      <div key={banner.id} className="w-full rounded-lg overflow-hidden border" style={{ aspectRatio: '6/1' }}>
-                        <img
-                          src={banner.image_url}
-                          alt="Banner destaque"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {/* Talvez você se interesse preview */}
-              <section>
-                <h3 className="text-base font-semibold mb-3">Talvez você se interesse</h3>
-                {activeInteresseBanners.length === 0 ? (
-                  <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
-                    Nenhum banner ativo nesta posição
-                  </div>
-                ) : (
-                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {activeInteresseBanners.slice(0, 3).map((banner) => (
-                      <Card key={banner.id} className="overflow-hidden">
-                        <div className="flex h-full">
-                          <div className="w-28 md:w-32 flex-shrink-0">
-                            <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
-                              <img
-                                src={banner.image_url}
-                                alt="Banner interesse"
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 p-3 md:p-4 flex flex-col justify-center min-w-0">
-                            <p className="text-xs text-muted-foreground">
-                              {banner.link_url ? (
-                                <span className="flex items-center gap-1 truncate">
-                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                                  {banner.link_url}
-                                </span>
-                              ) : (
-                                'Sem link de destino'
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </section>
-            </CardContent>
-          </Card>
+          <PreviewSection
+            activeDestaqueBanners={activeDestaqueBanners}
+            activeInteresseBanners={activeInteresseBanners}
+            courses={courses}
+          />
         </TabsContent>
       </Tabs>
 
@@ -443,40 +409,65 @@ export default function AdminBanners() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cursos_destaque">Cursos em destaque (1200×200)</SelectItem>
-                  <SelectItem value="talvez_interesse">Talvez você se interesse (1080×1350)</SelectItem>
+                  <SelectItem value="talvez_interesse">Talvez você se interesse (curso vinculado)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>
-                Imagem{' '}
-                <span className="text-xs text-muted-foreground font-normal">
-                  (recomendado {config.dimensions})
-                </span>
-              </Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="mt-1"
-              />
-              {imagePreview ? (
-                <div className="mt-2 w-full max-h-60 rounded overflow-hidden border" style={{ aspectRatio: config.aspectRatio }}>
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div
-                  className="mt-2 w-full max-h-60 rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm"
-                  style={{ aspectRatio: config.aspectRatio }}
-                >
-                  {config.dimensions}
-                </div>
-              )}
-            </div>
+
+            {/* Course selector for talvez_interesse */}
+            {placement === 'talvez_interesse' && (
+              <div>
+                <Label>Curso vinculado</Label>
+                <Select value={courseId} onValueChange={setCourseId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione um curso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  O card usará a thumbnail, título, descrição e dados do curso selecionado.
+                </p>
+              </div>
+            )}
+
+            {/* Image upload - only required for cursos_destaque */}
+            {placement === 'cursos_destaque' && (
+              <div>
+                <Label>
+                  Imagem{' '}
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (recomendado {config.dimensions})
+                  </span>
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="mt-1"
+                />
+                {imagePreview ? (
+                  <div className="mt-2 w-full max-h-60 rounded overflow-hidden border" style={{ aspectRatio: config.aspectRatio }}>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="mt-2 w-full max-h-60 rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm"
+                    style={{ aspectRatio: config.aspectRatio }}
+                  >
+                    {config.dimensions}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Link de destino (opcional)</Label>
               <Input
@@ -535,6 +526,7 @@ function BannerRow({
   onDelete,
   onToggle,
   thumbnailRatio,
+  courseName,
 }: {
   banner: Banner;
   index: number;
@@ -542,6 +534,7 @@ function BannerRow({
   onDelete: (b: Banner) => void;
   onToggle: (b: Banner) => void;
   thumbnailRatio: string;
+  courseName: string | null;
 }) {
   return (
     <motion.div
@@ -571,6 +564,12 @@ function BannerRow({
                   <span className="text-xs text-muted-foreground">(Inativo)</span>
                 )}
               </div>
+              {courseName && (
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mb-0.5">
+                  <BookOpen className="h-3 w-3" />
+                  {courseName}
+                </p>
+              )}
               {banner.link_url && (
                 <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
                   <ExternalLink className="h-3 w-3" />
@@ -603,5 +602,142 @@ function BannerRow({
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+/* Preview section */
+function PreviewSection({
+  activeDestaqueBanners,
+  activeInteresseBanners,
+  courses,
+}: {
+  activeDestaqueBanners: Banner[];
+  activeInteresseBanners: Banner[];
+  courses: Course[];
+}) {
+  const [courseMeta, setCourseMeta] = useState<Record<string, { lessonCount: number; totalDuration: number }>>({});
+
+  useEffect(() => {
+    const fetchMeta = async () => {
+      const courseIds = activeInteresseBanners
+        .map(b => b.course_id)
+        .filter(Boolean) as string[];
+
+      if (courseIds.length === 0) return;
+
+      const meta: Record<string, { lessonCount: number; totalDuration: number }> = {};
+      await Promise.all(
+        courseIds.map(async (cId) => {
+          const { data: lessons } = await supabase
+            .from('lessons')
+            .select('id, duration_minutes')
+            .eq('course_id', cId)
+            .eq('is_hidden', false);
+
+          meta[cId] = {
+            lessonCount: lessons?.length || 0,
+            totalDuration: lessons?.reduce((sum, l) => sum + (l.duration_minutes || 0), 0) || 0,
+          };
+        })
+      );
+      setCourseMeta(meta);
+    };
+
+    fetchMeta();
+  }, [activeInteresseBanners]);
+
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) return `${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <p className="text-sm text-muted-foreground">
+          Visualize como os alunos veem os banners na página de cursos (somente banners ativos).
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-8">
+        {/* Cursos em destaque preview */}
+        <section>
+          <h3 className="text-base font-semibold mb-3">Cursos em destaque</h3>
+          {activeDestaqueBanners.length === 0 ? (
+            <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
+              Nenhum banner ativo nesta posição
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activeDestaqueBanners.map((banner) => (
+                <div key={banner.id} className="w-full rounded-lg overflow-hidden border" style={{ aspectRatio: '6/1' }}>
+                  <img src={banner.image_url} alt="Banner destaque" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Talvez você se interesse preview */}
+        <section>
+          <h3 className="text-base font-semibold mb-3">Talvez você se interesse</h3>
+          {activeInteresseBanners.length === 0 ? (
+            <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
+              Nenhum banner ativo nesta posição
+            </div>
+          ) : (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {activeInteresseBanners.slice(0, 3).map((banner) => {
+                const course = courses.find(c => c.id === banner.course_id);
+                const meta = banner.course_id ? courseMeta[banner.course_id] : null;
+
+                return (
+                  <Card key={banner.id} className="overflow-hidden">
+                    <div className="flex h-full">
+                      <div className="w-28 md:w-32 flex-shrink-0">
+                        <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
+                          <img
+                            src={course?.thumbnail_url || banner.image_url}
+                            alt={course?.title || 'Banner'}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
+                        <div>
+                          <h4 className="font-semibold text-sm line-clamp-2 mb-1">
+                            {course?.title || 'Curso'}
+                          </h4>
+                          {course?.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                              {course.description}
+                            </p>
+                          )}
+                        </div>
+                        {meta && (
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <PlayCircle className="h-3 w-3" />
+                              {meta.lessonCount} {meta.lessonCount === 1 ? 'aula' : 'aulas'}
+                            </span>
+                            {meta.totalDuration > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {formatDuration(meta.totalDuration)}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </CardContent>
+    </Card>
   );
 }
