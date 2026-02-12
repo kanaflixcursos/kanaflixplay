@@ -42,15 +42,15 @@ export default function StudentCourses() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [suggestedCourses, setSuggestedCourses] = useState<SuggestedCourse[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const [destaqueBanners, setDestaqueBanners] = useState<Banner[]>([]);
+  const [interesseBanners, setInteresseBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
 
-      // Fetch enrolled courses, suggested courses, and banners in parallel
-      const [enrollmentsResult, bannersResult] = await Promise.all([
+      const [enrollmentsResult, destaqueBannersResult, interesseBannersResult] = await Promise.all([
         supabase
           .from('course_enrollments')
           .select('id, course:courses(id, title, description, thumbnail_url)')
@@ -59,8 +59,15 @@ export default function StudentCourses() {
           .from('banners')
           .select('id, image_url, link_url, placement')
           .eq('is_active', true)
-          .eq('placement', 'courses_page')
+          .eq('placement', 'cursos_destaque')
           .order('order_index'),
+        supabase
+          .from('banners')
+          .select('id, image_url, link_url, placement')
+          .eq('is_active', true)
+          .eq('placement', 'talvez_interesse')
+          .order('order_index')
+          .limit(3),
       ]);
 
       // Get enrolled course IDs
@@ -136,7 +143,8 @@ export default function StudentCourses() {
 
       setEnrolledCourses(coursesWithProgress);
       setSuggestedCourses(suggestedWithMeta);
-      setBanners(bannersResult.data || []);
+      setDestaqueBanners(destaqueBannersResult.data || []);
+      setInteresseBanners(interesseBannersResult.data || []);
       setLoading(false);
     };
 
@@ -155,8 +163,7 @@ export default function StudentCourses() {
     return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
   };
 
-  // Split banners for different slots
-  const topBanner = banners[0];
+  const topBanner = destaqueBanners[0];
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -281,76 +288,102 @@ export default function StudentCourses() {
         )}
       </section>
 
-      {/* Talvez você se interesse - Horizontal Cards */}
-      {!loading && suggestedCourses.length > 0 && (
+      {/* Talvez você se interesse - Banner-based or Course-based */}
+      {!loading && (interesseBanners.length > 0 || suggestedCourses.length > 0) && (
         <section>
           <h2 className="text-xl font-semibold mb-4">Talvez você se interesse</h2>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {suggestedCourses.map((course, index) => (
-              <motion.div
-                key={course.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.35,
-                  ease: 'easeOut',
-                  delay: index * 0.05,
-                }}
-              >
-                <Link to={`/checkout/${course.id}`}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    <div className="flex h-full">
-                      {/* Left - 4:5 image */}
-                      <div className="w-28 md:w-32 flex-shrink-0">
-                        {course.thumbnail_url ? (
-                          <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
+            {/* Banner-based cards */}
+            {interesseBanners.length > 0
+              ? interesseBanners.map((banner, index) => (
+                  <motion.div
+                    key={banner.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
+                  >
+                    {banner.link_url ? (
+                      <a href={banner.link_url} target="_blank" rel="noopener noreferrer">
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer h-full overflow-hidden">
+                          <div className="aspect-[4/5] w-full">
                             <img
-                              src={course.thumbnail_url}
-                              alt={course.title}
+                              src={banner.image_url}
+                              alt="Sugestão"
                               className="w-full h-full object-cover"
                             />
                           </div>
-                        ) : (
-                          <div className="aspect-[4/5] w-full bg-muted rounded-l-lg flex items-center justify-center">
-                            <BookOpen className="h-8 w-8 text-muted-foreground" />
+                        </Card>
+                      </a>
+                    ) : (
+                      <Card className="overflow-hidden">
+                        <div className="aspect-[4/5] w-full">
+                          <img
+                            src={banner.image_url}
+                            alt="Sugestão"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </Card>
+                    )}
+                  </motion.div>
+                ))
+              : suggestedCourses.map((course, index) => (
+                  <motion.div
+                    key={course.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, ease: 'easeOut', delay: index * 0.05 }}
+                  >
+                    <Link to={`/checkout/${course.id}`}>
+                      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                        <div className="flex h-full">
+                          <div className="w-28 md:w-32 flex-shrink-0">
+                            {course.thumbnail_url ? (
+                              <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
+                                <img
+                                  src={course.thumbnail_url}
+                                  alt={course.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="aspect-[4/5] w-full bg-muted rounded-l-lg flex items-center justify-center">
+                                <BookOpen className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-
-                      {/* Right - Info */}
-                      <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
-                        <div>
-                          <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-1">
-                            {course.title}
-                          </h3>
-                          {course.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                              {course.description}
-                            </p>
-                          )}
+                          <div className="flex-1 p-3 md:p-4 flex flex-col justify-between min-w-0">
+                            <div>
+                              <h3 className="font-semibold text-sm md:text-base line-clamp-2 mb-1">
+                                {course.title}
+                              </h3>
+                              {course.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                  {course.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <PlayCircle className="h-3 w-3" />
+                                {course.lessonCount} {course.lessonCount === 1 ? 'aula' : 'aulas'}
+                              </span>
+                              {course.totalDurationMinutes > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDuration(course.totalDurationMinutes)}
+                                </span>
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                {formatPrice(course.price)}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <PlayCircle className="h-3 w-3" />
-                            {course.lessonCount} {course.lessonCount === 1 ? 'aula' : 'aulas'}
-                          </span>
-                          {course.totalDurationMinutes > 0 && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatDuration(course.totalDurationMinutes)}
-                            </span>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            {formatPrice(course.price)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                      </Card>
+                    </Link>
+                  </motion.div>
+                ))}
           </div>
         </section>
       )}
