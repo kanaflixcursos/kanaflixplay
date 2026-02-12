@@ -108,6 +108,11 @@ interface PaymentConfig {
   };
 }
 
+interface CourseCategory {
+  id: string;
+  name: string;
+}
+
 interface FormData {
   title: string;
   description: string;
@@ -120,6 +125,7 @@ interface FormData {
   price: string;
   payment_methods: string[];
   installments: string;
+  category_id: string;
 }
 
 const initialFormData: FormData = {
@@ -134,6 +140,7 @@ const initialFormData: FormData = {
   price: '',
   payment_methods: [],
   installments: '1',
+  category_id: '',
 };
 
 const STEPS = [
@@ -161,6 +168,41 @@ export default function CourseForm() {
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [previewVideo, setPreviewVideo] = useState<VideoItem | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<CourseCategory[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [showNewCategory, setShowNewCategory] = useState(false);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('course_categories')
+      .select('id, name')
+      .order('name');
+    if (data) setCategories(data);
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    const { data, error } = await supabase
+      .from('course_categories')
+      .insert({ name: newCategoryName.trim() })
+      .select('id, name')
+      .single();
+    if (error) {
+      toast.error('Erro ao criar categoria');
+      return;
+    }
+    if (data) {
+      setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setFormData(prev => ({ ...prev, category_id: data.id }));
+      setNewCategoryName('');
+      setShowNewCategory(false);
+    }
+  };
+
   useEffect(() => {
     if (courseId) {
       fetchCourse();
@@ -236,6 +278,7 @@ export default function CourseForm() {
       price: data.price ? (data.price / 100).toFixed(2) : '',
       payment_methods: ['pix', 'credit_card', 'boleto'],
       installments: '12',
+      category_id: (data as any).category_id || '',
     });
 
     // Fetch existing modules when editing
@@ -552,7 +595,7 @@ export default function CourseForm() {
         ? Math.round(parseFloat(formData.price) * 100) 
         : 0;
 
-      const courseData = {
+      const courseData: Record<string, any> = {
         title: formData.title,
         description: formData.description,
         thumbnail_url: formData.thumbnail_url,
@@ -560,6 +603,7 @@ export default function CourseForm() {
         is_sequential: formData.is_sequential,
         is_published: !formData.save_as_draft,
         price: priceInCents,
+        category_id: formData.category_id || null,
       };
 
       let savedCourseId = courseId;
@@ -567,14 +611,14 @@ export default function CourseForm() {
       if (isEditing) {
         const { error } = await supabase
           .from('courses')
-          .update(courseData)
+          .update(courseData as any)
           .eq('id', courseId);
 
         if (error) throw error;
       } else {
         const { data, error } = await supabase
           .from('courses')
-          .insert(courseData)
+          .insert(courseData as any)
           .select('id')
           .single();
 
@@ -765,6 +809,52 @@ export default function CourseForm() {
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="Digite o nome do curso"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Categoria</Label>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={formData.category_id}
+                      onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowNewCategory(!showNewCategory)}
+                      title="Criar nova categoria"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {showNewCategory && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Nome da nova categoria..."
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleCreateCategory();
+                          }
+                        }}
+                      />
+                      <Button type="button" size="sm" onClick={handleCreateCategory} disabled={!newCategoryName.trim()}>
+                        Criar
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
