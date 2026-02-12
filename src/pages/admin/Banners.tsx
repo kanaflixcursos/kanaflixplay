@@ -249,7 +249,7 @@ export default function AdminBanners() {
               <Card className={!banner.is_active ? 'opacity-60' : ''}>
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-28 md:w-40 flex-shrink-0 rounded overflow-hidden" style={{ aspectRatio: '3/1' }}>
+                    <div className="w-28 md:w-40 flex-shrink-0 rounded overflow-hidden" style={{ aspectRatio: '6/1' }}>
                       <img
                         src={banner.image_url}
                         alt="Banner"
@@ -311,7 +311,7 @@ export default function AdminBanners() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Imagem <span className="text-xs text-muted-foreground font-normal">(proporção 3:1 — recomendado 1200×400px)</span></Label>
+              <Label>Imagem <span className="text-xs text-muted-foreground font-normal">(proporção 6:1 — recomendado 1200×200px)</span></Label>
               <Input
                 type="file"
                 accept="image/*"
@@ -319,7 +319,7 @@ export default function AdminBanners() {
                 className="mt-1"
               />
               {imagePreview ? (
-                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: '3/1' }}>
+                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: '6/1' }}>
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -327,8 +327,8 @@ export default function AdminBanners() {
                   />
                 </div>
               ) : (
-                <div className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm" style={{ aspectRatio: '3/1' }}>
-                  1200 × 400px
+                <div className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm" style={{ aspectRatio: '6/1' }}>
+                  1200 × 200px
                 </div>
               )}
             </div>
