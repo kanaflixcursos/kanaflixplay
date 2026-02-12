@@ -20,7 +20,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, ArrowLeft, ShoppingCart, Bell, HelpCircle } from 'lucide-react';
 
 const menuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
@@ -138,6 +138,44 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+
+                  {/* Notificações */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/notifications"
+                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                        activeClassName="bg-accent text-accent-foreground font-medium"
+                      >
+                        <Bell className="h-4 w-4" />
+                        <span className="flex-1">Notificações</span>
+                        {unreadCount > 0 && (
+                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  {/* Suporte */}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/admin/suporte"
+                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                        activeClassName="bg-accent text-accent-foreground font-medium"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        <span className="flex-1">Suporte</span>
+                        {pendingSupportCount > 0 && (
+                          <span className="h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+                            {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -166,10 +204,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               userName={userName}
               userEmail={userEmail}
               avatarUrl={profile.avatar_url}
-              unreadCount={unreadCount}
-              pendingSupportCount={pendingSupportCount}
               onSignOut={handleSignOut}
-              variant="admin"
             />
           </SidebarFooter>
         </Sidebar>

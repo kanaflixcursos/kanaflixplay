@@ -4,30 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { LogOut, Moon, Bell, GraduationCap, ShoppingBag, HelpCircle } from 'lucide-react';
+import { LogOut, Moon } from 'lucide-react';
 
 interface SidebarProfileBoxProps {
   userName: string;
   userEmail: string;
   avatarUrl?: string | null;
-  unreadCount?: number;
-  pendingSupportCount?: number;
-  unreadSupportNotifications?: number;
-  isAdmin?: boolean;
   onSignOut: () => void;
-  variant?: 'student' | 'admin';
 }
 
 export default function SidebarProfileBox({
   userName,
   userEmail,
   avatarUrl,
-  unreadCount = 0,
-  pendingSupportCount = 0,
-  unreadSupportNotifications = 0,
-  isAdmin = false,
   onSignOut,
-  variant = 'student',
 }: SidebarProfileBoxProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
@@ -62,94 +52,29 @@ export default function SidebarProfileBox({
 
       <Separator className="my-2" />
 
-      {/* Action Buttons */}
-      <div className="flex flex-col gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 font-normal"
-          onClick={() => navigate(variant === 'admin' ? '/admin/courses' : '/')}
-        >
-          <GraduationCap className="h-4 w-4" />
-          Meus Cursos
-        </Button>
-
-        {variant === 'student' && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 h-9 px-3 font-normal"
-            onClick={() => navigate('/purchases')}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Minhas Compras
-          </Button>
-        )}
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
-          onClick={() => navigate('/notifications')}
-        >
-          <Bell className="h-4 w-4" />
-          Notificações
-          {unreadCount > 0 && (
-            <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </Button>
-
-        {/* Hide support button for admins in student layout - they use /admin/suporte */}
-        {!(variant === 'student' && isAdmin) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 h-9 px-3 font-normal relative"
-            onClick={() => navigate(variant === 'admin' ? '/admin/suporte' : '/suporte')}
-          >
-            <HelpCircle className="h-4 w-4" />
-            Suporte
-            {variant === 'admin' && pendingSupportCount > 0 && (
-              <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-                {pendingSupportCount > 99 ? '99+' : pendingSupportCount}
-              </span>
-            )}
-            {variant === 'student' && unreadSupportNotifications > 0 && (
-              <span className="absolute right-2 h-5 min-w-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
-                {unreadSupportNotifications > 99 ? '99+' : unreadSupportNotifications}
-              </span>
-            )}
-          </Button>
-        )}
-
-        <Separator className="my-2" />
-
-        {/* Dark Mode Toggle */}
-        <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
-            <Moon className="h-4 w-4" />
-            <span className="text-sm font-normal">Modo Escuro</span>
-          </div>
-          <Switch
-            checked={isDarkMode}
-            onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-          />
+      {/* Dark Mode Toggle */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Moon className="h-4 w-4" />
+          <span className="text-sm font-normal">Modo Escuro</span>
         </div>
-
-        <Separator className="my-2" />
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start gap-2 h-9 px-3 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={onSignOut}
-        >
-          <LogOut className="h-4 w-4" />
-          Sair da Conta
-        </Button>
+        <Switch
+          checked={isDarkMode}
+          onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+        />
       </div>
+
+      <Separator className="my-2" />
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="w-full justify-start gap-2 h-9 px-3 font-normal text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={onSignOut}
+      >
+        <LogOut className="h-4 w-4" />
+        Sair da Conta
+      </Button>
     </>
   );
 }
