@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full max-w-[1200px] mx-auto">
+      <div className="min-h-screen flex w-full max-w-[1440px] mx-auto">
         <Sidebar variant="floating">
           <SidebarLogo showAdminBadge />
           <SidebarContent>
