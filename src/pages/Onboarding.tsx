@@ -108,7 +108,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6 max-w-[1200px] mx-auto">
+    <div className="min-h-screen flex items-center justify-center bg-background p-6 content-container">
       <div className="w-full max-w-md space-y-8">
         <div className="flex justify-center mb-6">
           <Logo className="h-12 w-auto" />
