@@ -20,7 +20,8 @@ import {
   Receipt,
   ShoppingBag,
   RefreshCcw,
-  Loader2
+  Loader2,
+  UserCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -61,6 +62,7 @@ const paymentMethodConfig: Record<string, { label: string; icon: React.ElementTy
   credit_card: { label: 'Cartão de Crédito', icon: CreditCard },
   pix: { label: 'PIX', icon: QrCode },
   boleto: { label: 'Boleto', icon: Barcode },
+  manual: { label: 'Acesso Manual', icon: UserCheck },
 };
 
 export default function Purchases() {
@@ -224,6 +226,7 @@ export default function Purchases() {
         ) : (
           <div className="grid gap-4">
             {orders.map((order) => {
+              const isManual = order.payment_method === 'manual';
               const status = statusConfig[order.status] || statusConfig.pending;
               const paymentMethod = order.payment_method 
                 ? paymentMethodConfig[order.payment_method] 
@@ -265,25 +268,39 @@ export default function Purchases() {
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t">
-                          {/* Value */}
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                            <p className="font-semibold text-lg">{formatCurrency(order.amount)}</p>
-                          </div>
-
-                          {/* Payment method */}
-                          <div>
-                            <p className="text-xs text-muted-foreground mb-1">Forma de Pagamento</p>
-                            <div className="flex items-center gap-1.5">
-                              <PaymentIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">
-                                {paymentMethod?.label || 'N/A'}
-                              </span>
+                          {/* Value - hide for manual */}
+                          {isManual ? (
+                            <div className="col-span-2">
+                              <Badge variant="secondary" className="gap-1.5 text-sm py-1">
+                                <UserCheck className="h-3.5 w-3.5" />
+                                Acesso Manual
+                              </Badge>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Concedido por administrador
+                              </p>
                             </div>
-                          </div>
+                          ) : (
+                            <>
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                                <p className="font-semibold text-lg">{formatCurrency(order.amount)}</p>
+                              </div>
+
+                              {/* Payment method */}
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Forma de Pagamento</p>
+                                <div className="flex items-center gap-1.5">
+                                  <PaymentIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium">
+                                    {paymentMethod?.label || 'N/A'}
+                                  </span>
+                                </div>
+                              </div>
+                            </>
+                          )}
 
                           {/* Payment date */}
-                          {order.paid_at && (
+                          {!isManual && order.paid_at && (
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Pago em</p>
                               <p className="text-sm font-medium">
@@ -302,7 +319,7 @@ export default function Purchases() {
                             </div>
                           )}
 
-                        {/* Boleto due date */}
+                          {/* Boleto due date */}
                           {order.payment_method === 'boleto' && order.status === 'pending' && order.boleto_due_date && (
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Vencimento</p>
@@ -319,7 +336,7 @@ export default function Purchases() {
                             Pedido #{order.id.slice(0, 8).toUpperCase()}
                           </p>
                           
-                          {order.status === 'paid' && !order.refund_request && (
+                          {order.status === 'paid' && !order.refund_request && !isManual && (
                             <Button
                               variant="outline"
                               size="sm"

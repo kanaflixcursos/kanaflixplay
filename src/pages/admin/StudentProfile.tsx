@@ -490,11 +490,16 @@ export default function StudentProfile() {
 
                         {/* Bottom row: Amount and actions */}
                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
-                          <span className="font-semibold text-base sm:text-lg">
-                            {formatCurrency(order.amount)}
+                          <span className={`font-semibold text-base sm:text-lg ${order.payment_method === 'manual' ? '' : ''}`}>
+                            {order.payment_method === 'manual' ? (
+                              <Badge variant="secondary" className="gap-1">
+                                <UserCheck className="h-3 w-3" />
+                                Acesso Manual
+                              </Badge>
+                            ) : formatCurrency(order.amount)}
                           </span>
                           <div className="flex items-center gap-2">
-                            {order.status === 'paid' && (
+                            {order.status === 'paid' && order.payment_method !== 'manual' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -505,7 +510,7 @@ export default function StudentProfile() {
                                 <span className="hidden sm:inline">Reembolsar</span>
                               </Button>
                             )}
-                            {order.status === 'pending' && (
+                            {order.status === 'pending' && order.payment_method !== 'manual' && (
                               <Button
                                 variant="outline"
                                 size="sm"
