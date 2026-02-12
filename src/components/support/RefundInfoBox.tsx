@@ -54,6 +54,7 @@ const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão de Crédito',
   pix: 'PIX',
   boleto: 'Boleto',
+  manual: 'Manual (Admin)',
 };
 
 export function RefundInfoBox({ refundRequest, isAdmin, onStatusChange }: RefundInfoBoxProps) {

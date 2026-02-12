@@ -117,6 +117,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   // Create user dialog
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [createUserForm, setCreateUserForm] = useState({ full_name: '', email: '', password: '' });
+  const [createUserCourses, setCreateUserCourses] = useState<string[]>([]);
   const [creatingUser, setCreatingUser] = useState(false);
 
   // Assign course dialog
@@ -457,9 +458,31 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
-      toast.success('Usuário criado com sucesso!');
+      const newUserId = data?.user_id;
+
+      // Assign selected courses
+      if (newUserId && createUserCourses.length > 0) {
+        let assignedCount = 0;
+        for (const courseId of createUserCourses) {
+          try {
+            const { data: assignData, error: assignError } = await supabase.functions.invoke('assign-course', {
+              body: { user_id: newUserId, course_id: courseId },
+            });
+            if (assignError) throw assignError;
+            if (assignData?.error) throw new Error(assignData.error);
+            assignedCount++;
+          } catch (err: any) {
+            console.error(`Failed to assign course ${courseId}:`, err);
+          }
+        }
+        toast.success(`Usuário criado e matriculado em ${assignedCount} curso(s)!`);
+      } else {
+        toast.success('Usuário criado com sucesso!');
+      }
+
       setCreateUserDialogOpen(false);
       setCreateUserForm({ full_name: '', email: '', password: '' });
+      setCreateUserCourses([]);
       fetchData();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar usuário');
@@ -1051,6 +1074,37 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
                 onChange={(e) => setCreateUserForm(prev => ({ ...prev, password: e.target.value }))}
                 placeholder="Mínimo 6 caracteres"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Matricular em cursos (opcional)</Label>
+              <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
+                {courses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum curso publicado</p>
+                ) : (
+                  courses.map((course) => (
+                    <label key={course.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={createUserCourses.includes(course.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCreateUserCourses(prev => [...prev, course.id]);
+                          } else {
+                            setCreateUserCourses(prev => prev.filter(id => id !== course.id));
+                          }
+                        }}
+                        className="h-4 w-4 rounded"
+                      />
+                      {course.title}
+                    </label>
+                  ))
+                )}
+              </div>
+              {createUserCourses.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {createUserCourses.length} curso(s) selecionado(s) — pedidos serão criados automaticamente
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

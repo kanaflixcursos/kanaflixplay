@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
+import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -60,12 +60,14 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
   credit_card: <CreditCard className="h-4 w-4" />,
   pix: <QrCode className="h-4 w-4" />,
   boleto: <FileText className="h-4 w-4" />,
+  manual: <UserCheck className="h-4 w-4" />,
 };
 
 const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão',
   pix: 'PIX',
   boleto: 'Boleto',
+  manual: 'Manual',
 };
 
 const statusColors: Record<string, string> = {
