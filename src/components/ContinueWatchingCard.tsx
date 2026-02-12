@@ -129,18 +129,18 @@ export default function ContinueWatchingCard() {
       transition={{ duration: 0.4, ease: 'easeOut' }}
     >
       <Link to={`/courses/${data.courseId}?lesson=${data.lessonId}`}>
-        <Card className="relative overflow-hidden h-36 md:h-40 group cursor-pointer border-0 shadow-md">
+        <Card className="relative overflow-hidden h-36 md:h-40 group cursor-pointer">
           {/* Background: base + thumbnail + gradient */}
           <div className="absolute inset-0 bg-card">
             {data.courseThumbnail && (
               <img
                 src={data.courseThumbnail}
                 alt={data.courseTitle}
-                className="absolute right-0 top-0 w-[60%] h-full object-cover"
+                className="absolute right-0 top-0 w-[65%] h-full object-cover"
               />
             )}
-            {/* Gradient overlay covering full card */}
-            <div className="absolute inset-0 bg-gradient-to-r from-card from-35% via-card/80 via-55% to-card/20" />
+            {/* Wide gradient overlay to fully hide image edge */}
+            <div className="absolute inset-0 bg-gradient-to-r from-card from-30% via-card via-45% to-transparent" />
           </div>
 
           {/* Content left side */}
