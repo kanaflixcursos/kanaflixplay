@@ -295,6 +295,7 @@ export type Database = {
           completed_at: string | null
           id: string
           lesson_id: string
+          updated_at: string
           user_id: string
           watched_seconds: number | null
         }
@@ -303,6 +304,7 @@ export type Database = {
           completed_at?: string | null
           id?: string
           lesson_id: string
+          updated_at?: string
           user_id: string
           watched_seconds?: number | null
         }
@@ -311,6 +313,7 @@ export type Database = {
           completed_at?: string | null
           id?: string
           lesson_id?: string
+          updated_at?: string
           user_id?: string
           watched_seconds?: number | null
         }

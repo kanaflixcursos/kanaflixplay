@@ -30,9 +30,9 @@ export default function ContinueWatchingCard() {
       // Get the most recent lesson progress entry (not completed, or most recent completed)
       const { data: progressData } = await supabase
         .from('lesson_progress')
-        .select('lesson_id, completed, completed_at, watched_seconds')
+        .select('lesson_id, completed, completed_at, watched_seconds, updated_at')
         .eq('user_id', user.id)
-        .order('completed_at', { ascending: false, nullsFirst: false })
+        .order('updated_at', { ascending: false })
         .limit(20);
 
       if (!progressData || progressData.length === 0) {
