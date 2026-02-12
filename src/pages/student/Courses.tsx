@@ -176,7 +176,7 @@ export default function StudentCourses() {
         >
           {topBanner.link_url ? (
             <a href={topBanner.link_url} target="_blank" rel="noopener noreferrer">
-              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '3/1' }}>
+              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '6/1' }}>
                 <img
                   src={topBanner.image_url}
                   alt="Cursos em destaque"
@@ -185,7 +185,7 @@ export default function StudentCourses() {
               </div>
             </a>
           ) : (
-            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '3/1' }}>
+            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '6/1' }}>
               <img
                 src={topBanner.image_url}
                 alt="Cursos em destaque"
