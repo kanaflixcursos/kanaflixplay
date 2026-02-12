@@ -33,6 +33,38 @@ Deno.serve(async (req) => {
     
     if (isWebhook) {
       console.log(`[Webhook] Auto-detected Pagar.me webhook: ${body.type}`);
+      
+      // Verify webhook authenticity by checking that the charge/order exists in Pagar.me
+      const chargeId = body.data?.id;
+      if (!chargeId) {
+        console.error('[Webhook] Missing charge/order ID in webhook payload');
+        return new Response(JSON.stringify({ error: 'Invalid webhook payload' }), { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
+
+      // Verify the charge exists in Pagar.me API (prevents forged webhooks)
+      if (body.type.startsWith('charge.')) {
+        const authString = btoa(`${PAGARME_API_KEY}:`);
+        const verifyResponse = await fetch(`${PAGARME_API_URL}/charges/${chargeId}`, {
+          headers: { 'Authorization': `Basic ${authString}` }
+        });
+        
+        if (!verifyResponse.ok) {
+          console.error(`[Webhook] Charge verification failed: ${chargeId} - status ${verifyResponse.status}`);
+          return new Response(JSON.stringify({ error: 'Webhook verification failed' }), { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+        
+        const verifiedCharge = await verifyResponse.json();
+        // Use the verified status from Pagar.me API, not from the webhook payload
+        console.log(`[Webhook] Charge ${chargeId} verified with status: ${verifiedCharge.status}`);
+        body.data = verifiedCharge;
+      }
+
       return handleWebhook(body, PAGARME_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     }
     
