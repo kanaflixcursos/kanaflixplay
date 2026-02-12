@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -24,8 +33,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit, Image, Loader2, ExternalLink, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit, Image, Loader2, ExternalLink, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+type BannerPlacement = 'cursos_destaque' | 'talvez_interesse';
+
+const PLACEMENT_CONFIG: Record<BannerPlacement, { label: string; ratio: string; dimensions: string; aspectRatio: string }> = {
+  cursos_destaque: {
+    label: 'Cursos em destaque',
+    ratio: '6/1',
+    dimensions: '1200 × 200px',
+    aspectRatio: '6/1',
+  },
+  talvez_interesse: {
+    label: 'Talvez você se interesse',
+    ratio: '4/5',
+    dimensions: '1080 × 1350px',
+    aspectRatio: '4/5',
+  },
+};
 
 interface Banner {
   id: string;
@@ -46,11 +72,13 @@ export default function AdminBanners() {
     open: false,
     banner: null,
   });
+  const [activeTab, setActiveTab] = useState<string>('manage');
 
   // Form state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [placement, setPlacement] = useState<BannerPlacement>('cursos_destaque');
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -76,6 +104,7 @@ export default function AdminBanners() {
     setImageFile(null);
     setLinkUrl('');
     setIsActive(true);
+    setPlacement('cursos_destaque');
     setEditingBanner(null);
     setImagePreview(null);
   };
@@ -89,6 +118,7 @@ export default function AdminBanners() {
     setEditingBanner(banner);
     setLinkUrl(banner.link_url || '');
     setIsActive(banner.is_active);
+    setPlacement((banner.placement as BannerPlacement) || 'cursos_destaque');
     setImagePreview(banner.image_url);
     setFormOpen(true);
   };
@@ -112,7 +142,6 @@ export default function AdminBanners() {
     try {
       let imageUrl = editingBanner?.image_url || '';
 
-      // Upload image if new file selected
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
@@ -131,22 +160,22 @@ export default function AdminBanners() {
       }
 
       if (editingBanner) {
-        // Update existing
         const { error } = await supabase
           .from('banners')
           .update({
             image_url: imageUrl,
             link_url: linkUrl || null,
             is_active: isActive,
+            placement,
           })
           .eq('id', editingBanner.id);
 
         if (error) throw error;
         toast.success('Banner atualizado!');
       } else {
-        // Create new
-        const maxOrder = banners.length > 0
-          ? Math.max(...banners.map(b => b.order_index))
+        const samePlacementBanners = banners.filter(b => b.placement === placement);
+        const maxOrder = samePlacementBanners.length > 0
+          ? Math.max(...samePlacementBanners.map(b => b.order_index))
           : -1;
 
         const { error } = await supabase
@@ -156,7 +185,7 @@ export default function AdminBanners() {
             link_url: linkUrl || null,
             is_active: isActive,
             order_index: maxOrder + 1,
-            placement: 'courses_page',
+            placement,
           });
 
         if (error) throw error;
@@ -205,6 +234,22 @@ export default function AdminBanners() {
     }
   };
 
+  const getPlacementLabel = (p: string) => {
+    return PLACEMENT_CONFIG[p as BannerPlacement]?.label || p;
+  };
+
+  const getPlacementBadgeVariant = (p: string) => {
+    return p === 'cursos_destaque' ? 'default' : 'secondary';
+  };
+
+  const destaqueBanners = banners.filter(b => b.placement === 'cursos_destaque');
+  const interesseBanners = banners.filter(b => b.placement === 'talvez_interesse');
+
+  const activeDestaqueBanners = destaqueBanners.filter(b => b.is_active);
+  const activeInteresseBanners = interesseBanners.filter(b => b.is_active);
+
+  const config = PLACEMENT_CONFIG[placement];
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -220,86 +265,163 @@ export default function AdminBanners() {
         </Button>
       </div>
 
-      {loading ? (
-        <div className="grid gap-4">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
-          ))}
-        </div>
-      ) : banners.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nenhum banner cadastrado.</p>
-            <Button className="mt-4" onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Primeiro Banner
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3">
-          {banners.map((banner, index) => (
-            <motion.div
-              key={banner.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-            >
-              <Card className={!banner.is_active ? 'opacity-60' : ''}>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <div className="w-28 md:w-40 flex-shrink-0 rounded overflow-hidden" style={{ aspectRatio: '6/1' }}>
-                      <img
-                        src={banner.image_url}
-                        alt="Banner"
-                        className="w-full h-full object-cover"
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="manage">Gerenciar</TabsTrigger>
+          <TabsTrigger value="preview" className="gap-1.5">
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Manage Tab */}
+        <TabsContent value="manage" className="space-y-6 mt-4">
+          {loading ? (
+            <div className="grid gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 rounded-lg" />
+              ))}
+            </div>
+          ) : banners.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center">
+                <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">Nenhum banner cadastrado.</p>
+                <Button className="mt-4" onClick={openCreateDialog}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeiro Banner
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Cursos em destaque */}
+              <section>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  Cursos em destaque
+                  <Badge variant="outline" className="text-xs font-normal">1200×200</Badge>
+                </h2>
+                {destaqueBanners.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum banner nesta categoria.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {destaqueBanners.map((banner, index) => (
+                      <BannerRow
+                        key={banner.id}
+                        banner={banner}
+                        index={index}
+                        onEdit={openEditDialog}
+                        onDelete={(b) => setDeleteDialog({ open: true, banner: b })}
+                        onToggle={handleToggleActive}
+                        thumbnailRatio="6/1"
                       />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          Banner #{index + 1}
-                        </span>
-                        {!banner.is_active && (
-                          <span className="text-xs text-muted-foreground">(Inativo)</span>
-                        )}
-                      </div>
-                      {banner.link_url && (
-                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3" />
-                          {banner.link_url}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={banner.is_active}
-                        onCheckedChange={() => handleToggleActive(banner)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => openEditDialog(banner)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setDeleteDialog({ open: true, banner })}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                )}
+              </section>
+
+              {/* Talvez você se interesse */}
+              <section>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  Talvez você se interesse
+                  <Badge variant="outline" className="text-xs font-normal">1080×1350</Badge>
+                </h2>
+                {interesseBanners.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum banner nesta categoria.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {interesseBanners.map((banner, index) => (
+                      <BannerRow
+                        key={banner.id}
+                        banner={banner}
+                        index={index}
+                        onEdit={openEditDialog}
+                        onDelete={(b) => setDeleteDialog({ open: true, banner: b })}
+                        onToggle={handleToggleActive}
+                        thumbnailRatio="4/5"
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+        </TabsContent>
+
+        {/* Preview Tab */}
+        <TabsContent value="preview" className="mt-4">
+          <Card>
+            <CardHeader>
+              <p className="text-sm text-muted-foreground">
+                Visualize como os alunos veem os banners na página de cursos (somente banners ativos são exibidos).
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Cursos em destaque preview */}
+              <section>
+                <h3 className="text-base font-semibold mb-3">Cursos em destaque</h3>
+                {activeDestaqueBanners.length === 0 ? (
+                  <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
+                    Nenhum banner ativo nesta posição
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeDestaqueBanners.map((banner) => (
+                      <div key={banner.id} className="w-full rounded-lg overflow-hidden border" style={{ aspectRatio: '6/1' }}>
+                        <img
+                          src={banner.image_url}
+                          alt="Banner destaque"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Talvez você se interesse preview */}
+              <section>
+                <h3 className="text-base font-semibold mb-3">Talvez você se interesse</h3>
+                {activeInteresseBanners.length === 0 ? (
+                  <div className="w-full rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm py-8">
+                    Nenhum banner ativo nesta posição
+                  </div>
+                ) : (
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {activeInteresseBanners.slice(0, 3).map((banner) => (
+                      <Card key={banner.id} className="overflow-hidden">
+                        <div className="flex h-full">
+                          <div className="w-28 md:w-32 flex-shrink-0">
+                            <div className="aspect-[4/5] w-full overflow-hidden rounded-l-lg">
+                              <img
+                                src={banner.image_url}
+                                alt="Banner interesse"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1 p-3 md:p-4 flex flex-col justify-center min-w-0">
+                            <p className="text-xs text-muted-foreground">
+                              {banner.link_url ? (
+                                <span className="flex items-center gap-1 truncate">
+                                  <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                                  {banner.link_url}
+                                </span>
+                              ) : (
+                                'Sem link de destino'
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
@@ -311,7 +433,27 @@ export default function AdminBanners() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Imagem <span className="text-xs text-muted-foreground font-normal">(proporção 6:1 — recomendado 1200×200px)</span></Label>
+              <Label>Tipo de banner</Label>
+              <Select
+                value={placement}
+                onValueChange={(v) => setPlacement(v as BannerPlacement)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cursos_destaque">Cursos em destaque (1200×200)</SelectItem>
+                  <SelectItem value="talvez_interesse">Talvez você se interesse (1080×1350)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>
+                Imagem{' '}
+                <span className="text-xs text-muted-foreground font-normal">
+                  (recomendado {config.dimensions})
+                </span>
+              </Label>
               <Input
                 type="file"
                 accept="image/*"
@@ -319,7 +461,7 @@ export default function AdminBanners() {
                 className="mt-1"
               />
               {imagePreview ? (
-                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: '6/1' }}>
+                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: config.aspectRatio }}>
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -327,8 +469,11 @@ export default function AdminBanners() {
                   />
                 </div>
               ) : (
-                <div className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm" style={{ aspectRatio: '6/1' }}>
-                  1200 × 200px
+                <div
+                  className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm"
+                  style={{ aspectRatio: config.aspectRatio }}
+                >
+                  {config.dimensions}
                 </div>
               )}
             </div>
@@ -379,5 +524,84 @@ export default function AdminBanners() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+/* Banner row component */
+function BannerRow({
+  banner,
+  index,
+  onEdit,
+  onDelete,
+  onToggle,
+  thumbnailRatio,
+}: {
+  banner: Banner;
+  index: number;
+  onEdit: (b: Banner) => void;
+  onDelete: (b: Banner) => void;
+  onToggle: (b: Banner) => void;
+  thumbnailRatio: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+    >
+      <Card className={!banner.is_active ? 'opacity-60' : ''}>
+        <CardContent className="p-3 md:p-4">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div
+              className="w-20 md:w-28 flex-shrink-0 rounded overflow-hidden"
+              style={{ aspectRatio: thumbnailRatio }}
+            >
+              <img
+                src={banner.image_url}
+                alt="Banner"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-medium">
+                  Banner #{index + 1}
+                </span>
+                {!banner.is_active && (
+                  <span className="text-xs text-muted-foreground">(Inativo)</span>
+                )}
+              </div>
+              {banner.link_url && (
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  {banner.link_url}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={banner.is_active}
+                onCheckedChange={() => onToggle(banner)}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onEdit(banner)}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onDelete(banner)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
