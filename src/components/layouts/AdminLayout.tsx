@@ -117,7 +117,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar>
+        <Sidebar variant="floating">
           <SidebarLogo showAdminBadge />
           <SidebarContent>
             <SidebarGroup>
@@ -180,7 +180,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </header>
 
           <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">
-            <div className="max-w-[1200px] mx-auto w-full">
+            <div className="content-container">
               {children}
             </div>
           </main>

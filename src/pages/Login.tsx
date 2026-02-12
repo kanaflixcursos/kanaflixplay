@@ -135,7 +135,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background relative max-w-[1200px] mx-auto">
+    <div className="min-h-screen flex bg-background relative content-container">
       {/* Theme Toggle - positioned absolutely */}
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle variant="outline" />

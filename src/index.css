@@ -255,6 +255,11 @@ All colors MUST be HSL.
   }
 }
 
+/* Global content container */
+.content-container {
+  @apply max-w-[1200px] mx-auto w-full;
+}
+
 /* Mesh gradient background */
 .mesh-gradient-bg {
   position: fixed;

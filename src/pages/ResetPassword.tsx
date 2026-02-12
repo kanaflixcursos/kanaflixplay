@@ -64,7 +64,7 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background relative">
+    <div className="min-h-screen flex bg-background relative content-container">
       {/* Theme Toggle */}
       <div className="absolute top-4 right-4 z-50">
         <ThemeToggle variant="outline" />
