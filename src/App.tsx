@@ -33,7 +33,7 @@ import AdminOrders from "@/pages/admin/Orders";
 import AdminComments from "@/pages/admin/Comments";
 import AdminSupport from "@/pages/admin/Support";
 import AdminTicketChat from "@/pages/admin/TicketChat";
-import AdminBanners from "@/pages/admin/Banners";
+
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -204,16 +204,6 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminComments />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/banners"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminBanners />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
