@@ -69,6 +69,7 @@ export default function PandavideoPlayerWithProgress({
           watched_seconds: Math.round(watchedSeconds),
           completed,
           completed_at: completed ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id,lesson_id'
         });
