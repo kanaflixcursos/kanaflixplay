@@ -5,8 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { BookOpen, ShoppingCart, Clock, PlayCircle } from 'lucide-react';
+import { BookOpen, Clock, PlayCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface EnrolledCourse {
@@ -21,12 +20,11 @@ interface EnrolledCourse {
   completedLessons: number;
 }
 
-interface SuggestedCourse {
+interface InteresseCourse {
   id: string;
   title: string;
   description: string | null;
   thumbnail_url: string | null;
-  price: number | null;
   lessonCount: number;
   totalDurationMinutes: number;
 }
@@ -41,9 +39,8 @@ interface Banner {
 export default function StudentCourses() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
-  const [suggestedCourses, setSuggestedCourses] = useState<SuggestedCourse[]>([]);
+  const [interesseCourses, setInteresseCourses] = useState<InteresseCourse[]>([]);
   const [destaqueBanners, setDestaqueBanners] = useState<Banner[]>([]);
-  const [interesseBanners, setInteresseBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -63,50 +60,50 @@ export default function StudentCourses() {
           .order('order_index'),
         supabase
           .from('banners')
-          .select('id, image_url, link_url, placement')
+          .select('id, image_url, link_url, placement, course_id')
           .eq('is_active', true)
           .eq('placement', 'talvez_interesse')
           .order('order_index')
           .limit(3),
       ]);
 
-      // Get enrolled course IDs
-      const enrolledCourseIds = (enrollmentsResult.data || []).map(
-        (e: any) => e.course?.id
-      ).filter(Boolean);
+      // Get course IDs from interesse banners
+      const interesseCourseIds = (interesseBannersResult.data || [])
+        .map((b: any) => b.course_id)
+        .filter(Boolean) as string[];
 
-      // Fetch featured courses not enrolled
-      const suggestedQuery = supabase
-        .from('courses')
-        .select('id, title, description, thumbnail_url, price')
-        .eq('is_published', true)
-        .eq('is_featured', true)
-        .limit(3);
+      // Fetch course data for interesse banners
+      if (interesseCourseIds.length > 0) {
+        const { data: coursesData } = await supabase
+          .from('courses')
+          .select('id, title, description, thumbnail_url')
+          .in('id', interesseCourseIds);
 
-      if (enrolledCourseIds.length > 0) {
-        suggestedQuery.not('id', 'in', `(${enrolledCourseIds.join(',')})`);
+        const coursesWithMeta = await Promise.all(
+          (coursesData || []).map(async (course) => {
+            const { data: lessons } = await supabase
+              .from('lessons')
+              .select('id, duration_minutes')
+              .eq('course_id', course.id)
+              .eq('is_hidden', false);
+
+            return {
+              ...course,
+              lessonCount: lessons?.length || 0,
+              totalDurationMinutes: lessons?.reduce(
+                (sum, l) => sum + (l.duration_minutes || 0), 0
+              ) || 0,
+            };
+          })
+        );
+
+        // Maintain banner order
+        const orderedCourses = interesseCourseIds
+          .map(cId => coursesWithMeta.find(c => c.id === cId))
+          .filter(Boolean) as InteresseCourse[];
+
+        setInteresseCourses(orderedCourses);
       }
-
-      const suggestedResult = await suggestedQuery;
-
-      // Fetch lesson count and duration for suggested courses
-      const suggestedWithMeta = await Promise.all(
-        (suggestedResult.data || []).map(async (course) => {
-          const { data: lessons } = await supabase
-            .from('lessons')
-            .select('id, duration_minutes')
-            .eq('course_id', course.id)
-            .eq('is_hidden', false);
-
-          const lessonCount = lessons?.length || 0;
-          const totalDurationMinutes = lessons?.reduce(
-            (sum, l) => sum + (l.duration_minutes || 0),
-            0
-          ) || 0;
-
-          return { ...course, lessonCount, totalDurationMinutes };
-        })
-      );
 
       // Fetch progress for enrolled courses
       const { data: allProgress } = await supabase
@@ -142,19 +139,12 @@ export default function StudentCourses() {
       );
 
       setEnrolledCourses(coursesWithProgress);
-      setSuggestedCourses(suggestedWithMeta);
       setDestaqueBanners(destaqueBannersResult.data || []);
-      setInteresseBanners(interesseBannersResult.data || []);
       setLoading(false);
     };
 
     fetchData();
   }, [user]);
-
-  const formatPrice = (price: number | null) => {
-    if (!price || price <= 0) return 'Gratuito';
-    return `R$ ${(price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
 
   const formatDuration = (minutes: number) => {
     if (minutes < 60) return `${minutes}min`;
@@ -174,7 +164,7 @@ export default function StudentCourses() {
         </p>
       </div>
 
-      {/* Top Banner - Cursos em destaque (1200x400 = 3:1) */}
+      {/* Top Banner - Cursos em destaque (1200x200 = 6:1) */}
       {topBanner && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -288,12 +278,12 @@ export default function StudentCourses() {
         )}
       </section>
 
-      {/* Talvez você se interesse - Course-based horizontal cards */}
-      {!loading && suggestedCourses.length > 0 && (
+      {/* Talvez você se interesse - Horizontal cards from banners */}
+      {!loading && interesseCourses.length > 0 && (
         <section>
           <h2 className="text-xl font-semibold mb-4">Talvez você se interesse</h2>
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {suggestedCourses.map((course, index) => (
+            {interesseCourses.map((course, index) => (
               <motion.div
                 key={course.id}
                 initial={{ opacity: 0, y: 12 }}

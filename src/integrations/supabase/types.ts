@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       banners: {
         Row: {
+          course_id: string | null
           created_at: string
           id: string
           image_url: string
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          course_id?: string | null
           created_at?: string
           id?: string
           image_url: string
@@ -36,6 +38,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          course_id?: string | null
           created_at?: string
           id?: string
           image_url?: string
@@ -45,7 +48,15 @@ export type Database = {
           placement?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "banners_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_enrollments: {
         Row: {
