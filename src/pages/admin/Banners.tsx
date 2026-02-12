@@ -189,12 +189,17 @@ export default function AdminBanners() {
         imageUrl = selectedCourse?.thumbnail_url || '';
       }
 
+      // For talvez_interesse, auto-set link_url to checkout page
+      const finalLinkUrl = placement === 'talvez_interesse' && courseId
+        ? `/checkout/${courseId}`
+        : linkUrl || null;
+
       if (editingBanner) {
         const { error } = await supabase
           .from('banners')
           .update({
             image_url: imageUrl,
-            link_url: linkUrl || null,
+            link_url: finalLinkUrl,
             is_active: isActive,
             placement,
             course_id: placement === 'talvez_interesse' ? courseId : null,
@@ -213,7 +218,7 @@ export default function AdminBanners() {
           .from('banners')
           .insert({
             image_url: imageUrl,
-            link_url: linkUrl || null,
+            link_url: finalLinkUrl,
             is_active: isActive,
             order_index: maxOrder + 1,
             placement,
@@ -468,15 +473,22 @@ export default function AdminBanners() {
               </div>
             )}
 
-            <div>
-              <Label>Link de destino (opcional)</Label>
-              <Input
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://..."
-                className="mt-1"
-              />
-            </div>
+            {placement === 'cursos_destaque' && (
+              <div>
+                <Label>Link de destino (opcional)</Label>
+                <Input
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="mt-1"
+                />
+              </div>
+            )}
+            {placement === 'talvez_interesse' && courseId && (
+              <p className="text-xs text-muted-foreground">
+                Link de destino: <span className="font-medium">/checkout/{courseId}</span>
+              </p>
+            )}
             <div className="flex items-center gap-2">
               <Switch checked={isActive} onCheckedChange={setIsActive} />
               <Label>Ativo</Label>
