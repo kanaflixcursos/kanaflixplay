@@ -18,6 +18,7 @@ import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
 import NotificationsPage from "@/pages/student/Notifications";
 import PurchasesPage from "@/pages/student/Purchases";
+import StudentCoursesPage from "@/pages/student/Courses";
 import SupportPage from "@/pages/student/Support";
 import TicketChatPage from "@/pages/student/TicketChat";
 
@@ -32,6 +33,7 @@ import AdminOrders from "@/pages/admin/Orders";
 import AdminComments from "@/pages/admin/Comments";
 import AdminSupport from "@/pages/admin/Support";
 import AdminTicketChat from "@/pages/admin/TicketChat";
+import AdminBanners from "@/pages/admin/Banners";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -60,6 +62,16 @@ const App = () => (
                   <ProtectedRoute>
                     <StudentLayout>
                       <CourseView />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <StudentCoursesPage />
                     </StudentLayout>
                   </ProtectedRoute>
                 }
@@ -192,6 +204,16 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminComments />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/banners"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminBanners />
                     </AdminLayout>
                   </ProtectedRoute>
                 }

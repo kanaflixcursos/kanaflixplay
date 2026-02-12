@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      banners: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          link_url: string | null
+          order_index: number
+          placement: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          placement?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          link_url?: string | null
+          order_index?: number
+          placement?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_enrollments: {
         Row: {
           course_id: string
@@ -86,6 +119,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_featured: boolean
           is_published: boolean
           is_sequential: boolean
           last_synced_at: string | null
@@ -99,6 +133,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null
@@ -112,6 +147,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null

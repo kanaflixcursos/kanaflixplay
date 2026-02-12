@@ -48,7 +48,9 @@ import {
   EyeOff,
   Copy,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Star,
+  StarOff
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -58,6 +60,7 @@ interface Course {
   description: string;
   thumbnail_url: string;
   is_published: boolean;
+  is_featured: boolean;
   created_at: string;
   pandavideo_folder_id: string | null;
   pandavideo_folder_name?: string;
@@ -213,6 +216,20 @@ export default function AdminCourses() {
     }
   };
 
+  const handleToggleFeatured = async (course: Course) => {
+    const { error } = await supabase
+      .from('courses')
+      .update({ is_featured: !course.is_featured })
+      .eq('id', course.id);
+
+    if (error) {
+      toast.error('Erro ao alterar destaque');
+    } else {
+      toast.success(course.is_featured ? 'Removido dos destaques' : 'Marcado como destaque');
+      fetchCourses();
+    }
+  };
+
   const handleSyncCourse = async (courseId?: string) => {
     if (courseId) {
       setSyncing(courseId);
@@ -325,6 +342,19 @@ export default function AdminCourses() {
             </>
           )}
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleToggleFeatured(course)}>
+          {course.is_featured ? (
+            <>
+              <StarOff className="h-4 w-4 mr-2" />
+              Remover Destaque
+            </>
+          ) : (
+            <>
+              <Star className="h-4 w-4 mr-2" />
+              Marcar como Destaque
+            </>
+          )}
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={() => setDeleteDialog({ open: true, course })}
@@ -406,6 +436,11 @@ export default function AdminCourses() {
                       <Badge variant={course.is_published ? 'default' : 'secondary'} className="text-xs">
                         {course.is_published ? 'Publicado' : 'Oculto'}
                       </Badge>
+                      {course.is_featured && (
+                        <Badge variant="outline" className="text-xs border-warning/30 text-warning">
+                          ⭐ Destaque
+                        </Badge>
+                      )}
                       {course.price && course.price > 0 ? (
                         <Badge variant="outline" className="text-xs">
                           {formatPrice(course.price)}

@@ -24,6 +24,7 @@ import { Home, Shield, Compass, GraduationCap, ShoppingBag, HelpCircle } from 'l
 
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
+  { title: 'Cursos', url: '/courses', icon: GraduationCap },
   { title: 'Compras', url: '/purchases', icon: ShoppingBag },
   { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
 ];
