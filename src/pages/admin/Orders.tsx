@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle, UserCheck } from 'lucide-react';
+import { ShoppingCart, Eye, CreditCard, QrCode, FileText, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -60,14 +60,12 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
   credit_card: <CreditCard className="h-4 w-4" />,
   pix: <QrCode className="h-4 w-4" />,
   boleto: <FileText className="h-4 w-4" />,
-  manual: <UserCheck className="h-4 w-4" />,
 };
 
 const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão',
   pix: 'PIX',
   boleto: 'Boleto',
-  manual: 'Manual',
 };
 
 const statusColors: Record<string, string> = {
@@ -388,13 +386,8 @@ export default function AdminOrders() {
                         <p className="text-xs text-muted-foreground truncate max-w-[150px]">{order.user_email}</p>
                       </div>
                     </TableCell>
-                    <TableCell className={order.payment_method === 'manual' ? '' : 'font-semibold text-success'}>
-                      {order.payment_method === 'manual' ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <UserCheck className="h-3 w-3" />
-                          Manual
-                        </Badge>
-                      ) : formatCurrency(order.amount)}
+                    <TableCell className="font-semibold text-success">
+                      {formatCurrency(order.amount)}
                     </TableCell>
                     <TableCell>
                       {order.payment_method && (
@@ -417,7 +410,7 @@ export default function AdminOrders() {
                         <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {order.status === 'paid' && order.payment_method !== 'manual' && (
+                        {order.status === 'paid' && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -427,7 +420,7 @@ export default function AdminOrders() {
                             <RotateCcw className="h-4 w-4" />
                           </Button>
                         )}
-                        {order.status === 'pending' && order.payment_method !== 'manual' && (
+                        {order.status === 'pending' && (
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -463,7 +456,7 @@ export default function AdminOrders() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className={order.payment_method === 'manual' ? '' : 'font-semibold text-success'}>{order.payment_method === 'manual' ? '' : formatCurrency(order.amount)}</span>
+                    <span className="font-semibold text-success">{formatCurrency(order.amount)}</span>
                     {order.payment_method && (
                       <Badge variant="outline" className="gap-1">
                         {paymentMethodIcons[order.payment_method]}
@@ -476,7 +469,7 @@ export default function AdminOrders() {
                       <Eye className="h-4 w-4 mr-1" />
                       Detalhes
                     </Button>
-                    {order.status === 'paid' && order.payment_method !== 'manual' && (
+                    {order.status === 'paid' && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -486,7 +479,7 @@ export default function AdminOrders() {
                         <RotateCcw className="h-4 w-4" />
                       </Button>
                     )}
-                    {order.status === 'pending' && order.payment_method !== 'manual' && (
+                    {order.status === 'pending' && (
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -526,14 +519,7 @@ export default function AdminOrders() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Valor</p>
-                  {selectedOrder.payment_method === 'manual' ? (
-                    <Badge variant="secondary" className="gap-1 mt-1">
-                      <UserCheck className="h-3 w-3" />
-                      Acesso Manual
-                    </Badge>
-                  ) : (
-                    <p className="font-medium text-success">{formatCurrency(selectedOrder.amount)}</p>
-                  )}
+                  <p className="font-medium text-success">{formatCurrency(selectedOrder.amount)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Comprador</p>
@@ -573,7 +559,7 @@ export default function AdminOrders() {
               
               {/* Action buttons in dialog */}
               <div className="flex gap-2 pt-2 border-t">
-                {selectedOrder.status === 'paid' && selectedOrder.payment_method !== 'manual' && (
+                {selectedOrder.status === 'paid' && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -587,7 +573,7 @@ export default function AdminOrders() {
                     Reembolsar
                   </Button>
                 )}
-                {selectedOrder.status === 'pending' && selectedOrder.payment_method !== 'manual' && (
+                {selectedOrder.status === 'pending' && (
                   <Button
                     variant="outline"
                     size="sm"

@@ -38,8 +38,7 @@ import {
   AlertCircle,
   RotateCcw,
   Hourglass,
-  Filter,
-  UserCheck
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -80,14 +79,12 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
   credit_card: <CreditCard className="h-4 w-4" />,
   pix: <QrCode className="h-4 w-4" />,
   boleto: <FileText className="h-4 w-4" />,
-  manual: <UserCheck className="h-4 w-4" />,
 };
 
 const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão de Crédito',
   pix: 'PIX',
   boleto: 'Boleto Bancário',
-  manual: 'Manual (Admin)',
 };
 
 const statusConfig: Record<string, { icon: React.ReactNode; className: string }> = {
@@ -490,16 +487,11 @@ export default function StudentProfile() {
 
                         {/* Bottom row: Amount and actions */}
                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
-                          <span className={`font-semibold text-base sm:text-lg ${order.payment_method === 'manual' ? '' : ''}`}>
-                            {order.payment_method === 'manual' ? (
-                              <Badge variant="secondary" className="gap-1">
-                                <UserCheck className="h-3 w-3" />
-                                Acesso Manual
-                              </Badge>
-                            ) : formatCurrency(order.amount)}
+                          <span className="font-semibold text-base sm:text-lg">
+                            {formatCurrency(order.amount)}
                           </span>
                           <div className="flex items-center gap-2">
-                            {order.status === 'paid' && order.payment_method !== 'manual' && (
+                            {order.status === 'paid' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -510,7 +502,7 @@ export default function StudentProfile() {
                                 <span className="hidden sm:inline">Reembolsar</span>
                               </Button>
                             )}
-                            {order.status === 'pending' && order.payment_method !== 'manual' && (
+                            {order.status === 'pending' && (
                               <Button
                                 variant="outline"
                                 size="sm"

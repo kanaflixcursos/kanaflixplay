@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ShoppingCart, Eye, CreditCard, QrCode, FileText, UserCheck } from 'lucide-react';
+import { ShoppingCart, Eye, CreditCard, QrCode, FileText } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import DashboardListCard, { DashboardListItem } from './DashboardListCard';
@@ -31,14 +31,12 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
   credit_card: <CreditCard className="h-3.5 w-3.5" />,
   pix: <QrCode className="h-3.5 w-3.5" />,
   boleto: <FileText className="h-3.5 w-3.5" />,
-  manual: <UserCheck className="h-3.5 w-3.5" />,
 };
 
 const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão',
   pix: 'PIX',
   boleto: 'Boleto',
-  manual: 'Manual',
 };
 
 const statusColors: Record<string, string> = {
@@ -139,25 +137,16 @@ export default function DashboardLatestPurchases() {
               </Button>
             </div>
             <div className="flex items-center justify-between gap-2 mt-2">
-            <div className="flex items-center gap-2">
-              {purchase.payment_method === 'manual' ? (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
-                  <UserCheck className="h-3 w-3" />
-                  Acesso Manual
-                </Badge>
-              ) : (
-                <>
-                  <span className="text-sm font-semibold text-success">
-                    {formatCurrency(purchase.amount)}
-                  </span>
-                  {purchase.payment_method && (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
-                      {paymentMethodIcons[purchase.payment_method]}
-                      {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
-                    </Badge>
-                  )}
-                </>
-              )}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-success">
+                  {formatCurrency(purchase.amount)}
+                </span>
+                {purchase.payment_method && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                    {paymentMethodIcons[purchase.payment_method]}
+                    {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
+                  </Badge>
+                )}
               </div>
               <Badge 
                 variant="outline" 
@@ -187,14 +176,7 @@ export default function DashboardLatestPurchases() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Valor</p>
-                  {selectedPurchase.payment_method === 'manual' ? (
-                    <Badge variant="secondary" className="gap-1 mt-1">
-                      <UserCheck className="h-3 w-3" />
-                      Acesso Manual
-                    </Badge>
-                  ) : (
-                    <p className="font-medium text-success">{formatCurrency(selectedPurchase.amount)}</p>
-                  )}
+                  <p className="font-medium text-success">{formatCurrency(selectedPurchase.amount)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Comprador</p>

@@ -52,7 +52,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload, UserPlus, BookPlus } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload } from 'lucide-react';
 import PhoneInput from '@/components/PhoneInput';
 import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -113,18 +113,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   const [resetting, setResetting] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-
-  // Create user dialog
-  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
-  const [createUserForm, setCreateUserForm] = useState({ full_name: '', email: '', password: '' });
-  const [createUserCourses, setCreateUserCourses] = useState<string[]>([]);
-  const [creatingUser, setCreatingUser] = useState(false);
-
-  // Assign course dialog
-  const [assignCourseDialogOpen, setAssignCourseDialogOpen] = useState(false);
-  const [assignCourseStudent, setAssignCourseStudent] = useState<Student | null>(null);
-  const [assignCourseId, setAssignCourseId] = useState('');
-  const [assigningCourse, setAssigningCourse] = useState(false);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -438,94 +426,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     setResetting(false);
   };
 
-  const handleCreateUser = async () => {
-    if (!createUserForm.full_name || !createUserForm.email || !createUserForm.password) {
-      toast.error('Preencha todos os campos');
-      return;
-    }
-
-    setCreatingUser(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email: createUserForm.email,
-          password: createUserForm.password,
-          full_name: createUserForm.full_name,
-        },
-      });
-
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      const newUserId = data?.user_id;
-
-      // Assign selected courses
-      if (newUserId && createUserCourses.length > 0) {
-        let assignedCount = 0;
-        for (const courseId of createUserCourses) {
-          try {
-            const { data: assignData, error: assignError } = await supabase.functions.invoke('assign-course', {
-              body: { user_id: newUserId, course_id: courseId },
-            });
-            if (assignError) throw assignError;
-            if (assignData?.error) throw new Error(assignData.error);
-            assignedCount++;
-          } catch (err: any) {
-            console.error(`Failed to assign course ${courseId}:`, err);
-          }
-        }
-        toast.success(`Usuário criado e matriculado em ${assignedCount} curso(s)!`);
-      } else {
-        toast.success('Usuário criado com sucesso!');
-      }
-
-      setCreateUserDialogOpen(false);
-      setCreateUserForm({ full_name: '', email: '', password: '' });
-      setCreateUserCourses([]);
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar usuário');
-    }
-
-    setCreatingUser(false);
-  };
-
-  const handleOpenAssignCourse = (student: Student) => {
-    setAssignCourseStudent(student);
-    setAssignCourseId('');
-    setAssignCourseDialogOpen(true);
-  };
-
-  const handleAssignCourse = async () => {
-    if (!assignCourseStudent || !assignCourseId) {
-      toast.error('Selecione um curso');
-      return;
-    }
-
-    setAssigningCourse(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('assign-course', {
-        body: {
-          user_id: assignCourseStudent.user_id,
-          course_id: assignCourseId,
-        },
-      });
-
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      toast.success(data?.message || 'Curso atribuído com sucesso!');
-      setAssignCourseDialogOpen(false);
-      fetchData();
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao atribuir curso');
-    }
-
-    setAssigningCourse(false);
-  };
-
   const filteredStudents = students.filter(student =>
     student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -577,10 +477,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           {student.role === 'admin' ? '✓ ' : ''}Administrador
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleOpenAssignCourse(student)}>
-          <BookPlus className="h-4 w-4 mr-2" />
-          Atribuir Curso
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>
           <RotateCcw className="h-4 w-4 mr-2" />
           Resetar Progresso
@@ -667,10 +563,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <p className="text-muted-foreground text-sm md:text-base">Gerencie os alunos da plataforma</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setCreateUserDialogOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Criar Usuário
-          </Button>
           <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Importar CSV
@@ -1035,142 +927,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         onOpenChange={setImportDialogOpen}
         onImported={fetchData}
       />
-
-      {/* Create User Dialog */}
-      <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Criar Usuário</DialogTitle>
-            <DialogDescription>
-              Crie um novo usuário manualmente. O email será confirmado automaticamente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="create-name">Nome Completo</Label>
-              <Input
-                id="create-name"
-                value={createUserForm.full_name}
-                onChange={(e) => setCreateUserForm(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Nome do usuário"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-email">Email</Label>
-              <Input
-                id="create-email"
-                type="email"
-                value={createUserForm.email}
-                onChange={(e) => setCreateUserForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="create-password">Senha</Label>
-              <Input
-                id="create-password"
-                type="password"
-                value={createUserForm.password}
-                onChange={(e) => setCreateUserForm(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Mínimo 6 caracteres"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Matricular em cursos (opcional)</Label>
-              <div className="max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
-                {courses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum curso publicado</p>
-                ) : (
-                  courses.map((course) => (
-                    <label key={course.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={createUserCourses.includes(course.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setCreateUserCourses(prev => [...prev, course.id]);
-                          } else {
-                            setCreateUserCourses(prev => prev.filter(id => id !== course.id));
-                          }
-                        }}
-                        className="h-4 w-4 rounded"
-                      />
-                      {course.title}
-                    </label>
-                  ))
-                )}
-              </div>
-              {createUserCourses.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {createUserCourses.length} curso(s) selecionado(s) — pedidos serão criados automaticamente
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateUser} disabled={creatingUser}>
-              {creatingUser ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Criar Usuário
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Assign Course Dialog */}
-      <Dialog open={assignCourseDialogOpen} onOpenChange={setAssignCourseDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Atribuir Curso</DialogTitle>
-            <DialogDescription>
-              Atribua um curso a {assignCourseStudent?.full_name}, criando o registro de compra e matrícula automaticamente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Select value={assignCourseId} onValueChange={setAssignCourseId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um curso" />
-              </SelectTrigger>
-              <SelectContent>
-                {courses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    {course.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignCourseDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAssignCourse} disabled={assigningCourse || !assignCourseId}>
-              {assigningCourse ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Atribuindo...
-                </>
-              ) : (
-                <>
-                  <BookPlus className="mr-2 h-4 w-4" />
-                  Atribuir Curso
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

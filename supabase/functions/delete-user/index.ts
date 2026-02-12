@@ -30,23 +30,20 @@ serve(async (req) => {
     });
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
-    if (claimsError || !claimsData?.claims) {
-      console.error('Claims validation error:', claimsError);
+    if (userError || !userData?.user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
-    const callerUserId = claimsData.claims.sub;
-
     // Check if caller is admin
     const { data: roleData } = await supabaseClient
       .from('user_roles')
       .select('role')
-      .eq('user_id', callerUserId)
+      .eq('user_id', userData.user.id)
       .single();
 
     if (roleData?.role !== 'admin') {
@@ -66,7 +63,7 @@ serve(async (req) => {
     }
 
     // Prevent deleting yourself
-    if (user_id === callerUserId) {
+    if (user_id === userData.user.id) {
       return new Response(JSON.stringify({ error: 'Cannot delete your own account' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -99,7 +96,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`User ${user_id} deleted successfully by admin ${callerUserId}`);
+    console.log(`User ${user_id} deleted successfully by admin ${userData.user.id}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
