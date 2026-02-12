@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { motion } from 'framer-motion';
 
 function StatCardSkeleton() {
   return (
@@ -40,40 +41,46 @@ export default function DashboardCoursesCard() {
   };
 
   return (
-    <Card className="overflow-hidden relative">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-4 via-chart-5 to-chart-4" />
-      <CardContent className="p-4 sm:p-6 text-left">
-        <div className="flex items-start justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-chart-4/20">
-              <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
-            </div>
-            <span className="text-sm font-medium text-muted-foreground">Total de Cursos</span>
-          </div>
-          <Clock className="h-4 w-4 text-muted-foreground" />
-        </div>
-
-        {loading ? (
-          <StatCardSkeleton />
-        ) : (
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {totalCourses.toLocaleString('pt-BR')}
-            </p>
-            {lastCourse && (
-              <div className="text-xs sm:text-sm text-muted-foreground">
-                <span>Último: </span>
-                <span className="font-medium text-foreground truncate block max-w-[180px]">
-                  {lastCourse.title}
-                </span>
-                <span className="text-[10px] sm:text-xs">
-                  {formatDistanceToNow(new Date(lastCourse.created_at), { addSuffix: true, locale: ptBR })}
-                </span>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
+    >
+      <Card className="overflow-hidden relative">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-4 via-chart-5 to-chart-4" />
+        <CardContent className="p-4 sm:p-6 text-left">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-chart-4/20">
+                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
               </div>
-            )}
+              <span className="text-sm font-medium text-muted-foreground">Total de Cursos</span>
+            </div>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <div className="space-y-1">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {totalCourses.toLocaleString('pt-BR')}
+              </p>
+              {lastCourse && (
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  <span>Último: </span>
+                  <span className="font-medium text-foreground truncate block max-w-[180px]">
+                    {lastCourse.title}
+                  </span>
+                  <span className="text-[10px] sm:text-xs">
+                    {formatDistanceToNow(new Date(lastCourse.created_at), { addSuffix: true, locale: ptBR })}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

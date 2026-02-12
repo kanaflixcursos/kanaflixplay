@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, UserCheck } from 'lucide-react';
 import { subDays } from 'date-fns';
+import { motion } from 'framer-motion';
 
 function StatCardSkeleton() {
   return (
@@ -40,33 +41,39 @@ export default function DashboardStudentsCard() {
   };
 
   return (
-    <Card className="overflow-hidden relative">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-2 via-chart-3 to-chart-2" />
-      <CardContent className="p-4 sm:p-6 text-left">
-        <div className="flex items-start justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-chart-2/20">
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-chart-2" />
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+    >
+      <Card className="overflow-hidden relative">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-2 via-chart-3 to-chart-2" />
+        <CardContent className="p-4 sm:p-6 text-left">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-chart-2/20">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-chart-2" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Total de Alunos</span>
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Total de Alunos</span>
+            <UserCheck className="h-4 w-4 text-success" />
           </div>
-          <UserCheck className="h-4 w-4 text-success" />
-        </div>
 
-        {loading ? (
-          <StatCardSkeleton />
-        ) : (
-          <div className="space-y-1">
-            <p className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {totalStudents.toLocaleString('pt-BR')}
-            </p>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-              <span>Ativos (7 dias):</span>
-              <span className="font-medium text-success">{activeStudents.toLocaleString('pt-BR')}</span>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <div className="space-y-1">
+              <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {totalStudents.toLocaleString('pt-BR')}
+              </p>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <span>Ativos (7 dias):</span>
+                <span className="font-medium text-success">{activeStudents.toLocaleString('pt-BR')}</span>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
