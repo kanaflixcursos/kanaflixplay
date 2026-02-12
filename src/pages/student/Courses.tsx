@@ -148,18 +148,22 @@ export default function StudentCourses() {
         >
           {topBanner.link_url ? (
             <a href={topBanner.link_url} target="_blank" rel="noopener noreferrer">
+              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
+                <img
+                  src={topBanner.image_url}
+                  alt="Banner"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </a>
+          ) : (
+            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
               <img
                 src={topBanner.image_url}
                 alt="Banner"
-                className="w-full rounded-lg object-cover max-h-48 md:max-h-64"
+                className="w-full h-full object-cover"
               />
-            </a>
-          ) : (
-            <img
-              src={topBanner.image_url}
-              alt="Banner"
-              className="w-full rounded-lg object-cover max-h-48 md:max-h-64"
-            />
+            </div>
           )}
         </motion.div>
       )}
@@ -258,18 +262,22 @@ export default function StudentCourses() {
         >
           {midBanner.link_url ? (
             <a href={midBanner.link_url} target="_blank" rel="noopener noreferrer">
+              <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
+                <img
+                  src={midBanner.image_url}
+                  alt="Banner"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </a>
+          ) : (
+            <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2/1' }}>
               <img
                 src={midBanner.image_url}
                 alt="Banner"
-                className="w-full rounded-lg object-cover max-h-48 md:max-h-64"
+                className="w-full h-full object-cover"
               />
-            </a>
-          ) : (
-            <img
-              src={midBanner.image_url}
-              alt="Banner"
-              className="w-full rounded-lg object-cover max-h-48 md:max-h-64"
-            />
+            </div>
           )}
         </motion.div>
       )}

@@ -249,11 +249,13 @@ export default function AdminBanners() {
               <Card className={!banner.is_active ? 'opacity-60' : ''}>
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center gap-3 md:gap-4">
-                    <img
-                      src={banner.image_url}
-                      alt="Banner"
-                      className="w-28 h-16 md:w-40 md:h-20 object-cover rounded flex-shrink-0"
-                    />
+                    <div className="w-28 md:w-40 flex-shrink-0 rounded overflow-hidden" style={{ aspectRatio: '2/1' }}>
+                      <img
+                        src={banner.image_url}
+                        alt="Banner"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium">
@@ -309,19 +311,25 @@ export default function AdminBanners() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Imagem</Label>
+              <Label>Imagem <span className="text-xs text-muted-foreground font-normal">(proporção 2:1 — recomendado 1200×600px)</span></Label>
               <Input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="mt-1"
               />
-              {imagePreview && (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="mt-2 w-full max-h-40 object-cover rounded"
-                />
+              {imagePreview ? (
+                <div className="mt-2 w-full rounded overflow-hidden border" style={{ aspectRatio: '2/1' }}>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="mt-2 w-full rounded border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-sm" style={{ aspectRatio: '2/1' }}>
+                  1200 × 600px
+                </div>
               )}
             </div>
             <div>
