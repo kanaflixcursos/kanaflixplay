@@ -153,6 +153,7 @@ export type Database = {
           is_published: boolean
           is_sequential: boolean
           last_synced_at: string | null
+          max_installments: number
           pandavideo_folder_id: string | null
           price: number | null
           thumbnail_url: string | null
@@ -168,6 +169,7 @@ export type Database = {
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null
+          max_installments?: number
           pandavideo_folder_id?: string | null
           price?: number | null
           thumbnail_url?: string | null
@@ -183,6 +185,7 @@ export type Database = {
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null
+          max_installments?: number
           pandavideo_folder_id?: string | null
           price?: number | null
           thumbnail_url?: string | null
