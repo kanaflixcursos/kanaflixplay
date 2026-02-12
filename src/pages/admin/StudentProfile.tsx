@@ -38,7 +38,8 @@ import {
   AlertCircle,
   RotateCcw,
   Hourglass,
-  Filter
+  Filter,
+  UserCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -79,12 +80,14 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
   credit_card: <CreditCard className="h-4 w-4" />,
   pix: <QrCode className="h-4 w-4" />,
   boleto: <FileText className="h-4 w-4" />,
+  manual: <UserCheck className="h-4 w-4" />,
 };
 
 const paymentMethodLabels: Record<string, string> = {
   credit_card: 'Cartão de Crédito',
   pix: 'PIX',
   boleto: 'Boleto Bancário',
+  manual: 'Manual (Admin)',
 };
 
 const statusConfig: Record<string, { icon: React.ReactNode; className: string }> = {
