@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, TrendingUp } from 'lucide-react';
 import { subDays, subMonths, subYears, startOfDay } from 'date-fns';
+import { motion } from 'framer-motion';
 
 type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
 
@@ -95,49 +96,55 @@ export default function DashboardRevenueCard() {
   };
 
   return (
-    <Card className="overflow-hidden relative">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
-      <CardContent className="p-4 sm:p-6 text-left">
-        <div className="flex items-start justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            </div>
-            <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
-          </div>
-          <TrendingUp className="h-4 w-4 text-success" />
-        </div>
-
-        {loading ? (
-          <StatCardSkeleton />
-        ) : (
-          <>
-            <div className="space-y-1 mb-4">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {formatCurrency(grossRevenue)}
-              </p>
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                <span>Líquido:</span>
-                <span className="font-medium text-success">{formatCurrency(netRevenue)}</span>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+    >
+      <Card className="overflow-hidden relative">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
+        <CardContent className="p-4 sm:p-6 text-left">
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
+              <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
             </div>
+            <TrendingUp className="h-4 w-4 text-success" />
+          </div>
 
-            <div className="flex flex-wrap gap-1">
-              {periodOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={period === option.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setPeriod(option.value)}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          {loading ? (
+            <StatCardSkeleton />
+          ) : (
+            <>
+              <div className="space-y-1 mb-4">
+                <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  {formatCurrency(grossRevenue)}
+                </p>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <span>Líquido:</span>
+                  <span className="font-medium text-success">{formatCurrency(netRevenue)}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {periodOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant={period === option.value ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setPeriod(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
