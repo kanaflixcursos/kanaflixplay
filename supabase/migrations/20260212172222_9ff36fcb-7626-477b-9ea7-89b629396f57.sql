@@ -1,0 +1,2 @@
+ALTER TABLE public.courses
+ADD COLUMN max_installments INTEGER NOT NULL DEFAULT 12;

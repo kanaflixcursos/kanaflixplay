@@ -277,7 +277,7 @@ export default function CourseForm() {
       pricing_type: data.price && data.price > 0 ? 'paid' : 'free',
       price: data.price ? (data.price / 100).toFixed(2) : '',
       payment_methods: ['pix', 'credit_card', 'boleto'],
-      installments: '12',
+      installments: String((data as any).max_installments || 12),
       category_id: (data as any).category_id || '',
     });
 
@@ -604,6 +604,7 @@ export default function CourseForm() {
         is_published: !formData.save_as_draft,
         price: priceInCents,
         category_id: formData.category_id || null,
+        max_installments: parseInt(formData.installments) || 12,
       };
 
       let savedCourseId = courseId;
