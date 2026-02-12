@@ -52,7 +52,8 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload } from 'lucide-react';
+import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import PhoneInput from '@/components/PhoneInput';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -84,8 +85,9 @@ export default function AdminStudents() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
-  
-  
+  // Import dialog
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+
   // Edit profile dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -530,6 +532,10 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
               className="pl-9 w-full sm:w-64"
             />
           </div>
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Importar CSV
+          </Button>
         </div>
       </div>
 
@@ -836,6 +842,11 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         </DialogContent>
       </Dialog>
 
+      <ImportUsersDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onImported={fetchData}
+      />
     </div>
   );
 }
