@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Camera, Loader2, BookOpen, MessageCircle, Mail, Phone, Calendar, User } from 'lucide-react';
+import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar, User } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -27,7 +27,6 @@ interface EnrolledCourse {
   id: string;
   title: string;
   thumbnail_url: string | null;
-  is_free: boolean;
 }
 
 export default function StudentProfile() {
@@ -37,19 +36,19 @@ export default function StudentProfile() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
-  const [repliesCount, setRepliesCount] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
 
   // Form state
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (user) {
       fetchProfile();
       fetchEnrolledCourses();
-      fetchRepliesCount();
     }
   }, [user]);
 
@@ -92,32 +91,42 @@ export default function StudentProfile() {
           id: e.course.id,
           title: e.course.title,
           thumbnail_url: e.course.thumbnail_url,
-          is_free: true, // For now, all courses are free
         }));
       setEnrolledCourses(courses);
+
+      // Calculate completed courses
+      if (courses.length > 0) {
+        const { data: allProgress } = await supabase
+          .from('lesson_progress')
+          .select('lesson_id, completed')
+          .eq('user_id', user.id)
+          .eq('completed', true);
+
+        let completed = 0;
+        for (const course of courses) {
+          const { count: totalLessons } = await supabase
+            .from('lessons')
+            .select('*', { count: 'exact', head: true })
+            .eq('course_id', course.id);
+
+          const { data: lessonIds } = await supabase
+            .from('lessons')
+            .select('id')
+            .eq('course_id', course.id);
+
+          const lessonIdSet = new Set(lessonIds?.map(l => l.id) || []);
+          const completedLessons = allProgress?.filter(p => lessonIdSet.has(p.lesson_id)).length || 0;
+
+          if (totalLessons && totalLessons > 0 && completedLessons >= totalLessons) {
+            completed++;
+          }
+        }
+        setCompletedCoursesCount(completed);
+      }
     }
   };
 
-  const fetchRepliesCount = async () => {
-    if (!user) return;
 
-    // Count comments that are replies to user's comments
-    const { data: userComments } = await supabase
-      .from('lesson_comments')
-      .select('id')
-      .eq('user_id', user.id);
-
-    if (userComments && userComments.length > 0) {
-      const commentIds = userComments.map(c => c.id);
-      
-      const { count } = await supabase
-        .from('lesson_comments')
-        .select('*', { count: 'exact', head: true })
-        .in('parent_id', commentIds);
-      
-      setRepliesCount(count || 0);
-    }
-  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -423,11 +432,11 @@ export default function StudentProfile() {
               <Separator />
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <Trophy className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="stat-card-value text-2xl">{repliesCount}</p>
-                  <p className="text-xs text-muted-foreground">Respostas recebidas</p>
+                  <p className="stat-card-value text-2xl">{completedCoursesCount}</p>
+                  <p className="text-xs text-muted-foreground">Cursos finalizados</p>
                 </div>
               </div>
             </CardContent>
