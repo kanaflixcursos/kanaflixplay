@@ -206,6 +206,9 @@ export default function CourseView() {
         lesson_id: lessonId,
         completed: true,
         completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,lesson_id'
       });
 
     if (error) {
