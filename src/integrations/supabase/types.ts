@@ -14,50 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      banners: {
-        Row: {
-          course_id: string | null
-          created_at: string
-          id: string
-          image_url: string
-          is_active: boolean
-          link_url: string | null
-          order_index: number
-          placement: string
-          updated_at: string
-        }
-        Insert: {
-          course_id?: string | null
-          created_at?: string
-          id?: string
-          image_url: string
-          is_active?: boolean
-          link_url?: string | null
-          order_index?: number
-          placement?: string
-          updated_at?: string
-        }
-        Update: {
-          course_id?: string | null
-          created_at?: string
-          id?: string
-          image_url?: string
-          is_active?: boolean
-          link_url?: string | null
-          order_index?: number
-          placement?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "banners_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       course_categories: {
         Row: {
           created_at: string

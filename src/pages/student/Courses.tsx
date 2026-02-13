@@ -78,7 +78,7 @@ function SuggestedCarousel({ courses }: { courses: SuggestedCourse[] }) {
             to={`/checkout/${course.id}`}
             className="flex-shrink-0 w-[140px] md:w-[160px] lg:w-[180px]"
           >
-            <div className="relative aspect-[4/5] rounded-lg overflow-hidden transition-transform duration-300 ease-out hover:scale-[1.3] hover:z-20 hover:shadow-2xl">
+            <div className="relative aspect-[4/5] rounded-lg overflow-hidden">
               {course.thumbnail_url ? (
                 <img
                   src={course.thumbnail_url}
