@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import StudentLayout from '@/components/layouts/StudentLayout';
@@ -440,7 +441,7 @@ export default function StudentProfile() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {enrolledCourses.map((course) => (
-                  <div key={course.id} className="flex items-center gap-3">
+                  <Link key={course.id} to={`/courses/${course.id}`} className="flex items-center gap-3 hover:bg-accent rounded-lg p-1 -m-1 transition-colors">
                     {course.thumbnail_url ? (
                       <img
                         src={course.thumbnail_url}
@@ -454,11 +455,8 @@ export default function StudentProfile() {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium line-clamp-1">{course.title}</p>
-                      <Badge variant={course.is_free ? 'secondary' : 'default'} className="text-xs">
-                        {course.is_free ? 'Gratuito' : 'Pago'}
-                      </Badge>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </CardContent>
             </Card>
