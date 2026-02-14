@@ -126,7 +126,7 @@ export default function DashboardSalesTable() {
 
   return (
     <>
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-left">
             <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
@@ -147,59 +147,59 @@ export default function DashboardSalesTable() {
             <p className="text-sm text-muted-foreground text-center py-8">Nenhuma venda realizada</p>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 sm:-mx-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-xs">ID do Pedido</TableHead>
-                      <TableHead className="text-xs">Aluno</TableHead>
-                      <TableHead className="text-xs">Nome do Curso</TableHead>
-                      <TableHead className="text-xs">Valor</TableHead>
-                      <TableHead className="text-xs">Pagamento</TableHead>
-                      <TableHead className="text-xs">Status</TableHead>
-                      <TableHead className="text-xs">Data</TableHead>
-                      <TableHead className="text-xs w-[80px]" />
+                      <TableHead className="text-sm pl-4 sm:pl-6">ID do Pedido</TableHead>
+                      <TableHead className="text-sm">Aluno</TableHead>
+                      <TableHead className="text-sm">Nome do Curso</TableHead>
+                      <TableHead className="text-sm">Valor</TableHead>
+                      <TableHead className="text-sm">Pagamento</TableHead>
+                      <TableHead className="text-sm">Status</TableHead>
+                      <TableHead className="text-sm">Data</TableHead>
+                      <TableHead className="text-sm w-[60px] pr-4 sm:pr-6" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sales.map((sale) => (
                       <TableRow key={sale.id}>
-                        <TableCell className="text-xs font-mono max-w-[120px] truncate">
+                        <TableCell className="text-sm font-mono text-muted-foreground pl-4 sm:pl-6">
                           {sale.id.slice(0, 8)}…
                         </TableCell>
-                        <TableCell className="text-xs max-w-[140px] truncate">
+                        <TableCell className="text-sm max-w-[160px]">
                           <Link
                             to={`/admin/students/${sale.user_id}`}
-                            className="text-primary hover:underline"
+                            className="text-primary hover:underline truncate block"
                           >
                             {sale.user_name || sale.user_email || 'Usuário'}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-xs max-w-[160px] truncate">
+                        <TableCell className="text-sm max-w-[180px] truncate">
                           {sale.course_title || '—'}
                         </TableCell>
-                        <TableCell className="text-xs font-semibold text-success whitespace-nowrap">
+                        <TableCell className="text-sm font-semibold text-success whitespace-nowrap">
                           {formatCurrency(sale.amount)}
                         </TableCell>
-                        <TableCell className="text-xs">
+                        <TableCell className="text-sm">
                           {sale.payment_method ? (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                            <Badge variant="outline" className="text-xs px-2 py-0.5 gap-1">
                               {paymentMethodIcons[sale.payment_method]}
                               {paymentMethodLabels[sale.payment_method] || sale.payment_method}
                             </Badge>
                           ) : '—'}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[sale.status] || ''}`}>
+                        <TableCell className="text-sm">
+                          <Badge variant="outline" className={`text-xs px-2 py-0.5 ${statusColors[sale.status] || ''}`}>
                             {statusLabels[sale.status] || sale.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                           {format(new Date(sale.created_at), 'dd/MM/yy HH:mm', { locale: ptBR })}
                         </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedSale(sale)}>
-                            <Eye className="h-3.5 w-3.5" />
+                        <TableCell className="pr-4 sm:pr-6">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSale(sale)}>
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -209,7 +209,7 @@ export default function DashboardSalesTable() {
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4">
+                <div className="mt-4 pt-4 border-t">
                   <Pagination>
                     <PaginationContent>
                       {page > 0 && (
