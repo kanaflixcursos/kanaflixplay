@@ -27,6 +27,7 @@ const menuItems = [
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
   { title: 'Compras', url: '/admin/orders', icon: ShoppingCart },
+  { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
 ];
 
 interface AdminLayoutProps {
@@ -133,7 +134,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                           activeClassName="bg-accent text-accent-foreground font-medium"
                         >
                           <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
+                          <span className="flex-1">{item.title}</span>
+                          {item.title === 'Suporte' && pendingSupportCount > 0 && (
+                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
+                              {pendingSupportCount}
+                            </span>
+                          )}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

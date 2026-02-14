@@ -26,6 +26,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Cursos', url: '/courses', icon: GraduationCap },
   { title: 'Compras', url: '/purchases', icon: ShoppingBag },
+  { title: 'Suporte', url: '/suporte', icon: HelpCircle },
   { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
 ];
 
@@ -145,7 +146,12 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                             activeClassName="bg-accent text-accent-foreground font-medium"
                           >
                             <item.icon className="h-4 w-4" />
-                            <span>{item.title}</span>
+                            <span className="flex-1">{item.title}</span>
+                            {item.title === 'Suporte' && unreadSupportNotifications > 0 && (
+                              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
+                                {unreadSupportNotifications}
+                              </span>
+                            )}
                           </NavLink>
                         )}
                       </SidebarMenuButton>
