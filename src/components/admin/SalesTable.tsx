@@ -142,7 +142,7 @@ export default function SalesTable({
 
       toast.success('Solicitação de reembolso criada!');
       setSelectedSale(null);
-      navigate(`/admin/support/${ticket.id}`);
+      navigate(`/admin/suporte/${ticket.id}`);
     } catch (error: any) {
       console.error('Error creating refund:', error);
       toast.error(error.message || 'Erro ao criar solicitação de reembolso');
