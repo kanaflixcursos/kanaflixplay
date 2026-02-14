@@ -21,7 +21,7 @@ import {
 import { Eye, CreditCard, QrCode, FileText, User, Copy, RotateCcw, XCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export interface Sale {
@@ -93,8 +93,8 @@ export default function SalesTable({
   showPagination = true,
   onRefresh,
 }: SalesTableProps) {
+  const navigate = useNavigate();
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [refundingOrder, setRefundingOrder] = useState<Sale | null>(null);
   const [refunding, setRefunding] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -106,21 +106,46 @@ export default function SalesTable({
     toast.success('ID copiado!');
   };
 
-  const handleRefund = async () => {
-    if (!refundingOrder) return;
+  const handleRefund = async (sale: Sale) => {
     setRefunding(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pagarme', {
-        body: { action: 'refund_order', orderId: refundingOrder.id }
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      toast.success('Reembolso processado com sucesso!');
-      setRefundDialogOpen(false);
+      // Create refund request
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Não autenticado');
+
+      // Create support ticket
+      const { data: ticket, error: ticketError } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: sale.user_id,
+          subject: `Reembolso - ${sale.course_title || 'Pedido'}`,
+          message: `Solicitação de reembolso iniciada pelo administrador para o pedido ${sale.id.slice(0, 8)}.`,
+          category: 'refund',
+          priority: 'high',
+        })
+        .select('id')
+        .single();
+
+      if (ticketError) throw ticketError;
+
+      // Create refund request linked to ticket
+      const { error: refundError } = await supabase
+        .from('refund_requests')
+        .insert({
+          order_id: sale.id,
+          user_id: sale.user_id,
+          reason: 'Reembolso iniciado pelo administrador',
+          ticket_id: ticket.id,
+        });
+
+      if (refundError) throw refundError;
+
+      toast.success('Solicitação de reembolso criada!');
       setSelectedSale(null);
-      onRefresh?.();
+      navigate(`/admin/support/${ticket.id}`);
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao processar reembolso');
+      console.error('Error creating refund:', error);
+      toast.error(error.message || 'Erro ao criar solicitação de reembolso');
     }
     setRefunding(false);
   };
@@ -235,10 +260,11 @@ export default function SalesTable({
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-warning hover:text-warning hover:bg-warning/10"
-                        onClick={() => { setRefundingOrder(sale); setRefundDialogOpen(true); }}
+                        onClick={() => handleRefund(sale)}
+                        disabled={refunding}
                         title="Reembolsar"
                       >
-                        <RotateCcw className="h-4 w-4" />
+                        {refunding ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                       </Button>
                     )}
                     {sale.status === 'pending' && (
@@ -355,14 +381,10 @@ export default function SalesTable({
                       variant="outline"
                       size="sm"
                       className="flex-1 text-warning border-warning/30 hover:bg-warning/10"
-                      onClick={() => {
-                        const sale = selectedSale;
-                        setSelectedSale(null);
-                        setRefundingOrder(sale);
-                        setRefundDialogOpen(true);
-                      }}
+                      disabled={refunding}
+                      onClick={() => handleRefund(selectedSale)}
                     >
-                      <RotateCcw className="h-4 w-4 mr-2" />
+                      {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
                       Reembolsar
                     </Button>
                   )}
@@ -391,28 +413,6 @@ export default function SalesTable({
         </DialogContent>
       </Dialog>
 
-      {/* Refund Dialog */}
-      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-warning">
-              <RotateCcw className="h-5 w-5" />
-              Confirmar Reembolso
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>Você está prestes a reembolsar o pedido do curso <strong>{refundingOrder?.course_title}</strong>.</p>
-              <p>Valor: <strong>{refundingOrder ? formatCurrency(refundingOrder.amount) : ''}</strong></p>
-              <p className="text-destructive">Esta ação irá devolver o valor ao cliente e revogar o acesso ao curso.</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={refunding}>Voltar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRefund} disabled={refunding} className="bg-warning text-warning-foreground hover:bg-warning/90">
-              {refunding ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processando...</> : 'Confirmar Reembolso'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Cancel Dialog */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
