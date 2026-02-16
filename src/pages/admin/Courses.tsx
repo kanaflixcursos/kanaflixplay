@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +40,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BookOpen, Users, Trophy, Search } from 'lucide-react';
 import {
   Plus,
   Document,
@@ -48,6 +56,13 @@ import {
   Danger,
 } from 'react-iconly';
 import { useIsMobile } from '@/hooks/use-mobile';
+import StatCard from '@/components/StatCard';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -93,7 +108,21 @@ export default function AdminCourses() {
   });
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
+  // Computed stats
+  const totalStudents = useMemo(() => courses.reduce((sum, c) => sum + c.enrollmentCount, 0), [courses]);
+  const bestSellingCourse = useMemo(() => {
+    if (courses.length === 0) return '-';
+    const sorted = [...courses].sort((a, b) => b.enrollmentCount - a.enrollmentCount);
+    return sorted[0]?.enrollmentCount > 0 ? sorted[0].title : '-';
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => 
+    courses.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())),
+    [courses, searchQuery]
+  );
   const fetchPandaFolders = async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -301,6 +330,64 @@ export default function AdminCourses() {
     </DropdownMenu>
   );
 
+  const MobileCourseCard = ({ course }: { course: Course }) => {
+    const isExpanded = expandedCourseId === course.id;
+
+    return (
+      <Collapsible open={isExpanded} onOpenChange={() => setExpandedCourseId(isExpanded ? null : course.id)}>
+        <div className="p-4 border rounded-lg bg-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {course.thumbnail_url ? (
+                <img src={course.thumbnail_url} alt={course.title} className="w-10 h-12 rounded object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-10 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                  <Document size={16} />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="font-medium truncate text-sm">{course.title}</p>
+                <Badge variant={course.is_published ? 'default' : 'secondary'} className="text-xs mt-0.5">
+                  {course.is_published ? 'Publicado' : 'Oculto'}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CourseActions course={course} />
+            </div>
+          </div>
+          <CollapsibleContent className="mt-4 pt-4 border-t space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Aulas:</span>
+                <span className="ml-2 font-medium">{course.lessonCount}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Alunos:</span>
+                <span className="ml-2 font-medium">{course.enrollmentCount}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Preço:</span>
+                <span className="ml-2 font-medium">{formatPrice(course.price)}</span>
+              </div>
+              {course.totalDurationMinutes > 0 && (
+                <div>
+                  <span className="text-muted-foreground">Duração:</span>
+                  <span className="ml-2">{formatTotalDuration(course.totalDurationMinutes)}</span>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    );
+  };
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -331,6 +418,24 @@ export default function AdminCourses() {
         </div>
       </div>
 
+      {/* Stat Cards */}
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <StatCard title="Total de Cursos" value={courses.length} icon={BookOpen} loading={loading} />
+        <StatCard title="Total de Alunos" value={totalStudents} icon={Users} loading={loading} />
+        <StatCard title="Curso Mais Vendido" value={bestSellingCourse} icon={Trophy} loading={loading} />
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar curso..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 w-full sm:w-64"
+        />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -348,109 +453,64 @@ export default function AdminCourses() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-3 md:gap-4">
-          {courses.map((course) => (
-            <Card key={course.id}>
-              <CardContent className="p-3 md:p-4">
-                <div className="flex items-center gap-3 md:gap-4">
-                  {course.thumbnail_url ? (
-                    <img
-                      src={course.thumbnail_url}
-                      alt={course.title}
-                      className="w-14 h-16 md:w-20 md:h-24 object-cover rounded flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-14 h-16 md:w-20 md:h-24 bg-muted rounded flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                      <Document size={24} />
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="card-title truncate text-sm md:text-base">{course.title}</h3>
-                      <Badge variant={course.is_published ? 'default' : 'secondary'} className="text-xs">
-                        {course.is_published ? 'Publicado' : 'Oculto'}
-                      </Badge>
-                      {course.is_featured && (
-                        <Badge variant="outline" className="text-xs border-warning/30 text-warning">
-                          ⭐ Destaque
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="card-description line-clamp-1 hidden sm:block">
-                      {course.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2 md:gap-4 mt-1 text-xs text-muted-foreground">
-                      <span>{course.lessonCount} aulas</span>
-                      <span>{course.enrollmentCount} alunos</span>
-                      <span className="font-medium text-foreground">{formatPrice(course.price)}</span>
-                      {course.pandavideo_folder_id && !isMobile && (
-                        <>
-                          <span className="flex items-center gap-1" title={`ID: ${course.pandavideo_folder_id}`}>
-                            <Folder size={12} />
-                            {getFolderName(course.pandavideo_folder_id)}
-                          </span>
-                        </>
-                      )}
-                      {course.totalDurationMinutes > 0 && (
-                        <span>{formatTotalDuration(course.totalDurationMinutes)}</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {isMobile ? (
-                    <CourseActions course={course} />
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
-                        title="Editar curso"
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      {course.pandavideo_folder_id && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleSyncCourse(course.id)}
-                          disabled={syncing === course.id}
-                          title="Sincronizar aulas"
-                        >
-                          {syncing === course.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Swap size={16} />
-                          )}
-                        </Button>
-                      )}
-                      
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setLinkDialog({ open: true, course })}
-                        title="Link compartilhável"
-                      >
-                        <Send size={16} />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setDeleteDialog({ open: true, course })}
-                        title="Excluir curso"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Delete size={16} />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+      ) : isMobile ? (
+        <div className="space-y-3">
+          {filteredCourses.map((course) => (
+            <MobileCourseCard key={course.id} course={course} />
           ))}
         </div>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome do Curso</TableHead>
+                <TableHead className="text-center">Aulas</TableHead>
+                <TableHead>Preço</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCourses.map((course) => (
+                <TableRow key={course.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {course.thumbnail_url ? (
+                        <img src={course.thumbnail_url} alt={course.title} className="w-10 h-12 object-cover rounded flex-shrink-0" />
+                      ) : (
+                        <div className="w-10 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                          <Document size={16} />
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">{course.title}</span>
+                        {course.description && (
+                          <span className="text-xs text-muted-foreground line-clamp-1">{course.description}</span>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">{course.lessonCount}</TableCell>
+                  <TableCell className="font-medium">{formatPrice(course.price)}</TableCell>
+                  <TableCell>
+                    <Badge variant={course.is_published ? 'default' : 'secondary'} className="text-xs">
+                      {course.is_published ? 'Publicado' : 'Oculto'}
+                    </Badge>
+                    {course.is_featured && (
+                      <Badge variant="outline" className="text-xs border-warning/30 text-warning ml-1">
+                        ⭐
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <CourseActions course={course} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
 
       {/* Link Dialog */}
