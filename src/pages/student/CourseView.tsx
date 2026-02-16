@@ -337,10 +337,21 @@ export default function CourseView() {
               ? 'bg-primary/10 ring-1 ring-primary' 
               : locked 
                 ? 'opacity-60 cursor-not-allowed' 
-                : 'hover:bg-muted'
+                : ''
         }`}
         onClick={() => setSelectedLesson(lesson)}
       >
+        <div className="shrink-0">
+          {isJustUnlocked ? (
+            <Unlock className="h-4 w-4 text-success animate-bounce" />
+          ) : locked ? (
+            <Lock className="h-4 w-4 text-muted-foreground" />
+          ) : lesson.completed ? (
+            <CheckCircle className="h-4 w-4 text-success" />
+          ) : (
+            <Circle className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
         <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
           {lesson.thumbnail_url ? (
             <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
@@ -360,29 +371,12 @@ export default function CourseView() {
             </div>
           )}
         </div>
-        <div className="shrink-0">
-          {isJustUnlocked ? (
-            <Unlock className="h-4 w-4 text-success animate-bounce" />
-          ) : locked ? (
-            <Lock className="h-4 w-4 text-muted-foreground" />
-          ) : lesson.completed ? (
-            <CheckCircle className="h-4 w-4 text-success" />
-          ) : (
-            <Circle className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium line-clamp-2 leading-tight">
             {lesson.title}
           </p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
             {lesson.duration_minutes && <span>{formatDuration(lesson.duration_minutes)}</span>}
-            {lesson.materials.length > 0 && (
-              <span className="flex items-center gap-0.5">
-                <FileText className="h-3 w-3" />
-                {lesson.materials.length}
-              </span>
-            )}
           </div>
         </div>
       </button>
@@ -515,46 +509,10 @@ export default function CourseView() {
                 )}
               </div>
               
-              {selectedLesson.description && (
-                <p className="text-muted-foreground">{selectedLesson.description}</p>
-              )}
+              
+              
 
-              {/* Materials Download Section */}
-              {selectedLesson.materials.length > 0 && (
-                <Card>
-                  <CardHeader className="py-4">
-                    <h3 className="card-title-compact flex items-center gap-2">
-                      <Download className="h-4 w-4" />
-                      Materiais Complementares
-                    </h3>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {selectedLesson.materials.map((material) => (
-                        <a
-                          key={material.id}
-                          href={material.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                        >
-                          {getFileIcon(material.file_type)}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {material.file_name}
-                            </p>
-                            <span className="text-xs text-muted-foreground">
-                              {formatFileSize(material.file_size)}
-                            </span>
-                          </div>
-                          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
-                        </a>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
+              
               <Separator />
 
               {/* Comments Section */}
@@ -648,6 +606,42 @@ export default function CourseView() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Materials below lesson list */}
+          {selectedLesson && selectedLesson.materials.length > 0 && (
+            <Card>
+              <CardHeader className="py-4">
+                <h3 className="card-title-compact flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  Materiais Complementares
+                </h3>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid gap-2">
+                  {selectedLesson.materials.map((material) => (
+                    <a
+                      key={material.id}
+                      href={material.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                    >
+                      {getFileIcon(material.file_type)}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {material.file_name}
+                        </p>
+                        <span className="text-xs text-muted-foreground">
+                          {formatFileSize(material.file_size)}
+                        </span>
+                      </div>
+                      <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
