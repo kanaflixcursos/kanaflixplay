@@ -21,6 +21,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import LessonMaterialUpload from '@/components/LessonMaterialUpload';
+import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
+import { Label } from '@/components/ui/label';
+import { Folder } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -334,6 +337,23 @@ export default function CourseLessons() {
     fetchData();
   }, [fetchData]);
 
+  // ─── Folder selection ───────────────────────────────────────────
+
+  const handleFolderSelect = async (folder: { id: string; name: string }) => {
+    if (!courseId) return;
+    const { error } = await supabase
+      .from('courses')
+      .update({ pandavideo_folder_id: folder.id })
+      .eq('id', courseId);
+
+    if (error) {
+      toast.error('Erro ao vincular pasta');
+    } else {
+      setCourse(prev => prev ? { ...prev, pandavideo_folder_id: folder.id } : prev);
+      toast.success(`Pasta "${folder.name}" vinculada ao curso`);
+    }
+  };
+
   // ─── Module CRUD ──────────────────────────────────────────────
 
   const handleAddModule = async () => {
@@ -568,6 +588,27 @@ export default function CourseLessons() {
             Sincronizar
           </Button>
         )}
+      </div>
+
+      {/* Pandavideo Folder Selector */}
+      <div className="space-y-2">
+        <Label className="text-sm">Pasta de Vídeos (Pandavideo)</Label>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 p-2.5 rounded-lg border bg-muted/50 flex items-center">
+            {course?.pandavideo_folder_id ? (
+              <div className="flex items-center gap-2">
+                <Folder className="h-4 w-4 text-primary" />
+                <span className="text-sm">Pasta vinculada</span>
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">Nenhuma pasta selecionada</span>
+            )}
+          </div>
+          <PandavideoFolderSelector
+            onSelect={handleFolderSelect}
+            selectedFolderId={course?.pandavideo_folder_id || ''}
+          />
+        </div>
       </div>
 
       {course?.last_synced_at && (
