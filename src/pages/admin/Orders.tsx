@@ -70,7 +70,7 @@ export default function AdminOrders() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Compras</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Compras</h1>
         <p className="text-muted-foreground">Gerencie todas as compras da plataforma</p>
       </div>
 

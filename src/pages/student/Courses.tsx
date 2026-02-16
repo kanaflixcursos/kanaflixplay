@@ -79,7 +79,7 @@ export default function StudentCourses() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Cursos</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Cursos</h1>
         <p className="text-muted-foreground text-sm md:text-base">
           Seus cursos matriculados
         </p>
