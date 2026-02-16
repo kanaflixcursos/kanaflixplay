@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import pagarmeLogo from "@/assets/pagarme-logo.svg";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -658,13 +658,6 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-success" />
             <span>Pagamento 100% seguro</span>
-          </div>
-          <div className="flex items-center justify-center pt-1">
-            <img
-              src={pagarmeLogo}
-              alt="Pagar.me - Pagamento seguro"
-              className="h-5 opacity-50"
-            />
           </div>
         </div>
       </CardContent>

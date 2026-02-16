@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import pagarmeLogo from '@/assets/pagarme-logo.svg';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -225,6 +226,18 @@ export default function Checkout() {
                 </Badge>
               )}
             </div>
+
+            {/* Powered by Pagar.me */}
+            {course.price > 0 && (
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <span className="text-xs text-muted-foreground">Powered by</span>
+                <img
+                  src={pagarmeLogo}
+                  alt="Pagar.me"
+                  className="h-4 opacity-60 dark:brightness-0 dark:invert"
+                />
+              </div>
+            )}
 
             {/* Course Info & Checkout */}
             <div className="flex flex-col">
