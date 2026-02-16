@@ -419,7 +419,7 @@ export default function AdminCourses() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-3 gap-3 md:gap-4 items-stretch">
         <StatCard title="Total de Cursos" value={courses.length} icon={BookOpen} loading={loading} />
         <StatCard title="Total de Alunos" value={totalStudents} icon={Users} loading={loading} />
         <StatCard

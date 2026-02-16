@@ -44,8 +44,9 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="h-full"
     >
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden h-full">
         <CardContent className="p-3 sm:p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className={cn("p-2 rounded-xl shrink-0", finalBgColor)}>
