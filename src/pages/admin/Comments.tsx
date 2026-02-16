@@ -136,18 +136,24 @@ export default function AdminComments() {
       {/* Stats */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Comentários</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Total de Comentários</span>
+            </div>
             <p className="text-2xl font-bold">{comments.length}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Últimas 24h</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-chart-2/10">
+                <MessageSquare className="h-5 w-5 text-chart-2" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Últimas 24h</span>
+            </div>
             <p className="text-2xl font-bold text-primary">
               {comments.filter(c => new Date(c.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length}
             </p>
@@ -158,8 +164,10 @@ export default function AdminComments() {
       {/* Comments List */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-chart-3/10">
+              <MessageSquare className="h-5 w-5 text-chart-3" />
+            </div>
             Lista de Comentários
           </CardTitle>
         </CardHeader>
