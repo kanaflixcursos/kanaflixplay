@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useId } from 'react';
 
 interface StatCardProps {
   title: string;
@@ -14,18 +15,26 @@ interface StatCardProps {
   iconBgColor?: string;
 }
 
-const defaultColors = [
+const colorPalette = [
   { icon: 'text-primary', bg: 'bg-primary/10' },
   { icon: 'text-chart-3', bg: 'bg-chart-3/10' },
   { icon: 'text-chart-2', bg: 'bg-chart-2/10' },
   { icon: 'text-chart-4', bg: 'bg-chart-4/10' },
+  { icon: 'text-chart-5', bg: 'bg-chart-5/10' },
 ];
 
-let colorIndex = 0;
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
 
 export default function StatCard({ title, value, description, icon: Icon, loading = false, iconColor, iconBgColor }: StatCardProps) {
-  const colors = defaultColors[colorIndex % defaultColors.length];
-  colorIndex++;
+  const id = useId();
+  const colors = colorPalette[hashString(id) % colorPalette.length];
 
   const finalIconColor = iconColor || colors.icon;
   const finalBgColor = iconBgColor || colors.bg;
@@ -47,10 +56,12 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
           {loading ? (
             <Skeleton className="h-7 sm:h-9 w-20" />
           ) : (
-            <div className="stat-card-value text-xl sm:text-3xl">{value}</div>
-          )}
-          {description && (
-            <p className="stat-card-description text-[10px] sm:text-xs">{description}</p>
+            <>
+              <div className="stat-card-value text-xl sm:text-3xl truncate">{value}</div>
+              {description && (
+                <p className="stat-card-description text-[10px] sm:text-xs mt-0.5">{description}</p>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
