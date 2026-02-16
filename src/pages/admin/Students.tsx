@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -21,14 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,16 +39,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, ChevronDown, ChevronUp, RotateCcw, Upload } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Upload, Download, X } from 'lucide-react';
 import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import PhoneInput from '@/components/PhoneInput';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Student {
   id: string;
@@ -79,19 +68,19 @@ interface Course {
 export default function AdminStudents() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
-  // Import dialog
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Edit profile dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date: '', email: '' });
+  const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date: '', email: '' });
   const [emailChangePending, setEmailChangePending] = useState(false);
   const [saving, setSaving] = useState(false);
   
@@ -100,6 +89,10 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  // Bulk delete
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Reset progress dialog
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -173,6 +166,13 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     fetchData();
   }, []);
 
+  const filteredStudents = useMemo(() =>
+    students.filter(student =>
+      student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [students, searchQuery]
+  );
 
   const handleChangeRole = async (student: Student, newRole: 'student' | 'professor' | 'admin') => {
     const { error } = await supabase
@@ -183,11 +183,7 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     if (error) {
       toast.error('Erro ao alterar função');
     } else {
-      const roleLabels: Record<string, string> = {
-        student: 'Aluno',
-        professor: 'Professor',
-        admin: 'Administrador'
-      };
+      const roleLabels: Record<string, string> = { student: 'Aluno', professor: 'Professor', admin: 'Administrador' };
       toast.success(`Função alterada para ${roleLabels[newRole]}`);
       fetchData();
     }
@@ -220,10 +216,8 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
 
   const handleSaveEdit = async () => {
     if (!editingStudent) return;
-
     setSaving(true);
 
-    // Validate email format if changed
     const emailChanged = editForm.email !== editingStudent.email;
     if (emailChanged && editForm.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -249,7 +243,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
       return;
     }
 
-    // If email changed, trigger email change in auth (requires edge function)
     if (emailChanged && editForm.email) {
       const { error: emailError } = await supabase.functions.invoke('update-user-email', {
         body: { user_id: editingStudent.user_id, new_email: editForm.email }
@@ -286,17 +279,11 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     }
 
     setDeleting(true);
-
     try {
-      // Call edge function to delete user completely (including from auth.users)
       const { error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: deletingStudent.user_id }
       });
-
-      if (error) {
-        throw new Error(error.message || 'Erro ao excluir usuário');
-      }
-
+      if (error) throw new Error(error.message || 'Erro ao excluir usuário');
       toast.success('Usuário excluído completamente do sistema!');
       fetchData();
       setDeleteDialogOpen(false);
@@ -304,8 +291,66 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
       console.error('Delete error:', error);
       toast.error(error.message || 'Erro ao excluir usuário');
     }
-
     setDeleting(false);
+  };
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const userId of selectedIds) {
+      const student = students.find(s => s.user_id === userId);
+      if (!student) continue;
+
+      try {
+        const { error } = await supabase.functions.invoke('delete-user', {
+          body: { user_id: userId }
+        });
+        if (error) throw error;
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+
+    if (successCount > 0) toast.success(`${successCount} usuário(s) excluído(s) com sucesso!`);
+    if (errorCount > 0) toast.error(`${errorCount} usuário(s) não puderam ser excluídos`);
+
+    setSelectedIds(new Set());
+    setBulkDeleteDialogOpen(false);
+    setBulkDeleting(false);
+    fetchData();
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    const toExport = selectedIds.size > 0
+      ? students.filter(s => selectedIds.has(s.user_id))
+      : filteredStudents;
+
+    const headers = ['Nome', 'Email', 'Telefone', 'Cursos Matriculados', 'Função', 'Cadastro', 'Último Acesso'];
+    const rows = toExport.map(s => [
+      s.full_name,
+      s.email,
+      s.phone || '',
+      s.enrolledCourses.toString(),
+      s.role,
+      formatDate(s.created_at),
+      formatDateTime(s.last_seen_at),
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `alunos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast.success(`${toExport.length} aluno(s) exportado(s)!`);
   };
 
   const handleOpenResetDialog = async (student: Student) => {
@@ -314,7 +359,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     setResetCourseId('');
     setResetting(false);
     
-    // Fetch courses the student is enrolled in
     const { data: enrollments } = await supabase
       .from('course_enrollments')
       .select('course_id')
@@ -326,7 +370,6 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
         .from('courses')
         .select('id, title')
         .in('id', courseIds);
-      
       setEnrolledCourses(coursesData || []);
     } else {
       setEnrolledCourses([]);
@@ -337,59 +380,54 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
 
   const handleResetProgress = async () => {
     if (!resetStudent) return;
-    
     if (resetType === 'course' && !resetCourseId) {
       toast.error('Selecione um curso');
       return;
     }
 
     setResetting(true);
-
     try {
       if (resetType === 'all') {
-        // Reset all progress for this user
-        const { error } = await supabase
-          .from('lesson_progress')
-          .delete()
-          .eq('user_id', resetStudent.user_id);
-
+        const { error } = await supabase.from('lesson_progress').delete().eq('user_id', resetStudent.user_id);
         if (error) throw error;
         toast.success(`Progresso total de ${resetStudent.full_name} resetado com sucesso!`);
       } else {
-        // Reset progress only for lessons in the selected course
-        const { data: lessons } = await supabase
-          .from('lessons')
-          .select('id')
-          .eq('course_id', resetCourseId);
-
+        const { data: lessons } = await supabase.from('lessons').select('id').eq('course_id', resetCourseId);
         if (lessons && lessons.length > 0) {
           const lessonIds = lessons.map(l => l.id);
-          const { error } = await supabase
-            .from('lesson_progress')
-            .delete()
-            .eq('user_id', resetStudent.user_id)
-            .in('lesson_id', lessonIds);
-
+          const { error } = await supabase.from('lesson_progress').delete().eq('user_id', resetStudent.user_id).in('lesson_id', lessonIds);
           if (error) throw error;
         }
-
         const courseName = enrolledCourses.find(c => c.id === resetCourseId)?.title || 'curso';
         toast.success(`Progresso de ${resetStudent.full_name} no curso "${courseName}" resetado com sucesso!`);
       }
-
       setResetDialogOpen(false);
     } catch (error) {
       console.error('Error resetting progress:', error);
       toast.error('Erro ao resetar progresso');
     }
-
     setResetting(false);
   };
 
-  const filteredStudents = students.filter(student =>
-    student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Selection helpers
+  const toggleSelect = (userId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredStudents.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredStudents.map(s => s.user_id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -401,10 +439,16 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
     return new Date(dateString).toLocaleString('pt-BR');
   };
 
+  const roleLabels: Record<string, string> = {
+    admin: 'Admin',
+    professor: 'Professor',
+    student: 'Aluno',
+  };
+
   const StudentActions = ({ student }: { student: Student }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -418,22 +462,13 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           Editar Perfil
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => handleChangeRole(student, 'student')}
-          disabled={student.role === 'student'}
-        >
+        <DropdownMenuItem onClick={() => handleChangeRole(student, 'student')} disabled={student.role === 'student'}>
           {student.role === 'student' ? '✓ ' : ''}Aluno
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleChangeRole(student, 'professor')}
-          disabled={student.role === 'professor'}
-        >
+        <DropdownMenuItem onClick={() => handleChangeRole(student, 'professor')} disabled={student.role === 'professor'}>
           {student.role === 'professor' ? '✓ ' : ''}Professor
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleChangeRole(student, 'admin')}
-          disabled={student.role === 'admin'}
-        >
+        <DropdownMenuItem onClick={() => handleChangeRole(student, 'admin')} disabled={student.role === 'admin'}>
           {student.role === 'admin' ? '✓ ' : ''}Administrador
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -441,79 +476,13 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <RotateCcw className="h-4 w-4 mr-2" />
           Resetar Progresso
         </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={() => handleOpenDeleteDialog(student)}
-          className="text-destructive focus:text-destructive"
-        >
+        <DropdownMenuItem onClick={() => handleOpenDeleteDialog(student)} className="text-destructive focus:text-destructive">
           <Trash2 className="h-4 w-4 mr-2" />
           Excluir Usuário
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-
-  const MobileStudentCard = ({ student }: { student: Student }) => {
-    const isExpanded = expandedStudentId === student.id;
-
-    return (
-      <Collapsible open={isExpanded} onOpenChange={() => setExpandedStudentId(isExpanded ? null : student.id)}>
-        <div className="p-4 border rounded-lg bg-card">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              {student.avatar_url ? (
-                <img 
-                  src={student.avatar_url} 
-                  alt={student.full_name}
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-medium">
-                    {student.full_name.slice(0, 2).toUpperCase()}
-                  </span>
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="font-medium truncate">{student.full_name}</p>
-                <Badge variant={student.role === 'admin' ? 'default' : 'secondary'} className="text-xs">
-                  {student.role === 'admin' ? 'Admin' : 'Aluno'}
-                </Badge>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </Button>
-              </CollapsibleTrigger>
-              <StudentActions student={student} />
-            </div>
-          </div>
-          
-          <CollapsibleContent className="mt-4 pt-4 border-t space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Cursos:</span>
-                <span className="ml-2 font-medium">{student.enrolledCourses}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Telefone:</span>
-                <span className="ml-2">{student.phone || '-'}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Último acesso:</span>
-                <span className="ml-2">{formatDateTime(student.last_seen_at)}</span>
-              </div>
-              <div className="col-span-2">
-                <span className="text-muted-foreground">Cadastro:</span>
-                <span className="ml-2">{formatDate(student.created_at)}</span>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-    );
-  };
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -526,18 +495,50 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome..."
+              placeholder="Buscar por nome ou email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 w-full sm:w-64"
             />
           </div>
+          <Button variant="outline" size="icon" onClick={handleExportCSV} title="Exportar CSV">
+            <Download className="h-4 w-4" />
+          </Button>
           <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
-            Importar CSV
+            Importar
           </Button>
         </div>
       </div>
+
+      {/* Bulk Actions Bar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
+          >
+            <span className="text-sm font-medium">
+              {selectedIds.size} selecionado{selectedIds.size > 1 ? 's' : ''}
+            </span>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Exportar CSV
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setBulkDeleteDialogOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Excluir
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={clearSelection}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -550,67 +551,77 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
             <p className="text-muted-foreground">Nenhum usuário cadastrado ainda.</p>
           </CardContent>
         </Card>
-      ) : isMobile ? (
-        // Mobile: Card list with collapsible details
-        <div className="space-y-3">
-          {filteredStudents.map((student) => (
-            <MobileStudentCard key={student.id} student={student} />
-          ))}
-        </div>
       ) : (
-        // Desktop: Table view
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Usuário</TableHead>
-                <TableHead className="text-center">Cursos</TableHead>
-                <TableHead>Último Acesso</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      {student.avatar_url ? (
-                        <img 
-                          src={student.avatar_url} 
-                          alt={student.full_name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-medium">
-                            {student.full_name.slice(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-medium">{student.full_name}</span>
-                        {student.email && (
-                          <span className="text-xs text-muted-foreground">{student.email}</span>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">{student.enrolledCourses}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
+        <div className="space-y-1">
+          {/* Select All */}
+          <div className="flex items-center gap-3 px-3 py-2">
+            <Checkbox
+              checked={selectedIds.size === filteredStudents.length && filteredStudents.length > 0}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="text-xs text-muted-foreground">
+              {filteredStudents.length} aluno{filteredStudents.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Student List */}
+          {filteredStudents.map((student, index) => {
+            const isSelected = selectedIds.has(student.user_id);
+
+            return (
+              <motion.div
+                key={student.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.5) }}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl border transition-colors cursor-pointer ${
+                  isSelected ? 'bg-primary/5 border-primary/20' : 'bg-card border-transparent hover:bg-accent/50'
+                }`}
+                onClick={() => toggleSelect(student.user_id)}
+              >
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => toggleSelect(student.user_id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarImage src={student.avatar_url || undefined} />
+                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                    {student.full_name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">{student.full_name}</span>
+                    <Badge
+                      variant={student.role === 'admin' ? 'default' : 'secondary'}
+                      className="text-[10px] px-1.5 py-0 h-5 shrink-0"
+                    >
+                      {roleLabels[student.role] || student.role}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{student.email || 'Sem email'}</p>
+                </div>
+
+                <div className="hidden md:flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
+                  <div className="text-center min-w-[60px]">
+                    <span className="font-medium text-foreground">{student.enrolledCourses}</span>
+                    <span className="ml-1">cursos</span>
+                  </div>
+                  <div className="min-w-[120px] text-xs">
                     {formatDateTime(student.last_seen_at)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {student.email || '-'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <StudentActions student={student} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+                  </div>
+                </div>
+
+                <div onClick={(e) => e.stopPropagation()}>
+                  <StudentActions student={student} />
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
 
       {/* Edit Profile Dialog */}
@@ -625,64 +636,32 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="full_name">Nome Completo</Label>
-              <Input
-                id="full_name"
-                value={editForm.full_name}
-                onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Nome do usuário"
-              />
+              <Input id="full_name" value={editForm.full_name} onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))} placeholder="Nome do usuário" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@exemplo.com"
-              />
+              <Input id="email" type="email" value={editForm.email} onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))} placeholder="email@exemplo.com" />
               {editForm.email !== editingStudent?.email && editForm.email && (
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ Um email de confirmação será enviado para o novo endereço.
-                </p>
+                <p className="text-xs text-muted-foreground">⚠️ Um email de confirmação será enviado para o novo endereço.</p>
               )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <PhoneInput
-                value={editForm.phone}
-                onChange={(value) => setEditForm(prev => ({ ...prev, phone: value }))}
-              />
+              <PhoneInput value={editForm.phone} onChange={(value) => setEditForm(prev => ({ ...prev, phone: value }))} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="birth_date">Data de Nascimento</Label>
-              <Input
-                id="birth_date"
-                type="date"
-                value={editForm.birth_date}
-                onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))}
-              />
+              <Input id="birth_date" type="date" value={editForm.birth_date} onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseEditDialog}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={handleCloseEditDialog}>Cancelar</Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar'
-              )}
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : 'Salvar'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -693,47 +672,40 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
               Excluir Usuário
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
-              <p>
-                Esta ação é <strong>irreversível</strong>. Todos os dados do usuário serão permanentemente excluídos, incluindo:
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                <li>Perfil e informações pessoais</li>
-                <li>Matrículas em cursos</li>
-                <li>Progresso nas aulas</li>
-                <li>Comentários</li>
-                <li>Notificações</li>
-              </ul>
+              <p>Esta ação é <strong>irreversível</strong>. Todos os dados do usuário serão permanentemente excluídos.</p>
               <div className="pt-2">
                 <Label htmlFor="confirm-delete">
                   Digite <strong>{deletingStudent?.full_name}</strong> para confirmar:
                 </Label>
-                <Input
-                  id="confirm-delete"
-                  value={deleteConfirmation}
-                  onChange={(e) => setDeleteConfirmation(e.target.value)}
-                  placeholder="Nome do usuário"
-                  className="mt-2"
-                />
+                <Input id="confirm-delete" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} placeholder="Nome do usuário" className="mt-2" />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteStudent}
-              disabled={deleting || deleteConfirmation !== deletingStudent?.full_name}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                'Excluir Permanentemente'
-              )}
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStudent} disabled={deleting || deleteConfirmation !== deletingStudent?.full_name} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Excluindo...</> : 'Excluir Permanentemente'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Excluir {selectedIds.size} Usuário{selectedIds.size > 1 ? 's' : ''}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>Esta ação é <strong>irreversível</strong>. Todos os dados dos {selectedIds.size} usuários selecionados serão permanentemente excluídos, incluindo perfis, matrículas, progresso e comentários.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} disabled={bulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {bulkDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Excluindo...</> : `Excluir ${selectedIds.size} Usuário${selectedIds.size > 1 ? 's' : ''}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -754,99 +726,50 @@ const [editForm, setEditForm] = useState({ full_name: '', phone: '', birth_date:
           <div className="space-y-4 py-4">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  id="reset-all"
-                  name="reset-type"
-                  checked={resetType === 'all'}
-                  onChange={() => setResetType('all')}
-                  className="h-4 w-4"
-                />
+                <input type="radio" id="reset-all" name="reset-type" checked={resetType === 'all'} onChange={() => setResetType('all')} className="h-4 w-4" />
                 <Label htmlFor="reset-all" className="cursor-pointer flex-1">
                   <span className="font-medium">Reset Total</span>
-                  <p className="text-sm text-muted-foreground">
-                    Remove todo o progresso do aluno em todos os cursos
-                  </p>
+                  <p className="text-sm text-muted-foreground">Remove todo o progresso do aluno em todos os cursos</p>
                 </Label>
               </div>
-              
               <div className="flex items-start gap-3">
-                <input
-                  type="radio"
-                  id="reset-course"
-                  name="reset-type"
-                  checked={resetType === 'course'}
-                  onChange={() => setResetType('course')}
-                  className="h-4 w-4 mt-1"
-                />
+                <input type="radio" id="reset-course" name="reset-type" checked={resetType === 'course'} onChange={() => setResetType('course')} className="h-4 w-4 mt-1" />
                 <Label htmlFor="reset-course" className="cursor-pointer flex-1">
                   <span className="font-medium">Reset por Curso</span>
-                  <p className="text-sm text-muted-foreground">
-                    Remove o progresso apenas do curso selecionado
-                  </p>
+                  <p className="text-sm text-muted-foreground">Remove o progresso apenas do curso selecionado</p>
                 </Label>
               </div>
             </div>
-
             {resetType === 'course' && (
               <div className="pl-7">
                 {enrolledCourses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Este aluno não está matriculado em nenhum curso.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Este aluno não está matriculado em nenhum curso.</p>
                 ) : (
                   <Select value={resetCourseId} onValueChange={setResetCourseId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um curso" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
                     <SelectContent>
                       {enrolledCourses.map((course) => (
-                        <SelectItem key={course.id} value={course.id}>
-                          {course.title}
-                        </SelectItem>
+                        <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               </div>
             )}
-
             <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
-              <p className="text-sm text-warning-foreground">
-                ⚠️ Esta ação irá remover todas as aulas concluídas e o tempo de estudo registrado. Esta ação não pode ser desfeita.
-              </p>
+              <p className="text-sm text-warning-foreground">⚠️ Esta ação irá remover todas as aulas concluídas e o tempo de estudo registrado. Esta ação não pode ser desfeita.</p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleResetProgress} 
-              disabled={resetting || (resetType === 'course' && !resetCourseId)}
-              variant="destructive"
-            >
-              {resetting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Resetando...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Resetar Progresso
-                </>
-              )}
+            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleResetProgress} disabled={resetting || (resetType === 'course' && !resetCourseId)} variant="destructive">
+              {resetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetando...</> : <><RotateCcw className="mr-2 h-4 w-4" />Resetar Progresso</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <ImportUsersDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        onImported={fetchData}
-      />
+      <ImportUsersDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImported={fetchData} />
     </div>
   );
 }
