@@ -95,7 +95,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
+  				'Work Sans',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
