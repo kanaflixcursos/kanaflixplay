@@ -95,7 +95,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Lexend',
+  				'Work Sans',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
@@ -105,7 +105,7 @@ export default {
   				'Noto Color Emoji'
   			],
   			serif: [
-  				'Playfair Display',
+  				'Lora',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -114,7 +114,7 @@ export default {
   				'serif'
   			],
   			mono: [
-  				'Cascadia Code',
+  				'IBM Plex Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
