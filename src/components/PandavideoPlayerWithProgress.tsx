@@ -39,11 +39,23 @@ export default function PandavideoPlayerWithProgress({
   const hasMarkedCompleteRef = useRef<boolean>(false);
   const totalDurationRef = useRef<number>(0);
 
-  // Get embed URL from video URL
+  // Validate that a URL belongs to an allowed Pandavideo domain
+  const isValidPandavideoUrl = (url: string): boolean => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') return false;
+      return /^player-vz-[a-z0-9-]+\.tv\.pandavideo\.com\.br$/.test(parsed.hostname);
+    } catch {
+      return false;
+    }
+  };
+
+  // Get embed URL from video URL with domain validation
   const getEmbedUrl = (url: string) => {
     if (!url) return null;
     
-    if (url.includes('/embed/')) {
+    if (url.includes('/embed/') && isValidPandavideoUrl(url)) {
       return url;
     }
     
@@ -51,10 +63,15 @@ export default function PandavideoPlayerWithProgress({
     if (videoIdMatch) {
       const domainMatch = url.match(/(player-vz-[^.]+\.tv\.pandavideo\.com\.br)/);
       const domain = domainMatch ? domainMatch[1] : 'player-vz-82493b0a-26d.tv.pandavideo.com.br';
-      return `https://${domain}/embed/?v=${videoIdMatch[1]}`;
+      const constructedUrl = `https://${domain}/embed/?v=${videoIdMatch[1]}`;
+      if (isValidPandavideoUrl(constructedUrl)) {
+        return constructedUrl;
+      }
+      return null;
     }
     
-    return url;
+    // Reject any URL that doesn't match Pandavideo patterns
+    return null;
   };
 
   const saveProgress = useCallback(async (watchedSeconds: number, completed: boolean) => {
