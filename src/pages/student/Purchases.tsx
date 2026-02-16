@@ -64,7 +64,7 @@ const paymentMethodConfig: Record<string, { label: string; icon: React.ElementTy
 };
 
 export default function Purchases() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refundingOrder, setRefundingOrder] = useState<Order | null>(null);
@@ -319,7 +319,7 @@ export default function Purchases() {
                             Pedido #{order.id.slice(0, 8).toUpperCase()}
                           </p>
                           
-                          {order.status === 'paid' && !order.refund_request && (
+                          {order.status === 'paid' && !order.refund_request && role !== 'admin' && (
                             <Button
                               variant="outline"
                               size="sm"

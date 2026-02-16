@@ -485,9 +485,6 @@ export default function AdminCourses() {
                       )}
                       <div className="flex flex-col min-w-0">
                         <span className="font-medium truncate">{course.title}</span>
-                        {course.description && (
-                          <span className="text-xs text-muted-foreground line-clamp-1">{course.description}</span>
-                        )}
                       </div>
                     </div>
                   </TableCell>

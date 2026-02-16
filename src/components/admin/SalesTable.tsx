@@ -13,6 +13,7 @@ import {
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Pagination, PaginationContent, PaginationItem, PaginationLink,
@@ -256,16 +257,42 @@ export default function SalesTable({
                       <Eye className="h-4 w-4" />
                     </Button>
                     {sale.status === 'paid' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-warning hover:text-warning hover:bg-warning/10"
-                        onClick={() => handleRefund(sale)}
-                        disabled={refunding}
-                        title="Reembolsar"
-                      >
-                        {refunding ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-warning hover:text-warning hover:bg-warning/10"
+                            title="Reembolsar"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2 text-warning">
+                              <RotateCcw className="h-5 w-5" />
+                              Confirmar Reembolso
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-2">
+                              <p>Você está prestes a iniciar o reembolso do pedido do curso <strong>{sale.course_title}</strong>.</p>
+                              <p>Valor: <strong>{formatCurrency(sale.amount)}</strong></p>
+                              <p className="text-muted-foreground">Um ticket de suporte será criado para acompanhar o processo.</p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleRefund(sale)}
+                              disabled={refunding}
+                              className="bg-warning text-warning-foreground hover:bg-warning/90"
+                            >
+                              {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                              Confirmar Reembolso
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                     {sale.status === 'pending' && (
                       <Button
@@ -377,16 +404,43 @@ export default function SalesTable({
               {(selectedSale.status === 'paid' || selectedSale.status === 'pending') && (
                 <div className="flex gap-2 pt-2 border-t">
                   {selectedSale.status === 'paid' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-warning border-warning/30 hover:bg-warning/10"
-                      disabled={refunding}
-                      onClick={() => handleRefund(selectedSale)}
-                    >
-                      {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                      Reembolsar
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-warning border-warning/30 hover:bg-warning/10"
+                          disabled={refunding}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          Reembolsar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-warning">
+                            <RotateCcw className="h-5 w-5" />
+                            Confirmar Reembolso
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="space-y-2">
+                            <p>Você está prestes a iniciar o reembolso do pedido do curso <strong>{selectedSale.course_title}</strong>.</p>
+                            <p>Valor: <strong>{formatCurrency(selectedSale.amount)}</strong></p>
+                            <p className="text-muted-foreground">Um ticket de suporte será criado para acompanhar o processo.</p>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleRefund(selectedSale)}
+                            disabled={refunding}
+                            className="bg-warning text-warning-foreground hover:bg-warning/90"
+                          >
+                            {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                            Confirmar Reembolso
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                   {selectedSale.status === 'pending' && (
                     <Button
