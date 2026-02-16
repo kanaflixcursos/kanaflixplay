@@ -158,6 +158,59 @@ export type Database = {
           },
         ]
       }
+      featured_banner: {
+        Row: {
+          badge_text: string
+          course_id: string | null
+          created_at: string
+          cta_text: string
+          custom_description: string | null
+          custom_image_url: string | null
+          custom_title: string | null
+          gradient_from: string
+          gradient_to: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          badge_text?: string
+          course_id?: string | null
+          created_at?: string
+          cta_text?: string
+          custom_description?: string | null
+          custom_image_url?: string | null
+          custom_title?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          badge_text?: string
+          course_id?: string | null
+          created_at?: string
+          cta_text?: string
+          custom_description?: string | null
+          custom_image_url?: string | null
+          custom_title?: string | null
+          gradient_from?: string
+          gradient_to?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_banner_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imported_users: {
         Row: {
           auth_user_id: string | null
