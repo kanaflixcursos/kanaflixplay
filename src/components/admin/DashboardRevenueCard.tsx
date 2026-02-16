@@ -48,51 +48,31 @@ export default function DashboardRevenueCard() {
   const getStartDate = () => {
     const now = new Date();
     switch (period) {
-      case '1d':
-        return startOfDay(now);
-      case '3d':
-        return subDays(now, 3);
-      case '1w':
-        return subDays(now, 7);
-      case '1m':
-        return subMonths(now, 1);
-      case '6m':
-        return subMonths(now, 6);
-      case '1y':
-        return subYears(now, 1);
-      case 'all':
-        return null;
+      case '1d': return startOfDay(now);
+      case '3d': return subDays(now, 3);
+      case '1w': return subDays(now, 7);
+      case '1m': return subMonths(now, 1);
+      case '6m': return subMonths(now, 6);
+      case '1y': return subYears(now, 1);
+      case 'all': return null;
     }
   };
 
   const fetchRevenue = async () => {
     setLoading(true);
     const startDate = getStartDate();
-
-    let query = supabase
-      .from('orders')
-      .select('amount')
-      .eq('status', 'paid');
-
-    if (startDate) {
-      query = query.gte('paid_at', startDate.toISOString());
-    }
-
+    let query = supabase.from('orders').select('amount').eq('status', 'paid');
+    if (startDate) query = query.gte('paid_at', startDate.toISOString());
     const { data } = await query;
-
     const gross = data?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
     const net = gross * 0.965;
-
     setGrossRevenue(gross);
     setNetRevenue(net);
     setLoading(false);
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value / 100);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value / 100);
   };
 
   return (
@@ -103,16 +83,17 @@ export default function DashboardRevenueCard() {
       className="h-full"
     >
       <Card className="overflow-hidden relative h-full">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
             </div>
-            <TrendingUp className="h-4 w-4 text-success" />
+            <div className="flex items-center gap-1 text-xs text-success font-medium bg-success/10 px-2 py-1 rounded-full">
+              <TrendingUp className="h-3 w-3" />
+            </div>
           </div>
 
           {loading ? (

@@ -26,15 +26,10 @@ export default function DashboardStudentsCard() {
 
   const fetchStudents = async () => {
     const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-
-    const [
-      { count: total },
-      { count: active },
-    ] = await Promise.all([
+    const [{ count: total }, { count: active }] = await Promise.all([
       supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('last_seen_at', sevenDaysAgo),
     ]);
-
     setTotalStudents(total || 0);
     setActiveStudents(active || 0);
     setLoading(false);
@@ -48,16 +43,17 @@ export default function DashboardStudentsCard() {
       className="h-full"
     >
       <Card className="overflow-hidden relative h-full">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-2 via-chart-3 to-chart-2" />
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-chart-2/20">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-chart-2" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-chart-3/10">
+                <Users className="h-5 w-5 text-chart-3" />
               </div>
               <span className="text-sm font-medium text-muted-foreground">Total de Alunos</span>
             </div>
-            <UserCheck className="h-4 w-4 text-success" />
+            <div className="flex items-center gap-1 text-xs text-success font-medium bg-success/10 px-2 py-1 rounded-full">
+              <UserCheck className="h-3 w-3" />
+            </div>
           </div>
 
           {loading ? (

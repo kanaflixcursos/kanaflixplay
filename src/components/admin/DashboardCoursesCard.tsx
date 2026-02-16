@@ -27,14 +27,10 @@ export default function DashboardCoursesCard() {
   }, []);
 
   const fetchCourses = async () => {
-    const [
-      { count: total },
-      { data: latest },
-    ] = await Promise.all([
+    const [{ count: total }, { data: latest }] = await Promise.all([
       supabase.from('courses').select('*', { count: 'exact', head: true }),
       supabase.from('courses').select('title, created_at').order('created_at', { ascending: false }).limit(1).single(),
     ]);
-
     setTotalCourses(total || 0);
     setLastCourse(latest);
     setLoading(false);
@@ -48,16 +44,17 @@ export default function DashboardCoursesCard() {
       className="h-full"
     >
       <Card className="overflow-hidden relative h-full">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-chart-4 via-chart-5 to-chart-4" />
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-chart-4/20">
-                <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-chart-4/10">
+                <BookOpen className="h-5 w-5 text-chart-4" />
               </div>
               <span className="text-sm font-medium text-muted-foreground">Total de Cursos</span>
             </div>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+              <Clock className="h-3 w-3" />
+            </div>
           </div>
 
           {loading ? (
