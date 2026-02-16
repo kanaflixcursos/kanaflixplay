@@ -8,8 +8,8 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground text-xs sm:text-sm md:text-base">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Dashboard Administrativo</h1>
+        <p className="text-muted-foreground text-sm mt-1">
           Visão geral da plataforma Kanaflix Play
         </p>
       </div>

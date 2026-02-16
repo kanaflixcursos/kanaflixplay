@@ -125,8 +125,8 @@ export default function StudentDashboard() {
   return (
     <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Vamos continuar aprendendo? Boas aulas!</p>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
+        <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
       </div>
 
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
@@ -158,7 +158,7 @@ export default function StudentDashboard() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
+        <h2 className="text-lg font-medium tracking-tight mb-4">Meus Cursos</h2>
         
         {loading ? (
           <p className="text-muted-foreground">Carregando...</p>
