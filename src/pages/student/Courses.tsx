@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface EnrolledCourse {
   id: string;
@@ -31,37 +31,62 @@ interface BannerData {
   is_active: boolean;
   cta_text: string;
   badge_text: string;
+  order_index: number;
+}
+
+interface BannerDisplay extends BannerData {
+  title: string;
+  description: string;
+  image: string | null;
+  link: string;
 }
 
 export default function StudentCourses() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [banner, setBanner] = useState<BannerData | null>(null);
-  const [bannerCourse, setBannerCourse] = useState<{ title: string; description: string | null; thumbnail_url: string | null } | null>(null);
+  const [banners, setBanners] = useState<BannerDisplay[]>([]);
+  const [currentBanner, setCurrentBanner] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
 
-      // Fetch banner config
+      // Fetch all active banners
       const { data: bannerData } = await supabase
         .from('featured_banner')
         .select('*')
-        .limit(1)
-        .single();
+        .eq('is_active', true)
+        .order('order_index');
 
-      if (bannerData && (bannerData as any).is_active) {
-        const b = bannerData as unknown as BannerData;
-        setBanner(b);
-        if (b.course_id) {
-          const { data: courseData } = await supabase
-            .from('courses')
-            .select('title, description, thumbnail_url')
-            .eq('id', b.course_id)
-            .single();
-          setBannerCourse(courseData);
-        }
+      if (bannerData && bannerData.length > 0) {
+        const bannerDisplays: BannerDisplay[] = await Promise.all(
+          bannerData.map(async (b: any) => {
+            let courseTitle = null;
+            let courseDesc = null;
+            let courseThumb = null;
+            if (b.course_id) {
+              const { data: courseData } = await supabase
+                .from('courses')
+                .select('title, description, thumbnail_url')
+                .eq('id', b.course_id)
+                .single();
+              if (courseData) {
+                courseTitle = courseData.title;
+                courseDesc = courseData.description;
+                courseThumb = courseData.thumbnail_url;
+              }
+            }
+            return {
+              ...b,
+              title: b.custom_title || courseTitle || 'Curso em Destaque',
+              description: b.custom_description || courseDesc || 'Explore o conteúdo exclusivo.',
+              image: b.custom_image_url || courseThumb,
+              link: b.course_id ? `/courses/${b.course_id}` : '/courses',
+            };
+          })
+        );
+        setBanners(bannerDisplays);
       }
 
       const { data: enrollmentsData } = await supabase
@@ -110,10 +135,8 @@ export default function StudentCourses() {
     fetchData();
   }, [user]);
 
-  const bannerTitle = banner?.custom_title || bannerCourse?.title;
-  const bannerDesc = banner?.custom_description || bannerCourse?.description || 'Explore o conteúdo exclusivo disponível para você.';
-  const bannerImage = banner?.custom_image_url || bannerCourse?.thumbnail_url;
-  const bannerLink = banner?.course_id ? `/courses/${banner.course_id}` : '/courses';
+  const prevBanner = () => setCurrentBanner((p) => (p - 1 + banners.length) % banners.length);
+  const nextBanner = () => setCurrentBanner((p) => (p + 1) % banners.length);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -124,43 +147,86 @@ export default function StudentCourses() {
         </p>
       </div>
 
-      {/* Featured Banner from DB */}
-      {banner && bannerTitle && (
-        <div
-          className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white"
-          style={{
-            background: `linear-gradient(135deg, ${banner.gradient_from}, ${banner.gradient_to})`,
-          }}
-        >
-          <div className="absolute top-0 right-0 w-1/2 h-full opacity-10">
-            <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/20" />
-            <div className="absolute bottom-4 right-20 w-20 h-20 rounded-full bg-white/15" />
-            <div className="absolute top-1/2 right-8 w-16 h-16 rounded-full bg-white/10" />
-          </div>
-          <div className="relative z-10 flex items-center gap-6">
-            <div className="flex-1 max-w-lg">
-              <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-3 backdrop-blur-sm">
-                {banner.badge_text}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">{bannerTitle}</h2>
-              <p className="text-sm text-white/80 mb-4 line-clamp-2">{bannerDesc}</p>
-              <Link
-                to={bannerLink}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white font-medium text-sm hover:bg-white/90 transition-colors"
-                style={{ color: banner.gradient_from }}
+      {/* Featured Banner Slideshow */}
+      {banners.length > 0 && (
+        <div className="relative">
+          <AnimatePresence mode="wait">
+            {(() => {
+              const b = banners[currentBanner];
+              return (
+                <motion.div
+                  key={currentBanner}
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div
+                    className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white min-h-[200px]"
+                    style={{ background: `linear-gradient(135deg, ${b.gradient_from}, ${b.gradient_to})` }}
+                  >
+                    {/* Image covering right side with gradient fade */}
+                    {b.image && (
+                      <div className="absolute top-0 right-0 w-1/2 h-full">
+                        <img src={b.image} alt="" className="w-full h-full object-cover" />
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            background: `linear-gradient(to right, ${b.gradient_from} 0%, ${b.gradient_from}CC 20%, transparent 100%)`,
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div className="relative z-10 flex-1 max-w-[55%]">
+                      <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-3 backdrop-blur-sm">
+                        {b.badge_text}
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-bold mb-2">{b.title}</h2>
+                      <p className="text-sm text-white/80 mb-4 line-clamp-2">{b.description}</p>
+                      <Link
+                        to={b.link}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white font-medium text-sm hover:bg-white/90 transition-colors"
+                        style={{ color: b.gradient_from }}
+                      >
+                        {b.cta_text}
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
+
+          {banners.length > 1 && (
+            <>
+              <button
+                onClick={prevBanner}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
               >
-                {banner.cta_text}
-              </Link>
-            </div>
-            {bannerImage && (
-              <div className="hidden md:block w-32 h-40 rounded-xl overflow-hidden shrink-0 shadow-lg">
-                <img src={bannerImage} alt="" className="w-full h-full object-cover" />
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={nextBanner}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+              <div className="flex justify-center gap-1.5 mt-3">
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentBanner(i)}
+                    className={`h-2 rounded-full transition-all ${i === currentBanner ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
+                  />
+                ))}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       )}
 
+      {/* Courses Section */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
 

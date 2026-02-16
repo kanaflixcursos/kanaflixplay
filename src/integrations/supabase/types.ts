@@ -171,6 +171,7 @@ export type Database = {
           gradient_to: string
           id: string
           is_active: boolean
+          order_index: number
           updated_at: string
         }
         Insert: {
@@ -185,6 +186,7 @@ export type Database = {
           gradient_to?: string
           id?: string
           is_active?: boolean
+          order_index?: number
           updated_at?: string
         }
         Update: {
@@ -199,6 +201,7 @@ export type Database = {
           gradient_to?: string
           id?: string
           is_active?: boolean
+          order_index?: number
           updated_at?: string
         }
         Relationships: [
