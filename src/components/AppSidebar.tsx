@@ -143,7 +143,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
+                        className="flex items-center gap-3 px-6 py-4 rounded-md text-[15px]"
                       >
                         <item.icon className="h-[18px] w-[18px]" />
                         <span>{item.title}</span>
@@ -152,7 +152,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                       <NavLink
                         to={item.url}
                         end={item.url === homeEnd}
-                        className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
+                        className="flex items-center gap-3 px-6 py-4 rounded-md text-[15px]"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-[18px] w-[18px]" />
@@ -180,7 +180,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/"
-                      className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
+                      className="flex items-center gap-3 px-6 py-4 rounded-md text-[15px]"
                     >
                       <ArrowLeft className="h-[18px] w-[18px]" />
                       <span>Voltar ao LMS</span>
@@ -199,7 +199,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/admin"
-                      className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
+                      className="flex items-center gap-3 px-6 py-4 rounded-md text-[15px]"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <Shield className="h-[18px] w-[18px]" />
