@@ -25,7 +25,6 @@ import TicketChatPage from "@/pages/student/TicketChat";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminCourses from "@/pages/admin/Courses";
-import CourseLessons from "@/pages/admin/CourseLessons";
 import CourseForm from "@/pages/admin/CourseForm";
 import AdminStudents from "@/pages/admin/Students";
 import AdminStudentProfile from "@/pages/admin/StudentProfile";
@@ -158,16 +157,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/admin/courses/:courseId/lessons"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <CourseLessons />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
+              
               <Route
                 path="/admin/students"
                 element={
