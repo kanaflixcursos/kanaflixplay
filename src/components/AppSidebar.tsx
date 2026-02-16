@@ -151,7 +151,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                         to={item.url}
                         end={item.url === homeEnd}
                         className="flex items-center gap-2 px-4 py-3 rounded-md"
-                        activeClassName="bg-accent text-accent-foreground font-medium"
+                        activeClassName="bg-primary/10 text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4" />
                         <span className="flex-1">{item.title}</span>
@@ -198,7 +198,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                     <NavLink
                       to="/admin"
                       className="flex items-center gap-2 px-4 py-3 rounded-md"
-                      activeClassName="bg-accent text-accent-foreground font-medium"
+                      activeClassName="bg-primary/10 text-primary font-medium"
                     >
                       <Shield className="h-4 w-4" />
                       <span>Painel Admin</span>

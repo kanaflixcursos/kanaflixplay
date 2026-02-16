@@ -121,8 +121,10 @@ export default function DashboardRevenueChart() {
       <Card className="overflow-hidden h-full">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+            <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              </div>
               <span className="truncate">Gráfico de Faturamento</span>
             </CardTitle>
             <div className="flex flex-wrap gap-1">
@@ -151,8 +153,10 @@ export default function DashboardRevenueChart() {
     <Card className="overflow-hidden h-full">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5" />
+          <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            </div>
             <span className="truncate">Gráfico de Faturamento</span>
           </CardTitle>
           <div className="flex flex-wrap gap-1">
