@@ -1,9 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
+import pagarmeLogo from "@/assets/pagarme-logo.svg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -590,41 +597,24 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               
               {/* Installments */}
               {availableInstallments.length > 1 && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Parcelas</Label>
-                  <RadioGroup 
-                    value={installments.toString()} 
+                  <Select
+                    value={installments.toString()}
                     onValueChange={(v) => setInstallments(parseInt(v))}
-                    className="grid gap-2"
                   >
-                    {availableInstallments.map((opt) => (
-                      <div 
-                        key={opt.number} 
-                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                          installments === opt.number ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                        }`}
-                        onClick={() => setInstallments(opt.number)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <RadioGroupItem value={opt.number.toString()} id={`inst-${opt.number}`} />
-                          <Label htmlFor={`inst-${opt.number}`} className="text-sm cursor-pointer">
-                            {opt.number}x de {formatPrice(opt.installmentAmount)}
-                            {opt.interest_rate === 0 && (
-                              <span className="text-xs text-success ml-2">sem juros</span>
-                            )}
-                          </Label>
-                        </div>
-                        <div className="text-right">
-                          {opt.interest_rate > 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              <span className="text-amber-600 dark:text-amber-400">+{opt.interest_rate}%</span>
-                              <span className="block">Total: {formatPrice(opt.totalAmount)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                    <SelectTrigger className="h-11 bg-muted/30">
+                      <SelectValue placeholder="Selecione as parcelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableInstallments.map((opt) => (
+                        <SelectItem key={opt.number} value={opt.number.toString()}>
+                          {opt.number}x de {formatPrice(opt.installmentAmount)}
+                          {opt.interest_rate === 0 ? ' (sem juros)' : ` (+${opt.interest_rate}% — Total: ${formatPrice(opt.totalAmount)})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
@@ -667,7 +657,14 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-success" />
-            <span>Pagamento 100% seguro via Pagar.me</span>
+            <span>Pagamento 100% seguro</span>
+          </div>
+          <div className="flex items-center justify-center pt-1">
+            <img
+              src={pagarmeLogo}
+              alt="Pagar.me - Pagamento seguro"
+              className="h-5 opacity-50"
+            />
           </div>
         </div>
       </CardContent>
