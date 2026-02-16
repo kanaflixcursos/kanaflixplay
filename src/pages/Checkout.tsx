@@ -225,19 +225,19 @@ export default function Checkout() {
                   Gratuito
                 </Badge>
               )}
-            </div>
 
-            {/* Powered by Pagar.me */}
-            {course.price > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <span className="text-xs text-muted-foreground">Powered by</span>
-                <img
-                  src={pagarmeLogo}
-                  alt="Pagar.me"
-                  className="h-4 opacity-60 dark:brightness-0 dark:invert"
-                />
-              </div>
-            )}
+              {/* Powered by Pagar.me */}
+              {course.price > 0 && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <span className="text-xs text-muted-foreground">Powered by</span>
+                  <img
+                    src={pagarmeLogo}
+                    alt="Pagar.me"
+                    className="h-4 opacity-60 dark:brightness-0 dark:invert"
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Course Info & Checkout */}
             <div className="flex flex-col">
