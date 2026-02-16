@@ -634,46 +634,6 @@ export default function CourseLessons() {
         </Button>
       </div>
 
-      {/* Unassigned lessons warning */}
-      {unassignedLessons.length > 0 && modules.length > 0 && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-destructive mb-2">
-              {unassignedLessons.length} aula(s) sem módulo
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              Arraste-as para um módulo abaixo. Todas as aulas devem pertencer a um módulo.
-            </p>
-            <DndContext sensors={sensors} collisionDetection={closestCenter}>
-              <SortableContext items={unassignedLessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-1">
-                  {unassignedLessons.map((lesson) => (
-                    <SortableLessonCard
-                      key={lesson.id}
-                      lesson={lesson}
-                      materials={materials[lesson.id] || []}
-                      isExpanded={expandedLessons.has(lesson.id)}
-                      isEditing={editingLessonId === lesson.id}
-                      editingTitle={editingTitle}
-                      savingId={savingId}
-                      onToggleExpand={() => toggleExpanded(lesson.id)}
-                      onStartEdit={() => handleStartEdit(lesson)}
-                      onCancelEdit={() => { setEditingLessonId(null); setEditingTitle(''); }}
-                      onSaveTitle={() => handleSaveTitle(lesson.id)}
-                      onEditingTitleChange={setEditingTitle}
-                      onToggleVisibility={() => handleToggleVisibility(lesson)}
-                      onMaterialsChange={fetchData}
-                      onPreview={() => setPreviewLesson(lesson)}
-                      formatDuration={formatDuration}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Modules with lessons */}
       {modules.length === 0 && lessons.length === 0 ? (
         <Card>
@@ -695,6 +655,43 @@ export default function CourseLessons() {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
+          {/* Unassigned lessons warning */}
+          {unassignedLessons.length > 0 && modules.length > 0 && (
+            <Card className="border-destructive/50 bg-destructive/5 mb-4">
+              <CardContent className="p-4">
+                <p className="text-sm font-medium text-destructive mb-2">
+                  {unassignedLessons.length} aula(s) sem módulo
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Arraste-as para um módulo abaixo. Todas as aulas devem pertencer a um módulo.
+                </p>
+                <SortableContext items={unassignedLessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-1">
+                    {unassignedLessons.map((lesson) => (
+                      <SortableLessonCard
+                        key={lesson.id}
+                        lesson={lesson}
+                        materials={materials[lesson.id] || []}
+                        isExpanded={expandedLessons.has(lesson.id)}
+                        isEditing={editingLessonId === lesson.id}
+                        editingTitle={editingTitle}
+                        savingId={savingId}
+                        onToggleExpand={() => toggleExpanded(lesson.id)}
+                        onStartEdit={() => handleStartEdit(lesson)}
+                        onCancelEdit={() => { setEditingLessonId(null); setEditingTitle(''); }}
+                        onSaveTitle={() => handleSaveTitle(lesson.id)}
+                        onEditingTitleChange={setEditingTitle}
+                        onToggleVisibility={() => handleToggleVisibility(lesson)}
+                        onMaterialsChange={fetchData}
+                        onPreview={() => setPreviewLesson(lesson)}
+                        formatDuration={formatDuration}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </CardContent>
+            </Card>
+          )}
           <div className="space-y-4">
             {modules.map((mod) => {
               const moduleLessons = lessons
