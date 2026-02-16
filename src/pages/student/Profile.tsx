@@ -289,7 +289,7 @@ export default function StudentProfile() {
     <StudentLayout>
     <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Meu Perfil</h1>
         <p className="text-muted-foreground text-sm md:text-base">Gerencie suas informações pessoais</p>
       </div>
 

@@ -184,7 +184,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </header>
 
           <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">
-            <div className="max-w-[1440px] mx-auto w-full">
+            <div className="max-w-[1000px] mx-auto w-full">
               {children}
             </div>
           </main>
