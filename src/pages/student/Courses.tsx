@@ -162,7 +162,7 @@ export default function StudentCourses() {
                 transition={{ duration: 0.3 }}>
 
                   <div
-                  className="relative overflow-hidden rounded-2xl text-white min-h-[200px] pl-[80px] pr-[59px] py-[70px]"
+                  className="relative overflow-hidden rounded-2xl text-white min-h-[200px] pl-[80px] pr-[59px] py-[56px]"
                   style={{ background: `linear-gradient(135deg, ${b.gradient_from}, ${b.gradient_to})` }}>
 
                     {/* Image covering right side with gradient fade */}
@@ -184,7 +184,7 @@ export default function StudentCourses() {
                       <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-3 backdrop-blur-sm">
                         {b.badge_text}
                       </span>
-                      <h2 className="text-xl sm:text-2xl font-bold mb-2">{b.title}</h2>
+                      <h2 className="text-2xl sm:text-3xl font-bold mb-2">{b.title}</h2>
                       <p className="text-sm text-white/80 mb-4 line-clamp-2">{b.description}</p>
                       <Link
                       to={b.link}
