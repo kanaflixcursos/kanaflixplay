@@ -77,13 +77,13 @@ export default function AdminOrders() {
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              Total de Pedidos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Total de Pedidos</span>
+            </div>
             {statsLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
@@ -92,13 +92,13 @@ export default function AdminOrders() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-success" />
-              Pedidos Pagos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-success/10">
+                <CreditCard className="h-5 w-5 text-success" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Pedidos Pagos</span>
+            </div>
             {statsLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
@@ -107,13 +107,13 @@ export default function AdminOrders() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <RotateCcw className="h-4 w-4 text-warning" />
-              Pedidos Estornados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-warning/10">
+                <RotateCcw className="h-5 w-5 text-warning" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Pedidos Estornados</span>
+            </div>
             {statsLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
@@ -122,13 +122,13 @@ export default function AdminOrders() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-destructive" />
-              Pedidos Cancelados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 rounded-xl bg-destructive/10">
+                <XCircle className="h-5 w-5 text-destructive" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Pedidos Cancelados</span>
+            </div>
             {statsLoading ? (
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             ) : (
@@ -141,8 +141,10 @@ export default function AdminOrders() {
       {/* Sales Table */}
       <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-left">
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+          <CardTitle className="flex items-center gap-3 text-base sm:text-lg text-left">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+            </div>
             <span className="truncate">Lista de Compras</span>
           </CardTitle>
         </CardHeader>

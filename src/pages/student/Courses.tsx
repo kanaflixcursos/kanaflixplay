@@ -85,6 +85,34 @@ export default function StudentCourses() {
         </p>
       </div>
 
+      {/* Featured Banner */}
+      {!loading && enrolledCourses.length > 0 && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary via-chart-3 to-chart-5 p-6 sm:p-8 text-white">
+          <div className="absolute top-0 right-0 w-1/2 h-full opacity-10">
+            <div className="absolute top-4 right-4 w-32 h-32 rounded-full bg-white/20" />
+            <div className="absolute bottom-4 right-20 w-20 h-20 rounded-full bg-white/15" />
+            <div className="absolute top-1/2 right-8 w-16 h-16 rounded-full bg-white/10" />
+          </div>
+          <div className="relative z-10 max-w-lg">
+            <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-3 backdrop-blur-sm">
+              CONTINUE APRENDENDO
+            </span>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">
+              {enrolledCourses[0]?.course.title}
+            </h2>
+            <p className="text-sm text-white/80 mb-4 line-clamp-2">
+              {enrolledCourses[0]?.course.description || 'Continue de onde parou e avance no seu aprendizado.'}
+            </p>
+            <a
+              href={`/courses/${enrolledCourses[0]?.course.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-primary font-medium text-sm hover:bg-white/90 transition-colors"
+            >
+              Ver Detalhes
+            </a>
+          </div>
+        </div>
+      )}
+
       <section>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
 

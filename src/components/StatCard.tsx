@@ -1,7 +1,8 @@
 import { LucideIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -9,9 +10,26 @@ interface StatCardProps {
   description?: string;
   icon: LucideIcon;
   loading?: boolean;
+  iconColor?: string;
+  iconBgColor?: string;
 }
 
-export default function StatCard({ title, value, description, icon: Icon, loading = false }: StatCardProps) {
+const defaultColors = [
+  { icon: 'text-primary', bg: 'bg-primary/10' },
+  { icon: 'text-chart-3', bg: 'bg-chart-3/10' },
+  { icon: 'text-chart-2', bg: 'bg-chart-2/10' },
+  { icon: 'text-chart-4', bg: 'bg-chart-4/10' },
+];
+
+let colorIndex = 0;
+
+export default function StatCard({ title, value, description, icon: Icon, loading = false, iconColor, iconBgColor }: StatCardProps) {
+  const colors = defaultColors[colorIndex % defaultColors.length];
+  colorIndex++;
+
+  const finalIconColor = iconColor || colors.icon;
+  const finalBgColor = iconBgColor || colors.bg;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -19,11 +37,13 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
       <Card className="overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
-          <span className="stat-card-label text-xs sm:text-sm truncate pr-2">{title}</span>
-          <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-        </CardHeader>
-        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+        <CardContent className="p-3 sm:p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={cn("p-2 rounded-xl shrink-0", finalBgColor)}>
+              <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5", finalIconColor)} />
+            </div>
+            <span className="stat-card-label text-xs sm:text-sm truncate">{title}</span>
+          </div>
           {loading ? (
             <Skeleton className="h-7 sm:h-9 w-20" />
           ) : (

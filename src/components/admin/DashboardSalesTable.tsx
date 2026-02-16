@@ -30,8 +30,10 @@ export default function DashboardSalesTable() {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-left">
-          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+        <CardTitle className="flex items-center gap-3 text-base sm:text-lg text-left">
+          <div className="p-2 rounded-xl bg-chart-4/10">
+            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4 shrink-0" />
+          </div>
           <span className="truncate">Últimas Vendas</span>
         </CardTitle>
         <Button variant="outline" size="sm" className="shrink-0 text-xs sm:text-sm h-8" asChild>
