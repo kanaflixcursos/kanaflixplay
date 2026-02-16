@@ -284,10 +284,7 @@ export default function AdminCourses() {
             <span className="ml-2">Sincronizar Aulas</span>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}>
-          <Document size={16} />
-          <span className="ml-2">Organizar Aulas</span>
-        </DropdownMenuItem>
+        
         <DropdownMenuItem onClick={() => setLinkDialog({ open: true, course })}>
           <Send size={16} />
           <span className="ml-2">Link Compartilhável</span>
@@ -429,14 +426,7 @@ export default function AdminCourses() {
                           )}
                         </Button>
                       )}
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
-                        title="Organizar aulas"
-                      >
-                        <Document size={16} />
-                      </Button>
+                      
                       <Button
                         variant="outline"
                         size="icon"
