@@ -167,12 +167,14 @@ export default function StudentCourses() {
                   >
                     {/* Image covering right side with gradient fade */}
                     {b.image && (
-                      <div className="absolute top-0 right-0 w-2/3 h-full">
-                        <img src={b.image} alt="" className="w-full h-full object-cover" />
-                        <div
-                          className="absolute inset-0"
+                      <div className="absolute top-0 right-0 w-1/2 h-full">
+                        <img
+                          src={b.image}
+                          alt=""
+                          className="w-full h-full object-cover"
                           style={{
-                            background: `linear-gradient(to right, ${b.gradient_from} 0%, ${b.gradient_from}CC 15%, ${b.gradient_from}66 35%, ${b.gradient_from}22 55%, transparent 100%)`,
+                            maskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
                           }}
                         />
                       </div>
