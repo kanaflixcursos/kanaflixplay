@@ -18,17 +18,17 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
+  SidebarFooter } from
+'@/components/ui/sidebar';
 import { Home, Shield, Compass, GraduationCap, ShoppingBag, HelpCircle } from 'lucide-react';
 
 const menuItems = [
-  { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Cursos', url: '/courses', icon: GraduationCap },
-  { title: 'Compras', url: '/purchases', icon: ShoppingBag },
-  { title: 'Suporte', url: '/suporte', icon: HelpCircle },
-  { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
-];
+{ title: 'Dashboard', url: '/', icon: Home },
+{ title: 'Cursos', url: '/courses', icon: GraduationCap },
+{ title: 'Compras', url: '/purchases', icon: ShoppingBag },
+{ title: 'Suporte', url: '/suporte', icon: HelpCircle },
+{ title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true }];
+
 
 interface StudentLayoutProps {
   children: ReactNode;
@@ -45,18 +45,18 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   // Use the unified support notifications hook
   const { unreadCount: unreadSupportNotifications } = useSupportNotifications({
     userId: user?.id,
-    isAdmin: false,
+    isAdmin: false
   });
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('avatar_url, full_name, email')
-        .eq('user_id', user.id)
-        .single();
-      
+      const { data } = await supabase.
+      from('profiles').
+      select('avatar_url, full_name, email').
+      eq('user_id', user.id).
+      single();
+
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
       }
@@ -72,11 +72,11 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
     const fetchUnreadNotifications = async () => {
       if (!user) return;
 
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
+      const { count } = await supabase.
+      from('notifications').
+      select('*', { count: 'exact', head: true }).
+      eq('user_id', user.id).
+      eq('is_read', false);
 
       setUnreadNotificationCount(count || 0);
     };
@@ -85,21 +85,21 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
     if (!user) return;
 
-    const channel = supabase
-      .channel('notifications-student-sidebar')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchUnreadNotifications();
-        }
-      )
-      .subscribe();
+    const channel = supabase.
+    channel('notifications-student-sidebar').
+    on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      },
+      () => {
+        fetchUnreadNotifications();
+      }
+    ).
+    subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -117,62 +117,62 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   return (
     <SidebarProvider>
       <div className="mesh-gradient-bg" aria-hidden="true" />
-      <div className="min-h-screen flex w-full relative">
-        <Sidebar variant="sidebar">
+      <div className="min-h-screen flex w-full max-w-[1440px] mx-auto relative">
+        <Sidebar variant="floating">
           <SidebarLogo />
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
+                  {menuItems.map((item) =>
+                  <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        {'external' in item && item.external ? (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-4 py-3 rounded-md"
-                          >
+                        {'external' in item && item.external ?
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors">
+
                             <item.icon className="h-4 w-4" />
                             <span>{item.title}</span>
-                          </a>
-                        ) : (
-                          <NavLink
-                            to={item.url}
-                            end={item.url === '/'}
-                            className="flex items-center gap-2 px-4 py-3 rounded-md"
-                            activeClassName="bg-accent text-accent-foreground font-medium"
-                          >
+                          </a> :
+
+                      <NavLink
+                        to={item.url}
+                        end={item.url === '/'}
+                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                        activeClassName="bg-accent text-accent-foreground font-medium">
+
                             <item.icon className="h-4 w-4" />
                             <span className="flex-1">{item.title}</span>
-                            {item.title === 'Suporte' && unreadSupportNotifications > 0 && (
-                              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
+                            {item.title === 'Suporte' && unreadSupportNotifications > 0 &&
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
                                 {unreadSupportNotifications}
                               </span>
-                            )}
+                        }
                           </NavLink>
-                        )}
+                      }
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                  ))}
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
             
-            {role === 'admin' && (
-              <SidebarGroup>
+            {role === 'admin' &&
+            <SidebarGroup>
                 <SidebarGroupLabel>Administração</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild>
                         <NavLink
-                          to="/admin"
-                        className="flex items-center gap-2 px-4 py-3 rounded-md"
-                          activeClassName="bg-accent text-accent-foreground font-medium"
-                        >
+                        to="/admin"
+                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                        activeClassName="bg-accent text-accent-foreground font-medium">
+
                           <Shield className="h-4 w-4" />
                           <span>Painel Admin</span>
                         </NavLink>
@@ -181,7 +181,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
-            )}
+            }
           </SidebarContent>
 
           <SidebarFooter className="border-t p-4">
@@ -190,8 +190,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               userEmail={displayEmail}
               avatarUrl={avatarUrl}
               unreadCount={unreadNotificationCount}
-              onSignOut={handleSignOut}
-            />
+              onSignOut={handleSignOut} />
+
           </SidebarFooter>
         </Sidebar>
 
@@ -200,15 +200,13 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             <SidebarTrigger />
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
-            <div className="max-w-[1440px] mx-auto w-full">
-              {children}
-            </div>
+          <main className="flex-1 p-4 md:p-6 overflow-auto bg-gray-100 px-[50px] py-[50px]">
+            {children}
           </main>
 
           <Footer />
         </div>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>);
+
 }
