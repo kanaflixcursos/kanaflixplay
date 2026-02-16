@@ -48,6 +48,7 @@ import ImageUpload from '@/components/ImageUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { CardBrandIcon } from '@/components/CardBrandIcon';
+import CourseLessonsManager from '@/components/admin/CourseLessonsManager';
 
 interface VideoItem {
   id: string;
@@ -894,19 +895,7 @@ export default function CourseForm() {
           {currentStep === 2 && (
             <div className="space-y-6">
               {isEditing && courseId ? (
-                <div className="text-center py-12 space-y-4">
-                  <Video className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-                  <div>
-                    <h3 className="text-lg font-semibold tracking-tight">Organizar Aulas</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Use o gerenciador de aulas para organizar módulos, reordenar aulas e gerenciar materiais complementares.
-                    </p>
-                  </div>
-                  <Button onClick={() => navigate(`/admin/courses/${courseId}/lessons`)}>
-                    <Layers className="h-4 w-4 mr-2" />
-                    Abrir Gerenciador de Aulas
-                  </Button>
-                </div>
+                <CourseLessonsManager courseId={courseId} />
               ) : (
                 <>
                   {/* Folder selector */}
