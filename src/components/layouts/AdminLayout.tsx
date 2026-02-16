@@ -1,184 +1,19 @@
-import { ReactNode, useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useSupportNotifications } from '@/hooks/useSupportNotifications';
-import { NavLink } from '@/components/NavLink';
+import { ReactNode } from 'react';
 import Footer from '@/components/Footer';
-import SidebarLogo from '@/components/SidebarLogo';
-import SidebarProfileBox from '@/components/SidebarProfileBox';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { LayoutDashboard, BookOpen, Users, ArrowLeft, ShoppingCart, HelpCircle } from 'lucide-react';
-
-const menuItems = [
-  { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
-  { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
-  { title: 'Alunos', url: '/admin/students', icon: Users },
-  { title: 'Compras', url: '/admin/orders', icon: ShoppingCart },
-  { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
-];
+import AppSidebar from '@/components/AppSidebar';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null; email: string | null }>({
-    full_name: null,
-    avatar_url: null,
-    email: null,
-  });
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Use the unified support notifications hook
-  const { unreadCount: pendingSupportCount } = useSupportNotifications({
-    userId: user?.id,
-    isAdmin: true,
-  });
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name, avatar_url, email')
-      .eq('user_id', user.id)
-      .single();
-    
-    if (data) {
-      setProfile(data);
-    }
-  };
-
-  const fetchUnreadNotifications = useCallback(async () => {
-    if (!user) return;
-    const { count } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('is_read', false);
-    
-    setUnreadCount(count || 0);
-  }, [user]);
-
-  useEffect(() => {
-    fetchUnreadNotifications();
-
-    if (!user) return;
-
-    const notificationsChannel = supabase
-      .channel('notifications-admin-sidebar')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          fetchUnreadNotifications();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(notificationsChannel);
-    };
-  }, [user, fetchUnreadNotifications]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const userName = profile.full_name || 'Administrador';
-  const userEmail = profile.email || user?.email || '';
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <Sidebar variant="sidebar">
-          <SidebarLogo showAdminBadge />
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {menuItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to={item.url}
-                          end={item.url === '/admin'}
-                          className="flex items-center gap-2 px-4 py-3 rounded-md"
-                          activeClassName="bg-accent text-accent-foreground font-medium"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          <span className="flex-1">{item.title}</span>
-                          {item.title === 'Suporte' && pendingSupportCount > 0 && (
-                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
-                              {pendingSupportCount}
-                            </span>
-                          )}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to="/"
-                        className="flex items-center gap-2 px-4 py-3 rounded-md"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span>Voltar ao LMS</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+        <AppSidebar variant="admin" />
 
-          <SidebarFooter className="border-t p-4">
-            <SidebarProfileBox
-              userName={userName}
-              userEmail={userEmail}
-              avatarUrl={profile.avatar_url}
-              unreadCount={unreadCount}
-              onSignOut={handleSignOut}
-            />
-          </SidebarFooter>
-        </Sidebar>
-
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 border-b flex items-center justify-between px-4">
             <SidebarTrigger />
           </header>
