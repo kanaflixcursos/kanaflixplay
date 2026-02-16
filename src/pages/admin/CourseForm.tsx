@@ -1272,13 +1272,13 @@ export default function CourseForm() {
                   )}
 
                   {/* Installment Fee Info */}
-                  {formData.payment_methods.includes('credit_card') && paymentConfig && parseInt(formData.installments) > 6 && (
+                  {formData.payment_methods.includes('credit_card') && paymentConfig && parseInt(formData.installments) > 1 && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="text-sm text-foreground">
                         <p className="font-medium">Parcelas com taxa</p>
                         <p className="text-xs text-muted-foreground">
-                          Parcelas acima de 6x possuem uma taxa de 4,07% sobre o valor total, referente ao custo de processamento.
+                          Parcelas de 2x a 6x possuem taxa de 3,79% e de 7x a 12x taxa de 4,07% sobre o valor total, referente ao custo de processamento.
                         </p>
                       </div>
                     </div>
