@@ -206,7 +206,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
       method: 'pix' as const, 
       icon: QrCode, 
       label: 'PIX',
-      badge: '5% OFF',
+      badge: null,
       badgeVariant: 'default' as const,
       description: 'Aprovação imediata'
     },
@@ -346,18 +346,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
             <div className="mt-4 flex items-baseline justify-between">
               <div>
                 <span className="text-3xl font-bold text-foreground">{formatPrice(course.price)}</span>
-                {paymentMethod === 'pix' && (
-                  <Badge variant="default" className="ml-2 gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    5% OFF no PIX
-                  </Badge>
-                )}
               </div>
-              {paymentMethod === 'pix' && (
-                <span className="text-lg font-semibold text-success">
-                  {formatPrice(Math.round(course.price * 0.95))}
-                </span>
-              )}
             </div>
           </div>
 
@@ -580,7 +569,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  Pagar {paymentMethod === 'pix' ? formatPrice(Math.round(course.price * 0.95)) : formatPrice(course.price)}
+                  Pagar {formatPrice(course.price)}
                 </>
               )}
             </Button>

@@ -120,11 +120,6 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     }
   };
 
-  // Get PIX discount percentage from config
-  const pixDiscount = useMemo(() => {
-    const pixMethod = paymentConfig?.payment_methods.find(m => m.id === 'pix');
-    return pixMethod?.discount_percentage || 5;
-  }, [paymentConfig]);
 
   // Calculate available installment options based on course price and config
   const availableInstallments = useMemo(() => {
@@ -146,10 +141,8 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         // Calculate total with interest
         let totalAmount = course.price;
         if (opt.interest_rate > 0) {
-          // Simple interest calculation (monthly rate applied to remaining balance)
-          // Using compound interest formula: M = C * (1 + i)^n
-          const monthlyRate = opt.interest_rate / 100;
-          totalAmount = Math.round(course.price * Math.pow(1 + monthlyRate, opt.number));
+          // One-time percentage fee based on Pagar.me MDR rates
+          totalAmount = Math.round(course.price * (1 + opt.interest_rate / 100));
         }
         
         const installmentAmount = Math.ceil(totalAmount / opt.number);
@@ -285,7 +278,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       method: 'pix' as const, 
       icon: QrCode, 
       label: 'PIX',
-      badge: `${pixDiscount}% OFF`,
+      badge: null,
       description: 'Aprovação imediata'
     },
     { 
@@ -305,12 +298,9 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   ];
 
   // Calculate amounts
-  const pixAmount = Math.round(course.price * (1 - pixDiscount / 100));
-  const finalAmount = paymentMethod === 'pix' 
-    ? pixAmount 
-    : paymentMethod === 'credit_card' 
-      ? selectedInstallment?.totalAmount || course.price
-      : course.price;
+  const finalAmount = paymentMethod === 'credit_card' 
+    ? selectedInstallment?.totalAmount || course.price
+    : course.price;
 
   if (paymentResult) {
     return (
@@ -409,18 +399,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         {/* Price Header */}
         <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 border-b">
           <div className="space-y-2">
-            {paymentMethod === 'pix' ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg text-muted-foreground line-through">{formatPrice(course.price)}</span>
-                  <Badge variant="default" className="gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    {pixDiscount}% OFF
-                  </Badge>
-                </div>
-                <span className="text-3xl font-bold text-success">{formatPrice(pixAmount)}</span>
-              </>
-            ) : paymentMethod === 'credit_card' && selectedInstallment ? (
+            {paymentMethod === 'credit_card' && selectedInstallment ? (
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-foreground">
@@ -433,7 +412,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     <span>
                       Total: {formatPrice(selectedInstallment.totalAmount)} 
                       <span className="text-xs ml-1">
-                        (juros de {selectedInstallment.interest_rate}% a.m.)
+                        (taxa de {selectedInstallment.interest_rate}%)
                       </span>
                     </span>
                   </div>
@@ -638,7 +617,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                         <div className="text-right">
                           {opt.interest_rate > 0 && (
                             <div className="text-xs text-muted-foreground">
-                              <span className="text-warning">+{opt.interest_rate}% a.m.</span>
+                              <span className="text-amber-600 dark:text-amber-400">+{opt.interest_rate}%</span>
                               <span className="block">Total: {formatPrice(opt.totalAmount)}</span>
                             </div>
                           )}
