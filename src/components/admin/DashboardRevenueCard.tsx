@@ -100,8 +100,9 @@ export default function DashboardRevenueCard() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="h-full"
     >
-      <Card className="overflow-hidden relative">
+      <Card className="overflow-hidden relative h-full">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-primary" />
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">

@@ -118,7 +118,7 @@ export default function DashboardRevenueChart() {
 
   if (loading) {
     return (
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden h-full">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
@@ -148,7 +148,7 @@ export default function DashboardRevenueChart() {
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden h-full">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
