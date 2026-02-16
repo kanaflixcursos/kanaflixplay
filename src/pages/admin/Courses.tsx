@@ -32,26 +32,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { 
-  Plus, 
-  BookOpen, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Loader2, 
-  Folder, 
-  RefreshCw, 
-  MoreHorizontal, 
-  Globe, 
-  FileText,
-  Link2,
-  EyeOff,
-  Copy,
-  Check,
-  AlertTriangle,
-  Star,
-  StarOff
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Document,
+  Edit,
+  Delete,
+  Show,
+  Folder,
+  Swap,
+  MoreCircle,
+  Send,
+  Paper,
+  TickSquare,
+  Danger,
+} from 'react-iconly';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Course {
@@ -85,7 +80,6 @@ export default function AdminCourses() {
   const [syncingAll, setSyncingAll] = useState(false);
   const [pandaFolders, setPandaFolders] = useState<PandaFolder[]>([]);
   
-  // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: Course | null }>({
     open: false,
     course: null,
@@ -93,7 +87,6 @@ export default function AdminCourses() {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
   
-  // Link dialog state
   const [linkDialog, setLinkDialog] = useState<{ open: boolean; course: Course | null }>({
     open: false,
     course: null,
@@ -145,7 +138,6 @@ export default function AdminCourses() {
           supabase.from('lessons').select('duration_minutes').eq('course_id', course.id),
         ]);
 
-        // Calculate total duration from all lessons
         const totalDurationMinutes = (lessonDurations || []).reduce((sum, lesson) => sum + (lesson.duration_minutes || 0), 0);
 
         return {
@@ -200,34 +192,6 @@ export default function AdminCourses() {
     setDeleting(false);
     setDeleteDialog({ open: false, course: null });
     setDeleteConfirmation('');
-  };
-
-  const handleTogglePublish = async (course: Course) => {
-    const { error } = await supabase
-      .from('courses')
-      .update({ is_published: !course.is_published })
-      .eq('id', course.id);
-
-    if (error) {
-      toast.error('Erro ao alterar status');
-    } else {
-      toast.success(course.is_published ? 'Curso ocultado' : 'Curso publicado');
-      fetchCourses();
-    }
-  };
-
-  const handleToggleFeatured = async (course: Course) => {
-    const { error } = await supabase
-      .from('courses')
-      .update({ is_featured: !course.is_featured })
-      .eq('id', course.id);
-
-    if (error) {
-      toast.error('Erro ao alterar destaque');
-    } else {
-      toast.success(course.is_featured ? 'Removido dos destaques' : 'Marcado como destaque');
-      fetchCourses();
-    }
   };
 
   const handleSyncCourse = async (courseId?: string) => {
@@ -303,7 +267,7 @@ export default function AdminCourses() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
-          <MoreHorizontal className="h-4 w-4" />
+          <MoreCircle size={16} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-popover w-48">
@@ -312,56 +276,25 @@ export default function AdminCourses() {
             onClick={() => handleSyncCourse(course.id)}
             disabled={syncing === course.id}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${syncing === course.id ? 'animate-spin' : ''}`} />
-            Sincronizar Aulas
+            <Swap size={16} />
+            <span className="ml-2">Sincronizar Aulas</span>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}>
-          <Eye className="h-4 w-4 mr-2" />
-          Ver Aulas
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/edit`)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar Curso
+          <Edit size={16} />
+          <span className="ml-2">Editar Aulas</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setLinkDialog({ open: true, course })}>
-          <Link2 className="h-4 w-4 mr-2" />
-          Link de Compra
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleTogglePublish(course)}>
-          {course.is_published ? (
-            <>
-              <EyeOff className="h-4 w-4 mr-2" />
-              Ocultar Curso
-            </>
-          ) : (
-            <>
-              <Globe className="h-4 w-4 mr-2" />
-              Publicar Curso
-            </>
-          )}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleToggleFeatured(course)}>
-          {course.is_featured ? (
-            <>
-              <StarOff className="h-4 w-4 mr-2" />
-              Remover Destaque
-            </>
-          ) : (
-            <>
-              <Star className="h-4 w-4 mr-2" />
-              Marcar como Destaque
-            </>
-          )}
+          <Send size={16} />
+          <span className="ml-2">Link Compartilhável</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={() => setDeleteDialog({ open: true, course })}
           className="text-destructive focus:text-destructive"
         >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Excluir Curso
+          <Delete size={16} />
+          <span className="ml-2">Excluir Curso</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -385,14 +318,14 @@ export default function AdminCourses() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <RefreshCw className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
-                {!isMobile && 'Sincronizar Todos'}
+                <Swap size={16} />
+                {!isMobile && <span className="ml-1">Sincronizar Todos</span>}
               </>
             )}
           </Button>
           <Button onClick={() => navigate('/admin/courses/new')} size={isMobile ? "icon" : "default"}>
-            <Plus className={isMobile ? "h-4 w-4" : "mr-2 h-4 w-4"} />
-            {!isMobile && 'Novo Curso'}
+            <Plus size={16} />
+            {!isMobile && <span className="ml-1">Novo Curso</span>}
           </Button>
         </div>
       </div>
@@ -404,11 +337,13 @@ export default function AdminCourses() {
       ) : courses.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <div className="flex justify-center mb-4 text-muted-foreground">
+              <Document size={48} />
+            </div>
             <p className="text-muted-foreground">Nenhum curso cadastrado ainda.</p>
             <Button className="mt-4" onClick={() => navigate('/admin/courses/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar Primeiro Curso
+              <Plus size={16} />
+              <span className="ml-1">Criar Primeiro Curso</span>
             </Button>
           </CardContent>
         </Card>
@@ -425,8 +360,8 @@ export default function AdminCourses() {
                       className="w-14 h-16 md:w-20 md:h-24 object-cover rounded flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-16 md:w-20 md:h-24 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                      <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                    <div className="w-14 h-16 md:w-20 md:h-24 bg-muted rounded flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                      <Document size={24} />
                     </div>
                   )}
                   
@@ -441,15 +376,6 @@ export default function AdminCourses() {
                           ⭐ Destaque
                         </Badge>
                       )}
-                      {course.price && course.price > 0 ? (
-                        <Badge variant="outline" className="text-xs">
-                          {formatPrice(course.price)}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs text-success border-success/30">
-                          Gratuito
-                        </Badge>
-                      )}
                     </div>
                     <p className="card-description line-clamp-1 hidden sm:block">
                       {course.description}
@@ -457,25 +383,24 @@ export default function AdminCourses() {
                     <div className="flex flex-wrap gap-2 md:gap-4 mt-1 text-xs text-muted-foreground">
                       <span>{course.lessonCount} aulas</span>
                       <span>{course.enrollmentCount} alunos</span>
+                      <span className="font-medium text-foreground">{formatPrice(course.price)}</span>
                       {course.pandavideo_folder_id && !isMobile && (
                         <>
                           <span className="flex items-center gap-1" title={`ID: ${course.pandavideo_folder_id}`}>
-                            <Folder className="h-3 w-3" />
+                            <Folder size={12} />
                             {getFolderName(course.pandavideo_folder_id)}
                           </span>
-                          {course.totalDurationMinutes > 0 && (
-                            <span>{formatTotalDuration(course.totalDurationMinutes)}</span>
-                          )}
                         </>
+                      )}
+                      {course.totalDurationMinutes > 0 && (
+                        <span>{formatTotalDuration(course.totalDurationMinutes)}</span>
                       )}
                     </div>
                   </div>
                   
-                  {/* Mobile: Dropdown menu */}
                   {isMobile ? (
                     <CourseActions course={course} />
                   ) : (
-                    /* Desktop: Button row */
                     <div className="flex items-center gap-1.5">
                       {course.pandavideo_folder_id && (
                         <Button
@@ -488,7 +413,7 @@ export default function AdminCourses() {
                           {syncing === course.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <RefreshCw className="h-4 w-4" />
+                            <Swap size={16} />
                           )}
                         </Button>
                       )}
@@ -496,25 +421,17 @@ export default function AdminCourses() {
                         variant="outline"
                         size="icon"
                         onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
-                        title="Ver aulas"
+                        title="Editar aulas"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Edit size={16} />
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setLinkDialog({ open: true, course })}
-                        title="Link de compra"
+                        title="Link compartilhável"
                       >
-                        <Link2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
-                        title="Editar curso"
-                      >
-                        <Edit className="h-4 w-4" />
+                        <Send size={16} />
                       </Button>
                       <Button
                         variant="outline"
@@ -523,7 +440,7 @@ export default function AdminCourses() {
                         title="Excluir curso"
                         className="text-destructive hover:text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Delete size={16} />
                       </Button>
                     </div>
                   )}
@@ -538,7 +455,7 @@ export default function AdminCourses() {
       <Dialog open={linkDialog.open} onOpenChange={(open) => setLinkDialog({ open, course: open ? linkDialog.course : null })}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Link de Compra do Curso</DialogTitle>
+            <DialogTitle>Link Compartilhável</DialogTitle>
             <DialogDescription>
               Compartilhe este link para que alunos possam comprar o curso diretamente.
             </DialogDescription>
@@ -554,8 +471,8 @@ export default function AdminCourses() {
                     className="w-12 h-14 object-cover rounded"
                   />
                 ) : (
-                  <div className="w-12 h-14 bg-muted rounded flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  <div className="w-12 h-14 bg-muted rounded flex items-center justify-center text-muted-foreground">
+                    <Document size={20} />
                   </div>
                 )}
                 <div>
@@ -577,7 +494,7 @@ export default function AdminCourses() {
                     onClick={() => linkDialog.course && handleCopyLink(linkDialog.course)}
                     variant={copied ? "default" : "outline"}
                   >
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? <TickSquare size={16} /> : <Paper size={16} />}
                   </Button>
                 </div>
               </div>
@@ -600,14 +517,16 @@ export default function AdminCourses() {
                     }}
                     variant={copiedId ? "default" : "outline"}
                   >
-                    {copiedId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copiedId ? <TickSquare size={16} /> : <Paper size={16} />}
                   </Button>
                 </div>
               </div>
 
               {!linkDialog.course.is_published && (
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
-                  <AlertTriangle className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
+                  <span className="text-warning-foreground mt-0.5 flex-shrink-0">
+                    <Danger size={16} />
+                  </span>
                   <p className="text-sm text-warning-foreground">
                     Este curso está oculto. Publique-o para que os alunos possam acessar.
                   </p>
@@ -634,7 +553,7 @@ export default function AdminCourses() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
+              <Danger size={20} />
               Excluir Curso Permanentemente
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
@@ -678,8 +597,8 @@ export default function AdminCourses() {
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Permanentemente
+                  <Delete size={16} />
+                  <span className="ml-1">Excluir Permanentemente</span>
                 </>
               )}
             </AlertDialogAction>
