@@ -178,7 +178,7 @@
 
 /* Utility classes */
 .content-container {
-  @apply max-w-[1000px] mx-auto w-full px-4 md:px-6;
+  @apply max-w-[1200px] mx-auto w-full px-4 md:px-6;
 }
 
 .stat-card-label {
