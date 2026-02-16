@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,92 +21,9 @@ interface EnrolledCourse {
   completedLessons: number;
 }
 
-interface SuggestedCourse {
-  id: string;
-  title: string;
-  thumbnail_url: string | null;
-}
-
-function SuggestedCarousel({ courses }: { courses: SuggestedCourse[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const animationRef = useRef<number>();
-  const scrollSpeed = 0.5;
-
-  const animate = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el || isPaused) {
-      animationRef.current = requestAnimationFrame(animate);
-      return;
-    }
-    el.scrollLeft += scrollSpeed;
-    // Reset to start when reaching the duplicated set
-    if (el.scrollLeft >= el.scrollWidth / 2) {
-      el.scrollLeft = 0;
-    }
-    animationRef.current = requestAnimationFrame(animate);
-  }, [isPaused]);
-
-  useEffect(() => {
-    animationRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    };
-  }, [animate]);
-
-  // Duplicate items for infinite scroll illusion
-  const items = [...courses, ...courses];
-
-  return (
-    <div
-      className="relative group"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      {/* Fade edges */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10 bg-gradient-to-r from-background to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-background to-transparent" />
-
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-hidden py-4"
-        style={{ scrollBehavior: 'auto' }}
-      >
-        {items.map((course, index) => (
-          <Link
-            key={`${course.id}-${index}`}
-            to={`/checkout/${course.id}`}
-            className="flex-shrink-0 w-[140px] md:w-[160px] lg:w-[180px]"
-          >
-            <div className="relative aspect-[4/5] rounded-lg overflow-hidden">
-              {course.thumbnail_url ? (
-                <img
-                  src={course.thumbnail_url}
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <BookOpen className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-              {/* Title overlay on hover */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-xs font-medium line-clamp-2">{course.title}</p>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function StudentCourses() {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
-  const [suggestedCourses, setSuggestedCourses] = useState<SuggestedCourse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -119,28 +36,7 @@ export default function StudentCourses() {
         .eq('user_id', user.id);
 
       const enrollments = enrollmentsData || [];
-      const enrolledCourseIds = new Set(enrollments.map((e: any) => e.course.id));
-      const categoryIds = [
-        ...new Set(
-          enrollments
-            .map((e: any) => e.course.category_id)
-            .filter(Boolean) as string[]
-        ),
-      ];
 
-      // Fetch suggested courses from same categories, excluding enrolled
-      if (categoryIds.length > 0) {
-        const { data: suggested } = await supabase
-          .from('courses')
-          .select('id, title, thumbnail_url')
-          .in('category_id', categoryIds)
-          .eq('is_published', true);
-
-        const filtered = (suggested || []).filter((c) => !enrolledCourseIds.has(c.id));
-        setSuggestedCourses(filtered);
-      }
-
-      // Fetch progress for enrolled courses
       const { data: allProgress } = await supabase
         .from('lesson_progress')
         .select('lesson_id, completed')
@@ -175,7 +71,6 @@ export default function StudentCourses() {
 
       setEnrolledCourses(coursesWithProgress);
       setLoading(false);
-      setLoading(false);
     };
 
     fetchData();
@@ -186,11 +81,10 @@ export default function StudentCourses() {
       <div>
         <h1 className="text-2xl md:text-3xl font-bold">Cursos</h1>
         <p className="text-muted-foreground text-sm md:text-base">
-          Seus cursos e sugestões para você
+          Seus cursos matriculados
         </p>
       </div>
 
-      {/* Enrolled Courses */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Meus Cursos</h2>
 
@@ -223,8 +117,7 @@ export default function StudentCourses() {
               const progress =
                 enrollment.totalLessons > 0
                   ? Math.round(
-                      (enrollment.completedLessons / enrollment.totalLessons) *
-                        100
+                      (enrollment.completedLessons / enrollment.totalLessons) * 100
                     )
                   : 0;
 
@@ -262,8 +155,7 @@ export default function StudentCourses() {
                       <CardContent>
                         <Progress value={progress} className="h-1.5" />
                         <p className="text-xs text-muted-foreground mt-1">
-                          {enrollment.completedLessons}/{enrollment.totalLessons}{' '}
-                          aulas
+                          {enrollment.completedLessons}/{enrollment.totalLessons} aulas
                         </p>
                       </CardContent>
                     </Card>
@@ -274,14 +166,6 @@ export default function StudentCourses() {
           </div>
         )}
       </section>
-
-      {/* Talvez você se interesse - Auto carousel by category */}
-      {!loading && suggestedCourses.length > 0 && (
-        <section>
-          <h2 className="text-xl font-semibold mb-2">Talvez você se interesse</h2>
-          <SuggestedCarousel courses={suggestedCourses} />
-        </section>
-      )}
     </div>
   );
 }
