@@ -252,17 +252,23 @@ export default function Checkout() {
                 )}
 
                 {/* Course Stats */}
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <BookOpen className="h-3.5 w-3.5 text-primary" />
+                    </div>
                     <span>{lessonCount} aulas</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Play className="h-4 w-4" />
+                    <div className="p-1.5 rounded-lg bg-chart-2/10">
+                      <Play className="h-3.5 w-3.5 text-chart-2" />
+                    </div>
                     <span>Acesso imediato</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
+                    <div className="p-1.5 rounded-lg bg-chart-4/10">
+                      <Clock className="h-3.5 w-3.5 text-chart-4" />
+                    </div>
                     <span>Acesso vitalício</span>
                   </div>
                 </div>
