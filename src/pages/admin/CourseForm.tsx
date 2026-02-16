@@ -1271,14 +1271,14 @@ export default function CourseForm() {
                     </div>
                   )}
 
-                  {/* Installment Interest Info */}
+                  {/* Installment Fee Info */}
                   {formData.payment_methods.includes('credit_card') && paymentConfig && parseInt(formData.installments) > 6 && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20">
-                      <Info className="h-4 w-4 text-warning-foreground mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-warning-foreground">
-                        <p className="font-medium">Parcelas com juros</p>
-                        <p className="text-xs opacity-80">
-                          Parcelas acima de 6x podem ter juros de até 1.99% ao mês, dependendo da bandeira do cartão.
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-foreground">
+                        <p className="font-medium">Parcelas com taxa</p>
+                        <p className="text-xs text-muted-foreground">
+                          Parcelas acima de 6x possuem uma taxa de 4,07% sobre o valor total, referente ao custo de processamento.
                         </p>
                       </div>
                     </div>
@@ -1297,9 +1297,9 @@ export default function CourseForm() {
                       const interestRate = installmentOption?.interest_rate || 0;
                       const hasInterest = interestRate > 0;
                       
-                      // Calculate total with compound interest if applicable
+                      // Calculate total with fee (one-time percentage fee, not compound)
                       const totalWithInterest = hasInterest 
-                        ? basePrice * Math.pow(1 + interestRate / 100, installmentCount)
+                        ? basePrice * (1 + interestRate / 100)
                         : basePrice;
                       const installmentValue = totalWithInterest / installmentCount;
                       
@@ -1314,8 +1314,8 @@ export default function CourseForm() {
                           
                           {/* Main price */}
                           <div className="flex items-baseline gap-2 mb-4">
-                            <span className="text-3xl font-bold text-foreground">
-                              R$ {basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <span className="text-3xl font-bold text-foreground">
+                              R$ {basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             <span className="text-sm text-muted-foreground">à vista</span>
                           </div>
@@ -1328,19 +1328,19 @@ export default function CourseForm() {
                                   {installmentCount}x no cartão
                                 </span>
                                 <div className="text-right">
-                                  <span className="text-lg font-semibold text-foreground">
-                                    R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    <span className="text-lg font-semibold text-foreground">
+                                    R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                   {hasInterest && (
-                                    <span className="text-xs text-warning-foreground ml-2">
-                                      ({interestRate}% a.m.)
+                                    <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
+                                      (taxa de {interestRate}%)
                                     </span>
                                   )}
                                 </div>
                               </div>
                               {hasInterest && (
-                                <p className="text-xs text-muted-foreground">
-                                  Total parcelado: R$ {totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  <p className="text-xs text-muted-foreground">
+                                  Total parcelado: R$ {totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                               )}
                             </div>
@@ -1354,7 +1354,7 @@ export default function CourseForm() {
                                 <span className="text-sm text-muted-foreground">PIX ({pixDiscount}% off)</span>
                               </div>
                               <span className="text-lg font-semibold text-success">
-                                R$ {pixPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                R$ {pixPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
                           )}

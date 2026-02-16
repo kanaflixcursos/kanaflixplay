@@ -839,12 +839,12 @@ function handleGetPaymentConfig() {
             { number: 4, interest_rate: 0, label: '4x sem juros' },
             { number: 5, interest_rate: 0, label: '5x sem juros' },
             { number: 6, interest_rate: 0, label: '6x sem juros' },
-            { number: 7, interest_rate: 1.99, label: '7x com juros' },
-            { number: 8, interest_rate: 1.99, label: '8x com juros' },
-            { number: 9, interest_rate: 1.99, label: '9x com juros' },
-            { number: 10, interest_rate: 1.99, label: '10x com juros' },
-            { number: 11, interest_rate: 1.99, label: '11x com juros' },
-            { number: 12, interest_rate: 1.99, label: '12x com juros' },
+            { number: 7, interest_rate: 4.07, label: '7x com taxa' },
+            { number: 8, interest_rate: 4.07, label: '8x com taxa' },
+            { number: 9, interest_rate: 4.07, label: '9x com taxa' },
+            { number: 10, interest_rate: 4.07, label: '10x com taxa' },
+            { number: 11, interest_rate: 4.07, label: '11x com taxa' },
+            { number: 12, interest_rate: 4.07, label: '12x com taxa' },
           ]
         }
       },
@@ -854,7 +854,7 @@ function handleGetPaymentConfig() {
         enabled: true,
         icon: 'qr-code',
         description: 'Pagamento instantâneo',
-        discount_percentage: 5,
+        discount_percentage: 0,
         expires_in_minutes: 30
       },
       {
