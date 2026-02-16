@@ -143,19 +143,19 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                         href={item.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-3 rounded-md"
+                        className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
                       >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-[18px] w-[18px]" />
                         <span>{item.title}</span>
                       </a>
                     ) : (
                       <NavLink
                         to={item.url}
                         end={item.url === homeEnd}
-                        className="flex items-center gap-2 px-4 py-3 rounded-md"
+                        className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-[18px] w-[18px]" />
                         <span className="flex-1">{item.title}</span>
                         {item.title === 'Suporte' && pendingSupportCount > 0 && (
                           <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
@@ -180,9 +180,9 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/"
-                      className="flex items-center gap-2 px-4 py-3 rounded-md"
+                      className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
                     >
-                      <ArrowLeft className="h-4 w-4" />
+                      <ArrowLeft className="h-[18px] w-[18px]" />
                       <span>Voltar ao LMS</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -199,10 +199,10 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/admin"
-                      className="flex items-center gap-2 px-4 py-3 rounded-md"
+                      className="flex items-center gap-3 px-5 py-3.5 rounded-md text-[15px]"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
-                      <Shield className="h-4 w-4" />
+                      <Shield className="h-[18px] w-[18px]" />
                       <span>Painel Admin</span>
                     </NavLink>
                   </SidebarMenuButton>
