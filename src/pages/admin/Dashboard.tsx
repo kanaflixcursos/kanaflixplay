@@ -3,6 +3,7 @@ import DashboardStudentsCard from '@/components/admin/DashboardStudentsCard';
 import DashboardCoursesCard from '@/components/admin/DashboardCoursesCard';
 import DashboardRevenueChart from '@/components/admin/DashboardRevenueChart';
 import DashboardSalesTable from '@/components/admin/DashboardSalesTable';
+import DashboardLatestSignupsCard from '@/components/admin/DashboardLatestSignupsCard';
 
 export default function AdminDashboard() {
   return (
@@ -20,7 +21,12 @@ export default function AdminDashboard() {
         <DashboardCoursesCard />
       </div>
 
-      <DashboardRevenueChart />
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DashboardRevenueChart />
+        </div>
+        <DashboardLatestSignupsCard />
+      </div>
 
       <DashboardSalesTable />
     </div>
