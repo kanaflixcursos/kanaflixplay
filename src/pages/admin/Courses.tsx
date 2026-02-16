@@ -114,9 +114,9 @@ export default function AdminCourses() {
   // Computed stats
   const totalStudents = useMemo(() => courses.reduce((sum, c) => sum + c.enrollmentCount, 0), [courses]);
   const bestSellingCourse = useMemo(() => {
-    if (courses.length === 0) return '-';
+    if (courses.length === 0) return null;
     const sorted = [...courses].sort((a, b) => b.enrollmentCount - a.enrollmentCount);
-    return sorted[0]?.enrollmentCount > 0 ? sorted[0].title : '-';
+    return sorted[0]?.enrollmentCount > 0 ? sorted[0] : null;
   }, [courses]);
 
   const filteredCourses = useMemo(() => 
@@ -422,7 +422,13 @@ export default function AdminCourses() {
       <div className="grid grid-cols-3 gap-3 md:gap-4">
         <StatCard title="Total de Cursos" value={courses.length} icon={BookOpen} loading={loading} />
         <StatCard title="Total de Alunos" value={totalStudents} icon={Users} loading={loading} />
-        <StatCard title="Curso Mais Vendido" value={bestSellingCourse} icon={Trophy} loading={loading} />
+        <StatCard
+          title="Curso Mais Vendido"
+          value={bestSellingCourse?.title || '-'}
+          description={bestSellingCourse ? `${bestSellingCourse.enrollmentCount} vendas` : undefined}
+          icon={Trophy}
+          loading={loading}
+        />
       </div>
 
       {/* Search */}
