@@ -117,7 +117,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   return (
     <SidebarProvider>
       <div className="mesh-gradient-bg" aria-hidden="true" />
-      <div className="min-h-screen flex w-full max-w-[1440px] mx-auto relative">
+      <div className="min-h-screen flex w-full mx-auto relative">
         <Sidebar variant="floating">
           <SidebarLogo />
           <SidebarContent>
@@ -200,7 +200,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             <SidebarTrigger />
           </header>
 
-          <main className="flex-1 p-4 md:p-6 overflow-auto bg-gray-100 px-[50px] py-[50px]">
+          <main className="flex-1 p-4 md:p-6 overflow-auto">
             {children}
           </main>
 
