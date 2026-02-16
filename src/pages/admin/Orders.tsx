@@ -57,10 +57,12 @@ export default function AdminOrders() {
   };
 
   const filteredSales = allSales.filter(sale => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      (sale.course_title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (sale.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (sale.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+      (sale.course_title?.toLowerCase().includes(term) || false) ||
+      (sale.user_name?.toLowerCase().includes(term) || false) ||
+      (sale.user_email?.toLowerCase().includes(term) || false) ||
+      (sale.id?.toLowerCase().includes(term) || false);
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -154,7 +156,7 @@ export default function AdminOrders() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por curso, nome ou email..."
+                placeholder="Buscar por ID, curso, nome ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
