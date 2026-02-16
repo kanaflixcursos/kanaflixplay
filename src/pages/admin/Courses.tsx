@@ -271,6 +271,10 @@ export default function AdminCourses() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-popover w-48">
+        <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/edit`)}>
+          <Edit size={16} />
+          <span className="ml-2">Editar Curso</span>
+        </DropdownMenuItem>
         {course.pandavideo_folder_id && (
           <DropdownMenuItem 
             onClick={() => handleSyncCourse(course.id)}
@@ -281,8 +285,8 @@ export default function AdminCourses() {
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}>
-          <Edit size={16} />
-          <span className="ml-2">Editar Aulas</span>
+          <Document size={16} />
+          <span className="ml-2">Organizar Aulas</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setLinkDialog({ open: true, course })}>
           <Send size={16} />
@@ -402,6 +406,14 @@ export default function AdminCourses() {
                     <CourseActions course={course} />
                   ) : (
                     <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
+                        title="Editar curso"
+                      >
+                        <Edit size={16} />
+                      </Button>
                       {course.pandavideo_folder_id && (
                         <Button
                           variant="outline"
@@ -421,9 +433,9 @@ export default function AdminCourses() {
                         variant="outline"
                         size="icon"
                         onClick={() => navigate(`/admin/courses/${course.id}/lessons`)}
-                        title="Editar aulas"
+                        title="Organizar aulas"
                       >
-                        <Edit size={16} />
+                        <Document size={16} />
                       </Button>
                       <Button
                         variant="outline"
