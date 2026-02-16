@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import pagarmeLogo from '@/assets/pagarme-logo.svg';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckoutForm } from '@/components/checkout/CheckoutForm';
@@ -186,7 +186,7 @@ export default function Checkout() {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <Logo className="h-8 w-auto" />
+            <Link to="/"><Logo className="h-8 w-auto" /></Link>
           </div>
           
           {user ? (
