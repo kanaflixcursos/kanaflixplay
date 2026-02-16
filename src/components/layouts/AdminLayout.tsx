@@ -117,7 +117,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full max-w-[1440px] mx-auto">
-        <Sidebar variant="floating">
+        <Sidebar variant="sidebar">
           <SidebarLogo showAdminBadge />
           <SidebarContent>
             <SidebarGroup>
@@ -130,7 +130,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         <NavLink
                           to={item.url}
                           end={item.url === '/admin'}
-                          className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                          className="flex items-center gap-2 px-4 py-3 rounded-md"
                           activeClassName="bg-accent text-accent-foreground font-medium"
                         >
                           <item.icon className="h-4 w-4" />
@@ -155,7 +155,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to="/"
-                        className="flex items-center gap-2 px-3 py-2 rounded-md transition-colors"
+                        className="flex items-center gap-2 px-4 py-3 rounded-md"
                       >
                         <ArrowLeft className="h-4 w-4" />
                         <span>Voltar ao LMS</span>
