@@ -230,11 +230,13 @@ export default function AdminFeaturedBanner() {
                     {/* Image covering right side with gradient fade */}
                     {pd.image && (
                       <div className="absolute top-0 right-0 w-1/2 h-full">
-                        <img src={pd.image} alt="" className="w-full h-full object-cover" />
-                        <div
-                          className="absolute inset-0"
+                        <img
+                          src={pd.image}
+                          alt=""
+                          className="w-full h-full object-cover"
                           style={{
-                            background: `linear-gradient(to right, ${pb.gradient_from} 0%, ${pb.gradient_from}CC 20%, transparent 100%)`,
+                            maskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(to left, black 30%, transparent 100%)',
                           }}
                         />
                       </div>
