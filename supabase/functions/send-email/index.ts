@@ -325,8 +325,9 @@ Deno.serve(async (req) => {
       case 'campaign': {
         const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string };
         subject = campaignData.subject || 'Novidades - Kanaflix Play';
-        // Wrap campaign content in the standard email template
+        // Strip embedded blocks JSON comment and replace variables
         const campaignContent = campaignData.htmlContent
+          .replace(/<!-- BLOCKS:[\s\S]*? -->/g, '')
           .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
         
         // Add tracking pixel if campaignId is provided
