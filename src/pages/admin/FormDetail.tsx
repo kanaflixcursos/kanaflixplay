@@ -534,7 +534,7 @@ export default function FormDetail() {
                         <td className="p-3 text-muted-foreground">{lead.phone || '—'}</td>
                         <td className="p-3">
                           <Badge variant={lead.status === 'converted' ? 'default' : 'secondary'} className="text-[10px]">
-                            {lead.status === 'new' ? 'Novo' : lead.status === 'qualified' ? 'Qualificado' : lead.status === 'converted' ? 'Convertido' : lead.status}
+                            {lead.status === 'new' ? 'Novo' : lead.status === 'qualified' ? 'Qualificado' : lead.status === 'converted' ? 'Convertido' : lead.status === 'lost' ? 'Perdido' : lead.status}
                           </Badge>
                         </td>
                         <td className="p-3 text-xs max-w-[280px]">

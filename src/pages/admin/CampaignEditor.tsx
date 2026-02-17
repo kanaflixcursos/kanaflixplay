@@ -403,6 +403,7 @@ export default function CampaignEditor() {
                     <SelectItem value="new">Novos</SelectItem>
                     <SelectItem value="qualified">Qualificados</SelectItem>
                     <SelectItem value="converted">Convertidos</SelectItem>
+                    <SelectItem value="lost">Perdidos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
