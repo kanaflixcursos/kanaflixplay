@@ -148,40 +148,39 @@ export default function MarketingForms() {
 
   const generateApiEndpoint = (slug: string) => `${SUPABASE_URL}/functions/v1/lead-capture?form=${slug}`;
 
-  const generateReactCode = (form: LeadForm) => {
-    const endpoint = generateApiEndpoint(form.slug);
-    const fields = form.fields;
+  const generateReactCode = () => {
+    const baseUrl = SUPABASE_URL + '/functions/v1/lead-capture';
     const lines: string[] = [];
     const add = (s: string) => lines.push(s);
 
-    // Build field keys for state
-    const fieldKeys = fields.map(f => f.name);
-    const phoneFields = fields.filter(f => f.type === 'phone').map(f => f.name);
-    const emailFields = fields.filter(f => f.type === 'email').map(f => f.name);
-    const requiredFields = fields.filter(f => f.required).map(f => f.name);
-
-    add('// Componente Framer — Formulário "' + form.name + '"');
+    add('// Componente Framer Universal — Formulário Dinâmico');
     add('// Cole este código como Code Component no Framer');
-    add('import { useState, startTransition, type CSSProperties } from "react"');
+    add('// Configure o "Slug do Formulário" nas props para selecionar qual formulário exibir');
+    add('import { useState, useEffect, startTransition, type CSSProperties } from "react"');
     add('import { addPropertyControls, ControlType } from "framer"');
     add('');
-    add('interface MultiSelectOption { label: string; options: string[] }');
+    add('type FormField = { name: string; label: string; type: string; required: boolean }');
+    add('type FormConfig = { slug: string; name: string; fields: FormField[] }');
     add('');
-    add('interface SimpleFormProps {');
+    add('interface DynamicFormProps {');
+    add('    formSlug: string');
     add('    buttonText: string; backgroundColor: string; inputBackground: string');
     add('    inputText: string; buttonBackground: string; buttonTextColor: string');
     add('    multiSelectText: string; font: CSSProperties; buttonFont: CSSProperties');
-    add('    borderRadius: number; multiSelects: MultiSelectOption[]');
+    add('    borderRadius: number; multiSelects: { label: string; options: string[] }[]');
     add('    loadingText: string; successText: string; successUrl: string');
     add('    style?: CSSProperties');
     add('}');
+    add('');
+    add('const API_BASE = "' + baseUrl + '"');
     add('');
     add('/**');
     add(' * @framerSupportedLayoutWidth any-prefer-fixed');
     add(' * @framerSupportedLayoutHeight auto');
     add(' */');
-    add('export default function SimpleForm(props: SimpleFormProps) {');
+    add('export default function DynamicForm(props: DynamicFormProps) {');
     add('    const {');
+    add('        formSlug = "",');
     add('        buttonText = "Enviar",');
     add('        backgroundColor = "#0A0A0A", inputBackground = "#1A1A2E",');
     add('        inputText = "#FFFFFF", buttonBackground = "#3B82F6",');
@@ -191,73 +190,70 @@ export default function MarketingForms() {
     add('        successUrl = "", style,');
     add('    } = props');
     add('');
-    add('    const API_ENDPOINT = "' + endpoint + '"');
-    add('');
-
-    // Generate initial state from form fields
-    const stateEntries = fieldKeys.map(k => `${k}: ""`).join(', ');
-    add('    const [formData, setFormData] = useState<Record<string, string>>({ ' + stateEntries + ' })');
+    add('    const [config, setConfig] = useState<FormConfig | null>(null)');
+    add('    const [configError, setConfigError] = useState("")');
+    add('    const [formData, setFormData] = useState<Record<string, string>>({})');
     add('    const [errors, setErrors] = useState<Record<string, string>>({})');
     add('    const [touched, setTouched] = useState<Record<string, boolean>>({})');
     add('    const [multiSelectData, setMultiSelectData] = useState<Record<number, string[]>>({})');
     add('    const [formStatus, setFormStatus] = useState<"idle" | "loading" | "success">("idle")');
     add('');
-
-    // Phone formatter (only if there are phone fields)
-    if (phoneFields.length > 0) {
-      add('    const formatPhone = (value: string): string => {');
-      add('        const numbers = value.replace(/\\D/g, "")');
-      add('        if (numbers.length <= 10) {');
-      add('            return numbers.replace(/(\\d{2})(\\d{4})(\\d{0,4})/, (_, p1, p2, p3) => {');
-      add('                let f = "(" + p1 + ") " + p2');
-      add('                if (p3) f += "-" + p3');
-      add('                return f');
-      add('            })');
-      add('        }');
-      add('        return numbers.replace(/(\\d{2})(\\d{5})(\\d{0,4})/, (_, p1, p2, p3) => {');
-      add('            let f = "(" + p1 + ") " + p2');
-      add('            if (p3) f += "-" + p3');
-      add('            return f');
-      add('        })');
-      add('    }');
-      add('');
-    }
-
-    add('    const validateEmail = (v: string) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)');
-    add('    const validatePhone = (v: string) => { const n = v.replace(/\\D/g, ""); return n.length === 10 || n.length === 11 }');
+    add('    // Fetch form config by slug');
+    add('    useEffect(() => {');
+    add('        if (!formSlug) { setConfig(null); setConfigError("Configure o slug do formulário nas props"); return }');
+    add('        setConfigError("")');
+    add('        fetch(API_BASE + "?form=" + encodeURIComponent(formSlug))');
+    add('            .then(r => { if (!r.ok) throw new Error("Formulário não encontrado"); return r.json() })');
+    add('            .then((data: FormConfig) => {');
+    add('                setConfig(data)');
+    add('                const initial: Record<string, string> = {}');
+    add('                data.fields.forEach(f => { initial[f.name] = "" })');
+    add('                setFormData(initial)');
+    add('                setErrors({}); setTouched({})');
+    add('            })');
+    add('            .catch(err => setConfigError(err.message || "Erro ao carregar formulário"))');
+    add('    }, [formSlug])');
     add('');
-    add('    const handleChange = (field: string, value: string) => {');
-    if (phoneFields.length > 0) {
-      add('        if (' + JSON.stringify(phoneFields) + '.includes(field)) value = formatPhone(value)');
-    }
-    add('        startTransition(() => {');
-    add('            setFormData(prev => ({ ...prev, [field]: value }))');
-    add('            if (touched[field]) {');
-    add('                setErrors(prev => ({ ...prev, [field]: "" }))');
-    add('            }');
+    add('    const formatPhone = (value: string): string => {');
+    add('        const numbers = value.replace(/\\D/g, "")');
+    add('        if (numbers.length <= 10) {');
+    add('            return numbers.replace(/(\\d{2})(\\d{4})(\\d{0,4})/, (_, p1, p2, p3) => {');
+    add('                let f = "(" + p1 + ") " + p2');
+    add('                if (p3) f += "-" + p3');
+    add('                return f');
+    add('            })');
+    add('        }');
+    add('        return numbers.replace(/(\\d{2})(\\d{5})(\\d{0,4})/, (_, p1, p2, p3) => {');
+    add('            let f = "(" + p1 + ") " + p2');
+    add('            if (p3) f += "-" + p3');
+    add('            return f');
     add('        })');
     add('    }');
     add('');
-    add('    const handleBlur = (field: string) => {');
+    add('    const validateEmail = (v: string) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v)');
+    add('    const validatePhone = (v: string) => { const n = v.replace(/\\D/g, ""); return n.length === 10 || n.length === 11 }');
+    add('');
+    add('    const validateField = (field: FormField, value: string): string => {');
+    add('        if (!field.required) return ""');
+    add('        if (field.type === "email" && !validateEmail(value)) return "Email inválido"');
+    add('        if (field.type === "phone" && !validatePhone(value)) return "Telefone inválido"');
+    add('        if (!value.trim()) return field.label + " é obrigatório"');
+    add('        return ""');
+    add('    }');
+    add('');
+    add('    const handleChange = (fieldName: string, fieldType: string, value: string) => {');
+    add('        if (fieldType === "phone") value = formatPhone(value)');
     add('        startTransition(() => {');
-    add('            setTouched(prev => ({ ...prev, [field]: true }))');
-    add('            const v = formData[field] || ""');
-
-    // Generate validation per field type
-    const validationClauses: string[] = [];
-    for (const f of fields) {
-      if (f.required && f.type === 'email') {
-        validationClauses.push(`if (field === "${f.name}" && !validateEmail(v)) setErrors(prev => ({ ...prev, ${f.name}: "Email inválido" }))`);
-      } else if (f.required && f.type === 'phone') {
-        validationClauses.push(`if (field === "${f.name}" && !validatePhone(v)) setErrors(prev => ({ ...prev, ${f.name}: "Telefone inválido" }))`);
-      } else if (f.required) {
-        validationClauses.push(`if (field === "${f.name}" && !v.trim()) setErrors(prev => ({ ...prev, ${f.name}: "${f.label} é obrigatório" }))`);
-      }
-    }
-    for (const clause of validationClauses) {
-      add('            ' + clause);
-    }
-
+    add('            setFormData(prev => ({ ...prev, [fieldName]: value }))');
+    add('            if (touched[fieldName]) setErrors(prev => ({ ...prev, [fieldName]: "" }))');
+    add('        })');
+    add('    }');
+    add('');
+    add('    const handleBlur = (field: FormField) => {');
+    add('        startTransition(() => {');
+    add('            setTouched(prev => ({ ...prev, [field.name]: true }))');
+    add('            const err = validateField(field, formData[field.name] || "")');
+    add('            if (err) setErrors(prev => ({ ...prev, [field.name]: err }))');
     add('        })');
     add('    }');
     add('');
@@ -273,51 +269,38 @@ export default function MarketingForms() {
     add('');
     add('    const handleSubmit = async (e: React.FormEvent) => {');
     add('        e.preventDefault()');
+    add('        if (!config) return');
     add('        const newErrors: Record<string, string> = {}');
-
-    // Generate submit validation per field
-    for (const f of fields) {
-      if (f.required && f.type === 'email') {
-        add('        if (!validateEmail(formData.' + f.name + ' || "")) newErrors.' + f.name + ' = "Email inválido"');
-      } else if (f.required && f.type === 'phone') {
-        add('        if (!validatePhone(formData.' + f.name + ' || "")) newErrors.' + f.name + ' = "Telefone inválido"');
-      } else if (f.required) {
-        add('        if (!(formData.' + f.name + ' || "").trim()) newErrors.' + f.name + ' = "' + f.label + ' é obrigatório"');
-      }
-    }
-
     add('        const allTouched: Record<string, boolean> = {}');
-    for (const f of fields) {
-      add('        allTouched.' + f.name + ' = true');
-    }
+    add('        config.fields.forEach(f => {');
+    add('            allTouched[f.name] = true');
+    add('            const err = validateField(f, formData[f.name] || "")');
+    add('            if (err) newErrors[f.name] = err');
+    add('        })');
     add('        startTransition(() => { setErrors(newErrors); setTouched(allTouched) })');
     add('        if (Object.values(newErrors).some(e => e !== "")) return');
     add('');
     add('        startTransition(() => setFormStatus("loading"))');
     add('        try {');
     add('            const payload: Record<string, unknown> = {}');
-    for (const f of fields) {
-      if (f.type === 'email') {
-        add('            payload["' + f.name + '"] = (formData.' + f.name + ' || "").trim().toLowerCase()');
-      } else {
-        add('            payload["' + f.name + '"] = (formData.' + f.name + ' || "").trim()');
-      }
-    }
+    add('            config.fields.forEach(f => {');
+    add('                const v = (formData[f.name] || "").trim()');
+    add('                payload[f.name] = f.type === "email" ? v.toLowerCase() : v');
+    add('            })');
     add('            multiSelects.forEach((ms, i) => {');
     add('                if (multiSelectData[i]?.length) {');
     add('                    payload[ms.label.toLowerCase().replace(/[^a-z0-9]/g, "_")] = multiSelectData[i].join(", ")');
     add('                }');
     add('            })');
-    add('            const res = await fetch(API_ENDPOINT, {');
+    add('            const res = await fetch(API_BASE + "?form=" + encodeURIComponent(formSlug), {');
     add('                method: "POST",');
     add('                headers: { "Content-Type": "application/json" },');
     add('                body: JSON.stringify(payload),');
     add('            })');
     add('            if (res.ok) {');
     add('                startTransition(() => setFormStatus("success"))');
-    add('                const redirectTo = successUrl || ""');
-    add('                if (redirectTo && typeof window !== "undefined") {');
-    add('                    setTimeout(() => { window.location.href = redirectTo }, 1500)');
+    add('                if (successUrl && typeof window !== "undefined") {');
+    add('                    setTimeout(() => { window.location.href = successUrl }, 1500)');
     add('                }');
     add('            } else {');
     add('                const err = await res.json().catch(() => ({}))');
@@ -339,6 +322,23 @@ export default function MarketingForms() {
     add('    const borderNormal = "rgba(255,255,255,0.08)"');
     add('    const borderError = "#FF5588"');
     add('');
+    add('    if (configError) {');
+    add('        return (');
+    add('            <div style={{ width: "100%", padding: "32px", backgroundColor, borderRadius: borderRadius + 4, ...style }}>');
+    add('                <p style={{ color: "#FF5588", textAlign: "center", ...font }}>{configError}</p>');
+    add('            </div>');
+    add('        )');
+    add('    }');
+    add('');
+    add('    if (!config) {');
+    add('        return (');
+    add('            <div style={{ width: "100%", padding: "48px 32px", backgroundColor, borderRadius: borderRadius + 4, display: "flex", justifyContent: "center", ...style }}>');
+    add('                <div style={{ width: 24, height: 24, border: "3px solid rgba(255,255,255,0.15)", borderTopColor: buttonBackground, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />');
+    add('                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>');
+    add('            </div>');
+    add('        )');
+    add('    }');
+    add('');
     add('    return (');
     add('        <div style={{ width: "100%", padding: "32px", backgroundColor, borderRadius: borderRadius + 4, ...style }}>');
     add('            {formStatus === "loading" && (');
@@ -356,17 +356,20 @@ export default function MarketingForms() {
     add('            )}');
     add('            {formStatus === "idle" && (');
     add('                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>');
-
-    // Generate each input dynamically from form fields
-    for (const f of fields) {
-      const inputType = f.type === 'phone' ? 'tel' : f.type === 'email' ? 'email' : 'text';
-      const maxLength = f.type === 'phone' ? ' maxLength={16}' : '';
-      add('                    <div>');
-      add('                        <input value={formData.' + f.name + ' || ""} type="' + inputType + '" placeholder="' + f.label + '"' + maxLength + ' onChange={e => handleChange("' + f.name + '", e.target.value)} onBlur={() => handleBlur("' + f.name + '")} style={{ ...inputStyle, borderColor: errors.' + f.name + ' && touched.' + f.name + ' ? borderError : borderNormal }} />');
-      add('                        {errors.' + f.name + ' && touched.' + f.name + ' && <p style={errorStyle}>{errors.' + f.name + '}</p>}');
-      add('                    </div>');
-    }
-
+    add('                    {config.fields.map(f => (');
+    add('                        <div key={f.name}>');
+    add('                            <input');
+    add('                                value={formData[f.name] || ""}');
+    add('                                type={f.type === "phone" ? "tel" : f.type === "email" ? "email" : "text"}');
+    add('                                placeholder={f.label}');
+    add('                                maxLength={f.type === "phone" ? 16 : undefined}');
+    add('                                onChange={e => handleChange(f.name, f.type, e.target.value)}');
+    add('                                onBlur={() => handleBlur(f)}');
+    add('                                style={{ ...inputStyle, borderColor: errors[f.name] && touched[f.name] ? borderError : borderNormal }}');
+    add('                            />');
+    add('                            {errors[f.name] && touched[f.name] && <p style={errorStyle}>{errors[f.name]}</p>}');
+    add('                        </div>');
+    add('                    ))}');
     add('                    {multiSelects.map((ms, i) => (');
     add('                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>');
     add('                            <span style={{ color: multiSelectText, ...font }}>{ms.label}</span>');
@@ -389,7 +392,8 @@ export default function MarketingForms() {
     add('    )');
     add('}');
     add('');
-    add('addPropertyControls(SimpleForm, {');
+    add('addPropertyControls(DynamicForm, {');
+    add('    formSlug: { type: ControlType.String, title: "Slug do Formulário", defaultValue: "", placeholder: "ex: landing-page" },');
     add('    buttonText: { type: ControlType.String, title: "Texto do Botão", defaultValue: "Enviar" },');
     add('    loadingText: { type: ControlType.String, title: "Texto Loading", defaultValue: "Enviando..." },');
     add('    successText: { type: ControlType.String, title: "Texto Sucesso", defaultValue: "Enviado com sucesso!" },');
@@ -596,12 +600,13 @@ export default function MarketingForms() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1 block">Componente React</Label>
-                <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-80">{generateReactCode(selectedForm)}</pre>
+                <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-80">{generateReactCode()}</pre>
               </div>
               <Button
                 variant="outline"
                 onClick={() => {
-                  navigator.clipboard.writeText(generateReactCode(selectedForm));
+                  navigator.clipboard.writeText(generateReactCode());
+                  toast.success('Código copiado!');
                   toast.success('Código copiado!');
                 }}
               >
