@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import StatCard from '@/components/StatCard';
+import { leadStatusMap } from '@/lib/lead-constants';
 
 type FormField = { name: string; label: string; type: 'text' | 'email' | 'phone' | 'select'; required: boolean; options?: string[] };
 type LeadForm = {
@@ -533,8 +534,8 @@ export default function FormDetail() {
                         <td className="p-3 text-muted-foreground">{lead.email}</td>
                         <td className="p-3 text-muted-foreground">{lead.phone || '—'}</td>
                         <td className="p-3">
-                          <Badge variant={lead.status === 'converted' ? 'default' : 'secondary'} className="text-[10px]">
-                            {lead.status === 'new' ? 'Novo' : lead.status === 'qualified' ? 'Qualificado' : lead.status === 'converted' ? 'Convertido' : lead.status === 'lost' ? 'Perdido' : lead.status}
+                          <Badge variant={leadStatusMap[lead.status]?.variant || 'secondary'} className="text-[10px]">
+                            {leadStatusMap[lead.status]?.label || lead.status}
                           </Badge>
                         </td>
                         <td className="p-3 text-xs max-w-[280px]">
