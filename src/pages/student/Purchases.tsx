@@ -264,7 +264,7 @@ export default function Purchases() {
                           </Badge>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 pt-2 border-t">
                           {/* Value */}
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Valor</p>

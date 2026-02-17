@@ -204,17 +204,17 @@ export default function Checkout() {
       {/* Main Content */}
       <main className="flex-1 content-container px-4 py-8">
         <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-12">
             {/* Course Image */}
             <div className="relative">
               {course.thumbnail_url ? (
                 <img 
                   src={course.thumbnail_url} 
                   alt={course.title}
-                  className="w-full aspect-[4/5] object-cover rounded-2xl shadow-xl"
+                  className="w-full aspect-[3/2] sm:aspect-[4/5] object-cover rounded-2xl shadow-xl"
                 />
               ) : (
-                <div className="w-full aspect-[4/5] bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
+                <div className="w-full aspect-[3/2] sm:aspect-[4/5] bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
                   <BookOpen className="h-16 w-16 text-muted-foreground" />
                 </div>
               )}

@@ -200,7 +200,106 @@ export default function SalesTable({
 
   return (
     <>
-      <div className="overflow-x-auto -mx-4 sm:-mx-6">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {sales.map((sale) => (
+          <div key={sale.id} className="border rounded-lg p-3 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <Link
+                to={`/admin/students/${sale.user_id}`}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0 flex-1"
+              >
+                <Avatar className="h-7 w-7 shrink-0">
+                  <AvatarImage src={sale.user_avatar || undefined} />
+                  <AvatarFallback className="bg-muted text-muted-foreground">
+                    <User className="h-3.5 w-3.5" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-primary truncate text-sm">
+                  {sale.user_name || sale.user_email || 'Usuário'}
+                </span>
+              </Link>
+              <Badge variant="outline" className={`text-xs px-2 py-0.5 shrink-0 ${statusColors[sale.status] || ''}`}>
+                {statusLabels[sale.status] || sale.status}
+              </Badge>
+            </div>
+
+            <p className="text-sm font-medium truncate">{sale.course_title || '—'}</p>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold text-foreground text-sm">{formatCurrency(sale.amount)}</span>
+                <span className="text-xs text-muted-foreground ml-1.5">
+                  Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
+                </span>
+              </div>
+              {sale.payment_method && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 gap-1">
+                  {paymentMethodIcons[sale.payment_method]}
+                  {paymentMethodLabels[sale.payment_method] || sale.payment_method}
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between pt-1 border-t">
+              <span className="text-xs text-muted-foreground">
+                {format(new Date(sale.created_at), 'dd/MM/yy HH:mm', { locale: ptBR })}
+              </span>
+              <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedSale(sale)}>
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+                {sale.status === 'paid' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-warning hover:text-warning hover:bg-warning/10">
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-warning">
+                          <RotateCcw className="h-5 w-5" />
+                          Confirmar Reembolso
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p>Você está prestes a iniciar o reembolso do pedido do curso <strong>{sale.course_title}</strong>.</p>
+                          <p>Valor: <strong>{formatCurrency(sale.amount)}</strong></p>
+                          <p className="text-muted-foreground">Um ticket de suporte será criado para acompanhar o processo.</p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRefund(sale)}
+                          disabled={refunding}
+                          className="bg-warning text-warning-foreground hover:bg-warning/90"
+                        >
+                          {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                          Confirmar Reembolso
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {sale.status === 'pending' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => { setCancelingOrder(sale); setCancelDialogOpen(true); }}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="overflow-x-auto -mx-4 sm:-mx-6 hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>

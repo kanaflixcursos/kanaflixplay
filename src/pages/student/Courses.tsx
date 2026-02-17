@@ -161,13 +161,13 @@ export default function StudentCourses() {
                 exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.3 }}>
 
-                  <div
-                  className="relative overflow-hidden rounded-2xl text-white min-h-[200px] pl-[80px] pr-[59px] py-[56px]"
+                <div
+                  className="relative overflow-hidden rounded-2xl text-white min-h-[140px] sm:min-h-[200px] px-5 py-6 sm:pl-[80px] sm:pr-[59px] sm:py-[56px]"
                   style={{ background: `linear-gradient(135deg, ${b.gradient_from}, ${b.gradient_to})` }}>
 
-                    {/* Image covering right side with gradient fade */}
+                    {/* Image covering right side with gradient fade - hidden on mobile */}
                     {b.image &&
-                  <div className="absolute top-0 right-0 w-1/2 h-full">
+                  <div className="absolute top-0 right-0 w-1/2 h-full hidden sm:block">
                         <img
                       src={b.image}
                       alt=""
@@ -180,15 +180,15 @@ export default function StudentCourses() {
                       </div>
                   }
 
-                    <div className="relative z-10 flex-1 max-w-[55%]">
-                      <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-3 backdrop-blur-sm">
+                    <div className="relative z-10 flex-1 max-w-full sm:max-w-[55%]">
+                      <span className="inline-block px-3 py-1 rounded-md bg-white/20 text-xs font-semibold mb-2 sm:mb-3 backdrop-blur-sm">
                         {b.badge_text}
                       </span>
-                      <h2 className="text-2xl sm:text-3xl font-bold mb-2">{b.title}</h2>
-                      <p className="text-sm text-white/80 mb-4 line-clamp-2">{b.description}</p>
+                      <h2 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2">{b.title}</h2>
+                      <p className="text-xs sm:text-sm text-white/80 mb-3 sm:mb-4 line-clamp-2">{b.description}</p>
                       <Link
                       to={b.link}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white font-medium text-sm hover:bg-white/90 transition-colors"
+                      className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white font-medium text-xs sm:text-sm hover:bg-white/90 transition-colors"
                       style={{ color: b.gradient_from }}>
 
                         {b.cta_text}
