@@ -83,8 +83,11 @@ function defaultBlock(type: BlockType): EmailBlock {
   }
 }
 
+const BLOCKS_MARKER = '<!-- BLOCKS:';
+const BLOCKS_MARKER_END = ' -->';
+
 function blocksToHtml(blocks: EmailBlock[]): string {
-  return blocks.map(b => {
+  const html = blocks.map(b => {
     switch (b.type) {
       case 'heading': {
         const sizes: Record<string, string> = { h1: '24px', h2: '20px', h3: '17px' };
@@ -105,6 +108,8 @@ function blocksToHtml(blocks: EmailBlock[]): string {
         return '';
     }
   }).join('\n');
+  // Embed blocks JSON as a hidden comment for reliable round-tripping
+  return html + '\n' + BLOCKS_MARKER + JSON.stringify(blocks) + BLOCKS_MARKER_END;
 }
 
 function escapeHtml(s: string) {
@@ -134,16 +139,17 @@ ${content}
 
 // Parse stored HTML back into blocks (best-effort, for editing existing campaigns)
 function htmlToBlocks(html: string): EmailBlock[] | null {
-  // Only attempt parsing campaign content between the template wrapper
-  // If it doesn't look like our format, return null to indicate "use raw mode"
-  if (!html || !html.includes('Kanaflix Play')) return null;
-
-  // Extract content area between the body markers
-  const contentMatch = html.match(/font-family:[^"]*;">\s*([\s\S]*?)\s*<\/td>\s*<\/tr>\s*<!-- Footer|<\/tr>\s*<tr>\s*<td style="padding:24px/i);
-  if (!contentMatch) return null;
-
-  // For existing campaigns, we can't reliably parse back to blocks
-  // Return null so we handle it gracefully
+  if (!html) return null;
+  // Extract embedded blocks JSON from the comment marker
+  const markerIndex = html.indexOf(BLOCKS_MARKER);
+  if (markerIndex === -1) return null;
+  const jsonStart = markerIndex + BLOCKS_MARKER.length;
+  const jsonEnd = html.indexOf(BLOCKS_MARKER_END, jsonStart);
+  if (jsonEnd === -1) return null;
+  try {
+    const parsed = JSON.parse(html.slice(jsonStart, jsonEnd));
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch { /* ignore parse errors */ }
   return null;
 }
 
