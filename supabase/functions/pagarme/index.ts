@@ -834,7 +834,7 @@ function handleGetPaymentConfig() {
           min_amount_per_installment: 500,
           options: [
             { number: 1, interest_rate: 0, label: 'À vista' },
-            { number: 2, interest_rate: 3.79, label: '2x com taxa' },
+            { number: 2, interest_rate: 3.25, label: '2x com taxa' },
             { number: 3, interest_rate: 3.79, label: '3x com taxa' },
             { number: 4, interest_rate: 3.79, label: '4x com taxa' },
             { number: 5, interest_rate: 3.79, label: '5x com taxa' },
