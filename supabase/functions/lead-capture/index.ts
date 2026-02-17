@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     // POST — capture lead
     const body = await req.json();
-    const { name, email, phone, ...rest } = body;
+    const { email } = body;
 
     if (!email) {
       return new Response(
@@ -91,15 +91,24 @@ Deno.serve(async (req) => {
     const sanitize = (val: unknown) =>
       typeof val === "string" ? val.trim().slice(0, 500) : val;
 
+    // Map fields by type to extract name, phone, and custom data
+    const nameField = fields.find((f: { type: string }) => f.name === 'name');
+    const phoneField = fields.find((f: { type: string }) => f.type === 'phone');
+    const standardFields = new Set(['email', nameField?.name, phoneField?.name].filter(Boolean));
+    const customData: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(body)) {
+      if (!standardFields.has(k)) {
+        customData[k.slice(0, 50)] = sanitize(v);
+      }
+    }
+
     const { error: insertError } = await supabase.from("leads").insert({
       form_id: form.id,
-      name: sanitize(name) as string || null,
+      name: sanitize(body.name) as string || null,
       email: (sanitize(email) as string).toLowerCase(),
-      phone: sanitize(phone) as string || null,
+      phone: phoneField ? (sanitize(body[phoneField.name]) as string || null) : null,
       source: formSlug,
-      custom_data: Object.fromEntries(
-        Object.entries(rest).map(([k, v]) => [k.slice(0, 50), sanitize(v)])
-      ),
+      custom_data: Object.keys(customData).length > 0 ? customData : null,
     });
 
     if (insertError) {
