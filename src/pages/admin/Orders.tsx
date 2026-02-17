@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
+import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, DollarSign } from 'lucide-react';
 import SalesTable, { Sale, fetchSalesData } from '@/components/admin/SalesTable';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { subDays, subMonths, subYears } from 'date-fns';
+import { motion } from 'framer-motion';
 
 interface OrderStats {
   total: number;
@@ -17,6 +20,37 @@ interface OrderStats {
   pending: number;
   failed: number;
 }
+
+type TimePeriod = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
+
+const periodLabels: Record<TimePeriod, string> = {
+  '1d': '1 dia',
+  '3d': '3 dias',
+  '1w': '1 semana',
+  '1m': '1 mês',
+  '6m': '6 meses',
+  '1y': '1 ano',
+  'all': 'Tudo',
+};
+
+function getDateFromPeriod(period: TimePeriod): Date | null {
+  const now = new Date();
+  switch (period) {
+    case '1d': return subDays(now, 1);
+    case '3d': return subDays(now, 3);
+    case '1w': return subDays(now, 7);
+    case '1m': return subMonths(now, 1);
+    case '6m': return subMonths(now, 6);
+    case '1y': return subYears(now, 1);
+    case 'all': return null;
+  }
+}
+
+const CHART_COLORS = {
+  paid: 'hsl(var(--success))',
+  refunded: 'hsl(var(--warning))',
+  canceled: 'hsl(var(--destructive))',
+};
 
 const PAGE_SIZE = 20;
 
@@ -30,9 +64,18 @@ export default function AdminOrders() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Revenue
+  const [revenuePeriod, setRevenuePeriod] = useState<TimePeriod>('1m');
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [revenueLoading, setRevenueLoading] = useState(true);
+
   useEffect(() => {
     loadAll();
   }, [page]);
+
+  useEffect(() => {
+    fetchRevenue();
+  }, [revenuePeriod]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -56,6 +99,28 @@ export default function AdminOrders() {
     setStatsLoading(false);
   };
 
+  const fetchRevenue = async () => {
+    setRevenueLoading(true);
+    try {
+      const startDate = getDateFromPeriod(revenuePeriod);
+      let query = supabase
+        .from('orders')
+        .select('amount')
+        .eq('status', 'paid');
+
+      if (startDate) {
+        query = query.gte('paid_at', startDate.toISOString());
+      }
+
+      const { data } = await query;
+      const total = data?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+      setTotalRevenue(total);
+    } catch (error) {
+      console.error('Error fetching revenue:', error);
+    }
+    setRevenueLoading(false);
+  };
+
   const filteredSales = allSales.filter(sale => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
@@ -67,16 +132,146 @@ export default function AdminOrders() {
     return matchesSearch && matchesStatus;
   });
 
+  const chartData = useMemo(() => {
+    if (!orderStats) return [];
+    return [
+      { name: 'Pagos', value: orderStats.paid, color: CHART_COLORS.paid },
+      { name: 'Estornados', value: orderStats.refunded, color: CHART_COLORS.refunded },
+      { name: 'Cancelados', value: orderStats.canceled, color: CHART_COLORS.canceled },
+    ].filter(d => d.value > 0);
+  }, [orderStats]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value / 100);
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Compras</h1>
-        <p className="text-muted-foreground">Gerencie todas as compras da plataforma</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
+        <p className="text-muted-foreground">Gerencie todas as vendas da plataforma</p>
       </div>
 
-      {/* Stats */}
+      {/* Revenue Card + Chart */}
+      <div className="grid gap-4 lg:grid-cols-5">
+        {/* Revenue StatCard */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="lg:col-span-2"
+        >
+          <Card className="h-full">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-2 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-success/10">
+                    <DollarSign className="h-5 w-5 text-success" />
+                  </div>
+                  <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
+                </div>
+              </div>
+
+              {revenueLoading ? (
+                <div className="space-y-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold tracking-tight text-success mb-4">
+                  {formatCurrency(totalRevenue)}
+                </p>
+              )}
+
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
+                  <Button
+                    key={period}
+                    variant={revenuePeriod === period ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-7 text-xs px-2.5"
+                    onClick={() => setRevenuePeriod(period)}
+                  >
+                    {periodLabels[period]}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Pie Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+          className="lg:col-span-3"
+        >
+          <Card className="h-full">
+            <CardHeader className="p-4 sm:p-6 pb-2">
+              <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">
+                Distribuição de Pedidos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0">
+              {statsLoading ? (
+                <div className="flex items-center justify-center h-[200px]">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : chartData.length === 0 ? (
+                <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                  Nenhum dado disponível
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={4}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={index} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [`${value} pedidos`, '']}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid hsl(var(--border))',
+                        backgroundColor: 'hsl(var(--popover))',
+                        color: 'hsl(var(--popover-foreground))',
+                        fontSize: '13px',
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="middle"
+                      align="right"
+                      layout="vertical"
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => (
+                        <span style={{ color: 'hsl(var(--foreground))', fontSize: '13px' }}>{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Stats Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4 sm:p-6">
@@ -147,7 +342,7 @@ export default function AdminOrders() {
             <div className="p-2 rounded-xl bg-primary/10">
               <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
             </div>
-            <span className="truncate">Lista de Compras</span>
+            <span className="truncate">Últimas Vendas</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="dashboard-card-content space-y-4">

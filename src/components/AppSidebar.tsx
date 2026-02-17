@@ -44,7 +44,7 @@ const adminMenuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
-  { title: 'Compras', url: '/admin/orders', icon: ShoppingCart },
+  { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
   { title: 'Banner Destaque', url: '/admin/featured-banner', icon: Star },
   { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
 ];
