@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -41,6 +41,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // GET — return form config (fields only, no sensitive data)
+    if (req.method === "GET") {
+      const fields = form.fields as Array<{ name: string; label: string; type: string; required: boolean }>;
+      return new Response(
+        JSON.stringify({
+          slug: form.slug,
+          name: form.name,
+          description: form.description,
+          fields: fields.map(f => ({ name: f.name, label: f.label, type: f.type, required: f.required })),
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST — capture lead
     const body = await req.json();
     const { name, email, phone, ...rest } = body;
 
