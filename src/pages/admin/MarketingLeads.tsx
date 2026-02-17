@@ -9,7 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Search, Download, ArrowLeft, Users, UserPlus, UserCheck, Tag, X, Plus, Filter } from 'lucide-react';
+import { Search, Download, ArrowLeft, Users, UserPlus, UserCheck, Tag, X, Plus, Filter, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'framer-motion';
@@ -49,6 +54,10 @@ export default function MarketingLeads() {
   const [convertedLeads, setConvertedLeads] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allSources, setAllSources] = useState<string[]>([]);
+
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Tag dialog
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
@@ -149,6 +158,36 @@ export default function MarketingLeads() {
 
   const hasActiveFilters = statusFilter !== 'all' || tagFilter !== 'all' || sourceFilter !== 'all' || search !== '';
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === leads.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(leads.map(l => l.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('leads').delete().in('id', ids);
+    if (error) {
+      toast.error('Erro ao excluir leads');
+    } else {
+      toast.success(`${ids.length} lead(s) excluído(s)`);
+      setSelectedIds(new Set());
+      fetchLeads();
+      fetchStats();
+    }
+    setDeleteDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -247,6 +286,17 @@ export default function MarketingLeads() {
           </div>
         </CardHeader>
         <CardContent className="dashboard-card-content">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 mb-3 p-2 rounded-md bg-muted">
+              <span className="text-sm font-medium">{selectedIds.size} selecionado(s)</span>
+              <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-1" /> Excluir
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                Cancelar
+              </Button>
+            </div>
+          )}
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -261,6 +311,12 @@ export default function MarketingLeads() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={selectedIds.size === leads.length && leads.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
@@ -272,7 +328,13 @@ export default function MarketingLeads() {
                 </TableHeader>
                 <TableBody>
                   {leads.map((lead) => (
-                    <TableRow key={lead.id}>
+                    <TableRow key={lead.id} data-state={selectedIds.has(lead.id) ? 'selected' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(lead.id)}
+                          onCheckedChange={() => toggleSelect(lead.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{lead.name || '—'}</TableCell>
                       <TableCell>{lead.email}</TableCell>
                       <TableCell>{lead.phone || '—'}</TableCell>
@@ -356,6 +418,24 @@ export default function MarketingLeads() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedIds.size} lead(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Os leads selecionados serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
