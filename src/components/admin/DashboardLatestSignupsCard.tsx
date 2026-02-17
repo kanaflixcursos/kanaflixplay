@@ -9,6 +9,7 @@ import { UserPlus } from 'lucide-react';
 
 interface RecentUser {
   id: string;
+  user_id: string;
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -21,7 +22,7 @@ export default function DashboardLatestSignupsCard() {
   useEffect(() => {
     supabase
       .from('profiles')
-      .select('id, full_name, email, avatar_url')
+      .select('id, user_id, full_name, email, avatar_url')
       .order('created_at', { ascending: false })
       .limit(5)
       .then(({ data }) => {
@@ -53,7 +54,11 @@ export default function DashboardLatestSignupsCard() {
                 </div>
               ))
             : users.map((user) => (
-                <div key={user.id} className="flex items-center gap-3 min-w-0">
+                <Link
+                  key={user.id}
+                  to={`/admin/students/${user.user_id}`}
+                  className="flex items-center gap-3 min-w-0 rounded-lg p-1.5 -mx-1.5 transition-colors hover:bg-accent/50"
+                >
                   <Avatar className="h-8 w-8 shrink-0">
                     <AvatarImage src={user.avatar_url || undefined} />
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
@@ -68,7 +73,7 @@ export default function DashboardLatestSignupsCard() {
                       {user.email}
                     </p>
                   </div>
-                </div>
+                </Link>
               ))}
         </div>
         <Button variant="outline" size="sm" className="w-full mt-4 text-xs sm:text-sm" asChild>
