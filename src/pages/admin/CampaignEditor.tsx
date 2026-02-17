@@ -113,7 +113,7 @@ function escapeHtml(s: string) {
 
 function renderPreviewHtml(blocks: EmailBlock[], subject: string): string {
   const content = blocksToHtml(blocks);
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet"></head>
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>a{pointer-events:none!important;cursor:default!important;}</style></head>
 <body style="margin:0;padding:0;font-family:${fontFamily};background-color:${brand.bg};-webkit-font-smoothing:antialiased;">
 <div style="display:none;max-height:0;overflow:hidden;">${subject}</div>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${brand.bg};padding:48px 20px;"><tr><td align="center">
@@ -630,10 +630,10 @@ export default function CampaignEditor() {
               </div>
               <iframe
                 srcDoc={previewHtml}
-                className="w-full bg-white pointer-events-none"
+                className="w-full bg-white"
                 style={{ height: '560px' }}
                 title="Email preview"
-                sandbox=""
+                sandbox="allow-same-origin"
               />
             </CardContent>
           </Card>
