@@ -30,6 +30,7 @@ import {
   GraduationCap,
   ShoppingBag,
   Star,
+  Megaphone,
 } from 'lucide-react';
 
 const studentMenuItems = [
@@ -46,6 +47,7 @@ const adminMenuItems = [
   { title: 'Alunos', url: '/admin/students', icon: Users },
   { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
   { title: 'Banner Destaque', url: '/admin/featured-banner', icon: Star },
+  { title: 'Marketing', url: '/admin/marketing', icon: Megaphone },
   { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
 ];
 

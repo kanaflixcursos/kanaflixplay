@@ -247,6 +247,95 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_forms: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          is_active: boolean
+          name: string
+          redirect_url: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          redirect_url?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          redirect_url?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          custom_data: Json | null
+          email: string
+          form_id: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          source: string
+          status: string
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          email: string
+          form_id?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          email?: string
+          form_id?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          source?: string
+          status?: string
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "lead_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_comments: {
         Row: {
           content: string

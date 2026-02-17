@@ -33,6 +33,9 @@ import AdminComments from "@/pages/admin/Comments";
 import AdminSupport from "@/pages/admin/Support";
 import AdminTicketChat from "@/pages/admin/TicketChat";
 import AdminFeaturedBanner from "@/pages/admin/FeaturedBanner";
+import AdminMarketing from "@/pages/admin/Marketing";
+import AdminMarketingLeads from "@/pages/admin/MarketingLeads";
+import AdminMarketingForms from "@/pages/admin/MarketingForms";
 
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -205,6 +208,36 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminFeaturedBanner />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminMarketing />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/leads"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminMarketingLeads />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/forms"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminMarketingForms />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
