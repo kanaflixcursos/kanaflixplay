@@ -1272,13 +1272,13 @@ export default function CourseForm() {
                   )}
 
                   {/* Installment Fee Info */}
-                  {formData.payment_methods.includes('credit_card') && paymentConfig && parseInt(formData.installments) > 1 && (
+                  {formData.payment_methods.includes('credit_card') && paymentConfig && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                       <div className="text-sm text-foreground">
-                        <p className="font-medium">Parcelas com taxa</p>
+                        <p className="font-medium">Taxas do cartão de crédito</p>
                         <p className="text-xs text-muted-foreground">
-                          Parcelas de 2x a 6x possuem taxa de 3,79% e de 7x a 12x taxa de 4,07% sobre o valor total, referente ao custo de processamento.
+                          1x: taxa de 3,25% · 2x a 6x: taxa de 3,79% · 7x a 12x: taxa de 4,07% sobre o valor total, referente ao custo de processamento. Taxas de PIX e Boleto são absorvidas.
                         </p>
                       </div>
                     </div>
@@ -1314,10 +1314,11 @@ export default function CourseForm() {
                           
                           {/* Main price */}
                           <div className="flex items-baseline gap-2 mb-4">
-                          <span className="text-3xl font-bold text-foreground">
-                              R$ {basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span className="text-3xl font-bold text-foreground">
+                              R$ {(basePrice * (1 + 3.25 / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
-                            <span className="text-sm text-muted-foreground">à vista</span>
+                            <span className="text-sm text-muted-foreground">à vista no cartão</span>
+                            <span className="text-xs text-amber-600 dark:text-amber-400">(taxa de 3,25%)</span>
                           </div>
 
                           {/* Installment options */}
