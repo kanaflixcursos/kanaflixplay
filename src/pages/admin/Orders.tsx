@@ -1,16 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, DollarSign } from 'lucide-react';
+import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
 import SalesTable, { Sale, fetchSalesData } from '@/components/admin/SalesTable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { subDays, subMonths, subYears } from 'date-fns';
 import { motion } from 'framer-motion';
+import DashboardRevenueCard from '@/components/admin/DashboardRevenueCard';
 
 interface OrderStats {
   total: number;
@@ -19,31 +18,6 @@ interface OrderStats {
   canceled: number;
   pending: number;
   failed: number;
-}
-
-type TimePeriod = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
-
-const periodLabels: Record<TimePeriod, string> = {
-  '1d': '1 dia',
-  '3d': '3 dias',
-  '1w': '1 semana',
-  '1m': '1 mês',
-  '6m': '6 meses',
-  '1y': '1 ano',
-  'all': 'Tudo',
-};
-
-function getDateFromPeriod(period: TimePeriod): Date | null {
-  const now = new Date();
-  switch (period) {
-    case '1d': return subDays(now, 1);
-    case '3d': return subDays(now, 3);
-    case '1w': return subDays(now, 7);
-    case '1m': return subMonths(now, 1);
-    case '6m': return subMonths(now, 6);
-    case '1y': return subYears(now, 1);
-    case 'all': return null;
-  }
 }
 
 const CHART_COLORS = {
@@ -64,18 +38,9 @@ export default function AdminOrders() {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Revenue
-  const [revenuePeriod, setRevenuePeriod] = useState<TimePeriod>('1m');
-  const [totalRevenue, setTotalRevenue] = useState(0);
-  const [revenueLoading, setRevenueLoading] = useState(true);
-
   useEffect(() => {
     loadAll();
   }, [page]);
-
-  useEffect(() => {
-    fetchRevenue();
-  }, [revenuePeriod]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -99,28 +64,6 @@ export default function AdminOrders() {
     setStatsLoading(false);
   };
 
-  const fetchRevenue = async () => {
-    setRevenueLoading(true);
-    try {
-      const startDate = getDateFromPeriod(revenuePeriod);
-      let query = supabase
-        .from('orders')
-        .select('amount')
-        .eq('status', 'paid');
-
-      if (startDate) {
-        query = query.gte('paid_at', startDate.toISOString());
-      }
-
-      const { data } = await query;
-      const total = data?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
-      setTotalRevenue(total);
-    } catch (error) {
-      console.error('Error fetching revenue:', error);
-    }
-    setRevenueLoading(false);
-  };
-
   const filteredSales = allSales.filter(sale => {
     const term = searchTerm.toLowerCase();
     const matchesSearch =
@@ -141,100 +84,52 @@ export default function AdminOrders() {
     ].filter(d => d.value > 0);
   }, [orderStats]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value / 100);
-  };
-
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
-        <p className="text-muted-foreground">Gerencie todas as vendas da plataforma</p>
+        <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
       </div>
 
-      {/* Revenue Card + Chart */}
-      <div className="grid gap-4 lg:grid-cols-5">
-        {/* Revenue StatCard */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="lg:col-span-2"
-        >
-          <Card className="h-full">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-start justify-between gap-2 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-success/10">
-                    <DollarSign className="h-5 w-5 text-success" />
-                  </div>
-                  <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
-                </div>
-              </div>
+      {/* Revenue + Chart row */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <DashboardRevenueCard />
 
-              {revenueLoading ? (
-                <div className="space-y-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <p className="text-2xl sm:text-3xl font-bold tracking-tight text-success mb-4">
-                  {formatCurrency(totalRevenue)}
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-1.5">
-                {(Object.keys(periodLabels) as TimePeriod[]).map((period) => (
-                  <Button
-                    key={period}
-                    variant={revenuePeriod === period ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-7 text-xs px-2.5"
-                    onClick={() => setRevenuePeriod(period)}
-                  >
-                    {periodLabels[period]}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Pie Chart */}
+        {/* Distribution Chart */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
-          className="lg:col-span-3"
+          className="h-full sm:col-span-1 lg:col-span-2"
         >
-          <Card className="h-full">
-            <CardHeader className="p-4 sm:p-6 pb-2">
-              <CardTitle className="text-base sm:text-lg font-semibold tracking-tight">
-                Distribuição de Pedidos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0">
+          <Card className="overflow-hidden relative h-full">
+            <CardContent className="p-4 sm:p-6 text-left">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-chart-3/10">
+                  <ShoppingCart className="h-5 w-5 text-chart-3" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Distribuição de Pedidos</span>
+              </div>
+
               {statsLoading ? (
-                <div className="flex items-center justify-center h-[200px]">
+                <div className="flex items-center justify-center h-[180px]">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : chartData.length === 0 ? (
-                <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
+                <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
                   Nenhum dado disponível
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie
                       data={chartData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
+                      innerRadius={45}
+                      outerRadius={75}
                       paddingAngle={4}
                       dataKey="value"
                       strokeWidth={0}
@@ -244,13 +139,15 @@ export default function AdminOrders() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => [`${value} pedidos`, '']}
+                      formatter={(value: number, name: string) => [`${value}`, name]}
                       contentStyle={{
-                        borderRadius: '8px',
+                        borderRadius: '12px',
                         border: '1px solid hsl(var(--border))',
                         backgroundColor: 'hsl(var(--popover))',
                         color: 'hsl(var(--popover-foreground))',
                         fontSize: '13px',
+                        padding: '8px 12px',
+                        boxShadow: '0 4px 12px hsl(var(--foreground) / 0.08)',
                       }}
                     />
                     <Legend
@@ -259,8 +156,9 @@ export default function AdminOrders() {
                       layout="vertical"
                       iconType="circle"
                       iconSize={8}
+                      wrapperStyle={{ fontSize: '13px' }}
                       formatter={(value) => (
-                        <span style={{ color: 'hsl(var(--foreground))', fontSize: '13px' }}>{value}</span>
+                        <span style={{ color: 'hsl(var(--foreground))' }}>{value}</span>
                       )}
                     />
                   </PieChart>
@@ -272,67 +170,39 @@ export default function AdminOrders() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-primary/10">
-                <ShoppingCart className="h-5 w-5 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Total de Pedidos</span>
-            </div>
-            {statsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <p className="text-2xl font-bold">{orderStats?.total ?? totalCount}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-success/10">
-                <CreditCard className="h-5 w-5 text-success" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Pedidos Pagos</span>
-            </div>
-            {statsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <p className="text-2xl font-bold text-success">{orderStats?.paid ?? 0}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-warning/10">
-                <RotateCcw className="h-5 w-5 text-warning" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Pedidos Estornados</span>
-            </div>
-            {statsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <p className="text-2xl font-bold text-warning">{orderStats?.refunded ?? 0}</p>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-destructive/10">
-                <XCircle className="h-5 w-5 text-destructive" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Pedidos Cancelados</span>
-            </div>
-            {statsLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <p className="text-2xl font-bold text-destructive">{orderStats?.canceled ?? 0}</p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: 'Total de Pedidos', value: orderStats?.total ?? totalCount, icon: ShoppingCart, colorClass: 'primary' },
+          { label: 'Pedidos Pagos', value: orderStats?.paid ?? 0, icon: CreditCard, colorClass: 'success' },
+          { label: 'Pedidos Estornados', value: orderStats?.refunded ?? 0, icon: RotateCcw, colorClass: 'warning' },
+          { label: 'Pedidos Cancelados', value: orderStats?.canceled ?? 0, icon: XCircle, colorClass: 'destructive' },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 * (i + 2) }}
+            className="h-full"
+          >
+            <Card className="overflow-hidden relative h-full">
+              <CardContent className="p-4 sm:p-6 text-left">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`p-2.5 rounded-xl bg-${stat.colorClass}/10`}>
+                    <stat.icon className={`h-5 w-5 text-${stat.colorClass}`} />
+                  </div>
+                  <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
+                </div>
+                {statsLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <p className={`text-2xl font-bold ${stat.colorClass !== 'primary' ? `text-${stat.colorClass}` : ''}`}>
+                    {stat.value}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
       {/* Sales Table */}
@@ -346,7 +216,6 @@ export default function AdminOrders() {
           </CardTitle>
         </CardHeader>
         <CardContent className="dashboard-card-content space-y-4">
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
