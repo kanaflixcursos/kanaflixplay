@@ -175,7 +175,7 @@
 }
 
 .card-title {
-  @apply text-lg font-medium tracking-tight text-foreground;
+  @apply text-sm sm:text-lg font-medium tracking-tight text-foreground leading-snug;
 }
 
 .card-description {
