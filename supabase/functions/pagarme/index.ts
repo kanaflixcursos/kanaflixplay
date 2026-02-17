@@ -249,12 +249,12 @@ async function handleCreateOrder(
   const charge = pagarmeOrder.charges?.[0];
 
   const orderData: any = {
+    id: pagarmeOrder.id,
     user_id: userId,
     course_id: courseId,
     amount: course.price,
     status: charge?.status === 'paid' ? 'paid' : 'pending',
     payment_method: paymentMethod,
-    pagarme_order_id: pagarmeOrder.id,
     pagarme_charge_id: charge?.id
   };
 
