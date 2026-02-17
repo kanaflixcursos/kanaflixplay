@@ -1236,7 +1236,7 @@ export default function CourseForm() {
                               {method.description && (
                                 <p className="text-xs text-muted-foreground">{method.description}</p>
                               )}
-                              {method.discount_percentage && method.discount_percentage > 0 && (
+                              {method.discount_percentage != null && method.discount_percentage > 0 && (
                                 <Badge variant="secondary" className="w-fit text-xs">
                                   {method.discount_percentage}% de desconto
                                 </Badge>

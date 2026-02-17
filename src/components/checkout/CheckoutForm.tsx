@@ -423,9 +423,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       </span>
                     </span>
                   </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">Sem juros</span>
-                )}
+                ) : null}
               </>
             ) : (
               <span className="text-3xl font-bold text-foreground">{formatPrice(course.price)}</span>
