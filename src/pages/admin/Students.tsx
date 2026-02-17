@@ -40,7 +40,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Upload, Download, X } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Upload, Download, X, ShieldCheck, ShieldOff, BookPlus } from 'lucide-react';
 import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
 import PhoneInput from '@/components/PhoneInput';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -101,6 +101,12 @@ export default function AdminStudents() {
   const [resetCourseId, setResetCourseId] = useState<string>('');
   const [resetting, setResetting] = useState(false);
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
+
+  // Grant course dialog
+  const [grantCourseDialogOpen, setGrantCourseDialogOpen] = useState(false);
+  const [grantStudent, setGrantStudent] = useState<Student | null>(null);
+  const [grantCourseId, setGrantCourseId] = useState<string>('');
+  const [granting, setGranting] = useState(false);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -174,7 +180,8 @@ export default function AdminStudents() {
     [students, searchQuery]
   );
 
-  const handleChangeRole = async (student: Student, newRole: 'student' | 'professor' | 'admin') => {
+  const handleToggleRole = async (student: Student) => {
+    const newRole = student.role === 'admin' ? 'student' : 'admin';
     const { error } = await supabase
       .from('user_roles')
       .update({ role: newRole })
@@ -183,8 +190,7 @@ export default function AdminStudents() {
     if (error) {
       toast.error('Erro ao alterar função');
     } else {
-      const roleLabels: Record<string, string> = { student: 'Aluno', professor: 'Professor', admin: 'Administrador' };
-      toast.success(`Função alterada para ${roleLabels[newRole]}`);
+      toast.success(`Função alterada para ${newRole === 'admin' ? 'Administrador' : 'Aluno'}`);
       fetchData();
     }
   };
@@ -409,7 +415,50 @@ export default function AdminStudents() {
     setResetting(false);
   };
 
-  // Selection helpers
+  const handleOpenGrantCourseDialog = (student: Student) => {
+    setGrantStudent(student);
+    setGrantCourseId('');
+    setGrantCourseDialogOpen(true);
+  };
+
+  const handleGrantCourse = async () => {
+    if (!grantStudent || !grantCourseId) {
+      toast.error('Selecione um curso');
+      return;
+    }
+
+    setGranting(true);
+    try {
+      // Check if already enrolled
+      const { data: existing } = await supabase
+        .from('course_enrollments')
+        .select('id')
+        .eq('user_id', grantStudent.user_id)
+        .eq('course_id', grantCourseId)
+        .maybeSingle();
+
+      if (existing) {
+        toast.error('Aluno já está matriculado neste curso');
+        setGranting(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('course_enrollments')
+        .insert({ user_id: grantStudent.user_id, course_id: grantCourseId });
+
+      if (error) throw error;
+
+      const courseName = courses.find(c => c.id === grantCourseId)?.title || 'curso';
+      toast.success(`${grantStudent.full_name} matriculado em "${courseName}" com sucesso!`);
+      setGrantCourseDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error granting course:', error);
+      toast.error('Erro ao conceder curso');
+    }
+    setGranting(false);
+  };
   const toggleSelect = (userId: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -441,7 +490,6 @@ export default function AdminStudents() {
 
   const roleLabels: Record<string, string> = {
     admin: 'Admin',
-    professor: 'Professor',
     student: 'Aluno',
   };
 
@@ -461,21 +509,23 @@ export default function AdminStudents() {
           <Pencil className="h-4 w-4 mr-2" />
           Editar Perfil
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleChangeRole(student, 'student')} disabled={student.role === 'student'}>
-          {student.role === 'student' ? '✓ ' : ''}Aluno
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleChangeRole(student, 'professor')} disabled={student.role === 'professor'}>
-          {student.role === 'professor' ? '✓ ' : ''}Professor
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleChangeRole(student, 'admin')} disabled={student.role === 'admin'}>
-          {student.role === 'admin' ? '✓ ' : ''}Administrador
+        <DropdownMenuItem onClick={() => handleToggleRole(student)}>
+          {student.role === 'admin' ? (
+            <><ShieldOff className="h-4 w-4 mr-2" />Tornar Aluno</>
+          ) : (
+            <><ShieldCheck className="h-4 w-4 mr-2" />Tornar Admin</>
+          )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleOpenGrantCourseDialog(student)}>
+          <BookPlus className="h-4 w-4 mr-2" />
+          Conceder Curso
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>
           <RotateCcw className="h-4 w-4 mr-2" />
           Resetar Progresso
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleOpenDeleteDialog(student)} className="text-destructive focus:text-destructive">
           <Trash2 className="h-4 w-4 mr-2" />
           Excluir Usuário
@@ -594,7 +644,10 @@ export default function AdminStudents() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{student.full_name}</span>
+                    <span
+                      className="font-medium text-sm truncate hover:underline cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); handleViewProfile(student); }}
+                    >{student.full_name}</span>
                     <Badge
                       variant={student.role === 'admin' ? 'default' : 'secondary'}
                       className="text-[10px] px-1.5 py-0 h-5 shrink-0"
@@ -764,6 +817,40 @@ export default function AdminStudents() {
             <Button variant="outline" onClick={() => setResetDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleResetProgress} disabled={resetting || (resetType === 'course' && !resetCourseId)} variant="destructive">
               {resetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Resetando...</> : <><RotateCcw className="mr-2 h-4 w-4" />Resetar Progresso</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Grant Course Dialog */}
+      <Dialog open={grantCourseDialogOpen} onOpenChange={setGrantCourseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookPlus className="h-5 w-5" />
+              Conceder Curso
+            </DialogTitle>
+            <DialogDescription>
+              Matricule {grantStudent?.full_name} em um curso.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {courses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum curso publicado disponível.</p>
+            ) : (
+              <Select value={grantCourseId} onValueChange={setGrantCourseId}>
+                <SelectTrigger><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((course) => (
+                    <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGrantCourseDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleGrantCourse} disabled={granting || !grantCourseId}>
+              {granting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Matriculando...</> : 'Matricular'}
             </Button>
           </DialogFooter>
         </DialogContent>
