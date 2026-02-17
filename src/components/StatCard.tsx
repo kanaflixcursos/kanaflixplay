@@ -52,7 +52,7 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
             <div className={cn("p-2 rounded-xl shrink-0", finalBgColor)}>
               <Icon className={cn("h-4 w-4 sm:h-5 sm:w-5", finalIconColor)} />
             </div>
-            <span className="stat-card-label text-xs sm:text-sm truncate">{title}</span>
+            <span className="stat-card-label text-xs sm:text-sm leading-tight">{title}</span>
           </div>
           {loading ? (
             <Skeleton className="h-7 sm:h-9 w-20" />
