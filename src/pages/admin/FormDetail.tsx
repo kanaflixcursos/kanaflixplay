@@ -315,7 +315,8 @@ export default function FormDetail() {
     add('                startTransition(() => setFormStatus("success"))');
     add('                const redirectTo = result.redirect_url || config.redirect_url || ""');
     add('                if (redirectTo && typeof window !== "undefined") {');
-    add('                    setTimeout(() => { window.location.href = redirectTo }, 1500)');
+    add('                    const finalUrl = redirectTo.startsWith("http") ? redirectTo : "https://" + redirectTo');
+    add('                    setTimeout(() => { window.location.href = finalUrl }, 1500)');
     add('                }');
     add('            } else {');
     add('                const err = await res.json().catch(() => ({}))');
