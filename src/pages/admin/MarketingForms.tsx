@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Plus, Copy, Trash2, FileText, Code, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Plus, Copy, Trash2, FileText, Code, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -37,8 +37,9 @@ export default function MarketingForms() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
+  const [editingForm, setEditingForm] = useState<LeadForm | null>(null);
 
-  // New form state
+  // Form state
   const [formName, setFormName] = useState('');
   const [formSlug, setFormSlug] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -57,29 +58,56 @@ export default function MarketingForms() {
 
   useEffect(() => { fetchForms(); }, [fetchForms]);
 
-  const handleCreateForm = async () => {
+  const openEditDialog = (form: LeadForm) => {
+    setEditingForm(form);
+    setFormName(form.name);
+    setFormSlug(form.slug);
+    setFormDescription(form.description || '');
+    setFormRedirect(form.redirect_url || '');
+    setFormFields(form.fields.length > 0 ? form.fields : [
+      { name: 'name', label: 'Nome', type: 'text', required: true },
+      { name: 'email', label: 'Email', type: 'email', required: true },
+    ]);
+    setDialogOpen(true);
+  };
+
+  const handleSaveForm = async () => {
     if (!formName || !formSlug) {
       toast.error('Preencha nome e slug');
       return;
     }
-    const { error } = await supabase.from('lead_forms').insert({
+
+    const payload = {
       name: formName,
       slug: formSlug,
       description: formDescription || null,
       redirect_url: formRedirect || null,
       fields: formFields as unknown as any,
-    });
-    if (error) {
-      toast.error(error.message.includes('duplicate') ? 'Slug já existe' : error.message);
-      return;
+    };
+
+    if (editingForm) {
+      const { error } = await supabase.from('lead_forms').update(payload).eq('id', editingForm.id);
+      if (error) {
+        toast.error(error.message.includes('duplicate') ? 'Slug já existe' : error.message);
+        return;
+      }
+      toast.success('Formulário atualizado!');
+    } else {
+      const { error } = await supabase.from('lead_forms').insert(payload);
+      if (error) {
+        toast.error(error.message.includes('duplicate') ? 'Slug já existe' : error.message);
+        return;
+      }
+      toast.success('Formulário criado!');
     }
-    toast.success('Formulário criado!');
+
     setDialogOpen(false);
     resetForm();
     fetchForms();
   };
 
   const resetForm = () => {
+    setEditingForm(null);
     setFormName('');
     setFormSlug('');
     setFormDescription('');
@@ -88,6 +116,11 @@ export default function MarketingForms() {
       { name: 'name', label: 'Nome', type: 'text', required: true },
       { name: 'email', label: 'Email', type: 'email', required: true },
     ]);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) resetForm();
   };
 
   const handleToggleActive = async (id: string, active: boolean) => {
@@ -170,13 +203,13 @@ ${form.fields.map(f => `      <input
             <p className="text-muted-foreground text-sm mt-1">Crie formulários de captura de leads</p>
           </div>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-1" /> Novo Formulário</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Criar Formulário</DialogTitle>
+              <DialogTitle>{editingForm ? 'Editar Formulário' : 'Criar Formulário'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -234,7 +267,7 @@ ${form.fields.map(f => `      <input
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleCreateForm}>Criar Formulário</Button>
+              <Button onClick={handleSaveForm}>{editingForm ? 'Salvar' : 'Criar Formulário'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -284,6 +317,14 @@ ${form.fields.map(f => `      <input
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => openEditDialog(form)}
+                    >
+                      <Pencil className="h-3 w-3 mr-1" /> Editar
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
