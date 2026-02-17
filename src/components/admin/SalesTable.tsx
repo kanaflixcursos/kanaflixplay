@@ -75,6 +75,20 @@ const statusLabels: Record<string, string> = {
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value / 100);
 
+const calculateNetAmount = (amount: number, paymentMethod: string | null): number => {
+  const gatewayFee = 70; // R$ 0,70 in cents
+  switch (paymentMethod) {
+    case 'pix':
+      return amount - Math.round(amount * 0.79 / 100) - gatewayFee;
+    case 'boleto':
+      return amount - 279 - gatewayFee; // R$ 2,79 + gateway
+    case 'credit_card':
+      return amount - gatewayFee; // MDR is passed to customer
+    default:
+      return amount - gatewayFee;
+  }
+};
+
 interface SalesTableProps {
   sales: Sale[];
   loading: boolean;
@@ -232,8 +246,13 @@ export default function SalesTable({
                 <TableCell className="text-sm max-w-[180px] truncate">
                   {sale.course_title || '—'}
                 </TableCell>
-                <TableCell className="text-sm font-semibold text-success whitespace-nowrap">
-                  {formatCurrency(sale.amount)}
+                <TableCell className="text-sm whitespace-nowrap">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-foreground">{formatCurrency(sale.amount)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-sm">
                   {sale.payment_method ? (
