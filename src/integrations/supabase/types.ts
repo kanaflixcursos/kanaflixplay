@@ -480,7 +480,6 @@ export type Database = {
           created_at: string
           id: string
           pagarme_charge_id: string | null
-          pagarme_order_id: string | null
           paid_at: string | null
           payment_method: string | null
           pix_expires_at: string | null
@@ -497,9 +496,8 @@ export type Database = {
           boleto_url?: string | null
           course_id?: string | null
           created_at?: string
-          id?: string
+          id: string
           pagarme_charge_id?: string | null
-          pagarme_order_id?: string | null
           paid_at?: string | null
           payment_method?: string | null
           pix_expires_at?: string | null
@@ -518,7 +516,6 @@ export type Database = {
           created_at?: string
           id?: string
           pagarme_charge_id?: string | null
-          pagarme_order_id?: string | null
           paid_at?: string | null
           payment_method?: string | null
           pix_expires_at?: string | null
@@ -805,34 +802,34 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
-          boleto_barcode?: never
-          boleto_due_date?: never
-          boleto_url?: never
+          boleto_barcode?: string | null
+          boleto_due_date?: string | null
+          boleto_url?: string | null
           course_id?: string | null
           created_at?: string | null
           id?: string | null
           paid_at?: string | null
           payment_method?: string | null
-          pix_expires_at?: never
-          pix_qr_code?: never
-          pix_qr_code_url?: never
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           amount?: number | null
-          boleto_barcode?: never
-          boleto_due_date?: never
-          boleto_url?: never
+          boleto_barcode?: string | null
+          boleto_due_date?: string | null
+          boleto_url?: string | null
           course_id?: string | null
           created_at?: string | null
           id?: string | null
           paid_at?: string | null
           payment_method?: string | null
-          pix_expires_at?: never
-          pix_qr_code?: never
-          pix_qr_code_url?: never
+          pix_expires_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
