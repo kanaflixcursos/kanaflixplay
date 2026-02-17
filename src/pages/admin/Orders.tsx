@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle } from 'lucide-react';
+import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock } from 'lucide-react';
 import SalesTable, { Sale, fetchSalesData } from '@/components/admin/SalesTable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
@@ -170,11 +170,12 @@ export default function AdminOrders() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
         {[
           { label: 'Total de Pedidos', value: orderStats?.total ?? totalCount, icon: ShoppingCart, colorClass: 'primary' },
           { label: 'Pedidos Pagos', value: orderStats?.paid ?? 0, icon: CreditCard, colorClass: 'success' },
-          { label: 'Pedidos Estornados', value: orderStats?.refunded ?? 0, icon: RotateCcw, colorClass: 'warning' },
+          { label: 'Pedidos Pendentes', value: orderStats?.pending ?? 0, icon: Clock, colorClass: 'warning' },
+          { label: 'Pedidos Estornados', value: orderStats?.refunded ?? 0, icon: RotateCcw, colorClass: 'muted-foreground' },
           { label: 'Pedidos Cancelados', value: orderStats?.canceled ?? 0, icon: XCircle, colorClass: 'destructive' },
         ].map((stat, i) => (
           <motion.div
