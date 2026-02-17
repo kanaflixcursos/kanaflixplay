@@ -31,9 +31,8 @@ type Lead = {
 
 const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   new: { label: 'Novo', variant: 'default' },
-  contacted: { label: 'Contatado', variant: 'secondary' },
   qualified: { label: 'Qualificado', variant: 'outline' },
-  converted: { label: 'Convertido', variant: 'default' },
+  converted: { label: 'Convertido', variant: 'secondary' },
   lost: { label: 'Perdido', variant: 'destructive' },
 };
 
