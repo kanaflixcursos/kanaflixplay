@@ -10,8 +10,10 @@ import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { useTrackVisit } from '@/hooks/useTrackVisit';
 
 export default function Login() {
+  useTrackVisit('/login');
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   

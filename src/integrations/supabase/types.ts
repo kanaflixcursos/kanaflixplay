@@ -775,6 +775,27 @@ export type Database = {
           },
         ]
       }
+      site_visits: {
+        Row: {
+          id: string
+          page_path: string
+          visited_at: string
+          visitor_id: string
+        }
+        Insert: {
+          id?: string
+          page_path?: string
+          visited_at?: string
+          visitor_id: string
+        }
+        Update: {
+          id?: string
+          page_path?: string
+          visited_at?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       support_ticket_messages: {
         Row: {
           attachments: Json | null

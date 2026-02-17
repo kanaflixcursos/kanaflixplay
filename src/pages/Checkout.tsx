@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import pagarmeLogo from '@/assets/pagarme-logo.svg';
+import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +29,7 @@ interface Course {
 }
 
 export default function Checkout() {
+  useTrackVisit('/checkout');
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
