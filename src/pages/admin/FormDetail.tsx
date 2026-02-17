@@ -108,6 +108,10 @@ export default function FormDetail() {
       toast.error('Preencha nome e slug');
       return;
     }
+    if (formRedirect && !formRedirect.startsWith('https://')) {
+      toast.error('A URL de redirecionamento deve começar com https://');
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from('lead_forms').update({
       name: formName,
@@ -533,14 +537,21 @@ export default function FormDetail() {
                             {lead.status === 'new' ? 'Novo' : lead.status === 'qualified' ? 'Qualificado' : lead.status === 'converted' ? 'Convertido' : lead.status}
                           </Badge>
                         </td>
-                        <td className="p-3 text-xs text-muted-foreground max-w-[200px]">
+                        <td className="p-3 text-xs max-w-[280px]">
                           {lead.custom_data && Object.keys(lead.custom_data).length > 0 ? (
-                            <div className="space-y-0.5">
-                              {Object.entries(lead.custom_data).map(([key, value]) => (
-                                <div key={key} className="truncate">
-                                  <span className="font-medium text-foreground">{key}:</span> {String(value)}
-                                </div>
-                              ))}
+                            <div className="space-y-1.5">
+                              {Object.entries(lead.custom_data).map(([key, value]) => {
+                                // Try to find the field label from form config
+                                const fieldConfig = form?.fields?.find(f => f.name === key);
+                                const displayLabel = fieldConfig?.label || key;
+                                const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+                                return (
+                                  <div key={key} className="flex flex-col gap-0.5">
+                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{displayLabel}</span>
+                                    <span className="text-foreground">{displayValue}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : '—'}
                         </td>
@@ -582,7 +593,20 @@ export default function FormDetail() {
               </div>
               <div>
                 <Label>URL de Redirecionamento (opcional)</Label>
-                <Input value={formRedirect} onChange={(e) => setFormRedirect(e.target.value)} placeholder="https://..." />
+                <Input 
+                  value={formRedirect} 
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (val && !val.startsWith('https://') && !val.startsWith('https:/')) {
+                      val = val.replace(/^(https?:\/\/|http:\/\/|\/\/)?/, 'https://');
+                    }
+                    setFormRedirect(val);
+                  }} 
+                  placeholder="https://exemplo.com" 
+                />
+                {formRedirect && !formRedirect.startsWith('https://') && (
+                  <p className="text-xs text-destructive mt-1">A URL deve começar com https://</p>
+                )}
               </div>
             </CardContent>
           </Card>
