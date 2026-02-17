@@ -27,7 +27,7 @@ export default function DashboardStudentsCard() {
   const fetchStudents = async () => {
     const sevenDaysAgo = subDays(new Date(), 7).toISOString();
     const [{ count: total }, { count: active }] = await Promise.all([
-      supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('last_seen_at', sevenDaysAgo),
     ]);
     setTotalStudents(total || 0);
