@@ -594,7 +594,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               </div>
               
               {/* Installments */}
-              {availableInstallments.length > 1 && (
+              {availableInstallments.length >= 1 && (
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Parcelas</Label>
                   <Select
