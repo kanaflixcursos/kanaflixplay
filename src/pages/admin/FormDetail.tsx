@@ -509,14 +509,16 @@ export default function FormDetail() {
                     <tr className="border-b">
                       <th className="text-left p-3 font-medium text-muted-foreground">Nome</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Telefone</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Dados Extras</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leads.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                        <td colSpan={6} className="p-6 text-center text-muted-foreground">
                           Nenhum lead capturado neste formulário ainda
                         </td>
                       </tr>
@@ -524,12 +526,24 @@ export default function FormDetail() {
                       <tr key={lead.id} className="border-b last:border-0 hover:bg-muted/30">
                         <td className="p-3">{lead.name || '—'}</td>
                         <td className="p-3 text-muted-foreground">{lead.email}</td>
+                        <td className="p-3 text-muted-foreground">{lead.phone || '—'}</td>
                         <td className="p-3">
                           <Badge variant={lead.status === 'converted' ? 'default' : 'secondary'} className="text-[10px]">
                             {lead.status === 'new' ? 'Novo' : lead.status === 'qualified' ? 'Qualificado' : lead.status === 'converted' ? 'Convertido' : lead.status}
                           </Badge>
                         </td>
-                        <td className="p-3 text-muted-foreground text-xs">{format(new Date(lead.created_at), 'dd/MM/yyyy HH:mm')}</td>
+                        <td className="p-3 text-xs text-muted-foreground max-w-[200px]">
+                          {lead.custom_data && Object.keys(lead.custom_data).length > 0 ? (
+                            <div className="space-y-0.5">
+                              {Object.entries(lead.custom_data).map(([key, value]) => (
+                                <div key={key} className="truncate">
+                                  <span className="font-medium text-foreground">{key}:</span> {String(value)}
+                                </div>
+                              ))}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        <td className="p-3 text-muted-foreground text-xs whitespace-nowrap">{format(new Date(lead.created_at), 'dd/MM/yyyy HH:mm')}</td>
                       </tr>
                     ))}
                   </tbody>
