@@ -168,7 +168,7 @@ export default function MarketingForms() {
     add('    multiSelectText: string; font: CSSProperties; buttonFont: CSSProperties');
     add('    borderRadius: number; additionalInputs: AdditionalInput[]');
     add('    multiSelects: MultiSelectOption[]; loadingText: string; successText: string');
-    add('    style?: CSSProperties');
+    add('    successUrl: string; style?: CSSProperties');
     add('}');
     add('');
     add('/**');
@@ -185,7 +185,7 @@ export default function MarketingForms() {
     add('        font, buttonFont, borderRadius = 12,');
     add('        additionalInputs = [], multiSelects = [],');
     add('        loadingText = "Enviando...", successText = "Enviado com sucesso!",');
-    add('        style,');
+    add('        successUrl = "", style,');
     add('    } = props');
     add('');
     add('    const API_ENDPOINT = "' + endpoint + '"');
@@ -299,10 +299,10 @@ export default function MarketingForms() {
     add('                body: JSON.stringify(payload),');
     add('            })');
     add('            if (res.ok) {');
-    add('                const data = await res.json()');
     add('                startTransition(() => setFormStatus("success"))');
-    add('                if (data.redirect_url && typeof window !== "undefined") {');
-    add('                    setTimeout(() => { window.location.href = data.redirect_url }, 1500)');
+    add('                const redirectTo = successUrl || ""');
+    add('                if (redirectTo && typeof window !== "undefined") {');
+    add('                    setTimeout(() => { window.location.href = redirectTo }, 1500)');
     add('                }');
     add('            } else {');
     add('                const err = await res.json().catch(() => ({}))');
@@ -388,6 +388,7 @@ export default function MarketingForms() {
     add('    buttonText: { type: ControlType.String, title: "Texto do Botão", defaultValue: "Enviar" },');
     add('    loadingText: { type: ControlType.String, title: "Texto Loading", defaultValue: "Enviando..." },');
     add('    successText: { type: ControlType.String, title: "Texto Sucesso", defaultValue: "Enviado com sucesso!" },');
+    add('    successUrl: { type: ControlType.String, title: "URL Redirecionamento", defaultValue: "", placeholder: "https://exemplo.com/obrigado" },');
     add('    backgroundColor: { type: ControlType.Color, title: "Fundo", defaultValue: "#0A0A0A" },');
     add('    inputBackground: { type: ControlType.Color, title: "Fundo Input", defaultValue: "#1A1A2E" },');
     add('    inputText: { type: ControlType.Color, title: "Texto Input", defaultValue: "#FFFFFF" },');
