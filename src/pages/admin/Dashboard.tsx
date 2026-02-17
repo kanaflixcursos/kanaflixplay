@@ -4,6 +4,7 @@ import DashboardCoursesCard from '@/components/admin/DashboardCoursesCard';
 import DashboardRevenueChart from '@/components/admin/DashboardRevenueChart';
 import DashboardSalesTable from '@/components/admin/DashboardSalesTable';
 import DashboardLatestSignupsCard from '@/components/admin/DashboardLatestSignupsCard';
+import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
 
 export default function AdminDashboard() {
   return (
@@ -14,6 +15,8 @@ export default function AdminDashboard() {
           Visão geral da plataforma Kanaflix Play
         </p>
       </div>
+
+      <FunnelRoadmap />
 
       <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3">
         <DashboardRevenueCard />
