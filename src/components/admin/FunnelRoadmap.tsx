@@ -4,7 +4,7 @@ import StatCard from '@/components/StatCard';
 import { Globe, UserPlus, UserCheck, Target, ShoppingCart, ChevronRight } from 'lucide-react';
 
 interface FunnelData {
-  visitors: number | null;
+  visitors: number;
   leads: number;
   qualified: number;
   opportunities: number;
@@ -19,25 +19,35 @@ const stages = [
   { key: 'sales' as const, label: 'Vendas', icon: ShoppingCart },
 ];
 
+function calcRate(current: number, previous: number): string | null {
+  if (previous === 0) return null;
+  return `${Math.round((current / previous) * 100)}%`;
+}
+
 export default function FunnelRoadmap() {
-  const [data, setData] = useState<FunnelData>({ visitors: null, leads: 0, qualified: 0, opportunities: 0, sales: 0 });
+  const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, qualified: 0, opportunities: 0, sales: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const [
+        { data: visitorRows },
         { count: totalLeads },
         { count: qualifiedCount },
         { count: opportunityCount },
         { count: convertedCount },
       ] = await Promise.all([
+        supabase.from('site_visits').select('visitor_id'),
         supabase.from('leads').select('*', { count: 'exact', head: true }),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified'),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity'),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted'),
       ]);
+
+      const uniqueVisitors = new Set(visitorRows?.map(r => r.visitor_id) || []).size;
+
       setData({
-        visitors: null,
+        visitors: uniqueVisitors,
         leads: totalLeads || 0,
         qualified: qualifiedCount || 0,
         opportunities: opportunityCount || 0,
@@ -45,33 +55,35 @@ export default function FunnelRoadmap() {
       });
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
-  const getValue = (key: typeof stages[number]['key']) => {
-    if (key === 'visitors') return '—';
-    return data[key];
-  };
+  const values = [data.visitors, data.leads, data.qualified, data.opportunities, data.sales];
 
   return (
     <div className="flex items-stretch gap-0">
-      {stages.map((stage, i) => (
-        <div key={stage.key} className="flex items-stretch flex-1 min-w-0">
-          <div className="flex-1 min-w-0">
-            <StatCard
-              title={stage.label}
-              value={loading ? '...' : String(getValue(stage.key))}
-              icon={stage.icon}
-              loading={loading}
-            />
-          </div>
-          {i < stages.length - 1 && (
-            <div className="flex items-center px-1 shrink-0 text-muted-foreground/40">
-              <ChevronRight className="h-4 w-4" />
+      {stages.map((stage, i) => {
+        const rate = i > 0 ? calcRate(values[i], values[i - 1]) : null;
+
+        return (
+          <div key={stage.key} className="flex items-stretch flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
+              <StatCard
+                title={stage.label}
+                value={loading ? '...' : String(values[i])}
+                description={rate ? `${rate} de conversão` : undefined}
+                icon={stage.icon}
+                loading={loading}
+              />
             </div>
-          )}
-        </div>
-      ))}
+            {i < stages.length - 1 && (
+              <div className="flex items-center px-1 shrink-0 text-muted-foreground/40">
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
