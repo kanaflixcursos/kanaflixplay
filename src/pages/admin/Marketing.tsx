@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, FileText, Mail, MessageSquare, BarChart3, Megaphone } from 'lucide-react';
+import { Users, FileText, Mail, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
 
 const tools = [
   {
@@ -43,23 +42,6 @@ const tools = [
 
 export default function MarketingHub() {
   const navigate = useNavigate();
-  const [totalLeads, setTotalLeads] = useState<number | null>(null);
-  const [activeForms, setActiveForms] = useState<number | null>(null);
-  const [conversions, setConversions] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      const [{ count: leads }, { count: forms }, { count: conv }] = await Promise.all([
-        supabase.from('leads').select('*', { count: 'exact', head: true }),
-        supabase.from('lead_forms').select('*', { count: 'exact', head: true }).eq('is_active', true),
-        supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted'),
-      ]);
-      setTotalLeads(leads || 0);
-      setActiveForms(forms || 0);
-      setConversions(conv || 0);
-    };
-    fetchMetrics();
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -70,12 +52,7 @@ export default function MarketingHub() {
         </p>
       </div>
 
-      {/* Metrics row */}
-      <div className="grid gap-3 grid-cols-3">
-        <MetricCard icon={Users} label="Total de Leads" value={totalLeads !== null ? String(totalLeads) : '—'} color="text-primary" bg="bg-primary/10" />
-        <MetricCard icon={Megaphone} label="Formulários Ativos" value={activeForms !== null ? String(activeForms) : '—'} color="text-chart-3" bg="bg-chart-3/10" />
-        <MetricCard icon={BarChart3} label="Conversões" value={conversions !== null ? String(conversions) : '—'} color="text-chart-2" bg="bg-chart-2/10" />
-      </div>
+      <FunnelRoadmap />
 
       {/* Tools grid */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -111,23 +88,5 @@ export default function MarketingHub() {
         ))}
       </div>
     </div>
-  );
-}
-
-function MetricCard({ icon: Icon, label, value, color, bg }: { icon: any; label: string; value: string; color: string; bg: string }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="h-full">
-      <Card className="h-full">
-        <CardContent className="p-3 sm:p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`p-2 rounded-xl shrink-0 ${bg}`}>
-              <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${color}`} />
-            </div>
-            <span className="stat-card-label text-xs sm:text-sm">{label}</span>
-          </div>
-          <div className="stat-card-value text-xl sm:text-3xl">{value}</div>
-        </CardContent>
-      </Card>
-    </motion.div>
   );
 }
