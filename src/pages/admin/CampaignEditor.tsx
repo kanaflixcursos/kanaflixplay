@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save, Send, Plus, Trash2, GripVertical, Image, Type, AlignLeft, Minus } from 'lucide-react';
 import { toast } from 'sonner';
+import { leadStatusMap } from '@/lib/lead-constants';
 
 type BlockType = 'heading' | 'text' | 'button' | 'image' | 'divider' | 'spacer';
 
@@ -400,10 +401,9 @@ export default function CampaignEditor() {
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="new">Novos</SelectItem>
-                    <SelectItem value="qualified">Qualificados</SelectItem>
-                    <SelectItem value="converted">Convertidos</SelectItem>
-                    <SelectItem value="lost">Perdidos</SelectItem>
+                    {Object.entries(leadStatusMap).map(([key, { label }]) => (
+                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

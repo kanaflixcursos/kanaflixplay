@@ -21,6 +21,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import StatCard from '@/components/StatCard';
+import { leadStatusMap } from '@/lib/lead-constants';
 
 type Lead = {
   id: string;
@@ -34,12 +35,7 @@ type Lead = {
   form_id: string | null;
 };
 
-const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  new: { label: 'Novo', variant: 'default' },
-  qualified: { label: 'Qualificado', variant: 'outline' },
-  converted: { label: 'Convertido', variant: 'secondary' },
-  lost: { label: 'Perdido', variant: 'destructive' },
-};
+const statusMap = leadStatusMap;
 
 export default function MarketingLeads() {
   const navigate = useNavigate();
