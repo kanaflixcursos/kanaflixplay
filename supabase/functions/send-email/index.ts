@@ -256,7 +256,7 @@ const templates = {
 
 // Handler types
 interface EmailRequest {
-  action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation';
+  action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation' | 'campaign';
   to: string;
   data: Record<string, unknown>;
 }
@@ -321,6 +321,16 @@ Deno.serve(async (req) => {
         });
         subject = "Reembolso Processado - Kanaflix Play";
         break;
+
+      case 'campaign': {
+        const campaignData = data as { subject: string; htmlContent: string; recipientName?: string };
+        subject = campaignData.subject || 'Novidades - Kanaflix Play';
+        // Wrap campaign content in the standard email template
+        const campaignContent = campaignData.htmlContent
+          .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
+        html = emailTemplate(campaignContent, subject);
+        break;
+      }
 
       default:
         throw new Error(`Unknown action: ${action}`);

@@ -29,7 +29,6 @@ const tools = [
     color: 'text-chart-2',
     bg: 'bg-chart-2/10',
     url: '/admin/marketing/email',
-    comingSoon: true,
   },
   {
     title: 'WhatsApp',
@@ -72,7 +71,7 @@ export default function MarketingHub() {
       </div>
 
       {/* Metrics row */}
-      <div className="grid gap-3 grid-cols-1 xs:grid-cols-3">
+      <div className="grid gap-3 grid-cols-3">
         <MetricCard icon={Users} label="Total de Leads" value={totalLeads !== null ? String(totalLeads) : '—'} color="text-primary" bg="bg-primary/10" />
         <MetricCard icon={Megaphone} label="Formulários Ativos" value={activeForms !== null ? String(activeForms) : '—'} color="text-chart-3" bg="bg-chart-3/10" />
         <MetricCard icon={BarChart3} label="Conversões" value={conversions !== null ? String(conversions) : '—'} color="text-chart-2" bg="bg-chart-2/10" />

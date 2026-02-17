@@ -158,6 +158,54 @@ export type Database = {
           },
         ]
       }
+      email_campaigns: {
+        Row: {
+          created_at: string
+          failed_count: number
+          html_content: string
+          id: string
+          name: string
+          sent_at: string | null
+          sent_count: number
+          status: string
+          subject: string
+          target_filters: Json
+          target_type: string
+          total_recipients: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          failed_count?: number
+          html_content: string
+          id?: string
+          name: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject: string
+          target_filters?: Json
+          target_type?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          failed_count?: number
+          html_content?: string
+          id?: string
+          name?: string
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string
+          target_filters?: Json
+          target_type?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       featured_banner: {
         Row: {
           badge_text: string
