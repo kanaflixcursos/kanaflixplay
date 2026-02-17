@@ -283,7 +283,7 @@ export default function CampaignEditor() {
               body: {
                 action: 'campaign',
                 to: r.email,
-                data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '' },
+                data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id },
               },
             })
           )
@@ -630,7 +630,7 @@ export default function CampaignEditor() {
               </div>
               <iframe
                 srcDoc={previewHtml}
-                className="w-full bg-white"
+                className="w-full bg-white pointer-events-none"
                 style={{ height: '560px' }}
                 title="Email preview"
                 sandbox=""

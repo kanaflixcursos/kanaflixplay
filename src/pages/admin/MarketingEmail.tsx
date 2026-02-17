@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil, MailOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ type Campaign = {
   total_recipients: number;
   sent_count: number;
   failed_count: number;
+  open_count: number;
   sent_at: string | null;
   created_at: string;
 };
@@ -42,6 +43,7 @@ export default function MarketingEmail() {
   // Stats
   const [totalCampaigns, setTotalCampaigns] = useState(0);
   const [totalSent, setTotalSent] = useState(0);
+  const [totalOpened, setTotalOpened] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
 
   const fetchCampaigns = useCallback(async () => {
@@ -54,6 +56,7 @@ export default function MarketingEmail() {
     setCampaigns(result);
     setTotalCampaigns(result.length);
     setTotalSent(result.reduce((sum, c) => sum + (c.sent_count || 0), 0));
+    setTotalOpened(result.reduce((sum, c) => sum + (c.open_count || 0), 0));
     setLoading(false);
   }, []);
 
@@ -90,9 +93,10 @@ export default function MarketingEmail() {
         </Button>
       </div>
 
-      <div className="grid gap-3 grid-cols-3">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <StatCard icon={Mail} title="Campanhas" value={totalCampaigns} loading={loading} iconColor="text-primary" iconBgColor="bg-primary/10" />
         <StatCard icon={Send} title="Emails Enviados" value={totalSent} loading={loading} iconColor="text-chart-2" iconBgColor="bg-chart-2/10" />
+        <StatCard icon={MailOpen} title="Emails Abertos" value={totalOpened} loading={loading} iconColor="text-chart-4" iconBgColor="bg-chart-4/10" />
         <StatCard icon={Users} title="Leads Disponíveis" value={totalLeads} loading={loading} iconColor="text-chart-3" iconBgColor="bg-chart-3/10" />
       </div>
 
