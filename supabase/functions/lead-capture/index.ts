@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       name: sanitize(name) as string || null,
       email: (sanitize(email) as string).toLowerCase(),
       phone: sanitize(phone) as string || null,
-      source: "form",
+      source: `form:${formSlug}`,
       custom_data: Object.fromEntries(
         Object.entries(rest).map(([k, v]) => [k.slice(0, 50), sanitize(v)])
       ),
