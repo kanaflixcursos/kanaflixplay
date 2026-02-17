@@ -58,6 +58,7 @@ export default function MarketingLeads() {
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkStatusChanging, setBulkStatusChanging] = useState(false);
 
   // Tag dialog
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
@@ -188,6 +189,24 @@ export default function MarketingLeads() {
     setDeleteDialogOpen(false);
   };
 
+  const handleBulkStatusChange = async (newStatus: string) => {
+    const ids = Array.from(selectedIds);
+    setBulkStatusChanging(true);
+    const { error } = await supabase.from('leads').update({
+      status: newStatus,
+      ...(newStatus === 'converted' ? { converted_at: new Date().toISOString() } : {}),
+    }).in('id', ids);
+    if (error) {
+      toast.error('Erro ao alterar status');
+    } else {
+      toast.success(`${ids.length} lead(s) atualizados para "${statusMap[newStatus]?.label || newStatus}"`);
+      setSelectedIds(new Set());
+      fetchLeads();
+      fetchStats();
+    }
+    setBulkStatusChanging(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -289,6 +308,16 @@ export default function MarketingLeads() {
           {selectedIds.size > 0 && (
             <div className="flex items-center gap-3 mb-3 p-2 rounded-md bg-muted">
               <span className="text-sm font-medium">{selectedIds.size} selecionado(s)</span>
+              <Select onValueChange={handleBulkStatusChange} disabled={bulkStatusChanging}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="Alterar status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(statusMap).map(([key, { label }]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
                 <Trash2 className="h-4 w-4 mr-1" /> Excluir
               </Button>
