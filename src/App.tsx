@@ -38,6 +38,7 @@ import AdminMarketingLeads from "@/pages/admin/MarketingLeads";
 import AdminMarketingForms from "@/pages/admin/MarketingForms";
 import AdminMarketingEmail from "@/pages/admin/MarketingEmail";
 import AdminFormDetail from "@/pages/admin/FormDetail";
+import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
 
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -260,6 +261,16 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminMarketingEmail />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/email/:campaignId"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCampaignEditor />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
