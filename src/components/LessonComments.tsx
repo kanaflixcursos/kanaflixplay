@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, MessageCircle, Reply, Trash2, ChevronDown, ChevronUp, GraduationCap } from 'lucide-react';
+import { Loader2, MessageCircle, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -19,7 +19,7 @@ interface Comment {
   created_at: string;
   user_name?: string;
   user_avatar?: string;
-  user_role?: 'admin' | 'student' | 'professor';
+  user_role?: 'admin' | 'student';
   replies?: Comment[];
 }
 
@@ -75,7 +75,7 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
       ...c,
       user_name: profileMap.get(c.user_id)?.name || 'Usuário',
       user_avatar: profileMap.get(c.user_id)?.avatar || undefined,
-      user_role: roleMap.get(c.user_id) as 'admin' | 'student' | 'professor' | undefined,
+      user_role: roleMap.get(c.user_id) as 'admin' | 'student' | undefined,
     }));
 
     // Separate root comments and replies
@@ -246,12 +246,6 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-sm">{comment.user_name}</span>
-                    {comment.user_role === 'professor' && (
-                      <Badge variant="secondary" className="gap-1 text-xs h-5">
-                        <GraduationCap className="h-3 w-3" />
-                        Professor
-                      </Badge>
-                    )}
                     {comment.user_role === 'admin' && (
                       <Badge variant="default" className="text-xs h-5">
                         Admin
@@ -355,12 +349,6 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm">{reply.user_name}</span>
-                          {reply.user_role === 'professor' && (
-                            <Badge variant="secondary" className="gap-1 text-xs h-5">
-                              <GraduationCap className="h-3 w-3" />
-                              Professor
-                            </Badge>
-                          )}
                           {reply.user_role === 'admin' && (
                             <Badge variant="default" className="text-xs h-5">
                               Admin
