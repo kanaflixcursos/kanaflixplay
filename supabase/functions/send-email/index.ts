@@ -323,12 +323,19 @@ Deno.serve(async (req) => {
         break;
 
       case 'campaign': {
-        const campaignData = data as { subject: string; htmlContent: string; recipientName?: string };
+        const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string };
         subject = campaignData.subject || 'Novidades - Kanaflix Play';
         // Wrap campaign content in the standard email template
         const campaignContent = campaignData.htmlContent
           .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
-        html = emailTemplate(campaignContent, subject);
+        
+        // Add tracking pixel if campaignId is provided
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+        const trackingPixel = campaignData.campaignId
+          ? `<img src="${SUPABASE_URL}/functions/v1/email-tracking?cid=${encodeURIComponent(campaignData.campaignId)}&e=${encodeURIComponent(to)}" width="1" height="1" style="display:none;" alt="" />`
+          : '';
+        
+        html = emailTemplate(campaignContent + trackingPixel, subject);
         break;
       }
 

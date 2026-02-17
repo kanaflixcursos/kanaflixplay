@@ -165,6 +165,7 @@ export type Database = {
           html_content: string
           id: string
           name: string
+          open_count: number
           sent_at: string | null
           sent_count: number
           status: string
@@ -180,6 +181,7 @@ export type Database = {
           html_content: string
           id?: string
           name: string
+          open_count?: number
           sent_at?: string | null
           sent_count?: number
           status?: string
@@ -195,6 +197,7 @@ export type Database = {
           html_content?: string
           id?: string
           name?: string
+          open_count?: number
           sent_at?: string | null
           sent_count?: number
           status?: string
@@ -205,6 +208,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      email_opens: {
+        Row: {
+          campaign_id: string
+          id: string
+          opened_at: string
+          recipient_email: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          opened_at?: string
+          recipient_email: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          opened_at?: string
+          recipient_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_opens_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       featured_banner: {
         Row: {
