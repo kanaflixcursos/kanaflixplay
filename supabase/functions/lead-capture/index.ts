@@ -43,13 +43,14 @@ Deno.serve(async (req) => {
 
     // GET — return form config (fields only, no sensitive data)
     if (req.method === "GET") {
-      const fields = form.fields as Array<{ name: string; label: string; type: string; required: boolean }>;
+      const fields = form.fields as Array<{ name: string; label: string; type: string; required: boolean; options?: string[] }>;
       return new Response(
         JSON.stringify({
           slug: form.slug,
           name: form.name,
           description: form.description,
-          fields: fields.map(f => ({ name: f.name, label: f.label, type: f.type, required: f.required })),
+          redirect_url: form.redirect_url || null,
+          fields: fields.map(f => ({ name: f.name, label: f.label, type: f.type, required: f.required, ...(f.options ? { options: f.options } : {}) })),
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
