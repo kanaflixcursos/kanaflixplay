@@ -202,16 +202,11 @@ export default function PandavideoPlayerWithProgress({
     );
   }
 
-  // Add cache-busting to force reload of updated Pandavideo settings
-  const cacheBuster = `${embedUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
-  const finalUrl = `${embedUrl}${cacheBuster}`;
-
   return (
     <div className={`aspect-video ${className}`}>
       <iframe
         ref={iframeRef}
-        key={lessonId}
-        src={finalUrl}
+        src={embedUrl}
         title={title || 'Video Player'}
         className="w-full h-full rounded-lg"
         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
