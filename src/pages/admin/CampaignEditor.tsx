@@ -401,8 +401,8 @@ export default function CampaignEditor() {
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
                     <SelectItem value="new">Novos</SelectItem>
-                    <SelectItem value="contacted">Contatados</SelectItem>
                     <SelectItem value="qualified">Qualificados</SelectItem>
+                    <SelectItem value="converted">Convertidos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
