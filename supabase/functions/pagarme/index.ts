@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
       case 'get_payment_config':
         return handleGetPaymentConfig();
       case 'get_order_stats':
-        return handleGetOrderStats(PAGARME_API_KEY, supabase);
+        return handleGetOrderStats(PAGARME_API_KEY, adminSupabase);
       case 'refund_order':
         return handleRefundOrder(payload, PAGARME_API_KEY, adminSupabase);
       case 'cancel_order':
