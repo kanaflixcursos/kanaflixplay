@@ -238,6 +238,26 @@ Deno.serve(async (req) => {
           .eq("course_id", course.id)
           .not("pandavideo_video_id", "is", null);
 
+        // Ensure a default module exists for the course
+        let { data: existingModules } = await supabase
+          .from("course_modules")
+          .select("id")
+          .eq("course_id", course.id)
+          .order("order_index")
+          .limit(1);
+
+        let defaultModuleId: string | null = null;
+        if (existingModules && existingModules.length > 0) {
+          defaultModuleId = existingModules[0].id;
+        } else {
+          const { data: newMod } = await supabase
+            .from("course_modules")
+            .insert({ course_id: course.id, title: "Módulo Único", order_index: 1 })
+            .select("id")
+            .single();
+          if (newMod) defaultModuleId = newMod.id;
+        }
+
         const existingVideoIds = new Set(
           (existingLessons || []).map((l) => l.pandavideo_video_id)
         );
@@ -311,7 +331,7 @@ Deno.serve(async (req) => {
           } else {
             // Create new lesson with next order_index
             newOrderIndex++;
-            const lessonData = {
+            const lessonData: Record<string, unknown> = {
               course_id: course.id,
               title: video.title || `Vídeo ${newOrderIndex}`,
               description: video.description || "",
@@ -321,6 +341,7 @@ Deno.serve(async (req) => {
               duration_minutes: durationMinutes,
               thumbnail_url: thumbnailUrl,
             };
+            if (defaultModuleId) lessonData.module_id = defaultModuleId;
             
             console.log(`Creating lesson for video: ${video.id} - ${video.title}`);
             const { error: insertError } = await supabase
