@@ -308,7 +308,21 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
     setCourse(courseData);
     const lessonsList = (lessonsData || []) as Lesson[];
     setLessons(lessonsList);
-    setModules((modulesData || []) as Module[]);
+    let modulesList = (modulesData || []) as Module[];
+
+    // Auto-create a default module if none exist
+    if (modulesList.length === 0) {
+      const { data: newModule, error: modError } = await supabase
+        .from('course_modules')
+        .insert({ course_id: courseId, title: 'Módulo 1', order_index: 1 })
+        .select()
+        .single();
+      if (!modError && newModule) {
+        modulesList = [newModule as Module];
+      }
+    }
+
+    setModules(modulesList);
 
     if (lessonsList.length > 0) {
       const { data: materialsData } = await supabase
