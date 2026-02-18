@@ -230,11 +230,7 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
 
       {/* Comments list */}
       <div className="space-y-4">
-        {comments.length === 0 ? (
-          <p className="text-center text-muted-foreground py-4">
-            Seja o primeiro a comentar nesta aula!
-          </p>
-        ) : (
+        {comments.length === 0 ? null : (
           comments.map(comment => (
             <div key={comment.id} className="space-y-3">
               {/* Main comment */}
