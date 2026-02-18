@@ -307,14 +307,13 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
 
     setCourse(courseData);
     const lessonsList = (lessonsData || []) as Lesson[];
-    setLessons(lessonsList);
     let modulesList = (modulesData || []) as Module[];
 
     // Auto-create a default module if none exist
     if (modulesList.length === 0) {
       const { data: newModule, error: modError } = await supabase
         .from('course_modules')
-        .insert({ course_id: courseId, title: 'Módulo 1', order_index: 1 })
+        .insert({ course_id: courseId, title: 'Módulo Único', order_index: 1 })
         .select()
         .single();
       if (!modError && newModule) {
@@ -322,6 +321,19 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
       }
     }
 
+    // Auto-assign any unassigned lessons to the first module
+    const firstModule = modulesList[0];
+    if (firstModule) {
+      const unassigned = lessonsList.filter(l => !l.module_id);
+      if (unassigned.length > 0) {
+        for (const lesson of unassigned) {
+          await supabase.from('lessons').update({ module_id: firstModule.id }).eq('id', lesson.id);
+          lesson.module_id = firstModule.id;
+        }
+      }
+    }
+
+    setLessons(lessonsList);
     setModules(modulesList);
 
     if (lessonsList.length > 0) {
@@ -385,6 +397,11 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
   };
 
   const handleDeleteModule = async (moduleId: string) => {
+    if (modules.length <= 1) {
+      toast.error('O curso deve ter pelo menos um módulo');
+      return;
+    }
+
     const moduleLessons = lessons.filter(l => l.module_id === moduleId);
     if (moduleLessons.length > 0) {
       toast.error('Mova as aulas para outro módulo antes de excluir');
@@ -558,7 +575,7 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
     }
   };
 
-  const unassignedLessons = lessons.filter(l => !l.module_id);
+  // No more unassigned lessons — all are auto-assigned to default module
 
   if (loading) {
     return (
@@ -643,42 +660,7 @@ export default function CourseLessonsManager({ courseId }: CourseLessonsManagerP
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          {unassignedLessons.length > 0 && modules.length > 0 && (
-            <Card className="border-destructive/50 bg-destructive/5 mb-4">
-              <CardContent className="p-4">
-                <p className="text-sm font-medium text-destructive mb-2">
-                  {unassignedLessons.length} aula(s) sem módulo
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Arraste-as para um módulo abaixo. Todas as aulas devem pertencer a um módulo.
-                </p>
-                <SortableContext items={unassignedLessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-1">
-                    {unassignedLessons.map((lesson) => (
-                      <SortableLessonCard
-                        key={lesson.id}
-                        lesson={lesson}
-                        materials={materials[lesson.id] || []}
-                        isExpanded={expandedLessons.has(lesson.id)}
-                        isEditing={editingLessonId === lesson.id}
-                        editingTitle={editingTitle}
-                        savingId={savingId}
-                        onToggleExpand={() => toggleExpanded(lesson.id)}
-                        onStartEdit={() => handleStartEdit(lesson)}
-                        onCancelEdit={() => { setEditingLessonId(null); setEditingTitle(''); }}
-                        onSaveTitle={() => handleSaveTitle(lesson.id)}
-                        onEditingTitleChange={setEditingTitle}
-                        onToggleVisibility={() => handleToggleVisibility(lesson)}
-                        onMaterialsChange={fetchData}
-                        onPreview={() => setPreviewLesson(lesson)}
-                        formatDuration={formatDuration}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </CardContent>
-            </Card>
-          )}
+          
           <div className="space-y-4">
             {modules.map((mod) => {
               const moduleLessons = lessons
