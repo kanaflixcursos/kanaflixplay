@@ -165,7 +165,10 @@ export default function CourseForm() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [loadingPaymentConfig, setLoadingPaymentConfig] = useState(false);
-  const [localModules, setLocalModules] = useState<LocalModule[]>([]);
+  const DEFAULT_MODULE_ID = 'local-default-module';
+  const [localModules, setLocalModules] = useState<LocalModule[]>([
+    { id: DEFAULT_MODULE_ID, title: 'Módulo Único', order_index: 1, is_optional: false },
+  ]);
   const [newModuleTitle, setNewModuleTitle] = useState('');
   const [previewVideo, setPreviewVideo] = useState<VideoItem | null>(null);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
@@ -291,6 +294,9 @@ export default function CourseForm() {
 
     if (modulesData && modulesData.length > 0) {
       setLocalModules(modulesData.map(m => ({ id: m.id, title: m.title, order_index: m.order_index, is_optional: m.is_optional ?? false })));
+    } else {
+      // Keep default "Módulo Único" if no modules exist
+      setLocalModules([{ id: DEFAULT_MODULE_ID, title: 'Módulo Único', order_index: 1, is_optional: false }]);
     }
 
     setLoadingCourse(false);
@@ -321,7 +327,8 @@ export default function CourseForm() {
         throw new Error(data.error || 'Erro ao buscar vídeos');
       }
 
-      // Build video list from Pandavideo
+      // Build video list from Pandavideo — assign to first local module by default
+      const firstModuleId = localModules.length > 0 ? localModules[0].id : DEFAULT_MODULE_ID;
       const pandaVideos: VideoItem[] = (data.videos || []).map((v: any) => {
         let durationSeconds = 0;
         if (v.length && typeof v.length === 'number') {
@@ -338,6 +345,7 @@ export default function CourseForm() {
           original_title: v.title,
           duration: durationSeconds,
           status: v.status,
+          module_id: firstModuleId,
         };
       });
 
@@ -473,8 +481,15 @@ export default function CourseForm() {
   };
 
   const handleDeleteLocalModule = (moduleId: string) => {
-    setLocalModules(localModules.filter(m => m.id !== moduleId));
-    setVideos(videos.map(v => v.module_id === moduleId ? { ...v, module_id: null } : v));
+    if (localModules.length <= 1) {
+      toast.error('O curso deve ter pelo menos um módulo');
+      return;
+    }
+    // Move lessons from deleted module to first remaining module
+    const remainingModules = localModules.filter(m => m.id !== moduleId);
+    const targetModuleId = remainingModules[0].id;
+    setLocalModules(remainingModules);
+    setVideos(videos.map(v => v.module_id === moduleId ? { ...v, module_id: targetModuleId } : v));
   };
 
   const handleUpdateLocalModuleTitle = (moduleId: string, title: string) => {
@@ -707,6 +722,40 @@ export default function CourseForm() {
                 Authorization: `Bearer ${sessionData.session.access_token}`,
               },
             });
+
+            // After sync, update lesson order and module assignments based on user's arrangement
+            if (videos.length > 0) {
+              const { data: syncedLessons } = await supabase
+                .from('lessons')
+                .select('id, pandavideo_video_id')
+                .eq('course_id', savedCourseId)
+                .not('pandavideo_video_id', 'is', null);
+
+              if (syncedLessons) {
+                const syncedByVideoId = new Map(
+                  syncedLessons.map(l => [l.pandavideo_video_id, l.id])
+                );
+
+                for (let i = 0; i < videos.length; i++) {
+                  const video = videos[i];
+                  const lessonId = syncedByVideoId.get(video.id);
+                  if (!lessonId) continue;
+
+                  const resolvedModuleId = video.module_id
+                    ? (moduleIdMap.get(video.module_id) || video.module_id)
+                    : null;
+
+                  await supabase
+                    .from('lessons')
+                    .update({
+                      title: video.title,
+                      order_index: i,
+                      module_id: resolvedModuleId,
+                    })
+                    .eq('id', lessonId);
+                }
+              }
+            }
           }
         } catch (syncError) {
           console.error('Auto-sync error:', syncError);
@@ -950,102 +999,70 @@ export default function CourseForm() {
                       </div>
 
                       {/* Grouped lessons by module */}
-                      {localModules.length > 0 ? (
-                        <div className="space-y-4">
-                          {/* Unassigned lessons */}
-                          <div
-                            className="space-y-1"
-                            onDragOver={handleModuleZoneDragOver}
-                            onDrop={(e) => handleDropOnModule(e, null)}
-                          >
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground pb-1">
-                              <Video className="h-4 w-4" />
-                              <span className="font-medium">Sem módulo</span>
-                              <Badge variant="secondary" className="text-xs">
-                                {videos.filter(v => !v.module_id).length}
-                              </Badge>
-                            </div>
-                            <div className="space-y-1 pl-3 border-l-2 border-muted min-h-[32px]">
-                              {videos.map((video, index) => {
-                                if (video.module_id) return null;
-                                return renderLessonRow(video, index);
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Modules with their lessons */}
-                          {localModules.map((mod) => {
-                            const moduleLessons = videos.filter(v => v.module_id === mod.id);
-                            return (
-                              <div
-                                key={mod.id}
-                                className="space-y-1"
-                                onDragOver={handleModuleZoneDragOver}
-                                onDrop={(e) => handleDropOnModule(e, mod.id)}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Layers className="h-4 w-4 text-primary shrink-0" />
-                                  <Input
-                                    defaultValue={mod.title}
-                                    className="h-7 text-sm font-medium flex-1 border-transparent hover:border-border focus:border-border"
-                                    onBlur={(e) => {
-                                      if (e.target.value !== mod.title) {
-                                        handleUpdateLocalModuleTitle(mod.id, e.target.value);
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                                    }}
-                                  />
-                                  <Badge 
-                                    variant={mod.is_optional ? "outline" : "default"} 
-                                    className={`text-xs shrink-0 cursor-pointer select-none transition-colors ${
-                                      mod.is_optional 
-                                        ? 'border-dashed text-muted-foreground hover:border-solid' 
-                                        : 'bg-primary text-primary-foreground'
-                                    }`}
-                                    onClick={() => setLocalModules(localModules.map(m => m.id === mod.id ? { ...m, is_optional: !m.is_optional } : m))}
-                                  >
-                                    {mod.is_optional ? '○ Opcional' : '● Obrigatório'}
-                                  </Badge>
-                                  <Badge variant="secondary" className="text-xs shrink-0">
-                                    {moduleLessons.length}
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
-                                    onClick={() => handleDeleteLocalModule(mod.id)}
-                                    type="button"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                                <div className="space-y-1 pl-3 border-l-2 border-primary/30 min-h-[32px]">
-                                  {moduleLessons.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground py-3 pl-2 italic">
-                                      Arraste aulas para cá
-                                    </p>
-                                  ) : (
-                                    moduleLessons.map((video) => {
-                                      const globalIndex = videos.indexOf(video);
-                                      return renderLessonRow(video, globalIndex);
-                                    })
-                                  )}
-                                </div>
+                      <div className="space-y-4">
+                        {localModules.map((mod) => {
+                          const moduleLessons = videos.filter(v => v.module_id === mod.id);
+                          return (
+                            <div
+                              key={mod.id}
+                              className="space-y-1"
+                              onDragOver={handleModuleZoneDragOver}
+                              onDrop={(e) => handleDropOnModule(e, mod.id)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Layers className="h-4 w-4 text-primary shrink-0" />
+                                <Input
+                                  defaultValue={mod.title}
+                                  className="h-7 text-sm font-medium flex-1 border-transparent hover:border-border focus:border-border"
+                                  onBlur={(e) => {
+                                    if (e.target.value !== mod.title) {
+                                      handleUpdateLocalModuleTitle(mod.id, e.target.value);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                  }}
+                                />
+                                <Badge 
+                                  variant={mod.is_optional ? "outline" : "default"} 
+                                  className={`text-xs shrink-0 cursor-pointer select-none transition-colors ${
+                                    mod.is_optional 
+                                      ? 'border-dashed text-muted-foreground hover:border-solid' 
+                                      : ''
+                                  }`}
+                                  onClick={() => setLocalModules(localModules.map(m => m.id === mod.id ? { ...m, is_optional: !m.is_optional } : m))}
+                                >
+                                  {mod.is_optional ? '○ Opcional' : '● Obrigatório'}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs shrink-0">
+                                  {moduleLessons.length}
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteLocalModule(mod.id)}
+                                  type="button"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        /* No modules - flat lesson list */
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground pb-1">
-                            {videos.length} aulas • Arraste para reordenar
-                          </p>
-                          {videos.map((video, index) => renderLessonRow(video, index))}
-                        </div>
-                      )}
+                              <div className="space-y-1 pl-3 border-l-2 border-primary/30 min-h-[32px]">
+                                {moduleLessons.length === 0 ? (
+                                  <p className="text-xs text-muted-foreground py-3 pl-2 italic">
+                                    Arraste aulas para cá
+                                  </p>
+                                ) : (
+                                  moduleLessons.map((video) => {
+                                    const globalIndex = videos.indexOf(video);
+                                    return renderLessonRow(video, globalIndex);
+                                  })
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : formData.pandavideo_folder_id ? (
                     <div className="text-center py-12 text-muted-foreground">
