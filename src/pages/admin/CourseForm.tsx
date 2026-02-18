@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,6 @@ import {
   ArrowRight, 
   Check, 
   Loader2, 
-  Folder, 
-  GripVertical,
   Image as ImageIcon,
   Video,
   DollarSign,
@@ -29,42 +27,11 @@ import {
   Barcode,
   Info,
   Plus,
-  Trash2,
-  Layers,
-  Play,
-  Clock,
-  Eye,
-  Pencil,
-  X
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import PandavideoPlayer from '@/components/PandavideoPlayer';
 import ImageUpload from '@/components/ImageUpload';
-import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { CardBrandIcon } from '@/components/CardBrandIcon';
-import CourseLessonsManager from '@/components/admin/CourseLessonsManager';
-
-interface VideoItem {
-  id: string;
-  title: string;
-  original_title: string;
-  duration: number;
-  status: string;
-  module_id?: string | null;
-}
-
-interface LocalModule {
-  id: string;
-  title: string;
-  order_index: number;
-  is_optional: boolean;
-}
+import CourseLessonsOrganizer, { CourseLessonsOrganizerRef } from '@/components/admin/CourseLessonsOrganizer';
 
 interface CardBrand {
   id: string;
@@ -158,23 +125,15 @@ export default function CourseForm() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [videos, setVideos] = useState<VideoItem[]>([]);
-  const [loadingVideos, setLoadingVideos] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(isEditing);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [loadingPaymentConfig, setLoadingPaymentConfig] = useState(false);
-  const DEFAULT_MODULE_ID = 'local-default-module';
-  const [localModules, setLocalModules] = useState<LocalModule[]>([
-    { id: DEFAULT_MODULE_ID, title: 'Módulo Único', order_index: 1, is_optional: false },
-  ]);
-  const [newModuleTitle, setNewModuleTitle] = useState('');
-  const [previewVideo, setPreviewVideo] = useState<VideoItem | null>(null);
-  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
+
+  const lessonsOrganizerRef = useRef<CourseLessonsOrganizerRef>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -214,12 +173,6 @@ export default function CourseForm() {
     fetchPaymentConfig();
   }, [courseId]);
 
-  useEffect(() => {
-    if (formData.pandavideo_folder_id) {
-      fetchVideosFromFolder();
-    }
-  }, [formData.pandavideo_folder_id]);
-
   const fetchPaymentConfig = async () => {
     setLoadingPaymentConfig(true);
     try {
@@ -242,7 +195,6 @@ export default function CourseForm() {
         const config = await response.json();
         setPaymentConfig(config);
         
-        // Set default payment methods if not already set
         if (formData.payment_methods.length === 0) {
           const enabledMethods = config.payment_methods
             .filter((m: PaymentMethodConfig) => m.enabled)
@@ -285,278 +237,17 @@ export default function CourseForm() {
       category_id: (data as any).category_id || '',
     });
 
-    // Fetch existing modules when editing
-    const { data: modulesData } = await supabase
-      .from('course_modules')
-      .select('*')
-      .eq('course_id', courseId)
-      .order('order_index');
-
-    if (modulesData && modulesData.length > 0) {
-      setLocalModules(modulesData.map(m => ({ id: m.id, title: m.title, order_index: m.order_index, is_optional: m.is_optional ?? false })));
-    } else {
-      // Keep default "Módulo Único" if no modules exist
-      setLocalModules([{ id: DEFAULT_MODULE_ID, title: 'Módulo Único', order_index: 1, is_optional: false }]);
-    }
-
     setLoadingCourse(false);
   };
 
-  const fetchVideosFromFolder = async () => {
-    setLoadingVideos(true);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast.error('Você precisa estar autenticado');
-        return;
-      }
-
-      // Fetch videos from Pandavideo API
-      const response = await fetch(
-        `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=list&folder_id=${formData.pandavideo_folder_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionData.session.access_token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao buscar vídeos');
-      }
-
-      // Build video list from Pandavideo — assign to first local module by default
-      const firstModuleId = localModules.length > 0 ? localModules[0].id : DEFAULT_MODULE_ID;
-      const pandaVideos: VideoItem[] = (data.videos || []).map((v: any) => {
-        let durationSeconds = 0;
-        if (v.length && typeof v.length === 'number') {
-          durationSeconds = v.length;
-        } else if (v.video_player?.duration) {
-          durationSeconds = v.video_player.duration;
-        } else if (v.duration && typeof v.duration === 'number') {
-          durationSeconds = v.duration;
-        }
-        
-        return {
-          id: v.id,
-          title: v.title,
-          original_title: v.title,
-          duration: durationSeconds,
-          status: v.status,
-          module_id: firstModuleId,
-        };
-      });
-
-      // If editing, fetch saved lessons to preserve order and custom titles
-      if (isEditing && courseId) {
-        const { data: savedLessons } = await supabase
-          .from('lessons')
-          .select('pandavideo_video_id, title, order_index, duration_minutes, module_id')
-          .eq('course_id', courseId)
-          .order('order_index', { ascending: true });
-
-        if (savedLessons && savedLessons.length > 0) {
-          // Create a map of saved lessons by pandavideo_video_id
-          const savedLessonsMap = new Map(
-            savedLessons.map(lesson => [lesson.pandavideo_video_id, lesson])
-          );
-
-          // Separate videos that exist in saved lessons from new ones
-          const existingVideos: VideoItem[] = [];
-          const newVideos: VideoItem[] = [];
-
-          pandaVideos.forEach(video => {
-            const savedLesson = savedLessonsMap.get(video.id);
-            if (savedLesson) {
-              existingVideos.push({
-                ...video,
-                title: savedLesson.title || video.title,
-                duration: savedLesson.duration_minutes ? savedLesson.duration_minutes * 60 : video.duration,
-                module_id: savedLesson.module_id,
-              });
-            } else {
-              newVideos.push(video);
-            }
-          });
-
-          // Sort existing videos by their saved order_index
-          existingVideos.sort((a, b) => {
-            const orderA = savedLessonsMap.get(a.id)?.order_index ?? 999;
-            const orderB = savedLessonsMap.get(b.id)?.order_index ?? 999;
-            return orderA - orderB;
-          });
-
-          // Append new videos at the end
-          setVideos([...existingVideos, ...newVideos]);
-        } else {
-          setVideos(pandaVideos);
-        }
-      } else {
-        setVideos(pandaVideos);
-      }
-    } catch (error) {
-      console.error('Error fetching videos:', error);
-      toast.error('Erro ao carregar vídeos da pasta');
-    } finally {
-      setLoadingVideos(false);
-    }
+  const handleFolderChange = (folderId: string, folderName: string) => {
+    setFormData(prev => ({
+      ...prev,
+      pandavideo_folder_id: folderId,
+      pandavideo_folder_name: folderName,
+    }));
   };
 
-  const handleFolderSelect = (folder: { id: string; name: string }) => {
-    setFormData({
-      ...formData,
-      pandavideo_folder_id: folder.id,
-      pandavideo_folder_name: folder.name,
-    });
-    setVideos([]);
-  };
-
-  const handleVideoTitleChange = (index: number, newTitle: string) => {
-    const updated = [...videos];
-    updated[index].title = newTitle;
-    setVideos(updated);
-  };
-
-  const handleVideoModuleChange = (index: number, moduleId: string | null) => {
-    const updated = [...videos];
-    updated[index].module_id = moduleId;
-    setVideos(updated);
-  };
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newVideos = [...videos];
-    const draggedItem = newVideos[draggedIndex];
-    newVideos.splice(draggedIndex, 1);
-    newVideos.splice(index, 0, draggedItem);
-    setVideos(newVideos);
-    setDraggedIndex(index);
-  };
-
-  const handleDropOnModule = (e: React.DragEvent, moduleId: string | null) => {
-    e.preventDefault();
-    if (draggedIndex === null) return;
-    const updated = [...videos];
-    updated[draggedIndex].module_id = moduleId;
-    setVideos(updated);
-    setDraggedIndex(null);
-  };
-
-  const handleModuleZoneDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleAddLocalModule = () => {
-    if (!newModuleTitle.trim()) return;
-    const nextIndex = localModules.length > 0
-      ? Math.max(...localModules.map(m => m.order_index)) + 1
-      : 1;
-    setLocalModules([...localModules, {
-      id: `local-${Date.now()}`,
-      title: newModuleTitle.trim(),
-      order_index: nextIndex,
-      is_optional: false,
-    }]);
-    setNewModuleTitle('');
-  };
-
-  const handleDeleteLocalModule = (moduleId: string) => {
-    if (localModules.length <= 1) {
-      toast.error('O curso deve ter pelo menos um módulo');
-      return;
-    }
-    // Move lessons from deleted module to first remaining module
-    const remainingModules = localModules.filter(m => m.id !== moduleId);
-    const targetModuleId = remainingModules[0].id;
-    setLocalModules(remainingModules);
-    setVideos(videos.map(v => v.module_id === moduleId ? { ...v, module_id: targetModuleId } : v));
-  };
-
-  const handleUpdateLocalModuleTitle = (moduleId: string, title: string) => {
-    setLocalModules(localModules.map(m => m.id === moduleId ? { ...m, title } : m));
-  };
-
-  const renderLessonRow = (video: VideoItem, index: number) => {
-    const isEditing = editingLessonId === video.id;
-    return (
-      <div
-        key={video.id}
-        draggable
-        onDragStart={(e) => handleDragStart(e, index)}
-        onDragOver={(e) => handleDragOver(e, index)}
-        onDragEnd={handleDragEnd}
-        className={`flex items-center gap-2 py-1.5 px-2 rounded border bg-card text-sm transition-colors group ${
-          draggedIndex === index ? 'opacity-50 border-primary' : ''
-        }`}
-      >
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground cursor-grab active:cursor-grabbing shrink-0" />
-        <Play className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-        {isEditing ? (
-          <Input
-            autoFocus
-            defaultValue={video.title}
-            className="h-6 text-sm flex-1 py-0 px-1"
-            onBlur={(e) => {
-              handleVideoTitleChange(index, e.target.value);
-              setEditingLessonId(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              if (e.key === 'Escape') setEditingLessonId(null);
-            }}
-          />
-        ) : (
-          <span className="flex-1 truncate text-sm">{video.title}</span>
-        )}
-        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => setEditingLessonId(isEditing ? null : video.id)}
-            title="Editar nome"
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => setPreviewVideo(video)}
-            title="Preview"
-          >
-            <Eye className="h-3 w-3" />
-          </Button>
-        </div>
-        <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatDuration(video.duration)}
-        </span>
-      </div>
-    );
-  };
   const togglePaymentMethod = (methodId: string) => {
     const current = formData.payment_methods;
     if (current.includes(methodId)) {
@@ -630,7 +321,6 @@ export default function CourseForm() {
           .from('courses')
           .update(courseData as any)
           .eq('id', courseId);
-
         if (error) throw error;
       } else {
         const { data, error } = await supabase
@@ -638,128 +328,13 @@ export default function CourseForm() {
           .insert(courseData as any)
           .select('id')
           .single();
-
         if (error) throw error;
         savedCourseId = data.id;
       }
 
-      // Save modules first (to get real IDs for local modules)
-      const moduleIdMap = new Map<string, string>(); // local-id -> real-id
-      if (localModules.length > 0 && savedCourseId) {
-        for (const mod of localModules) {
-          const isExistingModule = !mod.id.startsWith('local-');
-          if (isExistingModule) {
-            await supabase
-              .from('course_modules')
-              .update({ title: mod.title, order_index: mod.order_index, is_optional: mod.is_optional })
-              .eq('id', mod.id);
-            moduleIdMap.set(mod.id, mod.id);
-          } else {
-            const { data: newMod } = await supabase
-              .from('course_modules')
-              .insert({
-                course_id: savedCourseId,
-                title: mod.title,
-                order_index: mod.order_index,
-                is_optional: mod.is_optional,
-              })
-              .select('id')
-              .single();
-            if (newMod) {
-              moduleIdMap.set(mod.id, newMod.id);
-            }
-          }
-        }
-      }
-
-      // Save lesson order, custom titles, and module assignments
-      if (videos.length > 0 && savedCourseId) {
-        // First, get existing lessons to know which ones to update vs create
-        const { data: existingLessons } = await supabase
-          .from('lessons')
-          .select('id, pandavideo_video_id')
-          .eq('course_id', savedCourseId)
-          .not('pandavideo_video_id', 'is', null);
-
-        const existingByVideoId = new Map(
-          (existingLessons || []).map(l => [l.pandavideo_video_id, l.id])
-        );
-
-        for (let i = 0; i < videos.length; i++) {
-          const video = videos[i];
-          const resolvedModuleId = video.module_id
-            ? (moduleIdMap.get(video.module_id) || video.module_id)
-            : null;
-          const existingLessonId = existingByVideoId.get(video.id);
-
-          if (existingLessonId) {
-            // Update existing lesson
-            const { error } = await supabase
-              .from('lessons')
-              .update({
-                title: video.title,
-                order_index: i,
-                duration_minutes: Math.ceil(video.duration / 60),
-                module_id: resolvedModuleId,
-              })
-              .eq('id', existingLessonId);
-
-            if (error) {
-              console.error(`Error updating lesson ${existingLessonId}:`, error);
-            }
-          }
-        }
-      }
-
-      // Auto-sync lessons from Pandavideo only for NEW courses (not edits)
-      if (!isEditing && savedCourseId && formData.pandavideo_folder_id) {
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData.session) {
-            await supabase.functions.invoke('sync-pandavideo-lessons', {
-              body: { courseId: savedCourseId },
-              headers: {
-                Authorization: `Bearer ${sessionData.session.access_token}`,
-              },
-            });
-
-            // After sync, update lesson order and module assignments based on user's arrangement
-            if (videos.length > 0) {
-              const { data: syncedLessons } = await supabase
-                .from('lessons')
-                .select('id, pandavideo_video_id')
-                .eq('course_id', savedCourseId)
-                .not('pandavideo_video_id', 'is', null);
-
-              if (syncedLessons) {
-                const syncedByVideoId = new Map(
-                  syncedLessons.map(l => [l.pandavideo_video_id, l.id])
-                );
-
-                for (let i = 0; i < videos.length; i++) {
-                  const video = videos[i];
-                  const lessonId = syncedByVideoId.get(video.id);
-                  if (!lessonId) continue;
-
-                  const resolvedModuleId = video.module_id
-                    ? (moduleIdMap.get(video.module_id) || video.module_id)
-                    : null;
-
-                  await supabase
-                    .from('lessons')
-                    .update({
-                      title: video.title,
-                      order_index: i,
-                      module_id: resolvedModuleId,
-                    })
-                    .eq('id', lessonId);
-                }
-              }
-            }
-          }
-        } catch (syncError) {
-          console.error('Auto-sync error:', syncError);
-        }
+      // Delegate all module + lesson saving to the organizer
+      if (savedCourseId && lessonsOrganizerRef.current) {
+        await lessonsOrganizerRef.current.save(savedCourseId);
       }
 
       toast.success(isEditing ? 'Curso atualizado!' : 'Curso criado com sucesso!');
@@ -779,6 +354,8 @@ export default function CourseForm() {
       </div>
     );
   }
+
+  const organizerLessons = lessonsOrganizerRef.current?.getLessons() || [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -940,163 +517,15 @@ export default function CourseForm() {
             </div>
           )}
 
-          {/* Step 2: Video Selection */}
+          {/* Step 2: Lessons — unified component for both create & edit */}
           {currentStep === 2 && (
-            <div className="space-y-6">
-              {isEditing && courseId ? (
-                <CourseLessonsManager courseId={courseId} />
-              ) : (
-                <>
-                  {/* Folder selector */}
-                  <div className="space-y-2">
-                    <Label>Pasta de Vídeos (Pandavideo)</Label>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 p-3 rounded-lg border bg-muted/50 min-h-[42px] flex items-center">
-                        {formData.pandavideo_folder_id ? (
-                          <div className="flex items-center gap-2">
-                            <Folder className="h-4 w-4 text-primary" />
-                            <span className="text-sm">
-                              {formData.pandavideo_folder_name || 'Pasta selecionada'}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">
-                            Nenhuma pasta selecionada
-                          </span>
-                        )}
-                      </div>
-                      <PandavideoFolderSelector
-                        onSelect={handleFolderSelect}
-                        selectedFolderId={formData.pandavideo_folder_id}
-                      />
-                    </div>
-                  </div>
-
-                  {loadingVideos ? (
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  ) : videos.length > 0 ? (
-                    <div className="space-y-6">
-                      {/* Add module inline */}
-                      <div className="flex items-center gap-2">
-                        <Input
-                          placeholder="Criar novo módulo..."
-                          value={newModuleTitle}
-                          onChange={(e) => setNewModuleTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddLocalModule();
-                            }
-                          }}
-                          className="flex-1"
-                        />
-                        <Button type="button" onClick={handleAddLocalModule} disabled={!newModuleTitle.trim()} variant="outline" size="sm">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Módulo
-                        </Button>
-                      </div>
-
-                      {/* Grouped lessons by module */}
-                      <div className="space-y-4">
-                        {localModules.map((mod) => {
-                          const moduleLessons = videos.filter(v => v.module_id === mod.id);
-                          return (
-                            <div
-                              key={mod.id}
-                              className="space-y-1"
-                              onDragOver={handleModuleZoneDragOver}
-                              onDrop={(e) => handleDropOnModule(e, mod.id)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Layers className="h-4 w-4 text-primary shrink-0" />
-                                <Input
-                                  defaultValue={mod.title}
-                                  className="h-7 text-sm font-medium flex-1 border-transparent hover:border-border focus:border-border"
-                                  onBlur={(e) => {
-                                    if (e.target.value !== mod.title) {
-                                      handleUpdateLocalModuleTitle(mod.id, e.target.value);
-                                    }
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                                  }}
-                                />
-                                <Badge 
-                                  variant={mod.is_optional ? "outline" : "default"} 
-                                  className={`text-xs shrink-0 cursor-pointer select-none transition-colors ${
-                                    mod.is_optional 
-                                      ? 'border-dashed text-muted-foreground hover:border-solid' 
-                                      : ''
-                                  }`}
-                                  onClick={() => setLocalModules(localModules.map(m => m.id === mod.id ? { ...m, is_optional: !m.is_optional } : m))}
-                                >
-                                  {mod.is_optional ? '○ Opcional' : '● Obrigatório'}
-                                </Badge>
-                                <Badge variant="secondary" className="text-xs shrink-0">
-                                  {moduleLessons.length}
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteLocalModule(mod.id)}
-                                  type="button"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                              <div className="space-y-1 pl-3 border-l-2 border-primary/30 min-h-[32px]">
-                                {moduleLessons.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground py-3 pl-2 italic">
-                                    Arraste aulas para cá
-                                  </p>
-                                ) : (
-                                  moduleLessons.map((video) => {
-                                    const globalIndex = videos.indexOf(video);
-                                    return renderLessonRow(video, globalIndex);
-                                  })
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : formData.pandavideo_folder_id ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Video className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhum vídeo encontrado nesta pasta</p>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Selecione uma pasta para ver os vídeos disponíveis</p>
-                    </div>
-                  )}
-
-                  {/* Video Preview Dialog */}
-                  <Dialog open={!!previewVideo} onOpenChange={(open) => !open && setPreviewVideo(null)}>
-                    <DialogContent className="max-w-3xl p-0 overflow-hidden">
-                      <DialogHeader className="p-4 pb-0">
-                        <DialogTitle className="text-sm font-medium truncate pr-8">
-                          {previewVideo?.title}
-                        </DialogTitle>
-                      </DialogHeader>
-                      <div className="p-4 pt-2">
-                        {previewVideo && (
-                          <PandavideoPlayer
-                            videoUrl={`https://player-vz-82493b0a-26d.tv.pandavideo.com.br/embed/?v=${previewVideo.id}`}
-                            title={previewVideo.title}
-                          />
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
-            </div>
+            <CourseLessonsOrganizer
+              ref={lessonsOrganizerRef}
+              courseId={isEditing ? courseId : undefined}
+              pandavideoFolderId={formData.pandavideo_folder_id}
+              onFolderChange={handleFolderChange}
+              showFolderSelector={true}
+            />
           )}
 
           {/* Step 3: Pricing */}
@@ -1314,13 +743,11 @@ export default function CourseForm() {
                       const interestRate = installmentOption?.interest_rate || 0;
                       const hasInterest = interestRate > 0;
                       
-                      // Calculate total with fee (one-time percentage fee, not compound)
                       const totalWithInterest = hasInterest 
                         ? basePrice * (1 + interestRate / 100)
                         : basePrice;
                       const installmentValue = totalWithInterest / installmentCount;
                       
-                      // PIX discount
                       const pixMethod = paymentConfig?.payment_methods.find(m => m.id === 'pix');
                       const pixDiscount = pixMethod?.discount_percentage || 0;
                       const pixPrice = basePrice * (1 - pixDiscount / 100);
@@ -1329,7 +756,6 @@ export default function CourseForm() {
                         <div className="p-5 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
                           <p className="text-sm font-medium text-foreground mb-4">Prévia do valor para o aluno</p>
                           
-                          {/* Main price */}
                           <div className="flex items-baseline gap-2 mb-4">
                             <span className="text-3xl font-bold text-foreground">
                               R$ {(basePrice * (1 + 3.25 / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1338,7 +764,6 @@ export default function CourseForm() {
                             <span className="text-xs text-amber-600 dark:text-amber-400">(taxa de 3,25%)</span>
                           </div>
 
-                          {/* Installment options */}
                           {installmentCount > 1 && (
                             <div className="space-y-2 pt-3 border-t border-primary/10">
                               <div className="flex items-center justify-between">
@@ -1346,7 +771,7 @@ export default function CourseForm() {
                                   {installmentCount}x no cartão
                                 </span>
                                 <div className="text-right">
-                                    <span className="text-lg font-semibold text-foreground">
+                                  <span className="text-lg font-semibold text-foreground">
                                     R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                   {hasInterest && (
@@ -1357,14 +782,13 @@ export default function CourseForm() {
                                 </div>
                               </div>
                               {hasInterest && (
-                                  <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                   Total parcelado: R$ {totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                               )}
                             </div>
                           )}
 
-                          {/* PIX discount */}
                           {formData.payment_methods.includes('pix') && pixDiscount > 0 && (
                             <div className="flex items-center justify-between pt-3 mt-3 border-t border-primary/10">
                               <div className="flex items-center gap-2">
@@ -1415,15 +839,15 @@ export default function CourseForm() {
                 {/* Videos Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    videos.length > 0 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning-foreground'
+                    organizerLessons.length > 0 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning-foreground'
                   }`}>
                     <Check className="h-4 w-4" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">Aulas do Curso</p>
                     <p className="text-sm text-muted-foreground">
-                      {videos.length > 0 
-                        ? `${videos.length} aulas configuradas`
+                      {organizerLessons.length > 0 
+                        ? `${organizerLessons.length} aulas configuradas`
                         : 'Nenhuma aula selecionada (opcional)'}
                     </p>
                   </div>
