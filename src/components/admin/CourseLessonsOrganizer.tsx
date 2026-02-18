@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { Loader2, GripVertical, Folder } from 'lucide-react';
+import { Loader2, Folder, ArrowUp, ArrowDown, ArrowRightLeft } from 'lucide-react';
 import { Swap, Plus, Delete, Play as PlayIcon, Show, Hide, Paper, ChevronDown, ChevronUp } from 'react-iconly';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,30 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import LessonMaterialUpload from '@/components/LessonMaterialUpload';
 import PandavideoFolderSelector from '@/components/PandavideoFolderSelector';
 import { Label } from '@/components/ui/label';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-  DragOverlay,
-  useDroppable,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -77,30 +63,27 @@ export interface OrganizerLesson {
 }
 
 export interface CourseLessonsOrganizerRef {
-  /** Call this to persist all modules + lesson order to the database. */
   save: (courseId: string) => Promise<void>;
-  /** Get current modules (for review step). */
   getModules: () => OrganizerModule[];
-  /** Get current lessons (for review step). */
   getLessons: () => OrganizerLesson[];
 }
 
 interface CourseLessonsOrganizerProps {
-  /** If provided, component loads existing data from DB (edit mode). */
   courseId?: string;
-  /** Pandavideo folder ID for fetching videos (create mode). */
   pandavideoFolderId?: string;
-  /** Called when folder changes (create mode). */
   onFolderChange?: (folderId: string, folderName: string) => void;
-  /** Whether to show the folder selector */
   showFolderSelector?: boolean;
 }
 
-// ─── Sortable Lesson Card ─────────────────────────────────────────
+// ─── Lesson Card ──────────────────────────────────────────────────
 
-function SortableLessonCard({
+function LessonCard({
   lesson,
+  index,
+  totalInModule,
   materials,
+  modules,
+  currentModuleId,
   isExpanded,
   isEditingTitle,
   editingTitle,
@@ -114,10 +97,17 @@ function SortableLessonCard({
   onToggleVisibility,
   onMaterialsChange,
   onPreview,
+  onMoveUp,
+  onMoveDown,
+  onMoveToModule,
   formatDuration,
 }: {
   lesson: OrganizerLesson;
+  index: number;
+  totalInModule: number;
   materials: LessonMaterial[];
+  modules: OrganizerModule[];
+  currentModuleId: string;
   isExpanded: boolean;
   isEditingTitle: boolean;
   editingTitle: string;
@@ -131,39 +121,45 @@ function SortableLessonCard({
   onToggleVisibility: () => void;
   onMaterialsChange: () => void;
   onPreview: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onMoveToModule: (targetModuleId: string) => void;
   formatDuration: (lesson: OrganizerLesson) => string;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lesson.id, data: { type: 'lesson', moduleId: lesson.module_id } });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
+  const canMoveUp = index > 0;
+  const canMoveDown = index < totalInModule - 1;
+  const otherModules = modules.filter(m => m.id !== currentModuleId);
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      className={`${lesson.is_hidden ? 'opacity-60' : ''} ${isDragging ? 'shadow-lg ring-2 ring-primary/30' : ''}`}
-    >
+    <Card className={lesson.is_hidden ? 'opacity-60' : ''}>
       <Collapsible open={isExpanded && showMaterials} onOpenChange={onToggleExpand}>
         <CardContent className="p-3">
           <div className="flex items-center gap-2">
-            <button
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing touch-none shrink-0"
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </button>
+            {/* Order buttons */}
+            <div className="flex flex-col gap-0.5 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={onMoveUp}
+                disabled={!canMoveUp}
+              >
+                <ArrowUp className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={onMoveDown}
+                disabled={!canMoveDown}
+              >
+                <ArrowDown className="h-3 w-3" />
+              </Button>
+            </div>
+
+            <span className="text-xs text-muted-foreground font-mono w-5 text-center shrink-0">
+              {index + 1}
+            </span>
 
             <div
               className="relative w-16 h-10 rounded overflow-hidden bg-muted shrink-0 cursor-pointer group"
@@ -214,6 +210,23 @@ function SortableLessonCard({
                   {materials.length}
                 </Badge>
               )}
+
+              {/* Move to module dropdown */}
+              {otherModules.length > 0 && (
+                <Select onValueChange={onMoveToModule}>
+                  <SelectTrigger className="h-7 w-7 p-0 border-0 [&>svg]:hidden">
+                    <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {otherModules.map(m => (
+                      <SelectItem key={m.id} value={m.id}>
+                        Mover para: {m.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggleVisibility} disabled={savingId === lesson.id}>
                 {savingId === lesson.id ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -248,37 +261,6 @@ function SortableLessonCard({
   );
 }
 
-// ─── Droppable Module Container ───────────────────────────────────
-
-function DroppableModule({
-  moduleId,
-  children,
-  isEmpty,
-}: {
-  moduleId: string;
-  children: React.ReactNode;
-  isEmpty: boolean;
-}) {
-  const { setNodeRef, isOver } = useDroppable({ id: `module-drop-${moduleId}`, data: { type: 'module', moduleId } });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`space-y-2 min-h-[48px] rounded-lg transition-colors p-2 ${
-        isOver ? 'bg-primary/10 ring-1 ring-primary/30' : ''
-      } ${isEmpty ? 'border border-dashed border-muted-foreground/30' : ''}`}
-    >
-      {isEmpty && !isOver ? (
-        <p className="text-xs text-muted-foreground py-3 text-center italic">
-          Arraste aulas para este módulo
-        </p>
-      ) : (
-        children
-      )}
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────
 
 const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLessonsOrganizerProps>(
@@ -300,14 +282,8 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
     const [newModuleTitle, setNewModuleTitle] = useState('');
     const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
-    const [activeId, setActiveId] = useState<string | null>(null);
     const [currentFolderId, setCurrentFolderId] = useState(pandavideoFolderId || '');
     const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
-
-    const sensors = useSensors(
-      useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-      useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-    );
 
     // ─── Load data (edit mode) ────────────────────────────────────
 
@@ -328,7 +304,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       const lessonsList = (lessonsData || []) as OrganizerLesson[];
       let modulesList = (modulesData || []) as (OrganizerModule & { course_id?: string })[];
 
-      // Auto-create default module if none
       if (modulesList.length === 0) {
         const { data: newModule, error: modError } = await supabase
           .from('course_modules')
@@ -340,7 +315,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
         }
       }
 
-      // Auto-assign orphan lessons
       const firstModule = modulesList[0];
       if (firstModule) {
         const unassigned = lessonsList.filter(l => !l.module_id);
@@ -355,7 +329,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       setLessons(lessonsList);
       setModules(modulesList.map(m => ({ id: m.id, title: m.title, order_index: m.order_index, is_optional: m.is_optional })));
 
-      // Fetch materials
       if (lessonsList.length > 0) {
         const { data: materialsData } = await supabase
           .from('lesson_materials')
@@ -404,7 +377,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
             title: v.title,
             description: null,
             video_url: null,
-            order_index: idx,
+            order_index: idx + 1,
             duration_minutes: durationSeconds ? Math.ceil(durationSeconds / 60) : null,
             duration_seconds: durationSeconds,
             pandavideo_video_id: v.id,
@@ -436,11 +409,10 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       }
     }, [isEditMode, pandavideoFolderId]);
 
-    // ─── Imperative handle for parent to call save ────────────────
+    // ─── Imperative handle ────────────────────────────────────────
 
     useImperativeHandle(ref, () => ({
       save: async (targetCourseId: string) => {
-        // 1. Save modules — map local IDs to real DB IDs
         const moduleIdMap = new Map<string, string>();
 
         for (const mod of modules) {
@@ -466,7 +438,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
           }
         }
 
-        // 2. If NOT edit mode, sync from Pandavideo first to create lessons in DB
         if (!isEditMode && currentFolderId) {
           try {
             const { data: sessionData } = await supabase.auth.getSession();
@@ -481,7 +452,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
           }
         }
 
-        // 3. Now update every lesson with the correct order + module + title
         const { data: dbLessons } = await supabase
           .from('lessons')
           .select('id, pandavideo_video_id')
@@ -490,7 +460,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
         if (dbLessons && dbLessons.length > 0) {
           const byVideoId = new Map(dbLessons.map(l => [l.pandavideo_video_id, l.id]));
 
-          // Build per-module ordered lists
           for (const mod of modules) {
             const realModuleId = moduleIdMap.get(mod.id) || mod.id;
             const moduleLessons = lessons
@@ -499,7 +468,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
 
             for (let i = 0; i < moduleLessons.length; i++) {
               const lesson = moduleLessons[i];
-              // Find DB lesson id — either directly or by pandavideo_video_id
               const dbLessonId = byVideoId.get(lesson.pandavideo_video_id) || lesson.id;
               const isRealId = dbLessons.some(l => l.id === dbLessonId);
               if (!isRealId) continue;
@@ -579,7 +547,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       const targetModuleId = remainingModules[0].id;
 
       if (moduleLessons.length > 0) {
-        // Move lessons to first remaining module
         const updatedLessons = lessons.map(l =>
           l.module_id === moduleId ? { ...l, module_id: targetModuleId } : l
         );
@@ -617,6 +584,52 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
         await supabase.from('course_modules').update({ is_optional: !mod.is_optional }).eq('id', moduleId);
       }
       setModules(modules.map(m => m.id === moduleId ? { ...m, is_optional: !m.is_optional } : m));
+    };
+
+    // ─── Lesson ordering ──────────────────────────────────────────
+
+    const moveLessonInModule = async (lessonId: string, moduleId: string, direction: 'up' | 'down') => {
+      const moduleLessons = lessons
+        .filter(l => l.module_id === moduleId)
+        .sort((a, b) => a.order_index - b.order_index);
+
+      const idx = moduleLessons.findIndex(l => l.id === lessonId);
+      if (idx === -1) return;
+
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= moduleLessons.length) return;
+
+      // Swap order_index values
+      const currentOrder = moduleLessons[idx].order_index;
+      const swapOrder = moduleLessons[swapIdx].order_index;
+
+      const updatedLessons = lessons.map(l => {
+        if (l.id === moduleLessons[idx].id) return { ...l, order_index: swapOrder };
+        if (l.id === moduleLessons[swapIdx].id) return { ...l, order_index: currentOrder };
+        return l;
+      });
+
+      setLessons(updatedLessons);
+
+      if (isEditMode) {
+        await Promise.all([
+          supabase.from('lessons').update({ order_index: swapOrder }).eq('id', moduleLessons[idx].id),
+          supabase.from('lessons').update({ order_index: currentOrder }).eq('id', moduleLessons[swapIdx].id),
+        ]);
+      }
+    };
+
+    const moveLessonToModule = async (lessonId: string, targetModuleId: string) => {
+      const targetLessons = lessons.filter(l => l.module_id === targetModuleId);
+      const newOrder = targetLessons.length > 0 ? Math.max(...targetLessons.map(l => l.order_index)) + 1 : 1;
+
+      setLessons(prev => prev.map(l =>
+        l.id === lessonId ? { ...l, module_id: targetModuleId, order_index: newOrder } : l
+      ));
+
+      if (isEditMode) {
+        await supabase.from('lessons').update({ module_id: targetModuleId, order_index: newOrder }).eq('id', lessonId);
+      }
     };
 
     // ─── Lesson actions ─────────────────────────────────────────
@@ -682,85 +695,6 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       const hrs = Math.floor(lesson.duration_minutes / 60);
       const mins = lesson.duration_minutes % 60;
       return hrs > 0 ? `${hrs}h ${mins}min` : `${mins}min`;
-    };
-
-    // ─── Drag & Drop ──────────────────────────────────────────────
-
-    const handleDragStart = (event: DragStartEvent) => {
-      setActiveId(String(event.active.id));
-    };
-
-    const handleDragOver = (event: DragOverEvent) => {
-      const { active, over } = event;
-      if (!over) return;
-
-      const activeLesson = lessons.find(l => l.id === active.id);
-      if (!activeLesson) return;
-
-      let targetModuleId: string | null = null;
-      if (over.data.current?.type === 'module') {
-        targetModuleId = over.data.current.moduleId;
-      } else if (over.data.current?.type === 'lesson') {
-        targetModuleId = over.data.current.moduleId;
-      } else if (typeof over.id === 'string' && over.id.startsWith('module-drop-')) {
-        targetModuleId = over.id.replace('module-drop-', '');
-      }
-
-      if (targetModuleId && activeLesson.module_id !== targetModuleId) {
-        setLessons(prev => prev.map(l => l.id === active.id ? { ...l, module_id: targetModuleId } : l));
-      }
-    };
-
-    const handleDragEnd = async (event: DragEndEvent) => {
-      setActiveId(null);
-      const { active, over } = event;
-      if (!over) return;
-
-      const activeLesson = lessons.find(l => l.id === active.id);
-      if (!activeLesson) return;
-
-      let targetModuleId = activeLesson.module_id;
-      if (over.data.current?.type === 'module') {
-        targetModuleId = over.data.current.moduleId;
-      } else if (over.data.current?.type === 'lesson') {
-        targetModuleId = over.data.current.moduleId;
-      }
-
-      let moduleLessons = lessons.filter(l => l.module_id === targetModuleId);
-
-      if (active.id !== over.id && over.data.current?.type === 'lesson') {
-        const oldIndex = moduleLessons.findIndex(l => l.id === active.id);
-        const newIndex = moduleLessons.findIndex(l => l.id === over.id);
-        if (oldIndex !== -1 && newIndex !== -1) {
-          moduleLessons = arrayMove(moduleLessons, oldIndex, newIndex);
-        }
-      }
-
-      // Update order_index in state
-      const updatedIds = new Set(moduleLessons.map(l => l.id));
-      const reindexed = moduleLessons.map((l, idx) => ({ ...l, order_index: idx + 1, module_id: targetModuleId }));
-      const newLessons = lessons.map(l => {
-        if (updatedIds.has(l.id)) {
-          return reindexed.find(r => r.id === l.id)!;
-        }
-        return l;
-      });
-      setLessons(newLessons);
-
-      // Persist immediately in edit mode
-      if (isEditMode) {
-        try {
-          for (const lesson of reindexed) {
-            await supabase.from('lessons').update({
-              order_index: lesson.order_index,
-              module_id: lesson.module_id,
-            }).eq('id', lesson.id);
-          }
-        } catch {
-          toast.error('Erro ao reordenar');
-          fetchData();
-        }
-      }
     };
 
     // ─── Render ───────────────────────────────────────────────────
@@ -840,110 +774,103 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
             </CardContent>
           </Card>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="space-y-4">
-              {modules.map((mod) => {
-                const moduleLessons = lessons
-                  .filter(l => l.module_id === mod.id)
-                  .sort((a, b) => a.order_index - b.order_index);
+          <div className="space-y-4">
+            {modules.map((mod) => {
+              const moduleLessons = lessons
+                .filter(l => l.module_id === mod.id)
+                .sort((a, b) => a.order_index - b.order_index);
 
-                return (
-                  <div key={mod.id} className="border rounded-lg overflow-hidden">
-                    <div className="flex items-center gap-2 p-3 bg-muted/50">
-                      {editingModuleId === mod.id ? (
-                        <Input
-                          value={editingModuleTitle}
-                          onChange={(e) => setEditingModuleTitle(e.target.value)}
-                          className="h-7 text-sm font-medium flex-1"
-                          autoFocus
-                          onBlur={() => handleSaveModuleTitle(mod.id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveModuleTitle(mod.id);
-                            if (e.key === 'Escape') setEditingModuleId(null);
-                          }}
-                        />
-                      ) : (
-                        <h3
-                          className="text-sm font-semibold flex-1 cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => {
-                            setEditingModuleId(mod.id);
-                            setEditingModuleTitle(mod.title);
-                          }}
-                        >
-                          {mod.title}
-                        </h3>
-                      )}
-
-                      <Badge
-                        variant={mod.is_optional ? 'outline' : 'default'}
-                        className={`text-xs cursor-pointer select-none ${
-                          mod.is_optional ? 'border-dashed text-muted-foreground' : ''
-                        }`}
-                        onClick={() => toggleModuleOptional(mod.id)}
+              return (
+                <div key={mod.id} className="border rounded-lg overflow-hidden">
+                  <div className="flex items-center gap-2 p-3 bg-muted/50">
+                    {editingModuleId === mod.id ? (
+                      <Input
+                        value={editingModuleTitle}
+                        onChange={(e) => setEditingModuleTitle(e.target.value)}
+                        className="h-7 text-sm font-medium flex-1"
+                        autoFocus
+                        onBlur={() => handleSaveModuleTitle(mod.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveModuleTitle(mod.id);
+                          if (e.key === 'Escape') setEditingModuleId(null);
+                        }}
+                      />
+                    ) : (
+                      <h3
+                        className="text-sm font-semibold flex-1 cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => {
+                          setEditingModuleId(mod.id);
+                          setEditingModuleTitle(mod.title);
+                        }}
                       >
-                        {mod.is_optional ? 'Opcional' : 'Obrigatório'}
-                      </Badge>
+                        {mod.title}
+                      </h3>
+                    )}
 
-                      <Badge variant="secondary" className="text-xs">
-                        {moduleLessons.length} aulas
-                      </Badge>
+                    <Badge
+                      variant={mod.is_optional ? 'outline' : 'default'}
+                      className={`text-xs cursor-pointer select-none ${
+                        mod.is_optional ? 'border-dashed text-muted-foreground' : ''
+                      }`}
+                      onClick={() => toggleModuleOptional(mod.id)}
+                    >
+                      {mod.is_optional ? 'Opcional' : 'Obrigatório'}
+                    </Badge>
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteModule(mod.id)}
-                      >
-                        <Delete set="light" size={16} />
-                      </Button>
-                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {moduleLessons.length} aulas
+                    </Badge>
 
-                    <DroppableModule moduleId={mod.id} isEmpty={moduleLessons.length === 0}>
-                      <SortableContext items={moduleLessons.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                        {moduleLessons.map((lesson) => (
-                          <SortableLessonCard
-                            key={lesson.id}
-                            lesson={lesson}
-                            materials={materials[lesson.id] || []}
-                            isExpanded={expandedLessons.has(lesson.id)}
-                            isEditingTitle={editingLessonId === lesson.id}
-                            editingTitle={editingTitle}
-                            savingId={savingId}
-                            showMaterials={isEditMode}
-                            onToggleExpand={() => toggleExpanded(lesson.id)}
-                            onStartEdit={() => handleStartEdit(lesson)}
-                            onCancelEdit={() => { setEditingLessonId(null); setEditingTitle(''); }}
-                            onSaveTitle={() => handleSaveTitle(lesson.id)}
-                            onEditingTitleChange={setEditingTitle}
-                            onToggleVisibility={() => handleToggleVisibility(lesson)}
-                            onMaterialsChange={isEditMode ? fetchData : () => {}}
-                            onPreview={() => setPreviewLesson(lesson)}
-                            formatDuration={formatDuration}
-                          />
-                        ))}
-                      </SortableContext>
-                    </DroppableModule>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleDeleteModule(mod.id)}
+                    >
+                      <Delete set="light" size={16} />
+                    </Button>
                   </div>
-                );
-              })}
-            </div>
 
-            <DragOverlay>
-              {activeId ? (
-                <div className="bg-card border rounded-lg shadow-xl p-3 opacity-90">
-                  <p className="text-sm font-medium truncate">
-                    {lessons.find(l => l.id === activeId)?.title}
-                  </p>
+                  <div className="space-y-2 p-2">
+                    {moduleLessons.length === 0 ? (
+                      <p className="text-xs text-muted-foreground py-3 text-center italic">
+                        Nenhuma aula neste módulo
+                      </p>
+                    ) : (
+                      moduleLessons.map((lesson, idx) => (
+                        <LessonCard
+                          key={lesson.id}
+                          lesson={lesson}
+                          index={idx}
+                          totalInModule={moduleLessons.length}
+                          materials={materials[lesson.id] || []}
+                          modules={modules}
+                          currentModuleId={mod.id}
+                          isExpanded={expandedLessons.has(lesson.id)}
+                          isEditingTitle={editingLessonId === lesson.id}
+                          editingTitle={editingTitle}
+                          savingId={savingId}
+                          showMaterials={isEditMode}
+                          onToggleExpand={() => toggleExpanded(lesson.id)}
+                          onStartEdit={() => handleStartEdit(lesson)}
+                          onCancelEdit={() => { setEditingLessonId(null); setEditingTitle(''); }}
+                          onSaveTitle={() => handleSaveTitle(lesson.id)}
+                          onEditingTitleChange={setEditingTitle}
+                          onToggleVisibility={() => handleToggleVisibility(lesson)}
+                          onMaterialsChange={isEditMode ? fetchData : () => {}}
+                          onPreview={() => setPreviewLesson(lesson)}
+                          onMoveUp={() => moveLessonInModule(lesson.id, mod.id, 'up')}
+                          onMoveDown={() => moveLessonInModule(lesson.id, mod.id, 'down')}
+                          onMoveToModule={(targetModuleId) => moveLessonToModule(lesson.id, targetModuleId)}
+                          formatDuration={formatDuration}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
+              );
+            })}
+          </div>
         )}
 
         {/* Video Preview Dialog */}
