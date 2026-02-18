@@ -732,19 +732,11 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
           </div>
         )}
 
-        {/* Sync button (edit mode only) */}
-        {isEditMode && currentFolderId && (
-          <div className="flex items-center justify-between">
-            {lastSyncedAt && (
-              <p className="text-xs text-muted-foreground">
-                Última sincronização: {new Date(lastSyncedAt).toLocaleString('pt-BR')}
-              </p>
-            )}
-            <Button onClick={handleSync} disabled={syncing} variant="outline" size="sm">
-              {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Swap set="light" size={16} style={{ marginRight: 8 }} />}
-              Sincronizar
-            </Button>
-          </div>
+        {/* Last sync info */}
+        {isEditMode && lastSyncedAt && (
+          <p className="text-xs text-muted-foreground">
+            Última sincronização: {new Date(lastSyncedAt).toLocaleString('pt-BR')}
+          </p>
         )}
 
         {/* Add Module */}
