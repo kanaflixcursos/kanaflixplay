@@ -93,7 +93,7 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-medium tracking-tight">Cursos Disponíveis</h2>
         <Button variant="ghost" size="sm" asChild className="text-primary gap-1">
-          <Link to="/courses">
+          <Link to="/catalog">
             Ver todos <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>

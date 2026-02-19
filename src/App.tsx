@@ -19,6 +19,7 @@ import CourseView from "@/pages/student/CourseView";
 import NotificationsPage from "@/pages/student/Notifications";
 import PurchasesPage from "@/pages/student/Purchases";
 import StudentCoursesPage from "@/pages/student/Courses";
+import CatalogPage from "@/pages/student/Catalog";
 import SupportPage from "@/pages/student/Support";
 import TicketChatPage from "@/pages/student/TicketChat";
 
@@ -83,46 +84,15 @@ const App = () => (
                 }
               />
               <Route
-                path="/profile"
+                path="/catalog"
                 element={
                   <ProtectedRoute>
-                    <StudentProfile />
+                    <StudentLayout>
+                      <CatalogPage />
+                    </StudentLayout>
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <NotificationsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/purchases"
-                element={
-                  <ProtectedRoute>
-                    <PurchasesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte"
-                element={
-                  <ProtectedRoute>
-                    <SupportPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte/:ticketId"
-                element={
-                  <ProtectedRoute>
-                    <TicketChatPage />
-                  </ProtectedRoute>
-                }
-              />
-
               {/* Admin Routes */}
               <Route
                 path="/admin"

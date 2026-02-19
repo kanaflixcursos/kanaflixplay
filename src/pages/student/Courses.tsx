@@ -312,7 +312,7 @@ export default function StudentCourses() {
         }
       </section>
 
-      <AvailableCoursesSection limit={4} />
+      <AvailableCoursesSection limit={8} />
     </div>);
 
 }
