@@ -43,11 +43,11 @@ export default function PandavideoPlayer({ videoUrl, title, className = '' }: Pa
   }
 
   return (
-    <div className={`aspect-video ${className}`}>
+    <div className={`aspect-video rounded-lg overflow-hidden bg-black ${className}`}>
       <iframe
         src={embedUrl}
         title={title || 'Video Player'}
-        className="w-full h-full rounded-lg"
+        className="w-full h-full"
         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
         style={{ border: 'none' }}
