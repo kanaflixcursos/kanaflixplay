@@ -780,9 +780,11 @@ async function enrollUser(supabase: any, userId: string, courseId: string) {
     .single();
 
   if (!existing) {
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
     await supabase
       .from('course_enrollments')
-      .insert({ user_id: userId, course_id: courseId });
+      .insert({ user_id: userId, course_id: courseId, expires_at: expiresAt.toISOString() });
   }
 }
 

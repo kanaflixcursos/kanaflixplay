@@ -16,8 +16,11 @@ import {
   BookOpen, 
   Check, 
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface Course {
   id: string;
@@ -28,6 +31,13 @@ interface Course {
   is_published: boolean;
 }
 
+interface CourseModule {
+  id: string;
+  title: string;
+  order_index: number;
+  lessons: { id: string; title: string; order_index: number }[];
+}
+
 export default function Checkout() {
   useTrackVisit('/checkout');
   const { courseId } = useParams<{ courseId: string }>();
@@ -36,6 +46,7 @@ export default function Checkout() {
   
   const [course, setCourse] = useState<Course | null>(null);
   const [lessonCount, setLessonCount] = useState(0);
+  const [modules, setModules] = useState<CourseModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
@@ -76,6 +87,29 @@ export default function Checkout() {
       .rpc('get_public_lesson_count', { course_id_param: courseId });
 
     setLessonCount(count || 0);
+
+    // Fetch modules and lessons for this course
+    const { data: modulesData } = await supabase
+      .from('course_modules')
+      .select('id, title, order_index')
+      .eq('course_id', courseId)
+      .order('order_index');
+
+    if (modulesData && modulesData.length > 0) {
+      const modulesWithLessons = await Promise.all(
+        modulesData.map(async (mod) => {
+          const { data: lessonsData } = await supabase
+            .from('lessons')
+            .select('id, title, order_index')
+            .eq('module_id', mod.id)
+            .eq('is_hidden', false)
+            .order('order_index');
+          return { ...mod, lessons: lessonsData || [] };
+        })
+      );
+      setModules(modulesWithLessons);
+    }
+
     setLoading(false);
   };
 
@@ -104,11 +138,14 @@ export default function Checkout() {
     
     setCheckingEnrollment(true);
     try {
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
       const { error } = await supabase
         .from('course_enrollments')
         .insert({
           user_id: user.id,
-          course_id: courseId
+          course_id: courseId,
+          expires_at: expiresAt.toISOString()
         });
       
       if (error) {
@@ -239,6 +276,32 @@ export default function Checkout() {
                   />
                 </div>
               )}
+
+              {/* Course Modules & Lessons */}
+              {modules.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <h3 className="text-sm font-medium text-foreground mb-2">Conteúdo do curso</h3>
+                  {modules.map((mod) => (
+                    <Collapsible key={mod.id} defaultOpen={modules.length <= 3}>
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <span className="text-sm font-medium text-foreground flex-1">{mod.title}</span>
+                        <span className="text-xs text-muted-foreground">{mod.lessons.length} aulas</span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ul className="ml-6 mt-1 space-y-0.5">
+                          {mod.lessons.map((lesson) => (
+                            <li key={lesson.id} className="flex items-center gap-2 py-1.5 px-2 text-xs text-muted-foreground">
+                              <Play className="h-3 w-3 shrink-0" />
+                              <span className="line-clamp-1">{lesson.title}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Course Info & Checkout */}
@@ -271,7 +334,7 @@ export default function Checkout() {
                     <div className="p-1.5 rounded-lg bg-chart-4/10">
                       <Clock className="h-3.5 w-3.5 text-chart-4" />
                     </div>
-                    <span>Acesso vitalício</span>
+                    <span>Validade de 1 ano</span>
                   </div>
                 </div>
               </div>
