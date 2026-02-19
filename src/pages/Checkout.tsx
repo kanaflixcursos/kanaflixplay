@@ -35,7 +35,7 @@ interface CourseModule {
   id: string;
   title: string;
   order_index: number;
-  lessons: { id: string; title: string; order_index: number }[];
+  lessons: { id: string; title: string; order_index: number; duration_minutes: number | null }[];
 }
 
 export default function Checkout() {
@@ -100,7 +100,7 @@ export default function Checkout() {
         modulesData.map(async (mod) => {
           const { data: lessonsData } = await supabase
             .from('lessons')
-            .select('id, title, order_index')
+            .select('id, title, order_index, duration_minutes')
             .eq('module_id', mod.id)
             .eq('is_hidden', false)
             .order('order_index');
@@ -293,7 +293,14 @@ export default function Checkout() {
                           {mod.lessons.map((lesson) => (
                             <li key={lesson.id} className="flex items-center gap-2 py-1.5 px-2 text-xs text-muted-foreground">
                               <Play className="h-3 w-3 shrink-0" />
-                              <span className="line-clamp-1">{lesson.title}</span>
+                              <span className="line-clamp-1 flex-1">{lesson.title}</span>
+                              {lesson.duration_minutes != null && lesson.duration_minutes > 0 && (
+                                <span className="shrink-0 tabular-nums">
+                                  {lesson.duration_minutes >= 60
+                                    ? `${Math.floor(lesson.duration_minutes / 60)}h${String(lesson.duration_minutes % 60).padStart(2, '0')}`
+                                    : `${lesson.duration_minutes}min`}
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
