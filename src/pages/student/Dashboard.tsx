@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
+import AvailableCoursesSection from '@/components/AvailableCoursesSection';
 
 interface EnrolledCourse {
   id: string;
@@ -211,6 +212,8 @@ export default function StudentDashboard() {
           </div>
         )}
       </div>
+
+      <AvailableCoursesSection limit={4} />
     </div>
   );
 }
