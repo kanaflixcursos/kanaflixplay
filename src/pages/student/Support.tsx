@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportNotifications } from '@/hooks/useSupportNotifications';
-import StudentLayout from '@/components/layouts/StudentLayout';
+
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,17 +112,15 @@ export default function Support() {
 
   if (loading) {
     return (
-      <StudentLayout>
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-48" />
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-        </div>
-      </StudentLayout>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+      </div>
     );
   }
 
   return (
-    <StudentLayout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -224,6 +222,6 @@ export default function Support() {
           </div>
         )}
       </div>
-    </StudentLayout>
+    </>
   );
 }
