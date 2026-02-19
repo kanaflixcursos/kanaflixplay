@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import StudentLayout from '@/components/layouts/StudentLayout';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, Check, MessageCircle, Trash2 } from 'lucide-react';
@@ -130,7 +130,7 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <StudentLayout>
+    <>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -211,6 +211,6 @@ export default function NotificationsPage() {
           </CardContent>
         </Card>
       </div>
-    </StudentLayout>
+    </>
   );
 }

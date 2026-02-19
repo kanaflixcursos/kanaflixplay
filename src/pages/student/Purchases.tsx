@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import StudentLayout from '@/components/layouts/StudentLayout';
+
 import { toast } from 'sonner';
 
 interface Order {
@@ -176,35 +176,33 @@ export default function Purchases() {
 
   if (loading) {
     return (
-      <StudentLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Minhas Compras</h1>
-            <p className="text-muted-foreground">Histórico de pedidos e pagamentos</p>
-          </div>
-          <div className="grid gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <div className="flex gap-4">
-                    <Skeleton className="h-20 w-32 rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-5 w-48" />
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Minhas Compras</h1>
+          <p className="text-muted-foreground">Histórico de pedidos e pagamentos</p>
         </div>
-      </StudentLayout>
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="flex gap-4">
+                  <Skeleton className="h-20 w-32 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <StudentLayout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Minhas Compras</h1>
@@ -408,6 +406,6 @@ export default function Purchases() {
           </DialogContent>
         </Dialog>
       </div>
-    </StudentLayout>
+    </>
   );
 }

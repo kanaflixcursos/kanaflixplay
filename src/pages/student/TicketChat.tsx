@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupportNotifications } from '@/hooks/useSupportNotifications';
-import StudentLayout from '@/components/layouts/StudentLayout';
+
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -126,12 +126,12 @@ export default function TicketChatPage() {
   const isTicketClosed = ticket?.status === 'closed' || ticket?.status === 'resolved';
 
   if (loading) {
-    return <StudentLayout><div className="max-w-3xl mx-auto space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-[500px] w-full" /></div></StudentLayout>;
+    return <div className="max-w-3xl mx-auto space-y-4"><Skeleton className="h-8 w-48" /><Skeleton className="h-[500px] w-full" /></div>;
   }
   if (!ticket) return null;
 
   return (
-    <StudentLayout>
+    <>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
@@ -227,6 +227,6 @@ export default function TicketChatPage() {
 
         <FileViewer files={viewerFiles} initialIndex={viewerIndex} open={viewerOpen} onOpenChange={setViewerOpen} />
       </div>
-    </StudentLayout>
+    </>
   );
 }
