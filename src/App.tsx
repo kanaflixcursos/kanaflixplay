@@ -93,6 +93,56 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <StudentProfile />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <NotificationsPage />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/purchases"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <PurchasesPage />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/suporte"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <SupportPage />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/suporte/:ticketId"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <TicketChatPage />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
               {/* Admin Routes */}
               <Route
                 path="/admin"
