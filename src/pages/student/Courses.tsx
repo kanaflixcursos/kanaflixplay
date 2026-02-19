@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AvailableCoursesSection from '@/components/AvailableCoursesSection';
 
 interface EnrolledCourse {
   id: string;
@@ -310,6 +311,8 @@ export default function StudentCourses() {
           </div>
         }
       </section>
+
+      <AvailableCoursesSection limit={4} />
     </div>);
 
 }
