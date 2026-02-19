@@ -158,20 +158,20 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
 
                   {/* Price + Cart */}
                   <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                      <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
+                        {formatPrice(course.price)}
+                      </p>
+                    </div>
                     {course.price && course.price > 0 ? (
-                      <>
-                        <div>
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
-                          <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
-                            {formatPrice(course.price)}
-                          </p>
-                        </div>
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <ShoppingCart className="h-4 w-4 text-primary" />
-                        </div>
-                      </>
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <ShoppingCart className="h-4 w-4 text-primary" />
+                      </div>
                     ) : (
-                      <span className="text-sm font-semibold text-primary uppercase tracking-wide">Matricular</span>
+                      <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
+                        Matricular
+                      </Badge>
                     )}
                   </div>
                 </div>
