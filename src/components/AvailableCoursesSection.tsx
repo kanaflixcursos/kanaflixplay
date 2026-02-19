@@ -29,7 +29,7 @@ function formatDuration(minutes: number): string {
   return `${hours}h de aula`;
 }
 
-export default function AvailableCoursesSection({ limit = 8 }: { limit?: number }) {
+export default function AvailableCoursesSection() {
   const { user } = useAuth();
   const [courses, setCourses] = useState<AvailableCourse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +67,7 @@ export default function AvailableCoursesSection({ limit = 8 }: { limit?: number 
       let query = supabase
         .from('courses')
         .select('id, title, description, thumbnail_url, price, category_id, course_categories(name)')
-        .eq('is_published', true)
-        .limit(limit);
+        .eq('is_published', true);
 
       if (enrolledIds.length > 0) {
         query = query.not('id', 'in', `(${enrolledIds.join(',')})`);
@@ -102,7 +101,7 @@ export default function AvailableCoursesSection({ limit = 8 }: { limit?: number 
     };
 
     fetchAvailableCourses();
-  }, [user, limit]);
+  }, [user]);
 
   useEffect(() => {
     updateScrollButtons();

@@ -213,7 +213,7 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      <AvailableCoursesSection limit={4} />
+      <AvailableCoursesSection />
     </div>
   );
 }
