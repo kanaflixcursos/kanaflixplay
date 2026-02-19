@@ -82,10 +82,12 @@ export default function Onboarding() {
 
       if (importedUser && importedUser.course_ids?.length > 0) {
         for (const courseId of importedUser.course_ids) {
+          const expiresAt = new Date();
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
           await supabase
             .from('course_enrollments')
             .upsert(
-              { user_id: user.id, course_id: courseId },
+              { user_id: user.id, course_id: courseId, expires_at: expiresAt.toISOString() },
               { onConflict: 'user_id,course_id' }
             );
         }
