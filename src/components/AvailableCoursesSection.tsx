@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowRight, ShoppingCart, Clock } from 'lucide-react';
+import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -29,10 +29,29 @@ function formatDuration(minutes: number): string {
   return `${hours}h de aula`;
 }
 
-export default function AvailableCoursesSection({ limit = 4 }: { limit?: number }) {
+export default function AvailableCoursesSection({ limit = 8 }: { limit?: number }) {
   const { user } = useAuth();
   const [courses, setCourses] = useState<AvailableCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  };
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = el.querySelector('[data-card]')?.clientWidth || 200;
+    const gap = 12;
+    const scrollAmount = (cardWidth + gap) * 2;
+    el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const fetchAvailableCourses = async () => {
@@ -57,7 +76,6 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
 
       const { data } = await query;
 
-      // Fetch durations for each course
       const coursesWithDuration = await Promise.all(
         (data || []).map(async (course: any) => {
           const { data: lessons } = await supabase
@@ -86,12 +104,40 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
     fetchAvailableCourses();
   }, [user, limit]);
 
+  useEffect(() => {
+    updateScrollButtons();
+  }, [courses, loading]);
+
   if (!loading && courses.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-medium tracking-tight">Cursos Disponíveis</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-medium tracking-tight">Cursos Disponíveis</h2>
+          {!loading && courses.length > 0 && (
+            <div className="hidden sm:flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => scroll('left')}
+                disabled={!canScrollLeft}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => scroll('right')}
+                disabled={!canScrollRight}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
         <Button variant="ghost" size="sm" asChild className="text-primary gap-1">
           <Link to="/catalog">
             Ver todos <ArrowRight className="h-4 w-4" />
@@ -100,10 +146,10 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
       </div>
 
       {loading ? (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: limit }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <Skeleton className="aspect-[16/10] w-full" />
+        <div className="flex gap-3 overflow-hidden">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden shrink-0 w-[160px] sm:w-[200px]">
+              <Skeleton className="aspect-[4/5] w-full" />
               <div className="p-4 space-y-3">
                 <Skeleton className="h-3 w-1/2" />
                 <Skeleton className="h-5 w-3/4" />
@@ -113,9 +159,19 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
           ))}
         </div>
       ) : (
-        <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div
+          ref={scrollRef}
+          onScroll={updateScrollButtons}
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {courses.map((course) => (
-            <Link key={course.id} to={`/checkout/${course.id}`}>
+            <Link
+              key={course.id}
+              to={`/checkout/${course.id}`}
+              data-card
+              className="shrink-0 w-[160px] sm:w-[200px] snap-start"
+            >
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
                 {/* Thumbnail */}
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted rounded-t-lg">
@@ -133,43 +189,38 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
                 </div>
 
                 {/* Content */}
-                <div className="p-3 sm:p-4 flex flex-col flex-1 gap-2">
+                <div className="p-3 flex flex-col flex-1 gap-1.5">
                   {/* Category + Duration */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {course.category_name && (
-                      <Badge variant="secondary" className="text-xs font-medium">
+                      <Badge variant="secondary" className="text-[10px] font-medium">
                         {course.category_name}
                       </Badge>
                     )}
                     {course.total_duration > 0 && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="card-title line-clamp-2">{course.title}</h3>
-                  {course.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
-                    </p>
-                  )}
+                  <h3 className="text-sm font-semibold leading-snug line-clamp-2">{course.title}</h3>
 
                   {/* Price + Cart */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
+                  <div className="flex items-center justify-between pt-1.5 border-t border-border mt-auto">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
-                      <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                      <p className="text-sm font-semibold text-primary leading-tight">
                         {formatPrice(course.price)}
                       </p>
                     </div>
                     {course.price && course.price > 0 ? (
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <ShoppingCart className="h-4 w-4 text-primary" />
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <ShoppingCart className="h-3.5 w-3.5 text-primary" />
                       </div>
                     ) : (
-                      <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
+                      <Badge variant="secondary" className="text-[10px] font-semibold text-primary uppercase">
                         Matricular
                       </Badge>
                     )}
