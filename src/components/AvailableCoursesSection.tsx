@@ -118,7 +118,7 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
             <Link key={course.id} to={`/checkout/${course.id}`}>
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
                 {/* Thumbnail */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted rounded-t-lg">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
@@ -149,20 +149,30 @@ export default function AvailableCoursesSection({ limit = 4 }: { limit?: number 
                     )}
                   </div>
 
-                  {/* Title */}
-                  <h3 className="card-title line-clamp-2 flex-1">{course.title}</h3>
+                  <h3 className="card-title line-clamp-2">{course.title}</h3>
+                  {course.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
+                    </p>
+                  )}
 
                   {/* Price + Cart */}
-                  <div className="flex items-center justify-between pt-1 border-t border-border mt-auto">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
-                      <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
-                        {formatPrice(course.price)}
-                      </p>
-                    </div>
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <ShoppingCart className="h-4 w-4 text-primary" />
-                    </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-border mt-auto">
+                    {course.price && course.price > 0 ? (
+                      <>
+                        <div>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                          <p className="text-sm sm:text-base font-semibold text-primary leading-tight">
+                            {formatPrice(course.price)}
+                          </p>
+                        </div>
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <ShoppingCart className="h-4 w-4 text-primary" />
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-sm font-semibold text-primary uppercase tracking-wide">Matricular</span>
+                    )}
                   </div>
                 </div>
               </Card>
