@@ -38,7 +38,7 @@ const studentMenuItems = [
   { title: 'Cursos', url: '/courses', icon: GraduationCap },
   { title: 'Compras', url: '/purchases', icon: ShoppingBag },
   { title: 'Suporte', url: '/suporte', icon: HelpCircle },
-  { title: 'Explorar', url: 'https://kanaflix.com.br/', icon: Compass, external: true },
+  { title: 'Explorar', url: '/catalog', icon: Compass },
 ];
 
 const adminMenuItems = [
@@ -140,32 +140,20 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    {'external' in item && item.external ? (
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 px-6 py-5 rounded-md text-[15px]"
-                      >
-                        <item.icon className="h-[18px] w-[18px]" />
-                        <span>{item.title}</span>
-                      </a>
-                    ) : (
-                      <NavLink
-                        to={item.url}
-                        end={item.url === homeEnd}
-                        className="flex items-center gap-3 px-6 py-5 rounded-md text-[15px]"
-                        activeClassName="bg-primary/10 text-primary font-medium"
-                      >
-                        <item.icon className="h-[18px] w-[18px]" />
-                        <span className="flex-1">{item.title}</span>
-                        {item.title === 'Suporte' && pendingSupportCount > 0 && (
-                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
-                            {pendingSupportCount}
-                          </span>
-                        )}
-                      </NavLink>
-                    )}
+                    <NavLink
+                      to={item.url}
+                      end={item.url === homeEnd}
+                      className="flex items-center gap-3 px-6 py-5 rounded-md text-[15px]"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="h-[18px] w-[18px]" />
+                      <span className="flex-1">{item.title}</span>
+                      {item.title === 'Suporte' && pendingSupportCount > 0 && (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
+                          {pendingSupportCount}
+                        </span>
+                      )}
+                    </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
