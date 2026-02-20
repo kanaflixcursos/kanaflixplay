@@ -161,6 +161,56 @@ export type Database = {
           },
         ]
       }
+      discount_coupons: {
+        Row: {
+          code: string
+          course_id: string | null
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          course_id?: string | null
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          course_id?: string | null
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_coupons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           created_at: string
@@ -648,8 +698,10 @@ export type Database = {
           boleto_barcode: string | null
           boleto_due_date: string | null
           boleto_url: string | null
+          coupon_id: string | null
           course_id: string | null
           created_at: string
+          discount_amount: number | null
           failure_reason: string | null
           id: string
           pagarme_charge_id: string | null
@@ -667,8 +719,10 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          coupon_id?: string | null
           course_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           failure_reason?: string | null
           id: string
           pagarme_charge_id?: string | null
@@ -686,8 +740,10 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          coupon_id?: string | null
           course_id?: string | null
           created_at?: string
+          discount_amount?: number | null
           failure_reason?: string | null
           id?: string
           pagarme_charge_id?: string | null
@@ -701,6 +757,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "discount_coupons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_course_id_fkey"
             columns: ["course_id"]

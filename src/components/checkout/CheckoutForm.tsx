@@ -26,7 +26,8 @@ import {
   Sparkles,
   Clock,
   Zap,
-  AlertCircle
+  AlertCircle,
+  Tag
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -86,6 +87,16 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   const [copied, setCopied] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string;
+    code: string;
+    discount_type: 'percentage' | 'fixed';
+    discount_value: number;
+  } | null>(null);
+
   const [customer, setCustomer] = useState({
     name: '',
     email: '',
@@ -127,29 +138,92 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     }
   };
 
+  // Coupon validation
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('discount_coupons')
+        .select('id, code, discount_type, discount_value, max_uses, used_count, course_id, expires_at, is_active')
+        .eq('code', couponCode.toUpperCase().trim())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !data) {
+        toast.error('Cupom inválido ou não encontrado');
+        setCouponLoading(false);
+        return;
+      }
+
+      // Check expiration
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error('Este cupom expirou');
+        setCouponLoading(false);
+        return;
+      }
+
+      // Check usage limit
+      if (data.max_uses != null && data.used_count >= data.max_uses) {
+        toast.error('Este cupom atingiu o limite de usos');
+        setCouponLoading(false);
+        return;
+      }
+
+      // Check course restriction
+      if (data.course_id && data.course_id !== course.id) {
+        toast.error('Este cupom não é válido para este curso');
+        setCouponLoading(false);
+        return;
+      }
+
+      setAppliedCoupon({
+        id: data.id,
+        code: data.code,
+        discount_type: data.discount_type as 'percentage' | 'fixed',
+        discount_value: data.discount_value,
+      });
+      toast.success('Cupom aplicado!');
+    } catch {
+      toast.error('Erro ao validar cupom');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+  };
+
+  // Calculate discounted price
+  const discountedPrice = useMemo(() => {
+    if (!appliedCoupon) return course.price;
+    if (appliedCoupon.discount_type === 'percentage') {
+      return Math.max(0, Math.round(course.price * (1 - appliedCoupon.discount_value / 100)));
+    }
+    return Math.max(0, course.price - appliedCoupon.discount_value);
+  }, [course.price, appliedCoupon]);
+
 
   // Calculate available installment options based on course price and config
   const availableInstallments = useMemo(() => {
     const creditCardConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
     if (!creditCardConfig?.installments) {
-      // Default fallback
-      return [{ number: 1, interest_rate: 0, label: 'À vista', totalAmount: course.price, installmentAmount: course.price }];
+      return [{ number: 1, interest_rate: 0, label: 'À vista', totalAmount: discountedPrice, installmentAmount: discountedPrice }];
     }
 
     const { options, min_amount_per_installment } = creditCardConfig.installments;
     
     return options
       .filter(opt => {
-        // Check if each installment meets the minimum amount
-        const baseInstallmentAmount = course.price / opt.number;
+        const baseInstallmentAmount = discountedPrice / opt.number;
         return baseInstallmentAmount >= min_amount_per_installment;
       })
       .map(opt => {
-        // Calculate total with interest
-        let totalAmount = course.price;
+        let totalAmount = discountedPrice;
         if (opt.interest_rate > 0) {
-          // One-time percentage fee based on Pagar.me MDR rates
-          totalAmount = Math.round(course.price * (1 + opt.interest_rate / 100));
+          totalAmount = Math.round(discountedPrice * (1 + opt.interest_rate / 100));
         }
         
         const installmentAmount = Math.ceil(totalAmount / opt.number);
@@ -160,7 +234,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           installmentAmount
         };
       });
-  }, [course.price, paymentConfig]);
+  }, [discountedPrice, paymentConfig]);
 
   // Get the selected installment details
   const selectedInstallment = useMemo(() => {
@@ -228,6 +302,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           action: 'create_order',
           courseId: course.id,
           paymentMethod,
+          couponId: appliedCoupon?.id || undefined,
           customer: {
             name: customer.name,
             email: customer.email,
@@ -315,8 +390,8 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
-    ? selectedInstallment?.totalAmount || course.price
-    : course.price;
+    ? selectedInstallment?.totalAmount || discountedPrice
+    : discountedPrice;
 
   if (paymentResult) {
     return (
@@ -435,7 +510,18 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                 ) : null}
               </>
             ) : (
-              <span className="text-3xl font-bold text-foreground">{formatPrice(course.price)}</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-foreground">{formatPrice(discountedPrice)}</span>
+                {appliedCoupon && discountedPrice < course.price && (
+                  <span className="text-lg text-muted-foreground line-through">{formatPrice(course.price)}</span>
+                )}
+              </div>
+            )}
+            {appliedCoupon && (
+              <div className="flex items-center gap-2 text-sm text-success">
+                <Tag className="h-4 w-4" />
+                <span>Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}% off` : `${formatPrice(appliedCoupon.discount_value)} off`}</span>
+              </div>
             )}
           </div>
         </div>
@@ -471,6 +557,44 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Coupon Code */}
+          <div className="space-y-2">
+            <h4 className="font-semibold text-sm text-foreground">Cupom de desconto</h4>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between gap-2 p-3 bg-success/5 border border-success/20 rounded-xl">
+                <div className="flex items-center gap-2 text-sm">
+                  <Tag className="h-4 w-4 text-success" />
+                  <span className="font-mono font-bold">{appliedCoupon.code}</span>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}%` : formatPrice(appliedCoupon.discount_value)}
+                  </Badge>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={removeCoupon}>
+                  Remover
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={couponCode}
+                  onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Código do cupom"
+                  className="h-10 font-mono bg-muted/30"
+                  onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 h-10"
+                  onClick={handleApplyCoupon}
+                  disabled={couponLoading || !couponCode.trim()}
+                >
+                  {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
+                </Button>
+              </div>
+            )}
           </div>
 
           <Separator />

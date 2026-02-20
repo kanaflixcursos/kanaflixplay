@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, FileText, Mail, MessageSquare } from 'lucide-react';
+import { Users, FileText, Mail, MessageSquare, Ticket } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
 
@@ -30,11 +30,19 @@ const tools = [
     url: '/admin/marketing/email',
   },
   {
+    title: 'Cupons de Desconto',
+    description: 'Crie cupons promocionais para seus cursos',
+    icon: Ticket,
+    color: 'text-chart-4',
+    bg: 'bg-chart-4/10',
+    url: '/admin/marketing/coupons',
+  },
+  {
     title: 'WhatsApp',
     description: 'Envie mensagens via WhatsApp para seus contatos',
     icon: MessageSquare,
-    color: 'text-chart-4',
-    bg: 'bg-chart-4/10',
+    color: 'text-chart-5',
+    bg: 'bg-chart-5/10',
     url: '/admin/marketing/whatsapp',
     comingSoon: true,
   },
