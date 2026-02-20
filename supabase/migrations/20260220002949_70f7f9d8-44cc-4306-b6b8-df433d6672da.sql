@@ -1,0 +1,1 @@
+DELETE FROM orders WHERE id IN ('or_R52YbewflhYrxw3j', 'or_m1znOvEUZCP09YaK');
