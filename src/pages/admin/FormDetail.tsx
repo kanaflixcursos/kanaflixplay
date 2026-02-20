@@ -441,7 +441,7 @@ export default function FormDetail() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-10 w-64" />
-        <div className="grid gap-4 grid-cols-3">
+        <div className="grid gap-3 grid-cols-3">
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
           <Skeleton className="h-24" />
@@ -501,7 +501,7 @@ export default function FormDetail() {
 
         {/* === METRICS TAB === */}
         <TabsContent value="metrics" className="space-y-6">
-          <div className="grid gap-4 grid-cols-3">
+          <div className="grid gap-3 grid-cols-3">
             <StatCard icon={Users} title="Total de Leads" value={metricsLoading ? '—' : totalLeads} loading={metricsLoading} />
             <StatCard icon={Calendar} title="Novos" value={metricsLoading ? '—' : newLeads} loading={metricsLoading} />
             <StatCard icon={BarChart3} title="Convertidos" value={metricsLoading ? '—' : convertedLeads} loading={metricsLoading} />

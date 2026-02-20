@@ -190,7 +190,7 @@ export default function CatalogPage() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i}>
               <Skeleton className="h-6 w-40 mb-4" />
-              <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, j) => (
                   <Card key={j} className="overflow-hidden">
                     <Skeleton className="aspect-[4/5] w-full" />
@@ -255,7 +255,7 @@ export default function CatalogPage() {
 
 function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
   return (
-    <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       {courses.map((course) => (
         <Link
           key={course.id}

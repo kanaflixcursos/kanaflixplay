@@ -291,7 +291,7 @@ export default function StudentProfile() {
         <p className="text-muted-foreground text-sm md:text-base">Gerencie suas informações pessoais</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Profile Form */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -339,7 +339,7 @@ export default function StudentProfile() {
               <Separator />
 
               {/* Form Fields */}
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="fullName" className="flex items-center gap-2">
                     <User className="h-4 w-4" />

@@ -181,7 +181,7 @@ export default function Purchases() {
           <h1 className="text-2xl font-semibold tracking-tight">Minhas Compras</h1>
           <p className="text-muted-foreground">Histórico de pedidos e pagamentos</p>
         </div>
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardContent className="p-6">
@@ -220,7 +220,7 @@ export default function Purchases() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {orders.map((order) => {
               const status = statusConfig[order.status] || statusConfig.pending;
               const paymentMethod = order.payment_method 

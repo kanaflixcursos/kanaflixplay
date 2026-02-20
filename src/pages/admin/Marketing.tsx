@@ -55,7 +55,7 @@ export default function MarketingHub() {
       <FunnelRoadmap />
 
       {/* Tools grid */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
         {tools.map((tool, i) => (
           <motion.div
             key={tool.title}

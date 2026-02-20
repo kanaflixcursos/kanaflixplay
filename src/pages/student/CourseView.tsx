@@ -427,7 +427,7 @@ export default function CourseView() {
       </div>
 
       {/* Mobile: Stack vertically, Desktop: Grid */}
-      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Video Player */}

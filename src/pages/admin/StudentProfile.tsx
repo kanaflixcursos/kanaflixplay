@@ -335,7 +335,7 @@ export default function StudentProfile() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         {/* Profile Card */}
         <Card className="lg:col-span-1">
           <CardHeader>

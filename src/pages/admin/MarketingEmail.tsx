@@ -93,7 +93,7 @@ export default function MarketingEmail() {
         </Button>
       </div>
 
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <StatCard icon={Mail} title="Campanhas" value={totalCampaigns} loading={loading} iconColor="text-primary" iconBgColor="bg-primary/10" />
         <StatCard icon={Send} title="Emails Enviados" value={totalSent} loading={loading} iconColor="text-chart-2" iconBgColor="bg-chart-2/10" />
         <StatCard icon={MailOpen} title="Emails Abertos" value={totalOpened} loading={loading} iconColor="text-chart-4" iconBgColor="bg-chart-4/10" />

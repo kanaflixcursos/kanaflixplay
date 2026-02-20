@@ -134,7 +134,7 @@ export default function AdminComments() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
