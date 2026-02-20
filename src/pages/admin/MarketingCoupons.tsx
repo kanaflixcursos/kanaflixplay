@@ -41,10 +41,11 @@ interface Coupon {
   max_uses: number | null;
   used_count: number;
   course_id: string | null;
+  course_ids: string[];
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
-  course_title?: string;
+  course_titles: string[];
 }
 
 export default function MarketingCoupons() {
@@ -73,17 +74,34 @@ export default function MarketingCoupons() {
       return;
     }
 
-    const courseIds = [...new Set((data || []).filter(c => c.course_id).map(c => c.course_id!))];
+    // Collect all course IDs from course_ids arrays and legacy course_id
+    const allCourseIds = [...new Set(
+      (data || []).flatMap(c => {
+        const ids: string[] = (c as any).course_ids || [];
+        if (c.course_id && !ids.includes(c.course_id)) ids.push(c.course_id);
+        return ids;
+      })
+    )];
     let courseMap: Record<string, string> = {};
-    if (courseIds.length > 0) {
+    if (allCourseIds.length > 0) {
       const { data: coursesData } = await supabase
         .from('courses')
         .select('id, title')
-        .in('id', courseIds);
+        .in('id', allCourseIds);
       courseMap = Object.fromEntries((coursesData || []).map(c => [c.id, c.title]));
     }
 
-    setCoupons((data || []).map(c => ({ ...c, discount_type: c.discount_type as 'percentage' | 'fixed', course_title: c.course_id ? courseMap[c.course_id] : undefined })));
+    setCoupons((data || []).map(c => {
+      const ids: string[] = (c as any).course_ids?.length > 0 
+        ? (c as any).course_ids 
+        : (c.course_id ? [c.course_id] : []);
+      return {
+        ...c,
+        discount_type: c.discount_type as 'percentage' | 'fixed',
+        course_ids: ids,
+        course_titles: ids.map(id => courseMap[id]).filter(Boolean),
+      };
+    }));
     setLoading(false);
   };
 
@@ -124,7 +142,7 @@ export default function MarketingCoupons() {
 
   const filteredCoupons = coupons.filter(c =>
     c.code.toLowerCase().includes(search.toLowerCase()) ||
-    c.course_title?.toLowerCase().includes(search.toLowerCase())
+    c.course_titles.some(t => t.toLowerCase().includes(search.toLowerCase()))
   );
 
   const activeCoupons = coupons.filter(c => c.is_active).length;
@@ -257,13 +275,14 @@ export default function MarketingCoupons() {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    {coupon.course_title && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        <BookOpen className="h-2.5 w-2.5 mr-1" />
-                        {coupon.course_title}
-                      </Badge>
-                    )}
-                    {!coupon.course_id && (
+                    {coupon.course_titles.length > 0 ? (
+                      coupon.course_titles.map((title, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-[10px]">
+                          <BookOpen className="h-2.5 w-2.5 mr-1" />
+                          {title}
+                        </Badge>
+                      ))
+                    ) : (
                       <Badge variant="outline" className="text-[10px]">Todos os cursos</Badge>
                     )}
                     {coupon.max_uses != null && (

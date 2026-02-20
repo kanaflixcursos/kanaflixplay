@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -19,6 +21,8 @@ import {
   Sparkles,
   Percent,
   DollarSign,
+  BookOpen,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -32,7 +36,7 @@ const initialForm = {
   discount_type: 'percentage' as 'percentage' | 'fixed',
   discount_value: '',
   max_uses: '',
-  course_id: '',
+  course_ids: [] as string[],
   expires_at: '',
   is_active: true,
 };
@@ -46,6 +50,7 @@ export default function CouponForm() {
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [allCourses, setAllCourses] = useState(true);
 
   useEffect(() => {
     fetchCourses();
@@ -71,15 +76,20 @@ export default function CouponForm() {
       return;
     }
 
+    const courseIds = (data as any).course_ids as string[] || [];
+    // Fallback: if course_ids is empty but course_id exists, use it
+    const resolvedIds = courseIds.length > 0 ? courseIds : (data.course_id ? [data.course_id] : []);
+
     setForm({
       code: data.code,
       discount_type: data.discount_type as 'percentage' | 'fixed',
       discount_value: data.discount_type === 'fixed' ? (data.discount_value / 100).toString() : data.discount_value.toString(),
       max_uses: data.max_uses?.toString() || '',
-      course_id: data.course_id || '',
+      course_ids: resolvedIds,
       expires_at: data.expires_at ? data.expires_at.split('T')[0] : '',
       is_active: data.is_active,
     });
+    setAllCourses(resolvedIds.length === 0);
     setLoading(false);
   };
 
@@ -88,6 +98,19 @@ export default function CouponForm() {
     let code = '';
     for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
     setForm(f => ({ ...f, code }));
+  };
+
+  const toggleCourse = (courseId: string) => {
+    setForm(f => ({
+      ...f,
+      course_ids: f.course_ids.includes(courseId)
+        ? f.course_ids.filter(id => id !== courseId)
+        : [...f.course_ids, courseId],
+    }));
+  };
+
+  const removeCourse = (courseId: string) => {
+    setForm(f => ({ ...f, course_ids: f.course_ids.filter(id => id !== courseId) }));
   };
 
   const handleSave = async () => {
@@ -106,6 +129,8 @@ export default function CouponForm() {
 
     setSaving(true);
 
+    const courseIds = allCourses ? [] : form.course_ids;
+
     const payload = {
       code: form.code.toUpperCase().trim(),
       discount_type: form.discount_type,
@@ -113,7 +138,8 @@ export default function CouponForm() {
         ? Math.round(Number(form.discount_value) * 100)
         : Number(form.discount_value),
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-      course_id: form.course_id || null,
+      course_id: courseIds.length === 1 ? courseIds[0] : null, // backward compat
+      course_ids: courseIds,
       expires_at: form.expires_at ? new Date(form.expires_at + 'T23:59:59').toISOString() : null,
       is_active: form.is_active,
     };
@@ -138,6 +164,8 @@ export default function CouponForm() {
     toast.success(isEditing ? 'Cupom atualizado!' : 'Cupom criado!');
     navigate('/admin/marketing/coupons');
   };
+
+  const getCourseName = (id: string) => courses.find(c => c.id === id)?.title || id;
 
   if (loading) {
     return (
@@ -172,7 +200,7 @@ export default function CouponForm() {
         <CardContent className="space-y-5">
           {/* Code */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Código *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Código *</Label>
             <div className="flex gap-2">
               <Input
                 value={form.code}
@@ -191,7 +219,7 @@ export default function CouponForm() {
           {/* Type & Value */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Tipo de desconto</Label>
+              <Label className="text-xs font-medium text-muted-foreground">Tipo de desconto</Label>
               <Select value={form.discount_type} onValueChange={(v: 'percentage' | 'fixed') => setForm(f => ({ ...f, discount_type: v, discount_value: '' }))}>
                 <SelectTrigger>
                   <SelectValue />
@@ -207,7 +235,7 @@ export default function CouponForm() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">
+              <Label className="text-xs font-medium text-muted-foreground">
                 Valor {form.discount_type === 'percentage' ? '(%)' : '(R$)'} *
               </Label>
               <Input
@@ -222,26 +250,71 @@ export default function CouponForm() {
             </div>
           </div>
 
-          {/* Course */}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Curso específico (opcional)</Label>
-            <Select value={form.course_id || 'all'} onValueChange={v => setForm(f => ({ ...f, course_id: v === 'all' ? '' : v }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos os cursos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os cursos</SelectItem>
-                {courses.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Course multi-select */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground">Cursos válidos</Label>
+            
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="all-courses"
+                checked={allCourses}
+                onCheckedChange={(checked) => {
+                  setAllCourses(!!checked);
+                  if (checked) setForm(f => ({ ...f, course_ids: [] }));
+                }}
+              />
+              <label htmlFor="all-courses" className="text-sm font-medium cursor-pointer">
+                Todos os cursos
+              </label>
+            </div>
+
+            {!allCourses && (
+              <>
+                {/* Selected courses tags */}
+                {form.course_ids.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {form.course_ids.map(id => (
+                      <Badge key={id} variant="secondary" className="gap-1 pr-1">
+                        <BookOpen className="h-3 w-3" />
+                        <span className="text-xs max-w-[150px] truncate">{getCourseName(id)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeCourse(id)}
+                          className="ml-0.5 p-0.5 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+
+                {/* Course list with checkboxes */}
+                <div className="border rounded-lg max-h-48 overflow-y-auto divide-y divide-border">
+                  {courses.map(course => (
+                    <label
+                      key={course.id}
+                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 cursor-pointer transition-colors"
+                    >
+                      <Checkbox
+                        checked={form.course_ids.includes(course.id)}
+                        onCheckedChange={() => toggleCourse(course.id)}
+                      />
+                      <span className="text-sm truncate">{course.title}</span>
+                    </label>
+                  ))}
+                  {courses.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-3 text-center">Nenhum curso cadastrado</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Limits */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Limite de usos</Label>
+              <Label className="text-xs font-medium text-muted-foreground">Limite de usos</Label>
               <Input
                 type="number"
                 value={form.max_uses}
@@ -251,7 +324,7 @@ export default function CouponForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Data de validade</Label>
+              <Label className="text-xs font-medium text-muted-foreground">Data de validade</Label>
               <Input
                 type="date"
                 value={form.expires_at}
@@ -261,7 +334,7 @@ export default function CouponForm() {
           </div>
 
           {/* Active toggle */}
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-2 border-t">
             <Label className="text-sm">Cupom ativo</Label>
             <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
           </div>

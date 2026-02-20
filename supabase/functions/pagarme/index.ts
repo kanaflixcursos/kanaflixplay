@@ -187,7 +187,12 @@ async function handleCreateOrder(
       });
     }
 
-    if (coupon.course_id && coupon.course_id !== courseId) {
+    // Check course restriction (supports both course_ids array and legacy course_id)
+    const couponCourseIds: string[] = coupon.course_ids && coupon.course_ids.length > 0
+      ? coupon.course_ids
+      : (coupon.course_id ? [coupon.course_id] : []);
+    
+    if (couponCourseIds.length > 0 && !couponCourseIds.includes(courseId)) {
       return new Response(JSON.stringify({ error: 'Cupom não válido para este curso' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
