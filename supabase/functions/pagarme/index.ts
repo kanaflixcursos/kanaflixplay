@@ -249,14 +249,26 @@ async function handleCreateOrder(
 
   const charge = pagarmeOrder.charges?.[0];
 
+  // Extract failure reason from gateway response if charge failed
+  let failureReason: string | null = null;
+  if (charge?.status === 'failed') {
+    const gatewayErrors = charge.last_transaction?.gateway_response?.errors;
+    if (gatewayErrors && gatewayErrors.length > 0) {
+      failureReason = gatewayErrors.map((e: any) => e.message).join('; ');
+    } else {
+      failureReason = 'Pagamento recusado pelo gateway';
+    }
+  }
+
   const orderData: any = {
     id: pagarmeOrder.id,
     user_id: userId,
     course_id: courseId,
     amount: course.price,
-    status: charge?.status === 'paid' ? 'paid' : 'pending',
+    status: charge?.status === 'paid' ? 'paid' : charge?.status === 'failed' ? 'failed' : 'pending',
     payment_method: paymentMethod,
-    pagarme_charge_id: charge?.id
+    pagarme_charge_id: charge?.id,
+    failure_reason: failureReason
   };
 
   if (paymentMethod === 'pix' && charge?.last_transaction) {
@@ -330,6 +342,19 @@ async function handleCreateOrder(
           ? new Date(orderData.pix_expires_at).toLocaleString('pt-BR')
           : undefined,
       }
+    });
+  }
+
+  // If the charge failed immediately, return error with details
+  if (charge?.status === 'failed') {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Pagamento não autorizado',
+      failureReason,
+      order,
+    }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
 
