@@ -7,6 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -76,9 +83,15 @@ interface Course {
   pandavideo_folder_name?: string;
   last_synced_at: string | null;
   price: number | null;
+  category_id: string | null;
   lessonCount: number;
   enrollmentCount: number;
   totalDurationMinutes: number;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 interface PandaFolder {
@@ -94,6 +107,7 @@ export default function AdminCourses() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [pandaFolders, setPandaFolders] = useState<PandaFolder[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: Course | null }>({
     open: false,
@@ -109,6 +123,8 @@ export default function AdminCourses() {
   const [copied, setCopied] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
   // Computed stats
@@ -120,9 +136,21 @@ export default function AdminCourses() {
   }, [courses]);
 
   const filteredCourses = useMemo(() => 
-    courses.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase())),
-    [courses, searchQuery]
+    courses.filter(c => {
+      const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = filterCategory === 'all' || c.category_id === filterCategory || (filterCategory === 'none' && !c.category_id);
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'published' && c.is_published) || 
+        (filterStatus === 'draft' && !c.is_published);
+      return matchesSearch && matchesCategory && matchesStatus;
+    }),
+    [courses, searchQuery, filterCategory, filterStatus]
   );
+
+  const getCategoryName = (categoryId: string | null) => {
+    if (!categoryId) return null;
+    return categories.find(c => c.id === categoryId)?.name || null;
+  };
   const fetchPandaFolders = async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -182,9 +210,15 @@ export default function AdminCourses() {
     setLoading(false);
   };
 
+  const fetchCategories = async () => {
+    const { data } = await supabase.from('course_categories').select('id, name').order('name');
+    setCategories(data || []);
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchPandaFolders();
+    fetchCategories();
   }, []);
 
   const getFolderName = (folderId: string | null) => {
@@ -364,6 +398,10 @@ export default function AdminCourses() {
           <CollapsibleContent className="mt-4 pt-4 border-t space-y-2">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
+                <span className="text-muted-foreground">Categoria:</span>
+                <span className="ml-2 font-medium">{getCategoryName(course.category_id) || '—'}</span>
+              </div>
+              <div>
                 <span className="text-muted-foreground">Aulas:</span>
                 <span className="ml-2 font-medium">{course.lessonCount}</span>
               </div>
@@ -431,15 +469,39 @@ export default function AdminCourses() {
         />
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar curso..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 w-full sm:w-64"
-        />
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar curso..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={filterCategory} onValueChange={setFilterCategory}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as categorias</SelectItem>
+            <SelectItem value="none">Sem categoria</SelectItem>
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="published">Publicado</SelectItem>
+            <SelectItem value="draft">Oculto</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
@@ -471,6 +533,7 @@ export default function AdminCourses() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome do Curso</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead className="text-center">Aulas</TableHead>
                 <TableHead>Preço</TableHead>
                 <TableHead>Status</TableHead>
@@ -493,6 +556,11 @@ export default function AdminCourses() {
                         <span className="font-medium truncate">{course.title}</span>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {getCategoryName(course.category_id) || '—'}
+                    </span>
                   </TableCell>
                   <TableCell className="text-center">{course.lessonCount}</TableCell>
                   <TableCell className="font-medium">{formatPrice(course.price)}</TableCell>
