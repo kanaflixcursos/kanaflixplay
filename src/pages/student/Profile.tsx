@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface Profile {
   id: string;
@@ -286,12 +287,21 @@ export default function StudentProfile() {
   return (
     <>
     <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto">
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Meu Perfil</h1>
         <p className="text-muted-foreground text-sm md:text-base">Gerencie suas informações pessoais</p>
-      </div>
+      </motion.div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.08 }}
+        className="grid gap-3 lg:grid-cols-3"
+      >
         {/* Profile Form */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
@@ -469,7 +479,7 @@ export default function StudentProfile() {
             </Card>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
     </>
   );

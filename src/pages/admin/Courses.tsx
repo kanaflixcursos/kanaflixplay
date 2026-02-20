@@ -64,6 +64,7 @@ import {
 } from 'react-iconly';
 import { useIsMobile } from '@/hooks/use-mobile';
 import StatCard from '@/components/StatCard';
+import { motion } from 'framer-motion';
 import {
   Collapsible,
   CollapsibleContent,
@@ -428,7 +429,12 @@ export default function AdminCourses() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Cursos</h1>
           <p className="text-muted-foreground text-sm md:text-base">Gerencie os cursos da plataforma</p>
@@ -454,10 +460,15 @@ export default function AdminCourses() {
             {!isMobile && <span className="ml-1">Novo Curso</span>}
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 gap-3 md:gap-4 items-stretch">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+        className="grid grid-cols-3 gap-3 md:gap-4 items-stretch"
+      >
         <StatCard title="Total de Cursos" value={courses.length} icon={BookOpen} loading={loading} />
         <StatCard title="Total de Alunos" value={totalStudents} icon={Users} loading={loading} />
         <StatCard
@@ -467,7 +478,7 @@ export default function AdminCourses() {
           icon={Trophy}
           loading={loading}
         />
-      </div>
+      </motion.div>
 
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
