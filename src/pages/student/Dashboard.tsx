@@ -130,7 +130,7 @@ export default function StudentDashboard() {
         <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}
@@ -174,7 +174,7 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {enrolledCourses.map((enrollment) => {
               const progress = enrollment.totalLessons > 0 
                 ? Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100) 
