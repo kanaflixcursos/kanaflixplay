@@ -359,7 +359,7 @@ export default function AdminFeaturedBanner() {
             </div>
 
             {/* Custom Overrides */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Título personalizado</Label>
                 <Input
@@ -433,7 +433,7 @@ export default function AdminFeaturedBanner() {
             </div>
 
             {/* Gradient Colors */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Cor do gradiente (início)</Label>
                 <div className="flex items-center gap-3">

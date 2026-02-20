@@ -251,7 +251,7 @@ export default function MarketingForms() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-40" />)}
         </div>
       ) : forms.length === 0 ? (
@@ -263,7 +263,7 @@ export default function MarketingForms() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           {forms.map((form, i) => (
             <motion.div
               key={form.id}

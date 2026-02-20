@@ -18,13 +18,13 @@ export default function AdminDashboard() {
 
       <FunnelRoadmap />
 
-      <div className="grid gap-4 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 sm:grid-cols-3">
         <DashboardRevenueCard />
         <DashboardStudentsCard />
         <DashboardCoursesCard />
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <DashboardRevenueChart />
         </div>
