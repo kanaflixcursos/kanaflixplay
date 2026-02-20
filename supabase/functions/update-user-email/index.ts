@@ -35,19 +35,22 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user: callerUser }, error: userError } = await userClient.auth.getUser();
-    if (userError || !callerUser) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(
         JSON.stringify({ error: "Usuário não autenticado" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const callerId = claimsData.claims.sub as string;
+
     // Check if caller is admin
     const { data: roleData, error: roleError } = await userClient
       .from("user_roles")
       .select("role")
-      .eq("user_id", callerUser.id)
+      .eq("user_id", callerId)
       .maybeSingle();
 
     if (roleError || roleData?.role !== "admin") {
