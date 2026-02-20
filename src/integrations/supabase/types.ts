@@ -650,6 +650,7 @@ export type Database = {
           boleto_url: string | null
           course_id: string | null
           created_at: string
+          failure_reason: string | null
           id: string
           pagarme_charge_id: string | null
           paid_at: string | null
@@ -668,6 +669,7 @@ export type Database = {
           boleto_url?: string | null
           course_id?: string | null
           created_at?: string
+          failure_reason?: string | null
           id: string
           pagarme_charge_id?: string | null
           paid_at?: string | null
@@ -686,6 +688,7 @@ export type Database = {
           boleto_url?: string | null
           course_id?: string | null
           created_at?: string
+          failure_reason?: string | null
           id?: string
           pagarme_charge_id?: string | null
           paid_at?: string | null

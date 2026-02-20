@@ -40,6 +40,7 @@ export interface Sale {
   user_avatar: string | null;
   pix_qr_code: string | null;
   boleto_url: string | null;
+  failure_reason: string | null;
 }
 
 const paymentMethodIcons: Record<string, React.ReactNode> = {
@@ -518,6 +519,14 @@ export default function SalesTable({
                 )}
               </div>
 
+              {/* Failure Reason */}
+              {selectedSale.status === 'failed' && selectedSale.failure_reason && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm">
+                  <p className="text-destructive font-medium mb-1">Motivo da falha</p>
+                  <p className="text-destructive/80 text-xs break-words">{selectedSale.failure_reason}</p>
+                </div>
+              )}
+
               {/* Action buttons in dialog */}
               {(selectedSale.status === 'paid' || selectedSale.status === 'pending') && (
                 <div className="flex gap-2 pt-2 border-t">
@@ -623,7 +632,7 @@ export async function fetchSalesData(page: number, pageSize: number): Promise<{ 
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url')
+    .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url, failure_reason')
     .order('created_at', { ascending: false })
     .range(from, to);
 

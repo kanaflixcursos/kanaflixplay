@@ -252,16 +252,25 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       const result = response.data;
 
       if (!result.success) {
-        throw new Error(result.error || 'Erro ao processar pagamento');
+        const errorMsg = result.failureReason 
+          ? `Pagamento não autorizado: ${result.failureReason}`
+          : (result.error || 'Erro ao processar pagamento');
+        throw new Error(errorMsg);
       }
 
       if (paymentMethod === 'credit_card' && result.order.status === 'paid') {
         toast.success('Pagamento aprovado! Você já pode acessar o curso.');
         onSuccess?.();
       } else if (paymentMethod === 'pix') {
+        if (!result.pagarme?.pix?.qrCode || !result.pagarme?.pix?.qrCodeUrl) {
+          throw new Error('Não foi possível gerar o QR Code PIX. O método de pagamento PIX pode não estar habilitado. Tente outro método de pagamento.');
+        }
         setPaymentResult({ pix: result.pagarme.pix });
         toast.success('PIX gerado! Escaneie o QR Code para pagar.');
       } else if (paymentMethod === 'boleto') {
+        if (!result.pagarme?.boleto?.url || !result.pagarme?.boleto?.barcode) {
+          throw new Error('Não foi possível gerar o boleto. Tente outro método de pagamento.');
+        }
         setPaymentResult({ boleto: result.pagarme.boleto });
         toast.success('Boleto gerado! Pague até a data de vencimento.');
       }
