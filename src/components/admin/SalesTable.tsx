@@ -520,10 +520,12 @@ export default function SalesTable({
               </div>
 
               {/* Failure Reason */}
-              {selectedSale.status === 'failed' && selectedSale.failure_reason && (
+              {selectedSale.status === 'failed' && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm">
                   <p className="text-destructive font-medium mb-1">Motivo da falha</p>
-                  <p className="text-destructive/80 text-xs break-words">{selectedSale.failure_reason}</p>
+                  <p className="text-destructive/80 text-xs break-words">
+                    {selectedSale.failure_reason || 'Motivo não registrado. Pedidos anteriores à atualização do sistema não possuem detalhes da falha.'}
+                  </p>
                 </div>
               )}
 
