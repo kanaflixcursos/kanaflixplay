@@ -145,7 +145,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     try {
       const { data, error } = await supabase
         .from('discount_coupons')
-        .select('id, code, discount_type, discount_value, max_uses, used_count, course_id, expires_at, is_active')
+        .select('id, code, discount_type, discount_value, max_uses, used_count, course_id, course_ids, expires_at, is_active')
         .eq('code', couponCode.toUpperCase().trim())
         .eq('is_active', true)
         .single();
@@ -170,8 +170,12 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         return;
       }
 
-      // Check course restriction
-      if (data.course_id && data.course_id !== course.id) {
+      // Check course restriction (supports course_ids array and legacy course_id)
+      const couponCourseIds: string[] = (data as any).course_ids?.length > 0
+        ? (data as any).course_ids
+        : (data.course_id ? [data.course_id] : []);
+      
+      if (couponCourseIds.length > 0 && !couponCourseIds.includes(course.id)) {
         toast.error('Este cupom não é válido para este curso');
         setCouponLoading(false);
         return;

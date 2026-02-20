@@ -165,6 +165,7 @@ export type Database = {
         Row: {
           code: string
           course_id: string | null
+          course_ids: string[]
           created_at: string
           discount_type: string
           discount_value: number
@@ -178,6 +179,7 @@ export type Database = {
         Insert: {
           code: string
           course_id?: string | null
+          course_ids?: string[]
           created_at?: string
           discount_type?: string
           discount_value?: number
@@ -191,6 +193,7 @@ export type Database = {
         Update: {
           code?: string
           course_id?: string | null
+          course_ids?: string[]
           created_at?: string
           discount_type?: string
           discount_value?: number
