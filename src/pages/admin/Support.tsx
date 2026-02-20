@@ -4,12 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import PhoneInput from '@/components/PhoneInput';
+import { toast } from 'sonner';
 import {
   Clock,
   CheckCircle2,
@@ -18,7 +23,10 @@ import {
   Search,
   ChevronRight,
   MessageCircle,
-  Circle
+  Circle,
+  Settings2,
+  Save,
+  Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -56,6 +64,10 @@ export default function AdminSupport() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'resolved'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { unreadTicketIds } = useSupportNotifications({ userId: user?.id, isAdmin: true });
 
@@ -84,14 +96,39 @@ export default function AdminSupport() {
     setLoading(false);
   }, []);
 
+  const fetchWhatsappConfig = useCallback(async () => {
+    const { data } = await supabase
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'whatsapp_support')
+      .single();
+    if (data?.value) {
+      const val = data.value as { enabled: boolean; number: string };
+      setWhatsappEnabled(val.enabled ?? false);
+      setWhatsappNumber(val.number ?? '');
+    }
+  }, []);
+
+  const saveWhatsappConfig = async () => {
+    setSavingWhatsapp(true);
+    const { error } = await supabase
+      .from('site_settings')
+      .update({ value: { enabled: whatsappEnabled, number: whatsappNumber }, updated_at: new Date().toISOString() })
+      .eq('key', 'whatsapp_support');
+    if (error) toast.error('Erro ao salvar configuração');
+    else toast.success('Configuração do WhatsApp salva!');
+    setSavingWhatsapp(false);
+  };
+
   useEffect(() => {
     fetchTickets();
+    fetchWhatsappConfig();
     const channel = supabase
       .channel('admin-tickets')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () => fetchTickets())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [fetchTickets]);
+  }, [fetchTickets, fetchWhatsappConfig]);
 
   const filteredTickets = useMemo(() => {
     let filtered = tickets;
@@ -123,10 +160,40 @@ export default function AdminSupport() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Suporte</h1>
-          <p className="text-sm text-muted-foreground">Gerenciamento de solicitações</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Suporte</h1>
+            <p className="text-sm text-muted-foreground">Gerenciamento de solicitações</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowSettings(!showSettings)}>
+            <Settings2 className="h-4 w-4 mr-1" />
+            Configurações
+          </Button>
         </div>
+
+        {/* WhatsApp Settings */}
+        {showSettings && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">WhatsApp de Suporte</CardTitle>
+              <CardDescription>Configure o contato via WhatsApp exibido para os alunos</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="whatsapp-enabled">Exibir botão de WhatsApp</Label>
+                <Switch id="whatsapp-enabled" checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
+              </div>
+              <div className="space-y-2">
+                <Label>Número do WhatsApp</Label>
+                <PhoneInput value={whatsappNumber} onChange={setWhatsappNumber} placeholder="(00) 00000-0000" />
+              </div>
+              <Button size="sm" onClick={saveWhatsappConfig} disabled={savingWhatsapp}>
+                {savingWhatsapp ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                Salvar
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
