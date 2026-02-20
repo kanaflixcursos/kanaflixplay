@@ -8,6 +8,7 @@ import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
+import { motion } from 'framer-motion';
 
 interface EnrolledCourse {
   id: string;
@@ -125,10 +126,14 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
         <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
-      </div>
+      </motion.div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <StatCard
@@ -158,7 +163,11 @@ export default function StudentDashboard() {
         {!loading && <ContinueWatchingCard />}
       </div>
 
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
+      >
         <h2 className="text-lg font-medium tracking-tight mb-4">Meus Cursos</h2>
         
         {loading ? (
@@ -175,13 +184,19 @@ export default function StudentDashboard() {
           </Card>
         ) : (
           <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {enrolledCourses.map((enrollment) => {
+            {enrolledCourses.map((enrollment, idx) => {
               const progress = enrollment.totalLessons > 0 
                 ? Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100) 
                 : 0;
               
               return (
-                <Link key={enrollment.id} to={`/courses/${enrollment.course.id}`}>
+                <motion.div
+                  key={enrollment.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                >
+                <Link to={`/courses/${enrollment.course.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
                     {enrollment.course.thumbnail_url ? (
                       <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
@@ -207,13 +222,20 @@ export default function StudentDashboard() {
                     </CardContent>
                   </Card>
                 </Link>
+                </motion.div>
               );
             })}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <AvailableCoursesSection />
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}
+      >
+        <AvailableCoursesSection />
+      </motion.div>
     </div>
   );
 }

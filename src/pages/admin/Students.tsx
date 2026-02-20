@@ -536,7 +536,12 @@ export default function AdminStudents() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Alunos</h1>
           <p className="text-muted-foreground text-sm md:text-base">Gerencie os alunos da plataforma</p>
@@ -559,7 +564,7 @@ export default function AdminStudents() {
             Importar
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Bulk Actions Bar */}
       <AnimatePresence>

@@ -11,6 +11,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
 import { useTrackVisit } from '@/hooks/useTrackVisit';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   useTrackVisit('/login');
@@ -144,7 +145,12 @@ export default function Login() {
       </div>
 
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary/5">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary/5"
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
@@ -160,10 +166,15 @@ export default function Login() {
             Sua plataforma de cursos online com conteúdo de qualidade para impulsionar sua carreira.
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Right side - Auth Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut', delay: 0.1 }}
+        className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12"
+      >
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
@@ -488,7 +499,7 @@ export default function Login() {
             </a>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
