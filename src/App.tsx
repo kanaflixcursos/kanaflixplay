@@ -40,7 +40,7 @@ import AdminMarketingForms from "@/pages/admin/MarketingForms";
 import AdminMarketingEmail from "@/pages/admin/MarketingEmail";
 import AdminFormDetail from "@/pages/admin/FormDetail";
 import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
-
+import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -291,6 +291,16 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminCampaignEditor />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/coupons"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminMarketingCoupons />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
