@@ -131,7 +131,7 @@ async function handleCreateOrder(
   apiKey: string, 
   supabase: any
 ) {
-  const { courseId, paymentMethod, customer, card, installments = 1 } = payload;
+  const { courseId, paymentMethod, customer, card, installments = 1, couponId } = payload;
 
   const { data: course, error: courseError } = await supabase
     .from('courses')
@@ -153,9 +153,108 @@ async function handleCreateOrder(
     });
   }
 
+  // Server-side coupon validation
+  let finalPrice = course.price;
+  let discountAmount = 0;
+  let validatedCouponId: string | null = null;
+
+  if (couponId) {
+    const { data: coupon, error: couponError } = await supabase
+      .from('discount_coupons')
+      .select('*')
+      .eq('id', couponId)
+      .eq('is_active', true)
+      .single();
+
+    if (couponError || !coupon) {
+      return new Response(JSON.stringify({ error: 'Cupom inválido ou inativo' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+      return new Response(JSON.stringify({ error: 'Cupom expirado' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses) {
+      return new Response(JSON.stringify({ error: 'Cupom atingiu o limite de uso' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (coupon.course_id && coupon.course_id !== courseId) {
+      return new Response(JSON.stringify({ error: 'Cupom não válido para este curso' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (coupon.discount_type === 'percentage') {
+      discountAmount = Math.round(course.price * (coupon.discount_value / 100));
+    } else {
+      discountAmount = coupon.discount_value;
+    }
+
+    finalPrice = Math.max(0, course.price - discountAmount);
+    validatedCouponId = coupon.id;
+
+    // Increment used_count
+    await supabase
+      .from('discount_coupons')
+      .update({ used_count: coupon.used_count + 1 })
+      .eq('id', coupon.id);
+
+    console.log(`[Order] Coupon ${coupon.code} applied: discount ${discountAmount}, final price ${finalPrice}`);
+  }
+
+  // If price is 0 after discount, auto-enroll without payment
+  if (finalPrice <= 0) {
+    const orderData = {
+      id: `free_${Date.now()}`,
+      user_id: userId,
+      course_id: courseId,
+      amount: 0,
+      discount_amount: discountAmount,
+      coupon_id: validatedCouponId,
+      status: 'paid',
+      payment_method: 'coupon',
+      paid_at: new Date().toISOString(),
+    };
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert(orderData)
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Order insert error:', orderError);
+      return new Response(JSON.stringify({ error: 'Failed to save order' }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    await enrollUser(supabase, userId, courseId);
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      order,
+      pagarme: { status: 'paid' }
+    }), { 
+      status: 200, 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
   const orderPayload: any = {
     items: [{
-      amount: course.price,
+      amount: finalPrice,
       description: course.title,
       quantity: 1,
       code: course.id
@@ -264,7 +363,9 @@ async function handleCreateOrder(
     id: pagarmeOrder.id,
     user_id: userId,
     course_id: courseId,
-    amount: course.price,
+    amount: finalPrice,
+    discount_amount: discountAmount > 0 ? discountAmount : null,
+    coupon_id: validatedCouponId,
     status: charge?.status === 'paid' ? 'paid' : charge?.status === 'failed' ? 'failed' : 'pending',
     payment_method: paymentMethod,
     pagarme_charge_id: charge?.id,
