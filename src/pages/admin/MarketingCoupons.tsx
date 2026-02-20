@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -16,13 +15,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   ArrowLeft,
   Plus,
@@ -55,38 +47,17 @@ interface Coupon {
   course_title?: string;
 }
 
-interface CourseOption {
-  id: string;
-  title: string;
-}
-
-const initialForm = {
-  code: '',
-  discount_type: 'percentage' as 'percentage' | 'fixed',
-  discount_value: '',
-  max_uses: '',
-  course_id: '',
-  expires_at: '',
-  is_active: true,
-};
-
 export default function MarketingCoupons() {
   const navigate = useNavigate();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [courses, setCourses] = useState<CourseOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [form, setForm] = useState(initialForm);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchCoupons();
-    fetchCourses();
   }, []);
 
   const fetchCoupons = async () => {
@@ -102,7 +73,6 @@ export default function MarketingCoupons() {
       return;
     }
 
-    // Fetch course titles for coupons with course_id
     const courseIds = [...new Set((data || []).filter(c => c.course_id).map(c => c.course_id!))];
     let courseMap: Record<string, string> = {};
     if (courseIds.length > 0) {
@@ -115,89 +85,6 @@ export default function MarketingCoupons() {
 
     setCoupons((data || []).map(c => ({ ...c, discount_type: c.discount_type as 'percentage' | 'fixed', course_title: c.course_id ? courseMap[c.course_id] : undefined })));
     setLoading(false);
-  };
-
-  const fetchCourses = async () => {
-    const { data } = await supabase.from('courses').select('id, title').order('title');
-    setCourses(data || []);
-  };
-
-  const generateCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
-    setForm(f => ({ ...f, code }));
-  };
-
-  const openCreate = () => {
-    setEditingCoupon(null);
-    setForm(initialForm);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (coupon: Coupon) => {
-    setEditingCoupon(coupon);
-    setForm({
-      code: coupon.code,
-      discount_type: coupon.discount_type,
-      discount_value: coupon.discount_type === 'fixed' ? (coupon.discount_value / 100).toString() : coupon.discount_value.toString(),
-      max_uses: coupon.max_uses?.toString() || '',
-      course_id: coupon.course_id || '',
-      expires_at: coupon.expires_at ? coupon.expires_at.split('T')[0] : '',
-      is_active: coupon.is_active,
-    });
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.code.trim()) {
-      toast.error('Informe o código do cupom');
-      return;
-    }
-    if (!form.discount_value || Number(form.discount_value) <= 0) {
-      toast.error('Informe um valor de desconto válido');
-      return;
-    }
-    if (form.discount_type === 'percentage' && Number(form.discount_value) > 100) {
-      toast.error('Desconto percentual não pode ser maior que 100%');
-      return;
-    }
-
-    setSaving(true);
-
-    const payload = {
-      code: form.code.toUpperCase().trim(),
-      discount_type: form.discount_type,
-      discount_value: form.discount_type === 'fixed'
-        ? Math.round(Number(form.discount_value) * 100) // convert BRL to cents
-        : Number(form.discount_value),
-      max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-      course_id: form.course_id || null,
-      expires_at: form.expires_at ? new Date(form.expires_at + 'T23:59:59').toISOString() : null,
-      is_active: form.is_active,
-    };
-
-    let error;
-    if (editingCoupon) {
-      ({ error } = await supabase.from('discount_coupons').update(payload).eq('id', editingCoupon.id));
-    } else {
-      ({ error } = await supabase.from('discount_coupons').insert(payload));
-    }
-
-    if (error) {
-      if (error.code === '23505') {
-        toast.error('Já existe um cupom com esse código');
-      } else {
-        toast.error('Erro ao salvar cupom: ' + error.message);
-      }
-      setSaving(false);
-      return;
-    }
-
-    toast.success(editingCoupon ? 'Cupom atualizado!' : 'Cupom criado!');
-    setDialogOpen(false);
-    setSaving(false);
-    fetchCoupons();
   };
 
   const handleDelete = async () => {
@@ -254,7 +141,7 @@ export default function MarketingCoupons() {
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Cupons de Desconto</h1>
           <p className="text-muted-foreground text-sm mt-1">Crie e gerencie cupons promocionais</p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
+        <Button onClick={() => navigate('/admin/marketing/coupons/new')} className="gap-2">
           <Plus className="h-4 w-4" />
           <span className="hidden sm:inline">Novo Cupom</span>
         </Button>
@@ -318,7 +205,7 @@ export default function MarketingCoupons() {
               {search ? 'Nenhum cupom encontrado' : 'Nenhum cupom criado ainda'}
             </p>
             {!search && (
-              <Button onClick={openCreate} variant="outline" className="mt-4 gap-2">
+              <Button onClick={() => navigate('/admin/marketing/coupons/new')} variant="outline" className="mt-4 gap-2">
                 <Plus className="h-4 w-4" />
                 Criar Primeiro Cupom
               </Button>
@@ -407,7 +294,7 @@ export default function MarketingCoupons() {
                       variant="ghost"
                       size="sm"
                       className="flex-1 text-xs h-8"
-                      onClick={() => openEdit(coupon)}
+                      onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}/edit`)}
                     >
                       <Pencil className="h-3 w-3 mr-1" />
                       Editar
@@ -427,114 +314,6 @@ export default function MarketingCoupons() {
           ))}
         </div>
       )}
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingCoupon ? 'Editar Cupom' : 'Novo Cupom'}</DialogTitle>
-            <DialogDescription>
-              {editingCoupon ? 'Atualize as informações do cupom' : 'Configure o cupom de desconto'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Código *</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={form.code}
-                  onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }))}
-                  placeholder="EX: PROMO2026"
-                  maxLength={20}
-                  className="font-mono"
-                />
-                <Button type="button" variant="outline" size="sm" onClick={generateCode} className="shrink-0 text-xs">
-                  Gerar
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Tipo de desconto</Label>
-                <Select value={form.discount_type} onValueChange={(v: 'percentage' | 'fixed') => setForm(f => ({ ...f, discount_type: v, discount_value: '' }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentual (%)</SelectItem>
-                    <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">
-                  Valor {form.discount_type === 'percentage' ? '(%)' : '(R$)'} *
-                </Label>
-                <Input
-                  type="number"
-                  value={form.discount_value}
-                  onChange={e => setForm(f => ({ ...f, discount_value: e.target.value }))}
-                  placeholder={form.discount_type === 'percentage' ? '10' : '50.00'}
-                  min="0"
-                  max={form.discount_type === 'percentage' ? '100' : undefined}
-                  step={form.discount_type === 'fixed' ? '0.01' : '1'}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Curso específico (opcional)</Label>
-              <Select value={form.course_id || 'all'} onValueChange={v => setForm(f => ({ ...f, course_id: v === 'all' ? '' : v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os cursos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os cursos</SelectItem>
-                  {courses.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Limite de usos</Label>
-                <Input
-                  type="number"
-                  value={form.max_uses}
-                  onChange={e => setForm(f => ({ ...f, max_uses: e.target.value }))}
-                  placeholder="Ilimitado"
-                  min="1"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Data de validade</Label>
-                <Input
-                  type="date"
-                  value={form.expires_at}
-                  onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Ativo</Label>
-              <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editingCoupon ? 'Salvar' : 'Criar Cupom'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
