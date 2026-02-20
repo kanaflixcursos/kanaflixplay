@@ -25,6 +25,7 @@ interface Purchase {
   user_email: string | null;
   pix_qr_code: string | null;
   boleto_url: string | null;
+  failure_reason: string | null;
 }
 
 const paymentMethodIcons: Record<string, React.ReactNode> = {
@@ -65,7 +66,7 @@ export default function DashboardLatestPurchases() {
   const fetchPurchases = async () => {
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url')
+      .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url, failure_reason')
       .order('created_at', { ascending: false })
       .limit(5);
 
@@ -216,6 +217,14 @@ export default function DashboardLatestPurchases() {
                   </div>
                 )}
               </div>
+              {selectedPurchase.status === 'failed' && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm">
+                  <p className="text-destructive font-medium mb-1">Motivo da falha</p>
+                  <p className="text-destructive/80 text-xs break-words">
+                    {selectedPurchase.failure_reason || 'Motivo não registrado. Pedidos anteriores à atualização do sistema não possuem detalhes da falha.'}
+                  </p>
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground">ID: {selectedPurchase.id}</p>
             </div>
           )}
