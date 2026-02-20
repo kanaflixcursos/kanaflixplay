@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Loader2, Star, Eye, Plus, Trash2, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Star, Eye, Plus, Trash2, Upload, ChevronLeft, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -44,7 +44,6 @@ export default function AdminFeaturedBanner() {
   const [saving, setSaving] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
-  const [previewIndex, setPreviewIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -177,6 +176,42 @@ export default function AdminFeaturedBanner() {
     setSaving(false);
   };
 
+  const handleMoveUp = async (index: number) => {
+    if (index <= 0) return;
+    const updated = [...banners];
+    const [a, b] = [updated[index], updated[index - 1]];
+    const tempOrder = a.order_index;
+    a.order_index = b.order_index;
+    b.order_index = tempOrder;
+    [updated[index], updated[index - 1]] = [b, a];
+    setBanners(updated);
+    setActiveIndex(index - 1);
+
+    await Promise.all([
+      supabase.from('featured_banner').update({ order_index: a.order_index }).eq('id', a.id),
+      supabase.from('featured_banner').update({ order_index: b.order_index }).eq('id', b.id),
+    ]);
+    toast.success('Ordem atualizada!');
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index >= banners.length - 1) return;
+    const updated = [...banners];
+    const [a, b] = [updated[index], updated[index + 1]];
+    const tempOrder = a.order_index;
+    a.order_index = b.order_index;
+    b.order_index = tempOrder;
+    [updated[index], updated[index + 1]] = [b, a];
+    setBanners(updated);
+    setActiveIndex(index + 1);
+
+    await Promise.all([
+      supabase.from('featured_banner').update({ order_index: a.order_index }).eq('id', a.id),
+      supabase.from('featured_banner').update({ order_index: b.order_index }).eq('id', b.id),
+    ]);
+    toast.success('Ordem atualizada!');
+  };
+
   // Preview helpers
   const activeBanners = banners.filter((b) => b.is_active);
 
@@ -217,17 +252,16 @@ export default function AdminFeaturedBanner() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {activeBanners.length > 0 ? (
+          {config ? (
             <div className="relative">
               {(() => {
-                const pb = activeBanners[previewIndex % activeBanners.length];
+                const pb = config;
                 const pd = getDisplayData(pb);
                 return (
                   <div
                     className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white min-h-[200px]"
                     style={{ background: `linear-gradient(135deg, ${pb.gradient_from}, ${pb.gradient_to})` }}
                   >
-                    {/* Image covering right side with gradient fade */}
                     {pd.image && (
                       <div className="absolute top-0 right-0 w-1/2 h-full">
                         <img
@@ -248,7 +282,7 @@ export default function AdminFeaturedBanner() {
                       </span>
                       <h2 className="text-xl sm:text-2xl font-bold mb-2">{pd.title}</h2>
                       <p className="text-sm text-white/80 mb-4 line-clamp-2">{pd.description}</p>
-                      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-gray-900 font-medium text-sm">
+                      <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-foreground font-medium text-sm">
                         {pb.cta_text}
                       </span>
                     </div>
@@ -256,26 +290,26 @@ export default function AdminFeaturedBanner() {
                 );
               })()}
 
-              {activeBanners.length > 1 && (
+              {banners.length > 1 && (
                 <>
                   <button
-                    onClick={() => setPreviewIndex((p) => (p - 1 + activeBanners.length) % activeBanners.length)}
+                    onClick={() => setActiveIndex((p) => (p - 1 + banners.length) % banners.length)}
                     className="absolute left-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => setPreviewIndex((p) => (p + 1) % activeBanners.length)}
+                    onClick={() => setActiveIndex((p) => (p + 1) % banners.length)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 z-20 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
                   <div className="flex justify-center gap-1.5 mt-3">
-                    {activeBanners.map((_, i) => (
+                    {banners.map((_, i) => (
                       <button
                         key={i}
-                        onClick={() => setPreviewIndex(i)}
-                        className={`h-2 rounded-full transition-all ${i === previewIndex % activeBanners.length ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
+                        onClick={() => setActiveIndex(i)}
+                        className={`h-2 rounded-full transition-all ${i === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-muted-foreground/30'}`}
                       />
                     ))}
                   </div>
@@ -283,7 +317,7 @@ export default function AdminFeaturedBanner() {
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm text-center py-8">Nenhum banner ativo</p>
+            <p className="text-muted-foreground text-sm text-center py-8">Nenhum banner cadastrado</p>
           )}
         </CardContent>
       </Card>
@@ -291,15 +325,38 @@ export default function AdminFeaturedBanner() {
       {/* Banner Tabs */}
       <div className="flex items-center gap-2 flex-wrap">
         {banners.map((b, i) => (
-          <Button
-            key={b.id}
-            variant={i === activeIndex ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveIndex(i)}
-          >
-            Banner {i + 1}
-            {!b.is_active && <span className="ml-1 text-xs opacity-60">(inativo)</span>}
-          </Button>
+          <div key={b.id} className="flex items-center gap-1">
+            {i === activeIndex && banners.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => handleMoveUp(i)}
+                disabled={i === 0}
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button
+              variant={i === activeIndex ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveIndex(i)}
+            >
+              Banner {i + 1}
+              {!b.is_active && <span className="ml-1 text-xs opacity-60">(inativo)</span>}
+            </Button>
+            {i === activeIndex && banners.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => handleMoveDown(i)}
+                disabled={i === banners.length - 1}
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
         ))}
         <Button variant="outline" size="sm" onClick={handleAddBanner} disabled={saving}>
           <Plus className="h-4 w-4 mr-1" />
