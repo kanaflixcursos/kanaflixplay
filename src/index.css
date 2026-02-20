@@ -151,6 +151,11 @@
   }
 }
 
+/* Grid system */
+.grid-standard {
+  @apply gap-3;
+}
+
 /* Utility classes */
 .content-container {
   @apply max-w-[1200px] mx-auto w-full px-4 md:px-6;
