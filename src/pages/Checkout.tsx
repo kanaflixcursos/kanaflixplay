@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
 import { 
   Play, 
   Clock, 
@@ -19,7 +20,8 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronRight,
-  CalendarClock
+  CalendarClock,
+  Eye
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -40,6 +42,13 @@ interface CourseModule {
   lessons: { id: string; title: string; order_index: number; duration_minutes: number | null }[];
 }
 
+interface PreviewLesson {
+  id: string;
+  title: string;
+  video_url: string | null;
+  duration_minutes: number | null;
+}
+
 export default function Checkout() {
   useTrackVisit('/checkout');
   const { courseId } = useParams<{ courseId: string }>();
@@ -52,6 +61,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const [previewLesson, setPreviewLesson] = useState<PreviewLesson | null>(null);
 
   useEffect(() => {
     if (courseId) {
@@ -110,6 +120,20 @@ export default function Checkout() {
         })
       );
       setModules(modulesWithLessons);
+    }
+
+    // Fetch first lesson for preview
+    const { data: firstLesson } = await supabase
+      .from('lessons')
+      .select('id, title, video_url, duration_minutes')
+      .eq('course_id', courseId)
+      .eq('is_hidden', false)
+      .order('order_index')
+      .limit(1)
+      .single();
+
+    if (firstLesson) {
+      setPreviewLesson(firstLesson);
     }
 
     setLoading(false);
@@ -282,6 +306,24 @@ export default function Checkout() {
                     alt="Pagar.me"
                     className="h-4 opacity-60 dark:brightness-0 dark:invert"
                   />
+                </div>
+              )}
+
+              {/* Preview - First Lesson */}
+              {previewLesson?.video_url && !isEnrolled && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-medium text-foreground">Prévia gratuita</h3>
+                  </div>
+                  <PandavideoPlayerWithProgress
+                    videoUrl={previewLesson.video_url}
+                    lessonId={previewLesson.id}
+                    title={previewLesson.title}
+                    durationMinutes={previewLesson.duration_minutes}
+                    className="rounded-xl shadow-md"
+                  />
+                  <p className="text-xs text-muted-foreground">{previewLesson.title}</p>
                 </div>
               )}
 
