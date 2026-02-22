@@ -90,17 +90,45 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub as string;
     const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Helper to check admin role
+    const checkAdmin = async () => {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+      return roleData?.role === 'admin';
+    };
+
     switch (action) {
       case 'create_order':
         return handleCreateOrder(payload, userId, PAGARME_API_KEY, supabase);
       case 'get_payment_config':
         return handleGetPaymentConfig();
-      case 'get_order_stats':
+      case 'get_order_stats': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
         return handleGetOrderStats(PAGARME_API_KEY, adminSupabase);
-      case 'refund_order':
+      }
+      case 'refund_order': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
         return handleRefundOrder(payload, PAGARME_API_KEY, adminSupabase);
-      case 'cancel_order':
+      }
+      case 'cancel_order': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
         return handleCancelOrder(payload, PAGARME_API_KEY, adminSupabase);
+      }
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -124,6 +152,54 @@ async function handleCreateOrder(
   supabase: any
 ) {
   const { courseId, paymentMethod, customer, card, installments = 1, couponId } = payload;
+
+  // Validate payment method
+  const validPaymentMethods = ['credit_card', 'pix', 'boleto'];
+  if (!paymentMethod || !validPaymentMethods.includes(paymentMethod)) {
+    return new Response(JSON.stringify({ error: 'Invalid payment method' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
+  // Validate installments
+  const parsedInstallments = Number(installments);
+  if (!Number.isInteger(parsedInstallments) || parsedInstallments < 1 || parsedInstallments > 12) {
+    return new Response(JSON.stringify({ error: 'Installments must be between 1 and 12' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
+  // Validate required customer fields
+  if (!customer || !customer.name || !customer.email || !customer.document) {
+    return new Response(JSON.stringify({ error: 'Customer name, email, and document are required' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
+  // Validate customer document (CPF: 11 digits, CNPJ: 14 digits)
+  const cleanDoc = String(customer.document).replace(/\D/g, '');
+  if (cleanDoc.length !== 11 && cleanDoc.length !== 14) {
+    return new Response(JSON.stringify({ error: 'Invalid document (CPF or CNPJ)' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(customer.email)) {
+    return new Response(JSON.stringify({ error: 'Invalid customer email' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
+  // Validate card fields for credit card payments
+  if (paymentMethod === 'credit_card') {
+    if (!card || !card.number || !card.holderName || !card.expMonth || !card.expYear || !card.cvv) {
+      return new Response(JSON.stringify({ error: 'Card details are required for credit card payments' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+  }
 
   const { data: course, error: courseError } = await supabase
     .from('courses')
