@@ -407,10 +407,21 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     },
   ];
 
-  // Check if coupon is valid for current payment method
-  const couponMethodMismatch = appliedCoupon?.payment_methods && 
-    appliedCoupon.payment_methods.length > 0 && 
-    !appliedCoupon.payment_methods.includes(paymentMethod);
+  // Check if coupon restricts payment methods
+  const couponAllowedMethods = appliedCoupon?.payment_methods && appliedCoupon.payment_methods.length > 0
+    ? appliedCoupon.payment_methods
+    : null;
+
+  // Auto-select allowed method when coupon is applied
+  useEffect(() => {
+    if (couponAllowedMethods && !couponAllowedMethods.includes(paymentMethod)) {
+      setPaymentMethod(couponAllowedMethods[0] as PaymentMethod);
+    }
+  }, [couponAllowedMethods]);
+
+  const isMethodDisabled = (method: PaymentMethod) => {
+    return couponAllowedMethods ? !couponAllowedMethods.includes(method) : false;
+  };
 
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
@@ -555,15 +566,20 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           <div className="space-y-3">
             <h4 className="font-semibold text-sm text-foreground">Forma de pagamento</h4>
             <div className="grid grid-cols-3 gap-2">
-              {paymentMethods.map(({ method, icon: Icon, label, badge, description }) => (
+              {paymentMethods.map(({ method, icon: Icon, label, badge, description }) => {
+                const disabled = isMethodDisabled(method);
+                return (
                 <button
                   key={method}
                   type="button"
-                  onClick={() => setPaymentMethod(method)}
+                  onClick={() => !disabled && setPaymentMethod(method)}
+                  disabled={disabled}
                   className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                    paymentMethod === method
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                    disabled
+                      ? 'border-border bg-muted/30 opacity-50 cursor-not-allowed'
+                      : paymentMethod === method
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border hover:border-primary/30 hover:bg-muted/50'
                   }`}
                 >
                   {badge && (
@@ -573,21 +589,16 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       {badge}
                     </span>
                   )}
-                  <Icon className={`h-5 w-5 ${paymentMethod === method ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className={`text-xs font-medium ${paymentMethod === method ? 'text-primary' : 'text-foreground'}`}>
+                  <Icon className={`h-5 w-5 ${disabled ? 'text-muted-foreground' : paymentMethod === method ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className={`text-xs font-medium ${disabled ? 'text-muted-foreground' : paymentMethod === method ? 'text-primary' : 'text-foreground'}`}>
                     {label}
                   </span>
                   <span className="text-[10px] text-muted-foreground">{description}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
-            {couponMethodMismatch && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                <span>O cupom <strong>{appliedCoupon?.code}</strong> não é válido para esta forma de pagamento.</span>
-              </div>
-            )}
-          </div>
+            </div>
 
           {/* Coupon Code */}
           <div className="space-y-2">
@@ -801,7 +812,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           <Button 
             onClick={handleSubmit} 
             className="w-full h-12 text-base gap-2 shadow-lg" 
-            disabled={loading || loadingConfig || couponMethodMismatch}
+            disabled={loading || loadingConfig}
           >
             {loading ? (
               <>
