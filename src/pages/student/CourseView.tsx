@@ -18,7 +18,9 @@ import {
   Download,
   Clock,
   Lock,
-  Unlock
+  Unlock,
+  CalendarClock,
+  ShoppingCart
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -30,6 +32,7 @@ interface Course {
   thumbnail_url: string;
   is_sequential: boolean;
   price: number;
+  launch_date: string | null;
 }
 
 interface LessonMaterial {
@@ -70,6 +73,7 @@ export default function CourseView() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
@@ -109,80 +113,111 @@ export default function CourseView() {
 
       if (!isMounted) return;
       
-      setIsEnrolled(!!enrollment);
+      const enrolled = !!enrollment;
+      setIsEnrolled(enrolled);
 
-      // Fetch lessons if enrolled (excluding hidden ones for students)
-      if (enrollment) {
-        const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
-          supabase
-            .from('lessons')
-            .select('*')
-            .eq('course_id', courseId)
-            .eq('is_hidden', false)
-            .order('order_index'),
-          supabase
-            .from('course_modules')
-            .select('*')
-            .eq('course_id', courseId)
-            .order('order_index'),
-        ]);
-
-        setModules((modulesData || []) as Module[]);
-
-        // Fetch progress
-        const { data: progressData } = await supabase
-          .from('lesson_progress')
-          .select('lesson_id, completed')
-          .eq('user_id', user.id);
-
-        if (!isMounted) return;
-
-        const progressMap = new Map(progressData?.map(p => [p.lesson_id, p.completed]) || []);
-
-        // Fetch materials for all lessons
-        const lessonIds = (lessonsData || []).map(l => l.id);
-        const { data: materialsData } = await supabase
-          .from('lesson_materials')
+      // Fetch lessons for both enrolled and preview mode
+      // For preview: use RPC or public queries; for enrolled: standard queries
+      const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
+        supabase
+          .from('lessons')
           .select('*')
-          .in('lesson_id', lessonIds)
-          .order('order_index');
+          .eq('course_id', courseId)
+          .eq('is_hidden', false)
+          .order('order_index'),
+        supabase
+          .from('course_modules')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('order_index'),
+      ]);
 
-        if (!isMounted) return;
+      if (!isMounted) return;
 
-        const materialsByLesson: Record<string, LessonMaterial[]> = {};
-        (materialsData || []).forEach((material: LessonMaterial) => {
-          if (!materialsByLesson[material.lesson_id]) {
-            materialsByLesson[material.lesson_id] = [];
-          }
-          materialsByLesson[material.lesson_id].push(material);
-        });
+      // If not enrolled but we got lessons data, enter preview mode
+      if (!enrolled) {
+        if (lessonsData && lessonsData.length > 0) {
+          setIsPreviewMode(true);
+          setModules((modulesData || []) as Module[]);
+          
+          const mods = (modulesData || []) as Module[];
+          const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
+          
+          const sortedLessons = [...(lessonsData || [])].map(lesson => ({
+            ...lesson,
+            completed: false,
+            materials: [],
+          })).sort((a, b) => {
+            const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
+            const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+            if (aModOrder !== bModOrder) return aModOrder - bModOrder;
+            return a.order_index - b.order_index;
+          });
 
-        const lessonsWithProgress = (lessonsData || []).map(lesson => ({
-          ...lesson,
-          completed: progressMap.get(lesson.id) || false,
-          materials: materialsByLesson[lesson.id] || [],
-        }));
-
-        // Sort lessons to match module display order:
-        // 1. Lessons without module (by order_index)
-        // 2. Lessons grouped by module order_index, then by lesson order_index
-        const mods = (modulesData || []) as Module[];
-        const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
-        
-        const sortedLessons = [...lessonsWithProgress].sort((a, b) => {
-          const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
-          const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
-          if (aModOrder !== bModOrder) return aModOrder - bModOrder;
-          return a.order_index - b.order_index;
-        });
-
-        setLessons(sortedLessons);
-        
-        // Auto-select first incomplete or first lesson only on initial load
-        if (!selectedLesson) {
-          const firstIncomplete = sortedLessons.find(l => !l.completed);
-          setSelectedLesson(firstIncomplete || sortedLessons[0] || null);
+          setLessons(sortedLessons);
+          setSelectedLesson(sortedLessons[0] || null);
+        } else {
+          // No lessons available for preview, redirect to checkout
+          navigate(`/checkout/${courseId}`);
+          return;
         }
+        setLoading(false);
+        return;
+      }
+
+      setModules((modulesData || []) as Module[]);
+
+      // Fetch progress
+      const { data: progressData } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id, completed')
+        .eq('user_id', user.id);
+
+      if (!isMounted) return;
+
+      const progressMap = new Map(progressData?.map(p => [p.lesson_id, p.completed]) || []);
+
+      // Fetch materials for all lessons
+      const lessonIds = (lessonsData || []).map(l => l.id);
+      const { data: materialsData } = await supabase
+        .from('lesson_materials')
+        .select('*')
+        .in('lesson_id', lessonIds)
+        .order('order_index');
+
+      if (!isMounted) return;
+
+      const materialsByLesson: Record<string, LessonMaterial[]> = {};
+      (materialsData || []).forEach((material: LessonMaterial) => {
+        if (!materialsByLesson[material.lesson_id]) {
+          materialsByLesson[material.lesson_id] = [];
+        }
+        materialsByLesson[material.lesson_id].push(material);
+      });
+
+      const lessonsWithProgress = (lessonsData || []).map(lesson => ({
+        ...lesson,
+        completed: progressMap.get(lesson.id) || false,
+        materials: materialsByLesson[lesson.id] || [],
+      }));
+
+      // Sort lessons to match module display order
+      const mods = (modulesData || []) as Module[];
+      const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
+      
+      const sortedLessons = [...lessonsWithProgress].sort((a, b) => {
+        const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
+        const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+        if (aModOrder !== bModOrder) return aModOrder - bModOrder;
+        return a.order_index - b.order_index;
+      });
+
+      setLessons(sortedLessons);
+      
+      // Auto-select first incomplete or first lesson only on initial load
+      if (!selectedLesson) {
+        const firstIncomplete = sortedLessons.find(l => !l.completed);
+        setSelectedLesson(firstIncomplete || sortedLessons[0] || null);
       }
 
       setLoading(false);
@@ -269,9 +304,23 @@ export default function CourseView() {
     return formatDuration(total);
   };
 
+  // Pre-sale check
+  const isPreSale = !!(course?.launch_date && new Date(course.launch_date) > new Date());
+
   // Calculate which lessons are unlocked based on sequential progress
   // Must be called before any early returns to maintain hook order
   const unlockedLessonIds = useMemo(() => {
+    // In preview mode: only the first lesson is unlocked
+    if (isPreviewMode) {
+      const first = lessons[0];
+      return first ? new Set([first.id]) : new Set<string>();
+    }
+
+    // Pre-sale: no lessons unlocked
+    if (isPreSale) {
+      return new Set<string>();
+    }
+
     if (!course?.is_sequential) {
       // All lessons unlocked if course is not sequential
       return new Set(lessons.map(l => l.id));
@@ -281,21 +330,18 @@ export default function CourseView() {
     for (let i = 0; i < lessons.length; i++) {
       const lesson = lessons[i];
       if (i === 0) {
-        // First lesson is always unlocked
         unlocked.add(lesson.id);
       } else {
-        // Check if previous lesson is completed
         const prevLesson = lessons[i - 1];
         if (prevLesson.completed) {
           unlocked.add(lesson.id);
         } else {
-          // Stop unlocking further lessons
           break;
         }
       }
     }
     return unlocked;
-  }, [lessons, course?.is_sequential]);
+  }, [lessons, course?.is_sequential, isPreviewMode, isPreSale]);
 
   // Separate required and optional lessons
   const optionalModuleIds = new Set(modules.filter(m => m.is_optional).map(m => m.id));
@@ -398,19 +444,51 @@ export default function CourseView() {
   const isPaidCourse = course?.price && course.price > 0;
   const handleEnrollmentSuccess = () => {
     setIsEnrolled(true);
-    // Reload to get lessons
     window.location.reload();
   };
 
-  // Not enrolled - redirect to checkout page
-  if (!isEnrolled) {
+  // Not enrolled and no preview available - redirect to checkout
+  if (!isEnrolled && !isPreviewMode) {
     navigate(`/checkout/${courseId}`);
     return null;
   }
 
-  // Enrolled - show lesson player
+  // Show lesson player (enrolled or preview mode)
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Pre-sale banner */}
+      {isEnrolled && isPreSale && (
+        <div className="flex items-start gap-3 p-4 bg-chart-4/10 border border-chart-4/30 rounded-xl">
+          <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-sm text-foreground">
+              Curso em pré-venda — Lançamento em {new Date(course.launch_date!).toLocaleDateString('pt-BR')}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              As aulas estarão disponíveis a partir da data de lançamento.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Preview mode banner */}
+      {isPreviewMode && (
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <Play className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-sm text-foreground">
+              Modo Preview — Assista a primeira aula gratuitamente
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Adquira o curso para desbloquear todo o conteúdo.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => navigate(`/checkout/${courseId}`)} className="shrink-0 gap-1.5">
+            <ShoppingCart className="h-3.5 w-3.5" />
+            {isPaidCourse ? 'Comprar' : 'Matricular-se'}
+          </Button>
+        </div>
+      )}
       {/* Header - Mobile optimized */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="w-fit">
@@ -418,11 +496,16 @@ export default function CourseView() {
         </Button>
         <div className="flex-1">
           <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
-          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-            <span>{completedCount}/{requiredLessons.length} aulas</span>
-            <span>•</span>
-            <span>{progressPercent}%</span>
-          </div>
+          {!isPreviewMode && (
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+              <span>{completedCount}/{requiredLessons.length} aulas</span>
+              <span>•</span>
+              <span>{progressPercent}%</span>
+            </div>
+          )}
+          {isPreviewMode && (
+            <p className="text-xs sm:text-sm text-muted-foreground">Preview gratuito</p>
+          )}
         </div>
       </div>
 
@@ -440,6 +523,8 @@ export default function CourseView() {
                 title={selectedLesson.title}
                 durationMinutes={selectedLesson.duration_minutes}
                 isLocked={isLessonLocked(selectedLesson.id)}
+                lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
+                lockMessage={isPreviewMode ? 'Adquira o curso para desbloquear todas as aulas' : isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
                 onComplete={() => {
                   // Update local state when auto-completed
                   const updatedLessons = lessons.map(l => 
@@ -512,11 +597,24 @@ export default function CourseView() {
               
               
 
-              
-              <Separator />
-
-              {/* Comments Section */}
-              <LessonComments lessonId={selectedLesson.id} />
+              {/* Comments Section - hide in preview mode */}
+              {!isPreviewMode && (
+                <>
+                  <Separator />
+                  <LessonComments lessonId={selectedLesson.id} />
+                </>
+              )}
+              {isPreviewMode && (
+                <div className="p-6 bg-muted/50 rounded-xl text-center space-y-3">
+                  <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm font-medium">Gostou do que viu?</p>
+                  <p className="text-xs text-muted-foreground">Adquira o curso completo para acessar todas as aulas, materiais e comentários.</p>
+                  <Button onClick={() => navigate(`/checkout/${courseId}`)} className="gap-1.5">
+                    <ShoppingCart className="h-4 w-4" />
+                    {isPaidCourse ? 'Comprar Curso' : 'Matricular-se'}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -530,27 +628,34 @@ export default function CourseView() {
                 <span className="text-xs sm:text-sm text-muted-foreground">{getTotalDuration()}</span>
               </div>
               
-              {/* Progress bar */}
-              <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
-                <div 
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              
-              {/* Stats row */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                <span className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  {completedCount}/{requiredLessons.length} concluídas
-                </span>
-                {course?.is_sequential && (
-                  <span className="flex items-center gap-1">
-                    <Unlock className="h-3 w-3" />
-                    {unlockedCount}/{requiredLessons.length} desbloqueadas
-                  </span>
-                )}
-              </div>
+              {/* Progress bar - hide in preview mode */}
+              {!isPreviewMode && (
+                <>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  
+                  {/* Stats row */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      {completedCount}/{requiredLessons.length} concluídas
+                    </span>
+                    {course?.is_sequential && (
+                      <span className="flex items-center gap-1">
+                        <Unlock className="h-3 w-3" />
+                        {unlockedCount}/{requiredLessons.length} desbloqueadas
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
+              {isPreviewMode && (
+                <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">

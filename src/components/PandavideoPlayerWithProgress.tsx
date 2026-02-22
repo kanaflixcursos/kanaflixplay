@@ -11,6 +11,8 @@ interface PandavideoPlayerWithProgressProps {
   durationMinutes?: number | null;
   onComplete?: () => void;
   isLocked?: boolean;
+  lockTitle?: string;
+  lockMessage?: string;
 }
 
 interface PandaVideoEvent {
@@ -31,7 +33,9 @@ export default function PandavideoPlayerWithProgress({
   className = '',
   durationMinutes,
   onComplete,
-  isLocked = false
+  isLocked = false,
+  lockTitle,
+  lockMessage
 }: PandavideoPlayerWithProgressProps) {
   const { user } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -182,9 +186,9 @@ export default function PandavideoPlayerWithProgress({
       <div className={`aspect-video bg-foreground/90 flex flex-col items-center justify-center rounded-lg ${className}`}>
         <div className="text-center text-background">
           <Lock className="h-16 w-16 mx-auto mb-4" />
-          <p className="text-lg font-medium">Aula Bloqueada</p>
+          <p className="text-lg font-medium">{lockTitle || 'Aula Bloqueada'}</p>
           <p className="text-sm opacity-80 mt-2">
-            Complete a aula anterior para desbloquear
+            {lockMessage || 'Complete a aula anterior para desbloquear'}
           </p>
         </div>
       </div>
