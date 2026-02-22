@@ -60,7 +60,19 @@ export default function DashboardRevenueCard() {
 
   const GATEWAY_FEE = 70; // R$0.70 in cents
 
-  const calculateNetForOrder = (amount: number, paymentMethod: string | null): number => {
+  const calculateProgressiveFee = (amount: number, numInstallments: number): number => {
+    let totalFee = 0;
+    for (let i = 1; i <= numInstallments; i++) {
+      let rate: number;
+      if (i === 1) rate = 3.25;
+      else if (i <= 6) rate = 3.79;
+      else rate = 4.07;
+      totalFee += (amount * rate / 100) / numInstallments;
+    }
+    return Math.round(totalFee);
+  };
+
+  const calculateNetForOrder = (amount: number, paymentMethod: string | null, orderInstallments: number): number => {
     const gatewayFee = GATEWAY_FEE;
     let mdrFee = 0;
 
@@ -72,12 +84,11 @@ export default function DashboardRevenueCard() {
         mdrFee = 279; // R$2.79 fixed
         break;
       case 'credit_card':
-        // 1x = 3.25% flat; installments handled below but we don't have
-        // installment count here, so use weighted average ~3.25% for 1x
-        mdrFee = amount * 0.0325;
+        // Card MDR is passed to customer, so seller keeps full amount minus gateway fee
+        mdrFee = 0;
         break;
       default:
-        mdrFee = amount * 0.0325;
+        mdrFee = 0;
     }
 
     return amount - mdrFee - gatewayFee;
@@ -86,7 +97,7 @@ export default function DashboardRevenueCard() {
   const fetchRevenue = async () => {
     setLoading(true);
     const startDate = getStartDate();
-    let query = supabase.from('orders').select('amount, payment_method').eq('status', 'paid');
+    let query = supabase.from('orders').select('amount, payment_method, installments').eq('status', 'paid');
     if (startDate) query = query.gte('paid_at', startDate.toISOString());
     const { data } = await query;
 
@@ -94,7 +105,7 @@ export default function DashboardRevenueCard() {
     let net = 0;
     data?.forEach(order => {
       gross += order.amount || 0;
-      net += calculateNetForOrder(order.amount || 0, order.payment_method);
+      net += calculateNetForOrder(order.amount || 0, order.payment_method, order.installments || 1);
     });
 
     setGrossRevenue(gross);

@@ -84,6 +84,7 @@ const calculateNetAmount = (amount: number, paymentMethod: string | null): numbe
     case 'boleto':
       return amount - 279 - gatewayFee; // R$ 2,79 + gateway
     case 'credit_card':
+    case 'coupon':
       return amount - gatewayFee; // MDR is passed to customer
     default:
       return amount - gatewayFee;

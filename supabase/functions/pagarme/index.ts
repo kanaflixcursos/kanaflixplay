@@ -374,7 +374,8 @@ async function handleCreateOrder(
     status: charge?.status === 'paid' ? 'paid' : charge?.status === 'failed' ? 'failed' : 'pending',
     payment_method: paymentMethod,
     pagarme_charge_id: charge?.id,
-    failure_reason: failureReason
+    failure_reason: failureReason,
+    installments: paymentMethod === 'credit_card' ? installments : 1,
   };
 
   if (paymentMethod === 'pix' && charge?.last_transaction) {
@@ -966,19 +967,24 @@ function handleGetPaymentConfig() {
         installments: {
           max: 12,
           min_amount_per_installment: 500,
+          progressive_rates: {
+            installment_1: 3.25,
+            installment_2_to_6: 3.79,
+            installment_7_to_12: 4.07,
+          },
           options: [
-            { number: 1, interest_rate: 3.25, label: 'À vista' },
-            { number: 2, interest_rate: 3.79, label: '2x com taxa' },
-            { number: 3, interest_rate: 3.79, label: '3x com taxa' },
-            { number: 4, interest_rate: 3.79, label: '4x com taxa' },
-            { number: 5, interest_rate: 3.79, label: '5x com taxa' },
-            { number: 6, interest_rate: 3.79, label: '6x com taxa' },
-            { number: 7, interest_rate: 4.07, label: '7x com taxa' },
-            { number: 8, interest_rate: 4.07, label: '8x com taxa' },
-            { number: 9, interest_rate: 4.07, label: '9x com taxa' },
-            { number: 10, interest_rate: 4.07, label: '10x com taxa' },
-            { number: 11, interest_rate: 4.07, label: '11x com taxa' },
-            { number: 12, interest_rate: 4.07, label: '12x com taxa' },
+            { number: 1, label: 'À vista' },
+            { number: 2, label: '2x com taxa' },
+            { number: 3, label: '3x com taxa' },
+            { number: 4, label: '4x com taxa' },
+            { number: 5, label: '5x com taxa' },
+            { number: 6, label: '6x com taxa' },
+            { number: 7, label: '7x com taxa' },
+            { number: 8, label: '8x com taxa' },
+            { number: 9, label: '9x com taxa' },
+            { number: 10, label: '10x com taxa' },
+            { number: 11, label: '11x com taxa' },
+            { number: 12, label: '12x com taxa' },
           ]
         }
       },
