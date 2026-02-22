@@ -35,13 +35,13 @@ export default function FunnelRoadmap() {
         { count: totalLeads },
         { count: qualifiedCount },
         { count: opportunityCount },
-        { count: convertedCount },
+        { count: paidOrdersCount },
       ] = await Promise.all([
         supabase.from('site_visits').select('visitor_id'),
         supabase.from('leads').select('*', { count: 'exact', head: true }),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified'),
         supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity'),
-        supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted'),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid'),
       ]);
 
       const uniqueVisitors = new Set(visitorRows?.map(r => r.visitor_id) || []).size;
@@ -51,7 +51,7 @@ export default function FunnelRoadmap() {
         leads: totalLeads || 0,
         qualified: qualifiedCount || 0,
         opportunities: opportunityCount || 0,
-        sales: convertedCount || 0,
+        sales: paidOrdersCount || 0,
       });
       setLoading(false);
     };
