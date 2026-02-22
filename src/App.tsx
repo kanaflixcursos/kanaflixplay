@@ -69,11 +69,9 @@ const App = () => (
               <Route
                 path="/courses/:courseId"
                 element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <CourseView />
-                    </StudentLayout>
-                  </ProtectedRoute>
+                  <StudentLayout>
+                    <CourseView />
+                  </StudentLayout>
                 }
               />
               <Route
