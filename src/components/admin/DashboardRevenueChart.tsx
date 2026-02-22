@@ -211,15 +211,18 @@ export default function DashboardRevenueChart() {
               width={55}
             />
             <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value, name) => {
-                    if (name === 'revenue') return [formatCurrency(value as number), 'Faturamento'];
-                    if (name === 'sales') return [`${value} venda${(value as number) !== 1 ? 's' : ''}`, 'Vendas'];
-                    return [String(value), String(name)];
-                  }}
-                />
-              }
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const revenue = payload.find(p => p.dataKey === 'revenue')?.value as number ?? 0;
+                const sales = payload.find(p => p.dataKey === 'sales')?.value as number ?? 0;
+                return (
+                  <div className="rounded-xl border border-border bg-popover px-3 py-2 shadow-lg text-popover-foreground text-sm space-y-1">
+                    <p className="font-medium">{label}</p>
+                    <p className="text-muted-foreground">{sales} venda{sales !== 1 ? 's' : ''}</p>
+                    <p className="font-semibold">{formatCurrency(revenue)}</p>
+                  </div>
+                );
+              }}
             />
             <Area
               type="monotone"
