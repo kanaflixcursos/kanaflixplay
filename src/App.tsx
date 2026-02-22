@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
+import CompleteProfile from "./pages/CompleteProfile";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
               <Route path="/checkout/:courseId" element={<Checkout />} />
               
               {/* Student Routes */}

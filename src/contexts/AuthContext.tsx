@@ -9,6 +9,8 @@ interface AuthContextType {
   session: Session | null;
   role: UserRole;
   loading: boolean;
+  profileComplete: boolean | null;
+  recheckProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, redirectTo?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -21,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -31,6 +34,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     if (!error && data) {
       setRole(data.role as UserRole);
+    }
+  };
+
+  const checkProfileComplete = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('phone, birth_date')
+      .eq('user_id', userId)
+      .single();
+    
+    const complete = !!(data?.phone && data?.birth_date);
+    setProfileComplete(complete);
+  };
+
+  const recheckProfile = async () => {
+    if (user) {
+      await checkProfileComplete(user.id);
     }
   };
 
@@ -49,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (session?.user) {
           setTimeout(() => fetchUserRole(session.user.id), 0);
+          setTimeout(() => checkProfileComplete(session.user.id), 0);
           setTimeout(() => updateLastSeen(session.user.id), 0);
           
           // Handle redirect after email confirmation
@@ -64,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else {
           setRole(null);
+          setProfileComplete(null);
         }
         
         setLoading(false);
@@ -76,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         fetchUserRole(session.user.id);
+        checkProfileComplete(session.user.id);
         updateLastSeen(session.user.id);
       }
       
@@ -134,10 +157,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setRole(null);
+    setProfileComplete(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, profileComplete, recheckProfile, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
