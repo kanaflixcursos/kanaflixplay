@@ -58,16 +58,47 @@ export default function DashboardRevenueCard() {
     }
   };
 
+  const GATEWAY_FEE = 70; // R$0.70 in cents
+
+  const calculateNetForOrder = (amount: number, paymentMethod: string | null): number => {
+    const gatewayFee = GATEWAY_FEE;
+    let mdrFee = 0;
+
+    switch (paymentMethod) {
+      case 'pix':
+        mdrFee = amount * 0.0079;
+        break;
+      case 'boleto':
+        mdrFee = 279; // R$2.79 fixed
+        break;
+      case 'credit_card':
+        // 1x = 3.25% flat; installments handled below but we don't have
+        // installment count here, so use weighted average ~3.25% for 1x
+        mdrFee = amount * 0.0325;
+        break;
+      default:
+        mdrFee = amount * 0.0325;
+    }
+
+    return amount - mdrFee - gatewayFee;
+  };
+
   const fetchRevenue = async () => {
     setLoading(true);
     const startDate = getStartDate();
-    let query = supabase.from('orders').select('amount').eq('status', 'paid');
+    let query = supabase.from('orders').select('amount, payment_method').eq('status', 'paid');
     if (startDate) query = query.gte('paid_at', startDate.toISOString());
     const { data } = await query;
-    const gross = data?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
-    const net = gross * 0.965;
+
+    let gross = 0;
+    let net = 0;
+    data?.forEach(order => {
+      gross += order.amount || 0;
+      net += calculateNetForOrder(order.amount || 0, order.payment_method);
+    });
+
     setGrossRevenue(gross);
-    setNetRevenue(net);
+    setNetRevenue(Math.max(0, net));
     setLoading(false);
   };
 
