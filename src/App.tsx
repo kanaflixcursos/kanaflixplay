@@ -44,6 +44,7 @@ import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <ScrollToTop />
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
