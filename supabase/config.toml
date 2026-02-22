@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.lead-capture]
 verify_jwt = false
+
+[functions.cleanup-unconfirmed-users]
+verify_jwt = false
