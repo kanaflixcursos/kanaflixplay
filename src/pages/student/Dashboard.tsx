@@ -8,6 +8,7 @@ import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
+import WelcomeExperience from '@/components/WelcomeExperience';
 import { motion } from 'framer-motion';
 
 interface EnrolledCourse {
@@ -124,12 +125,17 @@ export default function StudentDashboard() {
 
   const totalCourses = enrolledCourses.length;
 
+  // Show welcome experience for users with no courses
+  if (!loading && enrolledCourses.length === 0) {
+    return <WelcomeExperience />;
+  }
+
   return (
     <div className="space-y-4 md:space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
       >
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
         <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
@@ -166,22 +172,12 @@ export default function StudentDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
       >
         <h2 className="text-lg font-medium tracking-tight mb-4">Meus Cursos</h2>
         
         {loading ? (
           <p className="text-muted-foreground">Carregando...</p>
-        ) : enrolledCourses.length === 0 ? (
-          <Card>
-            <CardContent className="py-10 text-center">
-              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Você ainda não está matriculado em nenhum curso.</p>
-              <a href="https://kanaflix.com.br/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline mt-2 inline-block">
-                Ver cursos disponíveis
-              </a>
-            </CardContent>
-          </Card>
         ) : (
           <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {enrolledCourses.map((enrollment, idx) => {
@@ -232,7 +228,7 @@ export default function StudentDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.15 }}
       >
         <AvailableCoursesSection />
       </motion.div>
