@@ -18,7 +18,8 @@ import {
   Loader2,
   ArrowLeft,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  CalendarClock
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -29,6 +30,7 @@ interface Course {
   price: number;
   thumbnail_url: string | null;
   is_published: boolean;
+  launch_date: string | null;
 }
 
 interface CourseModule {
@@ -264,6 +266,12 @@ export default function Checkout() {
                   Gratuito
                 </Badge>
               )}
+              {course.launch_date && new Date(course.launch_date) > new Date() && (
+                <Badge className="absolute top-4 left-4 bg-chart-4 text-white">
+                  <CalendarClock className="h-3 w-3 mr-1" />
+                  Pré-venda
+                </Badge>
+              )}
 
               {/* Powered by Pagar.me */}
               {course.price > 0 && (
@@ -344,6 +352,19 @@ export default function Checkout() {
                     <span>Validade de 1 ano</span>
                   </div>
                 </div>
+
+                {/* Pre-sale notice */}
+                {course.launch_date && new Date(course.launch_date) > new Date() && (
+                  <div className="flex items-start gap-3 p-4 bg-chart-4/5 border border-chart-4/20 rounded-xl">
+                    <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm text-foreground">Pré-venda — Lançamento em {new Date(course.launch_date).toLocaleDateString('pt-BR')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Garanta sua vaga agora! O conteúdo estará disponível a partir da data de lançamento.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Checkout or Enrolled State */}

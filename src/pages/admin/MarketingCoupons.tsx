@@ -29,9 +29,18 @@ import {
   Calendar,
   Hash,
   BookOpen,
+  CreditCard,
+  QrCode,
+  Barcode,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: typeof CreditCard }> = {
+  credit_card: { label: 'Cartão', icon: CreditCard },
+  pix: { label: 'PIX', icon: QrCode },
+  boleto: { label: 'Boleto', icon: Barcode },
+};
 
 interface Coupon {
   id: string;
@@ -42,6 +51,7 @@ interface Coupon {
   used_count: number;
   course_id: string | null;
   course_ids: string[];
+  payment_methods: string[];
   expires_at: string | null;
   is_active: boolean;
   created_at: string;
@@ -95,10 +105,12 @@ export default function MarketingCoupons() {
       const ids: string[] = (c as any).course_ids?.length > 0 
         ? (c as any).course_ids 
         : (c.course_id ? [c.course_id] : []);
+      const paymentMethods: string[] = (c as any).payment_methods || [];
       return {
         ...c,
         discount_type: c.discount_type as 'percentage' | 'fixed',
         course_ids: ids,
+        payment_methods: paymentMethods,
         course_titles: ids.map(id => courseMap[id]).filter(Boolean),
       };
     }));
@@ -289,6 +301,21 @@ export default function MarketingCoupons() {
                       ))
                     ) : (
                       <Badge variant="outline" className="text-[10px]">Todos os cursos</Badge>
+                    )}
+                    {coupon.payment_methods.length > 0 ? (
+                      coupon.payment_methods.map(pm => {
+                        const info = PAYMENT_METHOD_LABELS[pm];
+                        if (!info) return null;
+                        const Icon = info.icon;
+                        return (
+                          <Badge key={pm} variant="outline" className="text-[10px]">
+                            <Icon className="h-2.5 w-2.5 mr-1" />
+                            {info.label}
+                          </Badge>
+                        );
+                      })
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">Todas formas pgto</Badge>
                     )}
                     {coupon.max_uses != null && (
                       <Badge variant="outline" className="text-[10px]">
