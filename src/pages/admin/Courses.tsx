@@ -122,6 +122,7 @@ export default function AdminCourses() {
     course: null,
   });
   const [copied, setCopied] = useState(false);
+  const [copiedPreview, setCopiedPreview] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -312,6 +313,11 @@ export default function AdminCourses() {
   const getCourseLink = (course: Course) => {
     const baseUrl = 'https://cursos.kanaflix.com.br';
     return `${baseUrl}/checkout/${course.id}`;
+  };
+
+  const getPreviewLink = (course: Course) => {
+    const baseUrl = 'https://cursos.kanaflix.com.br';
+    return `${baseUrl}/courses/${course.id}`;
   };
 
   const handleCopyLink = async (course: Course) => {
@@ -626,7 +632,7 @@ export default function AdminCourses() {
               </div>
               
               <div className="space-y-2">
-                <Label>Link do curso</Label>
+                <Label>Link de Checkout</Label>
                 <div className="flex gap-2">
                   <Input 
                     readOnly 
@@ -639,6 +645,29 @@ export default function AdminCourses() {
                     variant={copied ? "default" : "outline"}
                   >
                     {copied ? <TickSquare size={16} /> : <Paper size={16} />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Link de Preview</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    readOnly 
+                    value={getPreviewLink(linkDialog.course)} 
+                    className="text-sm"
+                  />
+                  <Button 
+                    size="icon" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(getPreviewLink(linkDialog.course!));
+                      setCopiedPreview(true);
+                      toast.success('Link de preview copiado!');
+                      setTimeout(() => setCopiedPreview(false), 2000);
+                    }}
+                    variant={copiedPreview ? "default" : "outline"}
+                  >
+                    {copiedPreview ? <TickSquare size={16} /> : <Paper size={16} />}
                   </Button>
                 </div>
               </div>
