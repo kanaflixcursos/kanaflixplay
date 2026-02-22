@@ -145,7 +145,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     try {
       const { data, error } = await supabase
         .from('discount_coupons')
-        .select('id, code, discount_type, discount_value, max_uses, used_count, course_id, course_ids, expires_at, is_active')
+        .select('id, code, discount_type, discount_value, max_uses, used_count, course_id, course_ids, expires_at, is_active, payment_methods')
         .eq('code', couponCode.toUpperCase().trim())
         .eq('is_active', true)
         .single();
