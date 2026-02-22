@@ -707,6 +707,7 @@ export type Database = {
           discount_amount: number | null
           failure_reason: string | null
           id: string
+          installments: number
           pagarme_charge_id: string | null
           paid_at: string | null
           payment_method: string | null
@@ -728,6 +729,7 @@ export type Database = {
           discount_amount?: number | null
           failure_reason?: string | null
           id: string
+          installments?: number
           pagarme_charge_id?: string | null
           paid_at?: string | null
           payment_method?: string | null
@@ -749,6 +751,7 @@ export type Database = {
           discount_amount?: number | null
           failure_reason?: string | null
           id?: string
+          installments?: number
           pagarme_charge_id?: string | null
           paid_at?: string | null
           payment_method?: string | null

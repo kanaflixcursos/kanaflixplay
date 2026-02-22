@@ -61,7 +61,6 @@ interface PaymentResult {
 
 interface InstallmentOption {
   number: number;
-  interest_rate: number;
   label: string;
 }
 
@@ -210,11 +209,27 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   }, [course.price, appliedCoupon]);
 
 
+  // Progressive fee calculation helper
+  const calculateProgressiveTotal = (basePrice: number, numInstallments: number): number => {
+    if (numInstallments <= 0) return basePrice;
+    
+    let totalFee = 0;
+    for (let i = 1; i <= numInstallments; i++) {
+      let rate: number;
+      if (i === 1) rate = 3.25;
+      else if (i <= 6) rate = 3.79;
+      else rate = 4.07;
+      totalFee += (basePrice * rate / 100) / numInstallments;
+    }
+    
+    return Math.round(basePrice + totalFee);
+  };
+
   // Calculate available installment options based on course price and config
   const availableInstallments = useMemo(() => {
     const creditCardConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
     if (!creditCardConfig?.installments) {
-      return [{ number: 1, interest_rate: 0, label: 'À vista', totalAmount: discountedPrice, installmentAmount: discountedPrice }];
+      return [{ number: 1, label: 'À vista', totalAmount: calculateProgressiveTotal(discountedPrice, 1), installmentAmount: calculateProgressiveTotal(discountedPrice, 1) }];
     }
 
     const { options, min_amount_per_installment } = creditCardConfig.installments;
@@ -225,11 +240,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         return baseInstallmentAmount >= min_amount_per_installment;
       })
       .map(opt => {
-        let totalAmount = discountedPrice;
-        if (opt.interest_rate > 0) {
-          totalAmount = Math.round(discountedPrice * (1 + opt.interest_rate / 100));
-        }
-        
+        const totalAmount = calculateProgressiveTotal(discountedPrice, opt.number);
         const installmentAmount = Math.ceil(totalAmount / opt.number);
         
         return {
@@ -501,13 +512,13 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     {selectedInstallment.number}x de {formatPrice(selectedInstallment.installmentAmount)}
                   </span>
                 </div>
-                {selectedInstallment.interest_rate > 0 ? (
+                {selectedInstallment.totalAmount > discountedPrice ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
                     <span>
                       Total: {formatPrice(selectedInstallment.totalAmount)} 
                       <span className="text-xs ml-1">
-                        (taxa de {selectedInstallment.interest_rate}%)
+                        (juros progressivos)
                       </span>
                     </span>
                   </div>
@@ -745,7 +756,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       {availableInstallments.map((opt) => (
                         <SelectItem key={opt.number} value={opt.number.toString()}>
                           {opt.number}x de {formatPrice(opt.installmentAmount)}
-                          {opt.interest_rate === 0 ? ' (sem juros)' : ` (+${opt.interest_rate}% — Total: ${formatPrice(opt.totalAmount)})`}
+                          {opt.totalAmount > discountedPrice ? ` (Total: ${formatPrice(opt.totalAmount)})` : ' (à vista)'}
                         </SelectItem>
                       ))}
                     </SelectContent>
