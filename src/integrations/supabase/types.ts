@@ -1154,6 +1154,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      lead_stage_priority: { Args: { stage: string }; Returns: number }
+      promote_lead_on_checkout: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "student" | "professor"
