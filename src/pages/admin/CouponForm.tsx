@@ -23,6 +23,9 @@ import {
   DollarSign,
   BookOpen,
   X,
+  CreditCard,
+  QrCode,
+  Barcode,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,6 +33,12 @@ interface CourseOption {
   id: string;
   title: string;
 }
+
+const PAYMENT_METHOD_OPTIONS = [
+  { id: 'credit_card', label: 'Cartão de Crédito', icon: CreditCard },
+  { id: 'pix', label: 'PIX', icon: QrCode },
+  { id: 'boleto', label: 'Boleto', icon: Barcode },
+];
 
 const initialForm = {
   code: '',
@@ -39,6 +48,7 @@ const initialForm = {
   course_ids: [] as string[],
   expires_at: '',
   is_active: true,
+  payment_methods: [] as string[],
 };
 
 export default function CouponForm() {
@@ -51,6 +61,7 @@ export default function CouponForm() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [allCourses, setAllCourses] = useState(true);
+  const [allPaymentMethods, setAllPaymentMethods] = useState(true);
 
   useEffect(() => {
     fetchCourses();
@@ -77,8 +88,8 @@ export default function CouponForm() {
     }
 
     const courseIds = (data as any).course_ids as string[] || [];
-    // Fallback: if course_ids is empty but course_id exists, use it
     const resolvedIds = courseIds.length > 0 ? courseIds : (data.course_id ? [data.course_id] : []);
+    const paymentMethods = (data as any).payment_methods as string[] || [];
 
     setForm({
       code: data.code,
@@ -88,8 +99,10 @@ export default function CouponForm() {
       course_ids: resolvedIds,
       expires_at: data.expires_at ? data.expires_at.split('T')[0] : '',
       is_active: data.is_active,
+      payment_methods: paymentMethods,
     });
     setAllCourses(resolvedIds.length === 0);
+    setAllPaymentMethods(paymentMethods.length === 0);
     setLoading(false);
   };
 
@@ -113,6 +126,15 @@ export default function CouponForm() {
     setForm(f => ({ ...f, course_ids: f.course_ids.filter(id => id !== courseId) }));
   };
 
+  const togglePaymentMethod = (methodId: string) => {
+    setForm(f => ({
+      ...f,
+      payment_methods: f.payment_methods.includes(methodId)
+        ? f.payment_methods.filter(id => id !== methodId)
+        : [...f.payment_methods, methodId],
+    }));
+  };
+
   const handleSave = async () => {
     if (!form.code.trim()) {
       toast.error('Informe o código do cupom');
@@ -130,6 +152,7 @@ export default function CouponForm() {
     setSaving(true);
 
     const courseIds = allCourses ? [] : form.course_ids;
+    const paymentMethods = allPaymentMethods ? [] : form.payment_methods;
 
     const payload = {
       code: form.code.toUpperCase().trim(),
@@ -138,8 +161,9 @@ export default function CouponForm() {
         ? Math.round(Number(form.discount_value) * 100)
         : Number(form.discount_value),
       max_uses: form.max_uses ? parseInt(form.max_uses) : null,
-      course_id: courseIds.length === 1 ? courseIds[0] : null, // backward compat
+      course_id: courseIds.length === 1 ? courseIds[0] : null,
       course_ids: courseIds,
+      payment_methods: paymentMethods,
       expires_at: form.expires_at ? new Date(form.expires_at + 'T23:59:59').toISOString() : null,
       is_active: form.is_active,
     };
@@ -193,9 +217,15 @@ export default function CouponForm() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Configurações</CardTitle>
-          <CardDescription>Defina o código, tipo e valor do desconto</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-base">Configurações</CardTitle>
+            <CardDescription>Defina o código, tipo e valor do desconto</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Ativo</Label>
+            <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
+          </div>
         </CardHeader>
         <CardContent className="space-y-5">
           {/* Code */}
@@ -270,7 +300,6 @@ export default function CouponForm() {
 
             {!allCourses && (
               <>
-                {/* Selected courses tags */}
                 {form.course_ids.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {form.course_ids.map(id => (
@@ -289,7 +318,6 @@ export default function CouponForm() {
                   </div>
                 )}
 
-                {/* Course list with checkboxes */}
                 <div className="border rounded-lg max-h-48 overflow-y-auto divide-y divide-border">
                   {courses.map(course => (
                     <label
@@ -308,6 +336,51 @@ export default function CouponForm() {
                   )}
                 </div>
               </>
+            )}
+          </div>
+
+          {/* Payment methods multi-select */}
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground">Formas de pagamento válidas</Label>
+            
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="all-payment-methods"
+                checked={allPaymentMethods}
+                onCheckedChange={(checked) => {
+                  setAllPaymentMethods(!!checked);
+                  if (checked) setForm(f => ({ ...f, payment_methods: [] }));
+                }}
+              />
+              <label htmlFor="all-payment-methods" className="text-sm font-medium cursor-pointer">
+                Todas as formas de pagamento
+              </label>
+            </div>
+
+            {!allPaymentMethods && (
+              <div className="grid grid-cols-3 gap-2">
+                {PAYMENT_METHOD_OPTIONS.map(method => {
+                  const isSelected = form.payment_methods.includes(method.id);
+                  const Icon = method.icon;
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => togglePaymentMethod(method.id)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        isSelected
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                        {method.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
 
@@ -331,12 +404,6 @@ export default function CouponForm() {
                 onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
               />
             </div>
-          </div>
-
-          {/* Active toggle */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <Label className="text-sm">Cupom ativo</Label>
-            <Switch checked={form.is_active} onCheckedChange={v => setForm(f => ({ ...f, is_active: v }))} />
           </div>
         </CardContent>
       </Card>

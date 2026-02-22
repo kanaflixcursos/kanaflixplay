@@ -112,6 +112,7 @@ export type Database = {
           is_published: boolean
           is_sequential: boolean
           last_synced_at: string | null
+          launch_date: string | null
           max_installments: number
           pandavideo_folder_id: string | null
           price: number | null
@@ -128,6 +129,7 @@ export type Database = {
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null
+          launch_date?: string | null
           max_installments?: number
           pandavideo_folder_id?: string | null
           price?: number | null
@@ -144,6 +146,7 @@ export type Database = {
           is_published?: boolean
           is_sequential?: boolean
           last_synced_at?: string | null
+          launch_date?: string | null
           max_installments?: number
           pandavideo_folder_id?: string | null
           price?: number | null
@@ -173,6 +176,7 @@ export type Database = {
           id: string
           is_active: boolean
           max_uses: number | null
+          payment_methods: string[]
           updated_at: string
           used_count: number
         }
@@ -187,6 +191,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          payment_methods?: string[]
           updated_at?: string
           used_count?: number
         }
@@ -201,6 +206,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           max_uses?: number | null
+          payment_methods?: string[]
           updated_at?: string
           used_count?: number
         }
