@@ -19,8 +19,7 @@ import {
   Clock,
   Lock,
   Unlock,
-  CalendarClock,
-  ShoppingCart
+  CalendarClock
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -73,7 +72,6 @@ export default function CourseView() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
@@ -116,8 +114,13 @@ export default function CourseView() {
       const enrolled = !!enrollment;
       setIsEnrolled(enrolled);
 
-      // Fetch lessons for both enrolled and preview mode
-      // For preview: use RPC or public queries; for enrolled: standard queries
+      // If not enrolled, redirect to checkout
+      if (!enrolled) {
+        navigate(`/checkout/${courseId}`);
+        return;
+      }
+
+      // Fetch lessons and modules
       const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
         supabase
           .from('lessons')
@@ -133,37 +136,6 @@ export default function CourseView() {
       ]);
 
       if (!isMounted) return;
-
-      // If not enrolled but we got lessons data, enter preview mode
-      if (!enrolled) {
-        if (lessonsData && lessonsData.length > 0) {
-          setIsPreviewMode(true);
-          setModules((modulesData || []) as Module[]);
-          
-          const mods = (modulesData || []) as Module[];
-          const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
-          
-          const sortedLessons = [...(lessonsData || [])].map(lesson => ({
-            ...lesson,
-            completed: false,
-            materials: [],
-          })).sort((a, b) => {
-            const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
-            const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
-            if (aModOrder !== bModOrder) return aModOrder - bModOrder;
-            return a.order_index - b.order_index;
-          });
-
-          setLessons(sortedLessons);
-          setSelectedLesson(sortedLessons[0] || null);
-        } else {
-          // No lessons available for preview, redirect to checkout
-          navigate(`/checkout/${courseId}`);
-          return;
-        }
-        setLoading(false);
-        return;
-      }
 
       setModules((modulesData || []) as Module[]);
 
@@ -310,19 +282,12 @@ export default function CourseView() {
   // Calculate which lessons are unlocked based on sequential progress
   // Must be called before any early returns to maintain hook order
   const unlockedLessonIds = useMemo(() => {
-    // In preview mode: only the first lesson is unlocked
-    if (isPreviewMode) {
-      const first = lessons[0];
-      return first ? new Set([first.id]) : new Set<string>();
-    }
-
     // Pre-sale: no lessons unlocked
     if (isPreSale) {
       return new Set<string>();
     }
 
     if (!course?.is_sequential) {
-      // All lessons unlocked if course is not sequential
       return new Set(lessons.map(l => l.id));
     }
 
@@ -341,7 +306,7 @@ export default function CourseView() {
       }
     }
     return unlocked;
-  }, [lessons, course?.is_sequential, isPreviewMode, isPreSale]);
+  }, [lessons, course?.is_sequential, isPreSale]);
 
   // Separate required and optional lessons
   const optionalModuleIds = new Set(modules.filter(m => m.is_optional).map(m => m.id));
@@ -441,23 +406,17 @@ export default function CourseView() {
     return null;
   }
 
-  const isPaidCourse = course?.price && course.price > 0;
-  const handleEnrollmentSuccess = () => {
-    setIsEnrolled(true);
-    window.location.reload();
-  };
 
-  // Not enrolled and no preview available - redirect to checkout
-  if (!isEnrolled && !isPreviewMode) {
+  // Not enrolled - redirect to checkout
+  if (!isEnrolled) {
     navigate(`/checkout/${courseId}`);
     return null;
   }
 
-  // Show lesson player (enrolled or preview mode)
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Pre-sale banner */}
-      {isEnrolled && isPreSale && (
+      {isPreSale && (
         <div className="flex items-start gap-3 p-4 bg-chart-4/10 border border-chart-4/30 rounded-xl">
           <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
           <div>
@@ -470,25 +429,6 @@ export default function CourseView() {
           </div>
         </div>
       )}
-
-      {/* Preview mode banner */}
-      {isPreviewMode && (
-        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-          <Play className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="font-medium text-sm text-foreground">
-              Modo Preview — Assista a primeira aula gratuitamente
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Adquira o curso para desbloquear todo o conteúdo.
-            </p>
-          </div>
-          <Button size="sm" onClick={() => navigate(`/checkout/${courseId}`)} className="shrink-0 gap-1.5">
-            <ShoppingCart className="h-3.5 w-3.5" />
-            {isPaidCourse ? 'Comprar' : 'Matricular-se'}
-          </Button>
-        </div>
-      )}
       {/* Header - Mobile optimized */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="w-fit">
@@ -496,16 +436,11 @@ export default function CourseView() {
         </Button>
         <div className="flex-1">
           <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
-          {!isPreviewMode && (
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              <span>{completedCount}/{requiredLessons.length} aulas</span>
-              <span>•</span>
-              <span>{progressPercent}%</span>
-            </div>
-          )}
-          {isPreviewMode && (
-            <p className="text-xs sm:text-sm text-muted-foreground">Preview gratuito</p>
-          )}
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+            <span>{completedCount}/{requiredLessons.length} aulas</span>
+            <span>•</span>
+            <span>{progressPercent}%</span>
+          </div>
         </div>
       </div>
 
@@ -523,8 +458,8 @@ export default function CourseView() {
                 title={selectedLesson.title}
                 durationMinutes={selectedLesson.duration_minutes}
                 isLocked={isLessonLocked(selectedLesson.id)}
-                lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
-                lockMessage={isPreviewMode ? 'Adquira o curso para desbloquear todas as aulas' : isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
+                lockTitle={isPreSale ? 'Em Breve' : undefined}
+                lockMessage={isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
                 onComplete={() => {
                   // Update local state when auto-completed
                   const updatedLessons = lessons.map(l => 
@@ -597,24 +532,9 @@ export default function CourseView() {
               
               
 
-              {/* Comments Section - hide in preview mode */}
-              {!isPreviewMode && (
-                <>
-                  <Separator />
-                  <LessonComments lessonId={selectedLesson.id} />
-                </>
-              )}
-              {isPreviewMode && (
-                <div className="p-6 bg-muted/50 rounded-xl text-center space-y-3">
-                  <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
-                  <p className="text-sm font-medium">Gostou do que viu?</p>
-                  <p className="text-xs text-muted-foreground">Adquira o curso completo para acessar todas as aulas, materiais e comentários.</p>
-                  <Button onClick={() => navigate(`/checkout/${courseId}`)} className="gap-1.5">
-                    <ShoppingCart className="h-4 w-4" />
-                    {isPaidCourse ? 'Comprar Curso' : 'Matricular-se'}
-                  </Button>
-                </div>
-              )}
+              {/* Comments Section */}
+              <Separator />
+              <LessonComments lessonId={selectedLesson.id} />
             </div>
           )}
         </div>
@@ -628,34 +548,27 @@ export default function CourseView() {
                 <span className="text-xs sm:text-sm text-muted-foreground">{getTotalDuration()}</span>
               </div>
               
-              {/* Progress bar - hide in preview mode */}
-              {!isPreviewMode && (
-                <>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
-                    <div 
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  
-                  {/* Stats row */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      {completedCount}/{requiredLessons.length} concluídas
-                    </span>
-                    {course?.is_sequential && (
-                      <span className="flex items-center gap-1">
-                        <Unlock className="h-3 w-3" />
-                        {unlockedCount}/{requiredLessons.length} desbloqueadas
-                      </span>
-                    )}
-                  </div>
-                </>
-              )}
-              {isPreviewMode && (
-                <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
-              )}
+              {/* Progress bar */}
+              <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              
+              {/* Stats row */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                <span className="flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  {completedCount}/{requiredLessons.length} concluídas
+                </span>
+                {course?.is_sequential && (
+                  <span className="flex items-center gap-1">
+                    <Unlock className="h-3 w-3" />
+                    {unlockedCount}/{requiredLessons.length} desbloqueadas
+                  </span>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
