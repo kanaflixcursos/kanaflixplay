@@ -19,7 +19,8 @@ import {
   Clock,
   Lock,
   Unlock,
-  CalendarClock
+  CalendarClock,
+  ShoppingCart
 } from 'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
@@ -72,6 +73,7 @@ export default function CourseView() {
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
@@ -82,7 +84,7 @@ export default function CourseView() {
     let isMounted = true;
     
     const fetchCourseData = async () => {
-      if (!courseId || !user) return;
+      if (!courseId) return;
 
       // Fetch course
       const { data: courseData, error: courseError } = await supabase
@@ -101,26 +103,22 @@ export default function CourseView() {
 
       setCourse(courseData);
 
-      // Check enrollment
-      const { data: enrollment } = await supabase
-        .from('course_enrollments')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('course_id', courseId)
-        .single();
+      // Check enrollment (only if user is logged in)
+      let enrolled = false;
+      if (user) {
+        const { data: enrollment } = await supabase
+          .from('course_enrollments')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId)
+          .single();
 
-      if (!isMounted) return;
-      
-      const enrolled = !!enrollment;
-      setIsEnrolled(enrolled);
-
-      // If not enrolled, redirect to checkout
-      if (!enrolled) {
-        navigate(`/checkout/${courseId}`);
-        return;
+        if (!isMounted) return;
+        enrolled = !!enrollment;
+        setIsEnrolled(enrolled);
       }
 
-      // Fetch lessons and modules
+      // Fetch lessons and modules (RLS allows viewing published course lessons)
       const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
         supabase
           .from('lessons')
@@ -136,6 +134,37 @@ export default function CourseView() {
       ]);
 
       if (!isMounted) return;
+
+      // If not enrolled, enter preview mode
+      if (!enrolled) {
+        if (lessonsData && lessonsData.length > 0) {
+          setIsPreviewMode(true);
+          setModules((modulesData || []) as Module[]);
+          
+          const mods = (modulesData || []) as Module[];
+          const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
+          
+          const sortedLessons = [...(lessonsData || [])].map(lesson => ({
+            ...lesson,
+            completed: false,
+            materials: [],
+          })).sort((a, b) => {
+            const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
+            const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+            if (aModOrder !== bModOrder) return aModOrder - bModOrder;
+            return a.order_index - b.order_index;
+          });
+
+          setLessons(sortedLessons);
+          setSelectedLesson(sortedLessons[0] || null);
+        } else {
+          // No lessons, redirect to checkout
+          navigate(`/checkout/${courseId}`);
+          return;
+        }
+        setLoading(false);
+        return;
+      }
 
       setModules((modulesData || []) as Module[]);
 
@@ -282,6 +311,12 @@ export default function CourseView() {
   // Calculate which lessons are unlocked based on sequential progress
   // Must be called before any early returns to maintain hook order
   const unlockedLessonIds = useMemo(() => {
+    // Preview mode: only first lesson unlocked
+    if (isPreviewMode) {
+      const first = lessons[0];
+      return first ? new Set([first.id]) : new Set<string>();
+    }
+
     // Pre-sale: no lessons unlocked
     if (isPreSale) {
       return new Set<string>();
@@ -306,7 +341,7 @@ export default function CourseView() {
       }
     }
     return unlocked;
-  }, [lessons, course?.is_sequential, isPreSale]);
+  }, [lessons, course?.is_sequential, isPreviewMode, isPreSale]);
 
   // Separate required and optional lessons
   const optionalModuleIds = new Set(modules.filter(m => m.is_optional).map(m => m.id));
@@ -406,9 +441,10 @@ export default function CourseView() {
     return null;
   }
 
+  const isPaidCourse = course?.price && course.price > 0;
 
-  // Not enrolled - redirect to checkout
-  if (!isEnrolled) {
+  // Not enrolled and not in preview - redirect to checkout
+  if (!isEnrolled && !isPreviewMode) {
     navigate(`/checkout/${courseId}`);
     return null;
   }
@@ -436,11 +472,15 @@ export default function CourseView() {
         </Button>
         <div className="flex-1">
           <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
-          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-            <span>{completedCount}/{requiredLessons.length} aulas</span>
-            <span>•</span>
-            <span>{progressPercent}%</span>
-          </div>
+          {!isPreviewMode ? (
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+              <span>{completedCount}/{requiredLessons.length} aulas</span>
+              <span>•</span>
+              <span>{progressPercent}%</span>
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-muted-foreground">Preview gratuito</p>
+          )}
         </div>
       </div>
 
@@ -458,9 +498,9 @@ export default function CourseView() {
                 title={selectedLesson.title}
                 durationMinutes={selectedLesson.duration_minutes}
                 isLocked={isLessonLocked(selectedLesson.id)}
-                lockTitle={isPreSale ? 'Em Breve' : undefined}
-                lockMessage={isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
-                onComplete={() => {
+                lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
+                lockMessage={isPreviewMode ? 'Adquira o curso para desbloquear todas as aulas' : isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
+                onComplete={isPreviewMode ? undefined : () => {
                   // Update local state when auto-completed
                   const updatedLessons = lessons.map(l => 
                     l.id === selectedLesson.id ? { ...l, completed: true } : l
@@ -482,8 +522,26 @@ export default function CourseView() {
             <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
               <Play className="h-16 w-16 text-muted-foreground" />
             </div>
-          )}
+      )}
 
+      {/* Preview mode banner */}
+      {isPreviewMode && (
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <Play className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-sm text-foreground">
+              Modo Preview — Assista a primeira aula gratuitamente
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Adquira o curso para desbloquear todo o conteúdo.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => navigate(`/checkout/${courseId}`)} className="shrink-0 gap-1.5">
+            <ShoppingCart className="h-3.5 w-3.5" />
+            {isPaidCourse ? 'Comprar' : 'Matricular-se'}
+          </Button>
+        </div>
+      )}
           {/* Lesson Info - Outside the player card */}
           {selectedLesson && (
             <div className="space-y-3 md:space-y-4">
@@ -502,7 +560,7 @@ export default function CourseView() {
                     </div>
                   )}
                 </div>
-                {selectedLesson.completed ? (
+                {!isPreviewMode && selectedLesson.completed ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -516,7 +574,7 @@ export default function CourseView() {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                ) : !course.is_sequential && (
+                ) : !isPreviewMode && !course.is_sequential && (
                   <Button 
                     onClick={() => handleMarkComplete(selectedLesson.id)}
                     className="shrink-0 text-xs sm:text-sm"
@@ -528,13 +586,25 @@ export default function CourseView() {
                   </Button>
                 )}
               </div>
-              
-              
-              
 
-              {/* Comments Section */}
-              <Separator />
-              <LessonComments lessonId={selectedLesson.id} />
+              {/* Comments Section - only for enrolled users */}
+              {!isPreviewMode && (
+                <>
+                  <Separator />
+                  <LessonComments lessonId={selectedLesson.id} />
+                </>
+              )}
+              {isPreviewMode && (
+                <div className="p-6 bg-muted/50 rounded-xl text-center space-y-3">
+                  <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm font-medium">Gostou do que viu?</p>
+                  <p className="text-xs text-muted-foreground">Adquira o curso completo para acessar todas as aulas, materiais e comentários.</p>
+                  <Button onClick={() => navigate(`/checkout/${courseId}`)} className="gap-1.5">
+                    <ShoppingCart className="h-4 w-4" />
+                    {isPaidCourse ? 'Comprar Curso' : 'Matricular-se'}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -548,27 +618,33 @@ export default function CourseView() {
                 <span className="text-xs sm:text-sm text-muted-foreground">{getTotalDuration()}</span>
               </div>
               
-              {/* Progress bar */}
-              <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
-                <div 
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              
-              {/* Stats row */}
-              <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                <span className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  {completedCount}/{requiredLessons.length} concluídas
-                </span>
-                {course?.is_sequential && (
-                  <span className="flex items-center gap-1">
-                    <Unlock className="h-3 w-3" />
-                    {unlockedCount}/{requiredLessons.length} desbloqueadas
-                  </span>
-                )}
-              </div>
+              {/* Progress bar - hide in preview mode */}
+              {!isPreviewMode ? (
+                <>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  
+                  {/* Stats row */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                    <span className="flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      {completedCount}/{requiredLessons.length} concluídas
+                    </span>
+                    {course?.is_sequential && (
+                      <span className="flex items-center gap-1">
+                        <Unlock className="h-3 w-3" />
+                        {unlockedCount}/{requiredLessons.length} desbloqueadas
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
