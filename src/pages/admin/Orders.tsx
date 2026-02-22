@@ -2,10 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock } from 'lucide-react';
+import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock, CalendarIcon, X } from 'lucide-react';
+import { format, startOfDay, endOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import SalesTable, { Sale, fetchSalesData } from '@/components/admin/SalesTable';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { motion } from 'framer-motion';
@@ -33,6 +39,9 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -72,8 +81,27 @@ export default function AdminOrders() {
       (sale.user_email?.toLowerCase().includes(term) || false) ||
       (sale.id?.toLowerCase().includes(term) || false);
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPayment = paymentFilter === 'all' || sale.payment_method === paymentFilter;
+    
+    let matchesDate = true;
+    if (dateFrom || dateTo) {
+      const saleDate = sale.paid_at ? new Date(sale.paid_at) : new Date(sale.created_at);
+      if (dateFrom && saleDate < startOfDay(dateFrom)) matchesDate = false;
+      if (dateTo && saleDate > endOfDay(dateTo)) matchesDate = false;
+    }
+
+    return matchesSearch && matchesStatus && matchesPayment && matchesDate;
   });
+
+  const hasActiveFilters = statusFilter !== 'all' || paymentFilter !== 'all' || !!dateFrom || !!dateTo || !!searchTerm;
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setPaymentFilter('all');
+    setDateFrom(undefined);
+    setDateTo(undefined);
+  };
 
   const chartData = useMemo(() => {
     if (!orderStats) return [];
@@ -217,38 +245,99 @@ export default function AdminOrders() {
           </CardTitle>
         </CardHeader>
         <CardContent className="dashboard-card-content space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por ID, curso, nome ou email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por ID, curso, nome ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="failed">Falhou</SelectItem>
+                  <SelectItem value="canceled">Cancelado</SelectItem>
+                  <SelectItem value="refunded">Reembolsado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meios</SelectItem>
+                  <SelectItem value="credit_card">Cartão</SelectItem>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                  <SelectItem value="coupon">Cupom 100%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="paid">Pago</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="failed">Falhou</SelectItem>
-                <SelectItem value="canceled">Cancelado</SelectItem>
-                <SelectItem value="refunded">Reembolsado</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("h-9 text-xs gap-2", !dateFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: ptBR }) : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <span className="text-xs text-muted-foreground">até</span>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("h-9 text-xs gap-2", !dateTo && "text-muted-foreground")}>
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: ptBR }) : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" className="h-9 text-xs gap-1.5 text-muted-foreground" onClick={clearFilters}>
+                  <X className="h-3.5 w-3.5" />
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
           </div>
 
           <SalesTable
-            sales={searchTerm || statusFilter !== 'all' ? filteredSales : allSales}
+            sales={hasActiveFilters ? filteredSales : allSales}
             loading={loading}
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
-            showPagination={!searchTerm && statusFilter === 'all'}
+            showPagination={!hasActiveFilters}
             onRefresh={loadAll}
           />
         </CardContent>
