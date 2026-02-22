@@ -49,12 +49,12 @@ interface Order {
   } | null;
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ElementType }> = {
-  paid: { label: 'Pago', variant: 'default', icon: CheckCircle2 },
-  pending: { label: 'Pendente', variant: 'secondary', icon: Clock },
-  failed: { label: 'Falhou', variant: 'destructive', icon: XCircle },
-  refunded: { label: 'Reembolsado', variant: 'outline', icon: AlertCircle },
-  canceled: { label: 'Cancelado', variant: 'destructive', icon: XCircle },
+const statusConfig: Record<string, { label: string; className: string; icon: React.ElementType }> = {
+  paid: { label: 'Pago', className: 'bg-success/15 text-success border-success/30', icon: CheckCircle2 },
+  pending: { label: 'Pendente', className: 'bg-warning/15 text-warning border-warning/30', icon: Clock },
+  failed: { label: 'Falhou', className: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
+  refunded: { label: 'Reembolsado', className: 'bg-primary/15 text-primary border-primary/30', icon: AlertCircle },
+  canceled: { label: 'Cancelado', className: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
 };
 
 const paymentMethodConfig: Record<string, { label: string; icon: React.ElementType }> = {
@@ -226,21 +226,21 @@ export default function Purchases() {
               let effectiveStatus = statusConfig[order.status] || statusConfig.pending;
               let StatusIcon = effectiveStatus.icon;
               let statusLabel = effectiveStatus.label;
-              let statusVariant = effectiveStatus.variant;
+              let statusClassName = effectiveStatus.className;
 
               if (order.refund_request) {
                 if (order.refund_request.status === 'approved') {
                   StatusIcon = CheckCircle2;
                   statusLabel = 'Reembolso Aprovado';
-                  statusVariant = 'default';
+                  statusClassName = 'bg-success/15 text-success border-success/30';
                 } else if (order.refund_request.status === 'rejected') {
                   StatusIcon = XCircle;
                   statusLabel = 'Reembolso Recusado';
-                  statusVariant = 'destructive';
+                  statusClassName = 'bg-destructive/15 text-destructive border-destructive/30';
                 } else {
                   StatusIcon = Clock;
                   statusLabel = 'Reembolso Solicitado';
-                  statusVariant = 'secondary';
+                  statusClassName = 'bg-warning/15 text-warning border-warning/30';
                 }
               }
 
@@ -276,7 +276,7 @@ export default function Purchases() {
                               {formatDate(order.created_at)}
                             </p>
                           </div>
-                          <Badge variant={statusVariant} className="gap-1 self-start">
+                          <Badge variant="outline" className={`gap-1 self-start ${statusClassName}`}>
                             <StatusIcon className="h-3.5 w-3.5" />
                             {statusLabel}
                           </Badge>
