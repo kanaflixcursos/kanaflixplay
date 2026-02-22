@@ -222,11 +222,31 @@ export default function Purchases() {
         ) : (
           <div className="grid gap-3">
             {orders.map((order) => {
-              const status = statusConfig[order.status] || statusConfig.pending;
+              // Determine effective status: prefer refund request status when present
+              let effectiveStatus = statusConfig[order.status] || statusConfig.pending;
+              let StatusIcon = effectiveStatus.icon;
+              let statusLabel = effectiveStatus.label;
+              let statusVariant = effectiveStatus.variant;
+
+              if (order.refund_request) {
+                if (order.refund_request.status === 'approved') {
+                  StatusIcon = CheckCircle2;
+                  statusLabel = 'Reembolso Aprovado';
+                  statusVariant = 'default';
+                } else if (order.refund_request.status === 'rejected') {
+                  StatusIcon = XCircle;
+                  statusLabel = 'Reembolso Recusado';
+                  statusVariant = 'destructive';
+                } else {
+                  StatusIcon = Clock;
+                  statusLabel = 'Reembolso Solicitado';
+                  statusVariant = 'secondary';
+                }
+              }
+
               const paymentMethod = order.payment_method 
                 ? paymentMethodConfig[order.payment_method] 
                 : null;
-              const StatusIcon = status.icon;
               const PaymentIcon = paymentMethod?.icon || Receipt;
 
               return (
@@ -256,9 +276,9 @@ export default function Purchases() {
                               {formatDate(order.created_at)}
                             </p>
                           </div>
-                          <Badge variant={status.variant} className="gap-1 self-start">
+                          <Badge variant={statusVariant} className="gap-1 self-start">
                             <StatusIcon className="h-3.5 w-3.5" />
-                            {status.label}
+                            {statusLabel}
                           </Badge>
                         </div>
 
@@ -329,24 +349,6 @@ export default function Purchases() {
                               <RefreshCcw className="h-4 w-4 mr-1" />
                               Solicitar Reembolso
                             </Button>
-                          )}
-
-                          {order.refund_request && (
-                            <Badge 
-                              variant={
-                                order.refund_request.status === 'approved' ? 'default' :
-                                order.refund_request.status === 'rejected' ? 'destructive' : 'secondary'
-                              }
-                              className="gap-1"
-                            >
-                              {order.refund_request.status === 'pending' && <Clock className="h-3 w-3" />}
-                              {order.refund_request.status === 'approved' && <CheckCircle2 className="h-3 w-3" />}
-                              {order.refund_request.status === 'rejected' && <XCircle className="h-3 w-3" />}
-                              Reembolso {
-                                order.refund_request.status === 'pending' ? 'Solicitado' :
-                                order.refund_request.status === 'approved' ? 'Aprovado' : 'Recusado'
-                              }
-                            </Badge>
                           )}
                         </div>
                       </div>
