@@ -26,15 +26,13 @@ Deno.serve(async (req) => {
     
     const body = await req.json();
     
-    // Auto-detect webhook from Pagar.me (has 'type' field with event name like 'charge.paid')
-    // Pagar.me webhooks have format: { "id": "...", "type": "charge.paid", "data": {...} }
+    // Auto-detect webhook from Pagar.me
     const isWebhook = body.type && typeof body.type === 'string' && 
                       (body.type.startsWith('charge.') || body.type.startsWith('order.'));
     
     if (isWebhook) {
       console.log(`[Webhook] Auto-detected Pagar.me webhook: ${body.type}`);
       
-      // Verify webhook authenticity by checking that the charge/order exists in Pagar.me
       const chargeId = body.data?.id;
       if (!chargeId) {
         console.error('[Webhook] Missing charge/order ID in webhook payload');
@@ -44,7 +42,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Verify the charge exists in Pagar.me API (prevents forged webhooks)
       if (body.type.startsWith('charge.')) {
         const authString = btoa(`${PAGARME_API_KEY}:`);
         const verifyResponse = await fetch(`${PAGARME_API_URL}/charges/${chargeId}`, {
@@ -60,7 +57,6 @@ Deno.serve(async (req) => {
         }
         
         const verifiedCharge = await verifyResponse.json();
-        // Use the verified status from Pagar.me API, not from the webhook payload
         console.log(`[Webhook] Charge ${chargeId} verified with status: ${verifiedCharge.status}`);
         body.data = verifiedCharge;
       }
@@ -68,10 +64,8 @@ Deno.serve(async (req) => {
       return handleWebhook(body, PAGARME_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     }
     
-    // For regular API calls, extract action
     const { action, ...payload } = body;
 
-    // Validate auth for other actions
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
@@ -94,8 +88,6 @@ Deno.serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub as string;
-
-    // Create admin client for operations that need elevated permissions
     const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     switch (action) {
@@ -187,13 +179,22 @@ async function handleCreateOrder(
       });
     }
 
-    // Check course restriction (supports both course_ids array and legacy course_id)
+    // Check course restriction
     const couponCourseIds: string[] = coupon.course_ids && coupon.course_ids.length > 0
       ? coupon.course_ids
       : (coupon.course_id ? [coupon.course_id] : []);
     
     if (couponCourseIds.length > 0 && !couponCourseIds.includes(courseId)) {
       return new Response(JSON.stringify({ error: 'Cupom não válido para este curso' }), { 
+        status: 400, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Check payment method restriction
+    const couponPaymentMethods: string[] = coupon.payment_methods || [];
+    if (couponPaymentMethods.length > 0 && !couponPaymentMethods.includes(paymentMethod)) {
+      return new Response(JSON.stringify({ error: 'Cupom não válido para esta forma de pagamento' }), { 
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
@@ -353,7 +354,6 @@ async function handleCreateOrder(
 
   const charge = pagarmeOrder.charges?.[0];
 
-  // Extract failure reason from gateway response if charge failed
   let failureReason: string | null = null;
   if (charge?.status === 'failed') {
     const gatewayErrors = charge.last_transaction?.gateway_response?.errors;
@@ -404,7 +404,6 @@ async function handleCreateOrder(
     });
   }
 
-  // Get user profile for email
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, email')
@@ -414,7 +413,6 @@ async function handleCreateOrder(
   if (orderData.status === 'paid') {
     await enrollUser(supabase, userId, courseId);
     
-    // Send purchase confirmation email for instant card payments
     if (profile?.email) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       await sendEmail(SUPABASE_URL, {
@@ -431,7 +429,6 @@ async function handleCreateOrder(
       });
     }
   } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && profile?.email) {
-    // Send payment pending email for PIX/Boleto
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
       action: 'payment_pending',
@@ -452,7 +449,11 @@ async function handleCreateOrder(
     });
   }
 
-  // If the charge failed immediately, return error with details
+  // If the charge failed immediately, restore coupon usage
+  if (charge?.status === 'failed' && validatedCouponId) {
+    await restoreCouponUsage(supabase, validatedCouponId);
+  }
+
   if (charge?.status === 'failed') {
     return new Response(JSON.stringify({ 
       success: false, 
@@ -506,45 +507,30 @@ async function handleWebhook(
 
   try {
     switch (type) {
-      // Payment confirmed
       case 'charge.paid':
         await handleChargePaid(supabase, data);
         break;
-      
-      // Payment failed
       case 'charge.payment_failed':
         await handleChargePaymentFailed(supabase, data);
         break;
-      
-      // Payment refunded
       case 'charge.refunded':
         await handleChargeRefunded(supabase, data);
         break;
-      
-      // Payment pending (awaiting confirmation)
       case 'charge.pending':
         await handleChargePending(supabase, data);
         break;
-      
-      // Payment canceled
       case 'charge.canceled':
         await handleChargeCanceled(supabase, data);
         break;
-      
-      // Chargeback received
       case 'charge.chargedback':
         await handleChargeChargedback(supabase, data);
         break;
-      
-      // Order events
       case 'order.paid':
         console.log('[Webhook] Order paid - handled via charge.paid');
         break;
-      
       case 'order.canceled':
         console.log('[Webhook] Order canceled');
         break;
-      
       default:
         console.log(`[Webhook] Unhandled event type: ${type}`);
     }
@@ -562,7 +548,6 @@ async function handleWebhook(
   }
 }
 
-// Handle charge.paid event
 async function handleChargePaid(supabase: any, data: any) {
   const chargeId = data.id;
   console.log(`[Webhook] Processing charge.paid for charge: ${chargeId}`);
@@ -583,7 +568,6 @@ async function handleChargePaid(supabase: any, data: any) {
     return;
   }
 
-  // Update order status
   await supabase
     .from('orders')
     .update({ 
@@ -594,15 +578,12 @@ async function handleChargePaid(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as paid`);
 
-  // Enroll user in course
   if (order.course_id) {
     await enrollUser(supabase, order.user_id, order.course_id);
     console.log(`[Webhook] User ${order.user_id} enrolled in course ${order.course_id}`);
     
-    // Get user profile for email
     const profile = await getUserProfile(supabase, order.user_id);
     
-    // Send confirmation email
     if (profile?.email) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       const paymentMethodLabel = order.payment_method === 'credit_card' 
@@ -625,7 +606,6 @@ async function handleChargePaid(supabase: any, data: any) {
       });
     }
     
-    // Send success notification
     await createNotification(supabase, {
       user_id: order.user_id,
       type: 'payment_success',
@@ -641,14 +621,12 @@ async function handleChargePaid(supabase: any, data: any) {
   }
 }
 
-// Handle charge.payment_failed event
 async function handleChargePaymentFailed(supabase: any, data: any) {
   const chargeId = data.id;
   const failureCode = data.last_transaction?.acquirer_return_code || 'unknown';
   const failureMessage = data.last_transaction?.acquirer_message || 'Pagamento não autorizado';
   
   console.log(`[Webhook] Processing charge.payment_failed for charge: ${chargeId}`);
-  console.log(`[Webhook] Failure reason: ${failureCode} - ${failureMessage}`);
   
   const { data: order, error } = await supabase
     .from('orders')
@@ -661,15 +639,19 @@ async function handleChargePaymentFailed(supabase: any, data: any) {
     return;
   }
 
-  // Update order status
   await supabase
     .from('orders')
     .update({ status: 'failed' })
     .eq('id', order.id);
 
+  // Restore coupon usage on payment failure
+  if (order.coupon_id) {
+    await restoreCouponUsage(supabase, order.coupon_id);
+    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (payment failed)`);
+  }
+
   console.log(`[Webhook] Order ${order.id} marked as failed`);
 
-  // Notify user about failed payment
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_failed',
@@ -685,7 +667,6 @@ async function handleChargePaymentFailed(supabase: any, data: any) {
   });
 }
 
-// Handle charge.refunded event
 async function handleChargeRefunded(supabase: any, data: any) {
   const chargeId = data.id;
   console.log(`[Webhook] Processing charge.refunded for charge: ${chargeId}`);
@@ -701,24 +682,26 @@ async function handleChargeRefunded(supabase: any, data: any) {
     return;
   }
 
-  // Update order status
   await supabase
     .from('orders')
     .update({ status: 'refunded' })
     .eq('id', order.id);
 
+  // Restore coupon usage on refund
+  if (order.coupon_id) {
+    await restoreCouponUsage(supabase, order.coupon_id);
+    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (refunded)`);
+  }
+
   console.log(`[Webhook] Order ${order.id} marked as refunded`);
 
-  // Revoke course access
   if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
     console.log(`[Webhook] Revoked enrollment for user ${order.user_id} from course ${order.course_id}`);
   }
 
-  // Get user profile for email
   const profile = await getUserProfile(supabase, order.user_id);
   
-  // Send refund confirmation email
   if (profile?.email) {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
@@ -733,7 +716,6 @@ async function handleChargeRefunded(supabase: any, data: any) {
     });
   }
 
-  // Notify user
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_refunded',
@@ -748,7 +730,6 @@ async function handleChargeRefunded(supabase: any, data: any) {
   });
 }
 
-// Handle charge.pending event
 async function handleChargePending(supabase: any, data: any) {
   const chargeId = data.id;
   console.log(`[Webhook] Processing charge.pending for charge: ${chargeId}`);
@@ -764,7 +745,6 @@ async function handleChargePending(supabase: any, data: any) {
     return;
   }
 
-  // Update order status if not already paid
   if (order.status !== 'paid') {
     await supabase
       .from('orders')
@@ -775,7 +755,6 @@ async function handleChargePending(supabase: any, data: any) {
   }
 }
 
-// Handle charge.canceled event
 async function handleChargeCanceled(supabase: any, data: any) {
   const chargeId = data.id;
   console.log(`[Webhook] Processing charge.canceled for charge: ${chargeId}`);
@@ -791,15 +770,19 @@ async function handleChargeCanceled(supabase: any, data: any) {
     return;
   }
 
-  // Update order status
   await supabase
     .from('orders')
     .update({ status: 'canceled' })
     .eq('id', order.id);
 
+  // Restore coupon usage on cancellation
+  if (order.coupon_id) {
+    await restoreCouponUsage(supabase, order.coupon_id);
+    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (canceled)`);
+  }
+
   console.log(`[Webhook] Order ${order.id} marked as canceled`);
 
-  // Notify user
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_canceled',
@@ -813,7 +796,6 @@ async function handleChargeCanceled(supabase: any, data: any) {
   });
 }
 
-// Handle charge.chargedback event (dispute/chargeback)
 async function handleChargeChargedback(supabase: any, data: any) {
   const chargeId = data.id;
   console.log(`[Webhook] Processing charge.chargedback for charge: ${chargeId}`);
@@ -829,21 +811,24 @@ async function handleChargeChargedback(supabase: any, data: any) {
     return;
   }
 
-  // Update order status
   await supabase
     .from('orders')
     .update({ status: 'chargedback' })
     .eq('id', order.id);
 
+  // Restore coupon usage on chargeback
+  if (order.coupon_id) {
+    await restoreCouponUsage(supabase, order.coupon_id);
+    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (chargedback)`);
+  }
+
   console.log(`[Webhook] Order ${order.id} marked as chargedback`);
 
-  // Revoke course access
   if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
     console.log(`[Webhook] Revoked enrollment for user ${order.user_id} due to chargeback`);
   }
 
-  // Notify user
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_chargedback',
@@ -861,7 +846,26 @@ async function handleChargeChargedback(supabase: any, data: any) {
 // HELPER FUNCTIONS
 // ===========================================
 
-// Send email via send-email edge function
+async function restoreCouponUsage(supabase: any, couponId: string) {
+  try {
+    const { data: coupon } = await supabase
+      .from('discount_coupons')
+      .select('used_count')
+      .eq('id', couponId)
+      .single();
+    
+    if (coupon && coupon.used_count > 0) {
+      await supabase
+        .from('discount_coupons')
+        .update({ used_count: coupon.used_count - 1 })
+        .eq('id', couponId);
+      console.log(`[Coupon] Restored usage for coupon ${couponId}, new count: ${coupon.used_count - 1}`);
+    }
+  } catch (error) {
+    console.error(`[Coupon] Error restoring usage for coupon ${couponId}:`, error);
+  }
+}
+
 async function sendEmail(supabaseUrl: string, data: {
   action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation';
   to: string;
@@ -894,7 +898,6 @@ async function sendEmail(supabaseUrl: string, data: {
   }
 }
 
-// Get user profile with email
 async function getUserProfile(supabase: any, userId: string) {
   const { data } = await supabase
     .from('profiles')
@@ -1026,7 +1029,6 @@ function handleGetPaymentConfig() {
 
 async function handleGetOrderStats(apiKey: string, supabase: any) {
   try {
-    // Get stats from local orders table (more reliable)
     const { data: localOrders, error } = await supabase
       .from('orders')
       .select('status');
@@ -1062,10 +1064,6 @@ async function handleGetOrderStats(apiKey: string, supabase: any) {
   }
 }
 
-// ===========================================
-// REFUND ORDER HANDLER
-// ===========================================
-
 async function handleRefundOrder(
   payload: any,
   apiKey: string,
@@ -1080,7 +1078,6 @@ async function handleRefundOrder(
     });
   }
 
-  // Fetch order from database
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select('*, courses(title)')
@@ -1108,7 +1105,6 @@ async function handleRefundOrder(
     });
   }
 
-  // Call Pagar.me API to refund the charge
   const authString = btoa(`${apiKey}:`);
   
   try {
@@ -1133,13 +1129,16 @@ async function handleRefundOrder(
       });
     }
 
-    // Update order status in database
     await supabase
       .from('orders')
       .update({ status: 'refunded' })
       .eq('id', orderId);
 
-    // Revoke course enrollment
+    // Restore coupon usage on refund
+    if (order.coupon_id) {
+      await restoreCouponUsage(supabase, order.coupon_id);
+    }
+
     if (order.course_id) {
       await supabase
         .from('course_enrollments')
@@ -1148,7 +1147,6 @@ async function handleRefundOrder(
         .eq('course_id', order.course_id);
     }
 
-    // Create notification for user
     await supabase
       .from('notifications')
       .insert({
@@ -1182,10 +1180,6 @@ async function handleRefundOrder(
   }
 }
 
-// ===========================================
-// CANCEL ORDER HANDLER
-// ===========================================
-
 async function handleCancelOrder(
   payload: any,
   apiKey: string,
@@ -1200,7 +1194,6 @@ async function handleCancelOrder(
     });
   }
 
-  // Fetch order from database
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .select('*, courses(title)')
@@ -1221,7 +1214,6 @@ async function handleCancelOrder(
     });
   }
 
-  // If there's a Pagar.me charge, try to cancel it
   if (order.pagarme_charge_id) {
     const authString = btoa(`${apiKey}:`);
     
@@ -1237,21 +1229,22 @@ async function handleCancelOrder(
       if (!cancelResponse.ok) {
         const cancelData = await cancelResponse.json();
         console.log('Pagar.me cancel response:', cancelData);
-        // Continue even if Pagar.me cancel fails - we'll still update locally
       }
     } catch (error) {
       console.log('Error canceling charge in Pagar.me:', error);
-      // Continue with local update
     }
   }
 
-  // Update order status in database
   await supabase
     .from('orders')
     .update({ status: 'canceled' })
     .eq('id', orderId);
 
-  // Create notification for user
+  // Restore coupon usage on cancellation
+  if (order.coupon_id) {
+    await restoreCouponUsage(supabase, order.coupon_id);
+  }
+
   await supabase
     .from('notifications')
     .insert({

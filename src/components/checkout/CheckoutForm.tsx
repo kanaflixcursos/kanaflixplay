@@ -94,6 +94,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     code: string;
     discount_type: 'percentage' | 'fixed';
     discount_value: number;
+    payment_methods?: string[];
   } | null>(null);
 
   const [customer, setCustomer] = useState({
@@ -180,11 +181,19 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         return;
       }
 
+      // Check payment method restriction
+      const allowedMethods: string[] = (data as any).payment_methods || [];
+
+      const couponPaymentMethods2 = allowedMethods;
+
+      const couponPaymentMethods: string[] = (data as any).payment_methods || [];
+      
       setAppliedCoupon({
         id: data.id,
         code: data.code,
         discount_type: data.discount_type as 'percentage' | 'fixed',
         discount_value: data.discount_value,
+        payment_methods: couponPaymentMethods.length > 0 ? couponPaymentMethods : undefined,
       });
       toast.success('Cupom aplicado!');
     } catch {

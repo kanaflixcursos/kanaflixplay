@@ -94,6 +94,7 @@ interface FormData {
   payment_methods: string[];
   installments: string;
   category_id: string;
+  launch_date: string;
 }
 
 const initialFormData: FormData = {
@@ -109,6 +110,7 @@ const initialFormData: FormData = {
   payment_methods: [],
   installments: '1',
   category_id: '',
+  launch_date: '',
 };
 
 const STEPS = [
@@ -235,6 +237,7 @@ export default function CourseForm() {
       payment_methods: ['pix', 'credit_card', 'boleto'],
       installments: String((data as any).max_installments || 12),
       category_id: (data as any).category_id || '',
+      launch_date: (data as any).launch_date ? (data as any).launch_date.split('T')[0] : '',
     });
 
     setLoadingCourse(false);
@@ -312,6 +315,7 @@ export default function CourseForm() {
         price: priceInCents,
         category_id: formData.category_id || null,
         max_installments: parseInt(formData.installments) || 12,
+        launch_date: formData.launch_date ? new Date(formData.launch_date + 'T00:00:00').toISOString() : null,
       };
 
       let savedCourseId = courseId;
@@ -492,8 +496,21 @@ export default function CourseForm() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="Descreva o conteúdo do curso..."
-                    rows={6}
+                    rows={5}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="launch_date">Data de Lançamento (opcional)</Label>
+                  <Input
+                    id="launch_date"
+                    type="date"
+                    value={formData.launch_date}
+                    onChange={(e) => setFormData({ ...formData, launch_date: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se definida, o curso ficará em pré-venda até esta data
+                  </p>
                 </div>
 
                 <div className="flex items-center space-x-3 pt-2">
