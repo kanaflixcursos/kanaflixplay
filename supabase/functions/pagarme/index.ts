@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'create_order':
-        return handleCreateOrder(payload, userId, PAGARME_API_KEY, supabase);
+        return handleCreateOrder(payload, userId, PAGARME_API_KEY, adminSupabase);
       case 'get_payment_config':
         return handleGetPaymentConfig();
       case 'get_order_stats': {
@@ -994,9 +994,14 @@ async function enrollUser(supabase: any, userId: string, courseId: string) {
   if (!existing) {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-    await supabase
+    const { error } = await supabase
       .from('course_enrollments')
       .insert({ user_id: userId, course_id: courseId, expires_at: expiresAt.toISOString() });
+    if (error) {
+      console.error(`[Enrollment] Failed to enroll user ${userId} in course ${courseId}:`, error);
+    } else {
+      console.log(`[Enrollment] User ${userId} enrolled in course ${courseId}`);
+    }
   }
 }
 
