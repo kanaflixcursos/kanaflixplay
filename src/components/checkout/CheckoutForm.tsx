@@ -181,11 +181,6 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         return;
       }
 
-      // Check payment method restriction
-      const allowedMethods: string[] = (data as any).payment_methods || [];
-
-      const couponPaymentMethods2 = allowedMethods;
-
       const couponPaymentMethods: string[] = (data as any).payment_methods || [];
       
       setAppliedCoupon({
@@ -412,6 +407,11 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     },
   ];
 
+  // Check if coupon is valid for current payment method
+  const couponMethodMismatch = appliedCoupon?.payment_methods && 
+    appliedCoupon.payment_methods.length > 0 && 
+    !appliedCoupon.payment_methods.includes(paymentMethod);
+
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
     ? selectedInstallment?.totalAmount || discountedPrice
@@ -581,6 +581,12 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                 </button>
               ))}
             </div>
+            {couponMethodMismatch && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>O cupom <strong>{appliedCoupon?.code}</strong> não é válido para esta forma de pagamento.</span>
+              </div>
+            )}
           </div>
 
           {/* Coupon Code */}
@@ -795,7 +801,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
           <Button 
             onClick={handleSubmit} 
             className="w-full h-12 text-base gap-2 shadow-lg" 
-            disabled={loading || loadingConfig}
+            disabled={loading || loadingConfig || couponMethodMismatch}
           >
             {loading ? (
               <>
