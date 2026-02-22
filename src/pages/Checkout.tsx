@@ -61,6 +61,8 @@ export default function Checkout() {
   useEffect(() => {
     if (user && courseId) {
       checkEnrollment();
+      // Promote lead to "opportunity" when visiting checkout
+      supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
     }
   }, [user, courseId]);
 
