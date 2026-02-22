@@ -96,6 +96,10 @@ Deno.serve(async (req) => {
       const normalizedEmail = email?.toLowerCase().trim();
       if (!normalizedEmail) throw new Error("Email é obrigatório");
 
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(normalizedEmail)) throw new Error("Formato de email inválido");
+
       const { data: imported } = await supabaseAdmin
         .from("imported_users")
         .select("id, full_name, status")
@@ -125,6 +129,8 @@ Deno.serve(async (req) => {
     if (action === "send_magic_link") {
       const normalizedEmail = email?.toLowerCase().trim();
       if (!normalizedEmail) throw new Error("Email é obrigatório");
+      const magicLinkEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!magicLinkEmailRegex.test(normalizedEmail)) throw new Error("Formato de email inválido");
 
       // Verify email in imported_users
       const { data: imported } = await supabaseAdmin

@@ -267,10 +267,25 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify caller is authenticated (internal service calls use anon key + auth header)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { action, to, data }: EmailRequest = await req.json();
 
     if (!action || !to) {
       throw new Error("Missing required fields: action, to");
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      throw new Error("Invalid email address");
     }
 
     let html: string;
