@@ -18,6 +18,7 @@ type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
 interface DailyData {
   date: string;
   revenue: number;
+  sales: number;
 }
 
 const periodOptions: { value: Period; label: string }[] = [
@@ -33,6 +34,10 @@ const periodOptions: { value: Period; label: string }[] = [
 const chartConfig = {
   revenue: {
     label: 'Faturamento',
+    color: 'hsl(var(--primary))',
+  },
+  sales: {
+    label: 'Vendas',
     color: 'hsl(var(--primary))',
   },
 } satisfies ChartConfig;
@@ -91,15 +96,18 @@ export default function DashboardRevenueChart() {
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
 
-      const dayRevenue = orders?.filter(order => {
+      const dayOrders = orders?.filter(order => {
         if (!order.paid_at) return false;
         const paidAt = new Date(order.paid_at);
         return paidAt >= dayStart && paidAt <= dayEnd;
-      }).reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+      }) || [];
+
+      const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.amount || 0), 0);
 
       chartData.push({
-        date: format(date, days > 30 ? 'dd/MM' : 'dd/MM', { locale: ptBR }),
-        revenue: dayRevenue / 100, // Convert to BRL
+        date: format(date, 'dd/MM', { locale: ptBR }),
+        revenue: dayRevenue / 100,
+        sales: dayOrders.length,
       });
     }
 
@@ -202,9 +210,22 @@ export default function DashboardRevenueChart() {
               tickFormatter={(value) => formatCurrency(value)}
               width={55}
             />
-            <ChartTooltip 
-              content={<ChartTooltipContent />}
-              formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value, name) => {
+                    if (name === 'revenue') return [formatCurrency(value as number), 'Faturamento'];
+                    if (name === 'sales') return [`${value} venda${(value as number) !== 1 ? 's' : ''}`, 'Vendas'];
+                    return [String(value), String(name)];
+                  }}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="sales"
+              stroke="transparent"
+              fill="transparent"
             />
             <Area
               type="monotone"
