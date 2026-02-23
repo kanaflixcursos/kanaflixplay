@@ -40,7 +40,6 @@ interface JourneyEvent {
 const eventConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string; bg: string }> = {
   page_view: { icon: Eye, label: 'Visualizou página', color: 'text-muted-foreground', bg: 'bg-muted' },
   signup: { icon: UserPlus, label: 'Cadastro', color: 'text-chart-3', bg: 'bg-chart-3/15' },
-  login: { icon: LogIn, label: 'Login', color: 'text-primary', bg: 'bg-primary/15' },
   checkout_started: { icon: ShoppingCart, label: 'Checkout iniciado', color: 'text-warning', bg: 'bg-warning/15' },
   checkout_completed: { icon: CheckCircle, label: 'Compra concluída', color: 'text-success', bg: 'bg-success/15' },
   checkout_abandoned: { icon: XCircle, label: 'Checkout abandonado', color: 'text-destructive', bg: 'bg-destructive/15' },
@@ -106,6 +105,7 @@ export default function CustomerJourneyTimeline({
     if (utmFilter !== 'all') {
       query = query.eq('utm_source', utmFilter);
     }
+    query = query.neq('event_type', 'login');
 
     const { data } = await query;
     setEvents((data as JourneyEvent[]) || []);
