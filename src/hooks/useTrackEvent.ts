@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { getStoredUtm } from '@/lib/utm';
+import { captureUtmParams, getStoredUtm } from '@/lib/utm';
 import type { Json } from '@/integrations/supabase/types';
 
 const VISITOR_KEY = 'kanaflix_visitor_id';
@@ -28,6 +28,9 @@ export async function trackEvent(
   pagePath?: string,
   userId?: string
 ) {
+  // Always capture latest UTM params before tracking
+  captureUtmParams();
+  
   const visitorId = getVisitorId();
   const utm = getStoredUtm();
 
