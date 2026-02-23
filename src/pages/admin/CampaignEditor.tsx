@@ -37,6 +37,7 @@ type Campaign = {
   id: string;
   name: string;
   subject: string;
+  tag: string | null;
   html_content: string;
   status: string;
   target_type: string;
@@ -166,6 +167,8 @@ export default function CampaignEditor() {
   // Form state
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
+  const [campaignTag, setCampaignTag] = useState('');
+  const [tagManuallyEdited, setTagManuallyEdited] = useState(false);
   const [targetType, setTargetType] = useState('leads');
   const [targetStatus, setTargetStatus] = useState('all');
   const [targetTag, setTargetTag] = useState('');
@@ -188,6 +191,8 @@ export default function CampaignEditor() {
       setCampaign(c);
       setName(c.name);
       setSubject(c.subject);
+      setCampaignTag(c.tag || '');
+      setTagManuallyEdited(true); // Don't auto-generate for existing campaigns
       setTargetType(c.target_type);
       setTargetStatus(c.target_filters?.status || 'all');
       setTargetTag(c.target_filters?.tag || '');
@@ -232,6 +237,7 @@ export default function CampaignEditor() {
     const payload = {
       name,
       subject,
+      tag: campaignTag || null,
       html_content: finalHtml,
       target_type: targetType,
       target_filters: filters,
@@ -289,7 +295,7 @@ export default function CampaignEditor() {
               body: {
                 action: 'campaign',
                 to: r.email,
-                data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id },
+                data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id, campaignTag: campaign.tag || '' },
               },
             })
           )
@@ -384,11 +390,25 @@ export default function CampaignEditor() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <Label className="text-xs">Nome da Campanha</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
+              <Input value={name} onChange={e => {
+                const newName = e.target.value;
+                setName(newName);
+                if (!tagManuallyEdited) {
+                  setCampaignTag(newName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                }
+              }} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
             </div>
             <div>
               <Label className="text-xs">Assunto do Email</Label>
               <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Ex: 🔥 Oferta especial" className="h-9" disabled={!isDraft} />
+            </div>
+            <div>
+              <Label className="text-xs">Tag de Rastreamento</Label>
+              <Input value={campaignTag} onChange={e => {
+                setCampaignTag(e.target.value);
+                setTagManuallyEdited(true);
+              }} placeholder="ex: black-friday-2026" className="h-9 font-mono text-xs" disabled={!isDraft} />
+              <p className="text-[10px] text-muted-foreground mt-0.5">Usada como utm_campaign nos links</p>
             </div>
             <div>
               <Label className="text-xs">Público-alvo</Label>

@@ -338,12 +338,24 @@ Deno.serve(async (req) => {
         break;
 
       case 'campaign': {
-        const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string };
+        const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string; campaignTag?: string };
         subject = campaignData.subject || 'Novidades - Kanaflix Play';
         // Strip embedded blocks JSON comment and replace variables
-        const campaignContent = campaignData.htmlContent
+        let campaignContent = campaignData.htmlContent
           .replace(/<!-- BLOCKS:[\s\S]*? -->/g, '')
           .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
+        
+        // Append UTM params to all href links in CTA buttons if campaign has a tag
+        if (campaignData.campaignTag) {
+          const utmParams = `utm_source=email&utm_medium=campaign&utm_campaign=${encodeURIComponent(campaignData.campaignTag)}`;
+          campaignContent = campaignContent.replace(
+            /href="(https?:\/\/[^"]+)"/g,
+            (_match: string, url: string) => {
+              const separator = url.includes('?') ? '&' : '?';
+              return `href="${url}${separator}${utmParams}"`;
+            }
+          );
+        }
         
         // Add tracking pixel if campaignId is provided
         const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
