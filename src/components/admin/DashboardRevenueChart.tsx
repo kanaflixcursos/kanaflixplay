@@ -129,11 +129,11 @@ export default function DashboardRevenueChart() {
       <Card className="overflow-hidden h-full">
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
+            <CardTitle className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
                 <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <span className="truncate">Gráfico de Faturamento</span>
+              <span className="stat-card-label">Gráfico de Faturamento</span>
             </CardTitle>
             <div className="flex flex-wrap gap-1">
               {periodOptions.map((option) => (
@@ -161,11 +161,11 @@ export default function DashboardRevenueChart() {
     <Card className="overflow-hidden h-full">
       <CardHeader className="p-4 sm:p-6">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-            </div>
-            <span className="truncate">Gráfico de Faturamento</span>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              </div>
+              <span className="stat-card-label">Gráfico de Faturamento</span>
           </CardTitle>
           <div className="flex flex-wrap gap-1">
             {periodOptions.map((option) => (
