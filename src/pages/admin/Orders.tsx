@@ -274,7 +274,7 @@ export default function AdminOrders() {
                   <div className="p-2 rounded-xl bg-primary/10">
                     <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Receita Total</span>
+                  <span className="stat-card-label">Receita Total</span>
                 </div>
                 {a && <PercentBadge current={a.revenue.gross} previous={a.revenue.previousGross} />}
               </div>
@@ -301,7 +301,7 @@ export default function AdminOrders() {
                   <div className="p-2 rounded-xl bg-chart-3/10">
                     <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Pedidos</span>
+                  <span className="stat-card-label">Total de Pedidos</span>
                 </div>
                 {a && <PercentBadge current={a.orders.current.total} previous={a.orders.previous.total} />}
               </div>
@@ -339,7 +339,7 @@ export default function AdminOrders() {
                   <div className="p-2 rounded-xl bg-chart-4/10">
                     <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Ticket Médio</span>
+                  <span className="stat-card-label">Ticket Médio</span>
                 </div>
                 {a && <PercentBadge current={a.avgTicket.current} previous={a.avgTicket.previous} />}
               </div>
@@ -380,7 +380,7 @@ export default function AdminOrders() {
                   <div className="p-2 rounded-xl bg-chart-5/10">
                     <Target className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5" />
                   </div>
-                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Origem de Vendas</span>
+                  <span className="stat-card-label">Origem de Vendas</span>
                 </div>
                 {a && <PercentBadge current={a.salesOrigin.totalConverted} previous={a.salesOrigin.previousTotalConverted} />}
               </div>

@@ -50,7 +50,7 @@ export default function DashboardCoursesCard() {
               <div className="p-2.5 rounded-xl bg-chart-4/10">
                 <BookOpen className="h-5 w-5 text-chart-4" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Total de Cursos</span>
+              <span className="stat-card-label">Total de Cursos</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
               <Clock className="h-3 w-3" />
@@ -61,7 +61,7 @@ export default function DashboardCoursesCard() {
             <StatCardSkeleton />
           ) : (
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+              <p className="stat-card-value">
                 {totalCourses.toLocaleString('pt-BR')}
               </p>
               {lastCourse && (

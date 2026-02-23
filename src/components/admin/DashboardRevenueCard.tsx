@@ -131,7 +131,7 @@ export default function DashboardRevenueCard() {
               <div className="p-2.5 rounded-xl bg-primary/10">
                 <DollarSign className="h-5 w-5 text-primary" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Receita Total</span>
+              <span className="stat-card-label">Receita Total</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-success font-medium bg-success/10 px-2 py-1 rounded-full">
               <TrendingUp className="h-3 w-3" />
@@ -143,7 +143,7 @@ export default function DashboardRevenueCard() {
           ) : (
             <>
               <div className="space-y-1 mb-4">
-                <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+                <p className="stat-card-value">
                   {formatCurrency(grossRevenue)}
                 </p>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">

@@ -49,7 +49,7 @@ export default function DashboardStudentsCard() {
               <div className="p-2.5 rounded-xl bg-chart-3/10">
                 <Users className="h-5 w-5 text-chart-3" />
               </div>
-              <span className="text-sm font-medium text-muted-foreground">Total de Alunos</span>
+              <span className="stat-card-label">Total de Alunos</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-success font-medium bg-success/10 px-2 py-1 rounded-full">
               <UserCheck className="h-3 w-3" />
@@ -60,7 +60,7 @@ export default function DashboardStudentsCard() {
             <StatCardSkeleton />
           ) : (
             <div className="space-y-1">
-              <p className="text-2xl sm:text-3xl font-bold tracking-tight">
+              <p className="stat-card-value">
                 {totalStudents.toLocaleString('pt-BR')}
               </p>
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
