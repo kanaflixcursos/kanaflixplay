@@ -33,6 +33,9 @@ type Lead = {
   tags: string[];
   created_at: string;
   form_id: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
 };
 
 const statusMap = leadStatusMap;
@@ -112,9 +115,9 @@ export default function MarketingLeads() {
 
   const handleExportCSV = () => {
     if (!leads.length) return;
-    const header = 'Nome,Email,Telefone,Status,Origem,Tags,Data\n';
+    const header = 'Nome,Email,Telefone,Status,Origem,UTM Source,UTM Medium,UTM Campaign,Tags,Data\n';
     const rows = leads.map(l =>
-      `"${l.name || ''}","${l.email}","${l.phone || ''}","${l.status}","${l.source}","${(l.tags || []).join('; ')}","${format(new Date(l.created_at), 'dd/MM/yyyy HH:mm')}"`
+      `"${l.name || ''}","${l.email}","${l.phone || ''}","${l.status}","${l.source}","${l.utm_source || ''}","${l.utm_medium || ''}","${l.utm_campaign || ''}","${(l.tags || []).join('; ')}","${format(new Date(l.created_at), 'dd/MM/yyyy HH:mm')}"`
     ).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -346,6 +349,7 @@ export default function MarketingLeads() {
                     <TableHead>Email</TableHead>
                     <TableHead>Telefone</TableHead>
                     <TableHead>Origem</TableHead>
+                    <TableHead>UTM</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
@@ -365,6 +369,18 @@ export default function MarketingLeads() {
                       <TableCell>{lead.phone || '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">{lead.source}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {lead.utm_source ? (
+                          <div className="flex flex-col gap-0.5">
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
+                            {lead.utm_campaign && (
+                              <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{lead.utm_campaign}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">

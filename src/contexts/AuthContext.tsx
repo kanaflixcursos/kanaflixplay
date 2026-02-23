@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getStoredUtm, clearStoredUtm } from '@/lib/utm';
+import { trackEvent } from '@/hooks/useTrackEvent';
 
 type UserRole = 'admin' | 'student' | null;
 
@@ -55,9 +57,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateLastSeen = async (userId: string) => {
+    const utm = getStoredUtm();
+    const updateData: Record<string, string> = { last_seen_at: new Date().toISOString() };
+    
+    // First-touch UTM attribution: only set if profile doesn't have UTM yet
+    if (utm.utm_source) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('utm_source')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!profile?.utm_source) {
+        updateData.utm_source = utm.utm_source;
+        if (utm.utm_medium) updateData.utm_medium = utm.utm_medium;
+        if (utm.utm_campaign) updateData.utm_campaign = utm.utm_campaign;
+        clearStoredUtm();
+      }
+    }
+    
     await supabase
       .from('profiles')
-      .update({ last_seen_at: new Date().toISOString() })
+      .update(updateData)
       .eq('user_id', userId);
   };
 
@@ -74,10 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Handle redirect after email confirmation
           if (event === 'SIGNED_IN') {
+            trackEvent('login', {}, undefined, session.user.id);
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
               localStorage.removeItem('kanaflix_redirect_after_confirm');
-              // Small delay to ensure everything is set up
               setTimeout(() => {
                 window.location.href = redirectAfterConfirm;
               }, 100);
