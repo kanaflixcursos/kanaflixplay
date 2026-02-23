@@ -1,4 +1,5 @@
 const UTM_STORAGE_KEY = 'kanaflix_utm';
+const LANDING_URL_KEY = 'kanaflix_landing_url';
 
 export interface UtmParams {
   utm_source?: string;
@@ -29,6 +30,8 @@ export function captureUtmParams(): UtmParams {
   const existing = getStoredUtm();
   if (!existing.utm_source && params.utm_source) {
     localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(params));
+    // Save landing URL so we can redirect back after signup/email confirmation
+    localStorage.setItem(LANDING_URL_KEY, window.location.pathname + window.location.search);
   }
 
   return params;
@@ -44,7 +47,13 @@ export function getStoredUtm(): UtmParams {
   }
 }
 
+/** Get the landing URL captured with UTMs */
+export function getStoredLandingUrl(): string | null {
+  return localStorage.getItem(LANDING_URL_KEY);
+}
+
 /** Clear stored UTM (after attribution to profile) */
 export function clearStoredUtm() {
   localStorage.removeItem(UTM_STORAGE_KEY);
+  localStorage.removeItem(LANDING_URL_KEY);
 }
