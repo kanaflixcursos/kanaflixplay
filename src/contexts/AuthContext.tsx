@@ -12,7 +12,7 @@ interface AuthContextType {
   profileComplete: boolean | null;
   recheckProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, redirectTo?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => {
     // Check if email already exists in profiles
     const { data: existingProfile } = await supabase
       .from('profiles')
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: email.toLowerCase().trim(),
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, phone, birth_date: birthDate },
         emailRedirectTo: emailRedirectUrl,
       },
     });
@@ -147,6 +147,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Supabase returns a user with identities = [] if email already exists
     if (data?.user && data.user.identities?.length === 0) {
       return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
+    }
+
+    // Update profile with phone and birth_date after signup
+    if (!error && data?.user && phone && birthDate) {
+      await supabase
+        .from('profiles')
+        .update({ phone, birth_date: birthDate })
+        .eq('user_id', data.user.id);
     }
 
     return { error };

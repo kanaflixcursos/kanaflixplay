@@ -62,6 +62,7 @@ const statusColors: Record<string, string> = {
   canceled: 'bg-muted text-muted-foreground border-muted-foreground/30',
   refunded: 'bg-muted text-muted-foreground border-muted-foreground/30',
   chargedback: 'bg-destructive/20 text-destructive border-destructive/30',
+  free: 'bg-primary/20 text-primary border-primary/30',
 };
 
 const statusLabels: Record<string, string> = {
@@ -71,6 +72,7 @@ const statusLabels: Record<string, string> = {
   canceled: 'Cancelado',
   refunded: 'Reembolsado',
   chargedback: 'Estornado',
+  free: 'Gratuito',
 };
 
 export const formatCurrency = (value: number) =>
@@ -228,20 +230,22 @@ export default function SalesTable({
 
             <p className="text-sm font-medium truncate">{sale.course_title || '—'}</p>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold text-foreground text-sm">{formatCurrency(sale.amount)}</span>
-                <span className="text-xs text-muted-foreground ml-1.5">
-                  Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
-                </span>
+            {sale.status !== 'free' && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-foreground text-sm">{formatCurrency(sale.amount)}</span>
+                  <span className="text-xs text-muted-foreground ml-1.5">
+                    Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
+                  </span>
+                </div>
+                {sale.payment_method && (
+                  <Badge variant="outline" className="text-xs px-2 py-0.5 gap-1">
+                    {paymentMethodIcons[sale.payment_method]}
+                    {paymentMethodLabels[sale.payment_method] || sale.payment_method}
+                  </Badge>
+                )}
               </div>
-              {sale.payment_method && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5 gap-1">
-                  {paymentMethodIcons[sale.payment_method]}
-                  {paymentMethodLabels[sale.payment_method] || sale.payment_method}
-                </Badge>
-              )}
-            </div>
+            )}
 
             <div className="flex items-center justify-between pt-1 border-t">
               <span className="text-xs text-muted-foreground">
@@ -251,7 +255,7 @@ export default function SalesTable({
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedSale(sale)}>
                   <Eye className="h-3.5 w-3.5" />
                 </Button>
-                {sale.status === 'paid' && (
+                {sale.status !== 'free' && sale.status === 'paid' && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-warning hover:text-warning hover:bg-warning/10">
@@ -284,7 +288,7 @@ export default function SalesTable({
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-                {sale.status === 'pending' && (
+                {sale.status !== 'free' && sale.status === 'pending' && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -319,14 +323,18 @@ export default function SalesTable({
             {sales.map((sale) => (
               <TableRow key={sale.id}>
                 <TableCell className="pl-4 sm:pl-6">
-                  <button
-                    onClick={() => copyId(sale.id)}
-                    className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1.5 group"
-                    title="Clique para copiar o ID completo"
-                  >
-                    {sale.id.slice(0, 8)}…
-                    <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
+                  {sale.status === 'free' ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : (
+                    <button
+                      onClick={() => copyId(sale.id)}
+                      className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer flex items-center gap-1.5 group"
+                      title="Clique para copiar o ID completo"
+                    >
+                      {sale.id.slice(0, 8)}…
+                      <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">
                   <Link
@@ -348,15 +356,21 @@ export default function SalesTable({
                   {sale.course_title || '—'}
                 </TableCell>
                 <TableCell className="text-sm whitespace-nowrap">
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-foreground">{formatCurrency(sale.amount)}</span>
-                    <span className="text-xs text-muted-foreground">
-                      Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
-                    </span>
-                  </div>
+                  {sale.status === 'free' ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : (
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-foreground">{formatCurrency(sale.amount)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Líq. {formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}
+                      </span>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {sale.payment_method ? (
+                  {sale.status === 'free' ? (
+                    <span className="text-muted-foreground">—</span>
+                  ) : sale.payment_method ? (
                     <Badge variant="outline" className="text-xs px-2 py-0.5 gap-1">
                       {paymentMethodIcons[sale.payment_method]}
                       {paymentMethodLabels[sale.payment_method] || sale.payment_method}
@@ -376,7 +390,7 @@ export default function SalesTable({
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSale(sale)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    {sale.status === 'paid' && (
+                    {sale.status !== 'free' && sale.status === 'paid' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -414,7 +428,7 @@ export default function SalesTable({
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
-                    {sale.status === 'pending' && (
+                    {sale.status !== 'free' && sale.status === 'pending' && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -530,8 +544,7 @@ export default function SalesTable({
                 </div>
               )}
 
-              {/* Action buttons in dialog */}
-              {(selectedSale.status === 'paid' || selectedSale.status === 'pending') && (
+              {selectedSale.status !== 'free' && (selectedSale.status === 'paid' || selectedSale.status === 'pending') && (
                 <div className="flex gap-2 pt-2 border-t">
                   {selectedSale.status === 'paid' && (
                     <AlertDialog>

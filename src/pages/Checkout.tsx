@@ -158,6 +158,20 @@ export default function Checkout() {
           throw error;
         }
       } else {
+        // Create a free order record
+        const orderId = `free_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await supabase
+          .from('orders')
+          .insert({
+            id: orderId,
+            user_id: user.id,
+            course_id: courseId,
+            amount: 0,
+            status: 'free',
+            payment_method: null,
+            paid_at: new Date().toISOString(),
+          });
+
         setIsEnrolled(true);
         toast.success('Matrícula realizada com sucesso!');
       }

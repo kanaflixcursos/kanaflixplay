@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -8,8 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, role, loading, profileComplete } = useAuth();
-  const location = useLocation();
+  const { user, role, loading } = useAuth();
 
   if (loading) {
     return (
@@ -26,11 +25,6 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   // Redirect imported users to onboarding
   if (user.user_metadata?.needs_onboarding) {
     return <Navigate to="/onboarding" replace />;
-  }
-
-  // Redirect users with incomplete profile (skip for admins)
-  if (profileComplete === false && role !== 'admin' && location.pathname !== '/complete-profile') {
-    return <Navigate to="/complete-profile" replace />;
   }
 
   if (requiredRole && role !== requiredRole) {

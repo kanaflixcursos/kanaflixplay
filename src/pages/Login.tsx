@@ -9,9 +9,10 @@ import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Separator } from '@/components/ui/separator';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
 import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { motion } from 'framer-motion';
+import PhoneInput from '@/components/PhoneInput';
 
 export default function Login() {
   useTrackVisit('/login');
@@ -21,6 +22,8 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>('signin');
@@ -97,6 +100,17 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!phone.trim()) {
+      toast.error('Informe seu número de WhatsApp');
+      return;
+    }
+
+    if (!birthDate) {
+      toast.error('Informe sua data de nascimento');
+      return;
+    }
+
     setIsLoading(true);
     
     // Store redirect URL before signup
@@ -104,7 +118,7 @@ export default function Login() {
       localStorage.setItem('kanaflix_redirect_after_confirm', redirectTo);
     }
     
-    const { error } = await signUp(email, password, fullName, redirectTo);
+    const { error } = await signUp(email, password, fullName, redirectTo, phone, birthDate);
     
     if (error) {
       toast.error('Erro ao criar conta: ' + error.message);
@@ -474,6 +488,38 @@ export default function Login() {
                       <Eye className="h-4 w-4" />
                     )}
                   </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signupPhone" className="text-sm font-medium">
+                  WhatsApp <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <PhoneInput
+                    id="signupPhone"
+                    value={phone}
+                    onChange={setPhone}
+                    className="pl-10 h-11"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signupBirthDate" className="text-sm font-medium">
+                  Data de Nascimento <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signupBirthDate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="pl-10 h-11"
+                    required
+                  />
                 </div>
               </div>
 

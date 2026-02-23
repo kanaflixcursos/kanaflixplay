@@ -55,6 +55,7 @@ const statusConfig: Record<string, { label: string; className: string; icon: Rea
   failed: { label: 'Falhou', className: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
   refunded: { label: 'Reembolsado', className: 'bg-primary/15 text-primary border-primary/30', icon: AlertCircle },
   canceled: { label: 'Cancelado', className: 'bg-destructive/15 text-destructive border-destructive/30', icon: XCircle },
+  free: { label: 'Gratuito', className: 'bg-primary/15 text-primary border-primary/30', icon: CheckCircle2 },
 };
 
 const paymentMethodConfig: Record<string, { label: string; icon: React.ElementType }> = {

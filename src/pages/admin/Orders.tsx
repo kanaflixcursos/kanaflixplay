@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock, CalendarIcon, X } from 'lucide-react';
+import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock, CalendarIcon, X, Gift } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,7 @@ interface OrderStats {
   canceled: number;
   pending: number;
   failed: number;
+  free: number;
 }
 
 const CHART_COLORS = {
@@ -58,6 +59,15 @@ export default function AdminOrders() {
     setTotalCount(data.totalCount);
     setLoading(false);
     fetchOrderStats();
+    fetchFreeCount();
+  };
+
+  const fetchFreeCount = async () => {
+    const { count } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'free');
+    setOrderStats(prev => prev ? { ...prev, free: count || 0 } : null);
   };
 
   const fetchOrderStats = async () => {
@@ -198,10 +208,11 @@ export default function AdminOrders() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {[
           { label: 'Total de Pedidos', value: orderStats?.total ?? totalCount, icon: ShoppingCart, colorClass: 'primary' },
           { label: 'Pedidos Pagos', value: orderStats?.paid ?? 0, icon: CreditCard, colorClass: 'success' },
+          { label: 'Inscrições Gratuitas', value: orderStats?.free ?? 0, icon: Gift, colorClass: 'chart-2' },
           { label: 'Pedidos Pendentes', value: orderStats?.pending ?? 0, icon: Clock, colorClass: 'warning' },
           { label: 'Pedidos Estornados', value: orderStats?.refunded ?? 0, icon: RotateCcw, colorClass: 'muted-foreground' },
           { label: 'Pedidos Cancelados', value: orderStats?.canceled ?? 0, icon: XCircle, colorClass: 'destructive' },
@@ -263,6 +274,7 @@ export default function AdminOrders() {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="free">Gratuito</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="failed">Falhou</SelectItem>
                   <SelectItem value="canceled">Cancelado</SelectItem>
