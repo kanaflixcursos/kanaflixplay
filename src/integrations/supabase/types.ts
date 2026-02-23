@@ -439,6 +439,10 @@ export type Database = {
           status: string
           tags: string[]
           updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           converted_at?: string | null
@@ -453,6 +457,10 @@ export type Database = {
           status?: string
           tags?: string[]
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           converted_at?: string | null
@@ -467,6 +475,10 @@ export type Database = {
           status?: string
           tags?: string[]
           updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {
@@ -797,6 +809,9 @@ export type Database = {
           phone: string | null
           updated_at: string
           user_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -809,6 +824,9 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -821,6 +839,9 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -910,18 +931,36 @@ export type Database = {
         Row: {
           id: string
           page_path: string
+          referrer: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           visited_at: string
           visitor_id: string
         }
         Insert: {
           id?: string
           page_path?: string
+          referrer?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visited_at?: string
           visitor_id: string
         }
         Update: {
           id?: string
           page_path?: string
+          referrer?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           visited_at?: string
           visitor_id?: string
         }
@@ -1027,6 +1066,45 @@ export type Database = {
           subject?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_events: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          page_path: string | null
+          user_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          page_path?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          user_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          visitor_id?: string
         }
         Relationships: []
       }
