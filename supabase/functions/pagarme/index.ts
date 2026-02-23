@@ -113,6 +113,22 @@ Deno.serve(async (req) => {
         }
         return handleGetOrderStats(PAGARME_API_KEY, adminSupabase);
       }
+      case 'get_orders_analytics': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+        return handleGetOrdersAnalytics(adminSupabase);
+      }
+      case 'get_order_details': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+        return handleGetOrderDetails(payload, PAGARME_API_KEY, adminSupabase);
+      }
       case 'refund_order': {
         if (!(await checkAdmin())) {
           return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
@@ -1348,5 +1364,237 @@ async function handleCancelOrder(
   }), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+}
+
+async function handleGetOrdersAnalytics(supabase: any) {
+  try {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    // Fetch all orders with course info
+    const { data: allOrders, error } = await supabase
+      .from('orders')
+      .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, installments, courses(title)');
+
+    if (error) throw error;
+
+    const orders = allOrders || [];
+
+    // Split into current (last 30d) and previous (30-60d) periods
+    const current = orders.filter((o: any) => new Date(o.created_at) >= thirtyDaysAgo);
+    const previous = orders.filter((o: any) => {
+      const d = new Date(o.created_at);
+      return d >= sixtyDaysAgo && d < thirtyDaysAgo;
+    });
+
+    // --- Card 1: Revenue ---
+    const GATEWAY_FEE = 70;
+    const calcNet = (amount: number, pm: string | null) => {
+      switch (pm) {
+        case 'pix': return amount - Math.round(amount * 0.79 / 100) - GATEWAY_FEE;
+        case 'boleto': return amount - 279 - GATEWAY_FEE;
+        default: return amount - GATEWAY_FEE;
+      }
+    };
+
+    const paidCurrent = current.filter((o: any) => o.status === 'paid');
+    const paidPrevious = previous.filter((o: any) => o.status === 'paid');
+    
+    const grossCurrent = paidCurrent.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+    const grossPrevious = paidPrevious.reduce((s: number, o: any) => s + (o.amount || 0), 0);
+    const netCurrent = paidCurrent.reduce((s: number, o: any) => s + calcNet(o.amount || 0, o.payment_method), 0);
+
+    // --- Card 2: Order stats ---
+    const countByStatus = (list: any[]) => ({
+      total: list.length,
+      paid: list.filter((o: any) => o.status === 'paid').length,
+      pending: list.filter((o: any) => o.status === 'pending').length,
+      refunded: list.filter((o: any) => o.status === 'refunded' || o.status === 'chargedback').length,
+      canceled: list.filter((o: any) => o.status === 'canceled').length,
+      free: list.filter((o: any) => o.status === 'free').length,
+    });
+    const statsCurrent = countByStatus(current);
+    const statsPrevious = countByStatus(previous);
+
+    // --- Card 3: Average ticket (exclude free) ---
+    const paidAllTime = orders.filter((o: any) => o.status === 'paid' && o.amount > 0);
+    const avgTicketCurrent = paidCurrent.length > 0 ? Math.round(paidCurrent.reduce((s: number, o: any) => s + o.amount, 0) / paidCurrent.length) : 0;
+    const avgTicketPrevious = paidPrevious.length > 0 ? Math.round(paidPrevious.reduce((s: number, o: any) => s + o.amount, 0) / paidPrevious.length) : 0;
+
+    // Top selling courses (by count, exclude free)
+    const courseCount: Record<string, { title: string; count: number; revenue: number }> = {};
+    for (const o of paidAllTime) {
+      const cid = o.course_id;
+      if (!cid) continue;
+      if (!courseCount[cid]) courseCount[cid] = { title: o.courses?.title || 'Curso', count: 0, revenue: 0 };
+      courseCount[cid].count++;
+      courseCount[cid].revenue += o.amount || 0;
+    }
+    const topCourses = Object.values(courseCount).sort((a, b) => b.count - a.count).slice(0, 3);
+
+    // --- Card 4: Sales origin ---
+    // Check leads table for converted leads to determine checkout origin
+    const { data: leads } = await supabase
+      .from('leads')
+      .select('source, status')
+      .eq('status', 'converted');
+
+    const sourceCount: Record<string, number> = {};
+    for (const l of (leads || [])) {
+      sourceCount[l.source] = (sourceCount[l.source] || 0) + 1;
+    }
+    const topSources = Object.entries(sourceCount)
+      .map(([source, count]) => ({ source, count: count as number }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Payment method distribution (current period, paid only)
+    const pmCount: Record<string, number> = {};
+    for (const o of paidCurrent) {
+      const pm = o.payment_method || 'other';
+      pmCount[pm] = (pmCount[pm] || 0) + 1;
+    }
+    const pmPrevCount: Record<string, number> = {};
+    for (const o of paidPrevious) {
+      const pm = o.payment_method || 'other';
+      pmPrevCount[pm] = (pmPrevCount[pm] || 0) + 1;
+    }
+
+    const totalConverted = (leads || []).length;
+    const prevConverted = previous.filter((o: any) => o.status === 'paid' || o.status === 'free').length;
+
+    return new Response(JSON.stringify({
+      revenue: {
+        gross: grossCurrent,
+        net: Math.max(0, netCurrent),
+        previousGross: grossPrevious,
+      },
+      orders: {
+        current: statsCurrent,
+        previous: statsPrevious,
+      },
+      avgTicket: {
+        current: avgTicketCurrent,
+        previous: avgTicketPrevious,
+        topCourses,
+      },
+      salesOrigin: {
+        sources: topSources,
+        totalConverted,
+        paymentMethods: pmCount,
+        previousPaymentMethods: pmPrevCount,
+      },
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Error in get_orders_analytics:', error);
+    return new Response(JSON.stringify({ error: 'Failed to fetch analytics' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function handleGetOrderDetails(payload: any, apiKey: string, supabase: any) {
+  const { orderId } = payload;
+  if (!orderId) {
+    return new Response(JSON.stringify({ error: 'Order ID is required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('*, courses(title, thumbnail_url, price), discount_coupons(code, discount_type, discount_value)')
+    .eq('id', orderId)
+    .single();
+
+  if (error || !order) {
+    return new Response(JSON.stringify({ error: 'Order not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Get buyer profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, email, phone, avatar_url')
+    .eq('user_id', order.user_id)
+    .single();
+
+  // Try to get Pagar.me charge details if available
+  let chargeDetails = null;
+  if (order.pagarme_charge_id) {
+    try {
+      const authString = btoa(`${apiKey}:`);
+      const res = await fetch(`${PAGARME_API_URL}/charges/${order.pagarme_charge_id}`, {
+        headers: { 'Authorization': `Basic ${authString}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        chargeDetails = {
+          gateway_id: data.id,
+          gateway_status: data.status,
+          last_transaction: data.last_transaction ? {
+            id: data.last_transaction.id,
+            status: data.last_transaction.status,
+            acquirer_name: data.last_transaction.acquirer_name,
+            acquirer_tid: data.last_transaction.acquirer_tid,
+            acquirer_nsu: data.last_transaction.acquirer_nsu,
+            acquirer_auth_code: data.last_transaction.acquirer_auth_code,
+            brand: data.last_transaction.card?.brand,
+            last_four_digits: data.last_transaction.card?.last_four_digits,
+            installments: data.last_transaction.installments,
+          } : null,
+          created_at: data.created_at,
+          paid_at: data.paid_at,
+        };
+      }
+    } catch (err) {
+      console.error('Error fetching Pagar.me charge details:', err);
+    }
+  }
+
+  return new Response(JSON.stringify({
+    order: {
+      id: order.id,
+      amount: order.amount,
+      status: order.status,
+      payment_method: order.payment_method,
+      installments: order.installments,
+      paid_at: order.paid_at,
+      created_at: order.created_at,
+      failure_reason: order.failure_reason,
+      discount_amount: order.discount_amount,
+      pix_qr_code: order.pix_qr_code,
+      boleto_url: order.boleto_url,
+      boleto_barcode: order.boleto_barcode,
+    },
+    course: order.courses ? {
+      title: order.courses.title,
+      thumbnail_url: order.courses.thumbnail_url,
+      original_price: order.courses.price,
+    } : null,
+    coupon: order.discount_coupons ? {
+      code: order.discount_coupons.code,
+      discount_type: order.discount_coupons.discount_type,
+      discount_value: order.discount_coupons.discount_value,
+    } : null,
+    buyer: profile ? {
+      name: profile.full_name,
+      email: profile.email,
+      phone: profile.phone,
+      avatar_url: profile.avatar_url,
+    } : null,
+    gateway: chargeDetails,
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }
