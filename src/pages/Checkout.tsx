@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import pagarmeLogo from '@/assets/pagarme-logo.svg';
 import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { trackEvent } from '@/hooks/useTrackEvent';
@@ -52,6 +52,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
+  const hasTrackedCheckout = useRef(false);
 
   useEffect(() => {
     if (courseId) {
@@ -62,10 +63,14 @@ export default function Checkout() {
   useEffect(() => {
     if (user && courseId) {
       checkEnrollment();
-      // Promote lead to "opportunity" when visiting checkout
-      supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
-      // Track checkout started event
-      trackEvent('checkout_started', { course_id: courseId }, `/checkout/${courseId}`, user.id);
+      // Only track once per mount
+      if (!hasTrackedCheckout.current) {
+        hasTrackedCheckout.current = true;
+        // Promote lead to "opportunity" when visiting checkout
+        supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
+        // Track checkout started event
+        trackEvent('checkout_started', { course_id: courseId }, `/checkout/${courseId}`, user.id);
+      }
     }
   }, [user, courseId]);
 

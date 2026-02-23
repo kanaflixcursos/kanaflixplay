@@ -95,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Handle redirect after email confirmation
           if (event === 'SIGNED_IN') {
-            trackEvent('login', {}, undefined, session.user.id);
+            // Only track login for password-based sign-ins, not initial loads
+            trackEvent('login', {}, '/login', session.user.id);
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
               localStorage.removeItem('kanaflix_redirect_after_confirm');
