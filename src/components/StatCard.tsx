@@ -58,7 +58,7 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
             <Skeleton className="h-7 sm:h-9 w-20" />
           ) : (
             <>
-              <div className="stat-card-value text-xl sm:text-3xl truncate">{value}</div>
+              <div className="stat-card-value truncate">{value}</div>
               {description && (
                 <p className="stat-card-description text-[10px] sm:text-xs mt-0.5">{description}</p>
               )}
