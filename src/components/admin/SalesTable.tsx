@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -482,133 +483,8 @@ export default function SalesTable({
         </div>
       )}
 
-      {/* Details Dialog */}
-      <Dialog open={!!selectedSale} onOpenChange={() => setSelectedSale(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Compra</DialogTitle>
-          </DialogHeader>
-          {selectedSale && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Curso</p>
-                  <p className="font-medium">{selectedSale.course_title || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Valor</p>
-                  <p className="font-medium text-success">{formatCurrency(selectedSale.amount)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Comprador</p>
-                  <p className="font-medium">{selectedSale.user_name || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Email</p>
-                  <p className="font-medium truncate">{selectedSale.user_email || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Pagamento</p>
-                  <div className="flex items-center gap-1.5 font-medium">
-                    {selectedSale.payment_method && paymentMethodIcons[selectedSale.payment_method]}
-                    {selectedSale.payment_method
-                      ? paymentMethodLabels[selectedSale.payment_method] || selectedSale.payment_method
-                      : 'N/A'}
-                  </div>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <Badge variant="outline" className={statusColors[selectedSale.status] || ''}>
-                    {statusLabels[selectedSale.status] || selectedSale.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Criado em</p>
-                  <p className="font-medium">{format(new Date(selectedSale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-                </div>
-                {selectedSale.paid_at && (
-                  <div>
-                    <p className="text-muted-foreground">Pago em</p>
-                    <p className="font-medium">{format(new Date(selectedSale.paid_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Failure Reason */}
-              {selectedSale.status === 'failed' && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm">
-                  <p className="text-destructive font-medium mb-1">Motivo da falha</p>
-                  <p className="text-destructive/80 text-xs break-words">
-                    {selectedSale.failure_reason || 'Motivo não registrado. Pedidos anteriores à atualização do sistema não possuem detalhes da falha.'}
-                  </p>
-                </div>
-              )}
-
-              {selectedSale.status !== 'free' && (selectedSale.status === 'paid' || selectedSale.status === 'pending') && (
-                <div className="flex gap-2 pt-2 border-t">
-                  {selectedSale.status === 'paid' && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-warning border-warning/30 hover:bg-warning/10"
-                          disabled={refunding}
-                        >
-                          <RotateCcw className="h-4 w-4 mr-2" />
-                          Reembolsar
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2 text-warning">
-                            <RotateCcw className="h-5 w-5" />
-                            Confirmar Reembolso
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="space-y-2">
-                            <p>Você está prestes a iniciar o reembolso do pedido do curso <strong>{selectedSale.course_title}</strong>.</p>
-                            <p>Valor: <strong>{formatCurrency(selectedSale.amount)}</strong></p>
-                            <p className="text-muted-foreground">Um ticket de suporte será criado para acompanhar o processo.</p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleRefund(selectedSale)}
-                            disabled={refunding}
-                            className="bg-warning text-warning-foreground hover:bg-warning/90"
-                          >
-                            {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                            Confirmar Reembolso
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  {selectedSale.status === 'pending' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
-                      onClick={() => {
-                        const sale = selectedSale;
-                        setSelectedSale(null);
-                        setCancelingOrder(sale);
-                        setCancelDialogOpen(true);
-                      }}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Cancelar Pedido
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              <p className="text-[10px] text-muted-foreground">ID: {selectedSale.id}</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Details Dialog - Receipt */}
+      <OrderDetailModal sale={selectedSale} onClose={() => setSelectedSale(null)} onRefund={handleRefund} refunding={refunding} onCancel={(sale) => { setSelectedSale(null); setCancelingOrder(sale); setCancelDialogOpen(true); }} />
 
 
       {/* Cancel Dialog */}
@@ -634,6 +510,266 @@ export default function SalesTable({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+// Order Detail Receipt Modal
+interface OrderDetailModalProps {
+  sale: Sale | null;
+  onClose: () => void;
+  onRefund: (sale: Sale) => void;
+  refunding: boolean;
+  onCancel: (sale: Sale) => void;
+}
+
+interface OrderDetails {
+  order: any;
+  course: any;
+  coupon: any;
+  buyer: any;
+  gateway: any;
+}
+
+function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: OrderDetailModalProps) {
+  const [details, setDetails] = useState<OrderDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const fetchDetails = async (orderId: string) => {
+    setLoadingDetails(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: { action: 'get_order_details', orderId },
+      });
+      if (!error && data) setDetails(data);
+    } catch (e) {
+      console.error('Error fetching order details:', e);
+    }
+    setLoadingDetails(false);
+  };
+
+  // Fetch details when sale changes
+  if (sale && !details && !loadingDetails) {
+    fetchDetails(sale.id);
+  }
+
+  const handleClose = () => {
+    setDetails(null);
+    onClose();
+  };
+
+  const d = details;
+  const isFree = sale?.status === 'free';
+
+  return (
+    <Dialog open={!!sale} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg">Comprovante do Pedido</DialogTitle>
+        </DialogHeader>
+        {sale && (
+          <div className="space-y-4">
+            {/* Status Header */}
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className={`text-xs px-2.5 py-1 ${statusColors[sale.status] || ''}`}>
+                {statusLabels[sale.status] || sale.status}
+              </Badge>
+              {!isFree && (
+                <span className="text-xs text-muted-foreground font-mono">{sale.id.slice(0, 12)}…</span>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Course */}
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Produto</p>
+              <p className="font-medium text-sm">{sale.course_title || 'N/A'}</p>
+            </div>
+
+            {/* Buyer */}
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Comprador</p>
+              <p className="font-medium text-sm">{d?.buyer?.name || sale.user_name || 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">{d?.buyer?.email || sale.user_email || ''}</p>
+              {d?.buyer?.phone && <p className="text-xs text-muted-foreground">{d.buyer.phone}</p>}
+            </div>
+
+            <Separator />
+
+            {/* Financial */}
+            {!isFree && (
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Valores</p>
+                <div className="space-y-1.5 text-sm">
+                  {d?.course?.original_price != null && d.course.original_price !== sale.amount && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Preço original</span>
+                      <span>{formatCurrency(d.course.original_price)}</span>
+                    </div>
+                  )}
+                  {d?.coupon && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cupom ({d.coupon.code})</span>
+                      <span className="text-success">
+                        -{d.coupon.discount_type === 'percentage' ? `${d.coupon.discount_value}%` : formatCurrency(d.coupon.discount_value)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold">
+                    <span>Total cobrado</span>
+                    <span>{formatCurrency(sale.amount)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Receita líquida</span>
+                    <span className="text-success">{formatCurrency(calculateNetAmount(sale.amount, sale.payment_method))}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isFree && (
+              <div>
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Valor</p>
+                <p className="text-sm font-medium text-primary">Inscrição Gratuita</p>
+              </div>
+            )}
+
+            {/* Payment Info */}
+            {!isFree && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Pagamento</p>
+                  <div className="space-y-1.5 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Método</span>
+                      <div className="flex items-center gap-1.5">
+                        {sale.payment_method && paymentMethodIcons[sale.payment_method]}
+                        <span>{sale.payment_method ? (paymentMethodLabels[sale.payment_method] || sale.payment_method) : 'N/A'}</span>
+                      </div>
+                    </div>
+                    {sale.payment_method === 'credit_card' && (sale.amount > 0) && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Parcelas</span>
+                        <span>{d?.gateway?.last_transaction?.installments || d?.order?.installments || 1}x</span>
+                      </div>
+                    )}
+                    {d?.gateway?.last_transaction?.brand && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bandeira</span>
+                        <span className="capitalize">{d.gateway.last_transaction.brand} •••• {d.gateway.last_transaction.last_four_digits}</span>
+                      </div>
+                    )}
+                    {d?.gateway?.last_transaction?.acquirer_nsu && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">NSU</span>
+                        <span className="font-mono text-xs">{d.gateway.last_transaction.acquirer_nsu}</span>
+                      </div>
+                    )}
+                    {d?.gateway?.last_transaction?.acquirer_auth_code && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cód. Autorização</span>
+                        <span className="font-mono text-xs">{d.gateway.last_transaction.acquirer_auth_code}</span>
+                      </div>
+                    )}
+                    {d?.gateway?.last_transaction?.acquirer_tid && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">TID</span>
+                        <span className="font-mono text-xs">{d.gateway.last_transaction.acquirer_tid}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Dates */}
+            <Separator />
+            <div>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Datas</p>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Criado em</span>
+                  <span>{format(new Date(sale.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                </div>
+                {sale.paid_at && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pago em</span>
+                    <span>{format(new Date(sale.paid_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Failure Reason */}
+            {sale.status === 'failed' && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm">
+                <p className="text-destructive font-medium mb-1">Motivo da falha</p>
+                <p className="text-destructive/80 text-xs break-words">
+                  {sale.failure_reason || d?.order?.failure_reason || 'Motivo não registrado.'}
+                </p>
+              </div>
+            )}
+
+            {/* Gateway ID */}
+            {d?.gateway?.gateway_id && (
+              <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1">
+                <p>Gateway ID: {d.gateway.gateway_id}</p>
+                {d.gateway.last_transaction?.id && <p>Transação: {d.gateway.last_transaction.id}</p>}
+              </div>
+            )}
+
+            {/* Actions */}
+            {!isFree && (sale.status === 'paid' || sale.status === 'pending') && (
+              <div className="flex gap-2 pt-2 border-t">
+                {sale.status === 'paid' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex-1 text-warning border-warning/30 hover:bg-warning/10" disabled={refunding}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reembolsar
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-warning">
+                          <RotateCcw className="h-5 w-5" /> Confirmar Reembolso
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p>Reembolso do curso <strong>{sale.course_title}</strong>.</p>
+                          <p>Valor: <strong>{formatCurrency(sale.amount)}</strong></p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={refunding}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onRefund(sale)} disabled={refunding} className="bg-warning text-warning-foreground hover:bg-warning/90">
+                          {refunding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                          Confirmar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {sale.status === 'pending' && (
+                  <Button variant="outline" size="sm" className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => onCancel(sale)}>
+                    <XCircle className="h-4 w-4 mr-2" /> Cancelar Pedido
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {loadingDetails && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground ml-2">Carregando detalhes do gateway...</span>
+              </div>
+            )}
+
+            <p className="text-[10px] text-muted-foreground text-center pt-1">ID: {sale.id}</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

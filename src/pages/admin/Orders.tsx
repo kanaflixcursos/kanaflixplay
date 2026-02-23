@@ -5,35 +5,87 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ShoppingCart, CreditCard, Search, Loader2, RotateCcw, XCircle, Clock, CalendarIcon, X, Gift } from 'lucide-react';
+import {
+  ShoppingCart, DollarSign, TrendingUp, TrendingDown, Search, Loader2,
+  RotateCcw, XCircle, Clock, CalendarIcon, X, Gift, CreditCard, QrCode,
+  FileText, BarChart3, Target, Minus,
+} from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import SalesTable, { Sale, fetchSalesData } from '@/components/admin/SalesTable';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import SalesTable, { Sale, fetchSalesData, formatCurrency } from '@/components/admin/SalesTable';
 import { motion } from 'framer-motion';
-import DashboardRevenueCard from '@/components/admin/DashboardRevenueCard';
-
-interface OrderStats {
-  total: number;
-  paid: number;
-  refunded: number;
-  canceled: number;
-  pending: number;
-  failed: number;
-  free: number;
-}
-
-const CHART_COLORS = {
-  paid: 'hsl(var(--success))',
-  refunded: 'hsl(var(--warning))',
-  canceled: 'hsl(var(--destructive))',
-};
 
 const PAGE_SIZE = 20;
+
+interface AnalyticsData {
+  revenue: { gross: number; net: number; previousGross: number };
+  orders: {
+    current: { total: number; paid: number; pending: number; refunded: number; canceled: number; free: number };
+    previous: { total: number; paid: number; pending: number; refunded: number; canceled: number; free: number };
+  };
+  avgTicket: {
+    current: number;
+    previous: number;
+    topCourses: { title: string; count: number; revenue: number }[];
+  };
+  salesOrigin: {
+    sources: { source: string; count: number }[];
+    totalConverted: number;
+    paymentMethods: Record<string, number>;
+    previousPaymentMethods: Record<string, number>;
+  };
+}
+
+const sourceLabels: Record<string, string> = {
+  signup: 'Cadastro',
+  form: 'Formulário',
+  hotmart: 'Hotmart',
+  import: 'Importação',
+  manual: 'Manual',
+};
+
+const pmLabels: Record<string, string> = {
+  credit_card: 'Cartão',
+  pix: 'PIX',
+  boleto: 'Boleto',
+};
+
+const pmIcons: Record<string, React.ReactNode> = {
+  credit_card: <CreditCard className="h-3.5 w-3.5" />,
+  pix: <QrCode className="h-3.5 w-3.5" />,
+  boleto: <FileText className="h-3.5 w-3.5" />,
+};
+
+function PercentBadge({ current, previous }: { current: number; previous: number }) {
+  if (previous === 0 && current === 0) return null;
+  if (previous === 0) return (
+    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-[10px] gap-0.5 px-1.5 py-0 h-5">
+      <TrendingUp className="h-3 w-3" /> Novo
+    </Badge>
+  );
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct === 0) return (
+    <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px] gap-0.5 px-1.5 py-0 h-5">
+      <Minus className="h-3 w-3" /> 0%
+    </Badge>
+  );
+  const isUp = pct > 0;
+  return (
+    <Badge variant="outline" className={cn(
+      "text-[10px] gap-0.5 px-1.5 py-0 h-5",
+      isUp ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"
+    )}>
+      {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {isUp ? '+' : ''}{pct}%
+    </Badge>
+  );
+}
 
 export default function AdminOrders() {
   const [allSales, setAllSales] = useState<Sale[]>([]);
@@ -43,14 +95,12 @@ export default function AdminOrders() {
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
-  useEffect(() => {
-    loadAll();
-  }, [page]);
+  useEffect(() => { loadAll(); }, [page]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -58,29 +108,20 @@ export default function AdminOrders() {
     setAllSales(data.sales);
     setTotalCount(data.totalCount);
     setLoading(false);
-    fetchOrderStats();
-    fetchFreeCount();
+    fetchAnalytics();
   };
 
-  const fetchFreeCount = async () => {
-    const { count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'free');
-    setOrderStats(prev => prev ? { ...prev, free: count || 0 } : null);
-  };
-
-  const fetchOrderStats = async () => {
-    setStatsLoading(true);
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('pagarme', {
-        body: { action: 'get_order_stats' }
+        body: { action: 'get_orders_analytics' },
       });
-      if (!error && data?.stats) setOrderStats(data.stats);
-    } catch (error) {
-      console.error('Error fetching order stats:', error);
+      if (!error && data) setAnalytics(data);
+    } catch (e) {
+      console.error('Error fetching analytics:', e);
     }
-    setStatsLoading(false);
+    setAnalyticsLoading(false);
   };
 
   const filteredSales = allSales.filter(sale => {
@@ -92,7 +133,7 @@ export default function AdminOrders() {
       (sale.id?.toLowerCase().includes(term) || false);
     const matchesStatus = statusFilter === 'all' || sale.status === statusFilter;
     const matchesPayment = paymentFilter === 'all' || sale.payment_method === paymentFilter;
-    
+
     let matchesDate = true;
     if (dateFrom || dateTo) {
       const saleDate = sale.paid_at ? new Date(sale.paid_at) : new Date(sale.created_at);
@@ -113,16 +154,8 @@ export default function AdminOrders() {
     setDateTo(undefined);
   };
 
-  const chartData = useMemo(() => {
-    if (!orderStats) return [];
-    return [
-      { name: 'Pagos', value: orderStats.paid, color: CHART_COLORS.paid },
-      { name: 'Estornados', value: orderStats.refunded, color: CHART_COLORS.refunded },
-      { name: 'Cancelados', value: orderStats.canceled, color: CHART_COLORS.canceled },
-    ].filter(d => d.value > 0);
-  }, [orderStats]);
-
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const a = analytics;
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -131,118 +164,151 @@ export default function AdminOrders() {
         <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
       </div>
 
-      {/* Revenue + Chart row */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <DashboardRevenueCard />
-
-        {/* Distribution Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
-          className="h-full sm:col-span-1 lg:col-span-2"
-        >
-          <Card className="overflow-hidden relative h-full">
-            <CardContent className="p-4 sm:p-6 text-left">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-chart-3/10">
-                  <ShoppingCart className="h-5 w-5 text-chart-3" />
+      {/* Analytics Cards */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Receita Total */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0 }}>
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Receita Total</span>
                 </div>
-                <span className="text-sm font-medium text-muted-foreground">Distribuição de Pedidos</span>
+                {a && <PercentBadge current={a.revenue.gross} previous={a.revenue.previousGross} />}
               </div>
-
-              {statsLoading ? (
-                <div className="flex items-center justify-center h-[180px]">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : chartData.length === 0 ? (
-                <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
-                  Nenhum dado disponível
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={75}
-                      paddingAngle={4}
-                      dataKey="value"
-                      strokeWidth={0}
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string) => [`${value}`, name]}
-                      contentStyle={{
-                        borderRadius: '12px',
-                        border: '1px solid hsl(var(--border))',
-                        backgroundColor: 'hsl(var(--popover))',
-                        color: 'hsl(var(--popover-foreground))',
-                        fontSize: '13px',
-                        padding: '8px 12px',
-                        boxShadow: '0 4px 12px hsl(var(--foreground) / 0.08)',
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="middle"
-                      align="right"
-                      layout="vertical"
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: '13px' }}
-                      formatter={(value) => (
-                        <span style={{ color: 'hsl(var(--foreground))' }}>{value}</span>
-                      )}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+              {analyticsLoading ? (
+                <div className="space-y-2"><Skeleton className="h-8 w-28" /><Skeleton className="h-4 w-20" /></div>
+              ) : a ? (
+                <>
+                  <p className="text-xl sm:text-2xl font-bold tracking-tight">{formatCurrency(a.revenue.gross)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Líquido: <span className="font-medium text-success">{formatCurrency(a.revenue.net)}</span>
+                  </p>
+                </>
+              ) : <p className="text-muted-foreground text-sm">—</p>}
             </CardContent>
           </Card>
         </motion.div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        {[
-          { label: 'Total de Pedidos', value: orderStats?.total ?? totalCount, icon: ShoppingCart, colorClass: 'primary' },
-          { label: 'Pedidos Pagos', value: orderStats?.paid ?? 0, icon: CreditCard, colorClass: 'success' },
-          { label: 'Inscrições Gratuitas', value: orderStats?.free ?? 0, icon: Gift, colorClass: 'chart-2' },
-          { label: 'Pedidos Pendentes', value: orderStats?.pending ?? 0, icon: Clock, colorClass: 'warning' },
-          { label: 'Pedidos Estornados', value: orderStats?.refunded ?? 0, icon: RotateCcw, colorClass: 'muted-foreground' },
-          { label: 'Pedidos Cancelados', value: orderStats?.canceled ?? 0, icon: XCircle, colorClass: 'destructive' },
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 * (i + 2) }}
-            className="h-full"
-          >
-            <Card className="overflow-hidden relative h-full">
-              <CardContent className="p-4 sm:p-6 text-left">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2.5 rounded-xl bg-${stat.colorClass}/10`}>
-                    <stat.icon className={`h-5 w-5 text-${stat.colorClass}`} />
+        {/* Card 2: Total de Pedidos */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-chart-3/10">
+                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3" />
                   </div>
-                  <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total de Pedidos</span>
                 </div>
-                {statsLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <p className={`text-2xl font-bold ${stat.colorClass !== 'primary' ? `text-${stat.colorClass}` : ''}`}>
-                    {stat.value}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+                {a && <PercentBadge current={a.orders.current.total} previous={a.orders.previous.total} />}
+              </div>
+              {analyticsLoading ? (
+                <div className="space-y-2"><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-full" /></div>
+              ) : a ? (
+                <>
+                  <p className="text-xl sm:text-2xl font-bold tracking-tight">{a.orders.current.total}</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
+                    <span className="text-success">{a.orders.current.paid} pagos</span>
+                    <span className="text-warning">{a.orders.current.pending} pendentes</span>
+                    <span>{a.orders.current.refunded} estornados</span>
+                    <span className="text-destructive">{a.orders.current.canceled} cancelados</span>
+                    <span className="text-primary">{a.orders.current.free} gratuitos</span>
+                  </div>
+                </>
+              ) : <p className="text-muted-foreground text-sm">—</p>}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Card 3: Ticket Médio */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-chart-4/10">
+                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Ticket Médio</span>
+                </div>
+                {a && <PercentBadge current={a.avgTicket.current} previous={a.avgTicket.previous} />}
+              </div>
+              {analyticsLoading ? (
+                <div className="space-y-2"><Skeleton className="h-8 w-24" /><Skeleton className="h-4 w-full" /></div>
+              ) : a ? (
+                <>
+                  <p className="text-xl sm:text-2xl font-bold tracking-tight">{formatCurrency(a.avgTicket.current)}</p>
+                  {a.avgTicket.topCourses.length > 0 && (
+                    <div className="mt-1.5 space-y-0.5">
+                      {a.avgTicket.topCourses.map((c, i) => (
+                        <div key={i} className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground truncate max-w-[120px]">{c.title}</span>
+                          <span className="font-medium text-foreground shrink-0">{c.count} vendas</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : <p className="text-muted-foreground text-sm">—</p>}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Card 4: Origem de Vendas */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}>
+          <Card className="h-full overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-chart-5/10">
+                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5" />
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium text-muted-foreground">Origem de Vendas</span>
+                </div>
+              </div>
+              {analyticsLoading ? (
+                <div className="space-y-2"><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-full" /></div>
+              ) : a ? (
+                <>
+                  {/* Payment method breakdown */}
+                  <div className="space-y-1.5 mb-2">
+                    {Object.entries(a.salesOrigin.paymentMethods).map(([pm, count]) => {
+                      const total = Object.values(a.salesOrigin.paymentMethods).reduce((s, v) => s + v, 0);
+                      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                      return (
+                        <div key={pm} className="flex items-center gap-2 text-[11px]">
+                          <div className="flex items-center gap-1.5 w-16 shrink-0 text-muted-foreground">
+                            {pmIcons[pm]}
+                            <span>{pmLabels[pm] || pm}</span>
+                          </div>
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-foreground font-medium w-8 text-right">{pct}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Lead sources */}
+                  {a.salesOrigin.sources.length > 0 && (
+                    <div className="pt-1.5 border-t space-y-0.5">
+                      {a.salesOrigin.sources.slice(0, 3).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">{sourceLabels[s.source] || s.source}</span>
+                          <span className="font-medium text-foreground">{s.count} conversões</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : <p className="text-muted-foreground text-sm">—</p>}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Sales Table */}
@@ -325,7 +391,6 @@ export default function AdminOrders() {
                 </Button>
               )}
             </div>
-
           </div>
 
           <SalesTable
