@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
             status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           });
         }
-        return handleGetOrdersAnalytics(adminSupabase);
+        return handleGetOrdersAnalytics(adminSupabase, payload.month);
       }
       case 'get_order_details': {
         if (!(await checkAdmin())) {
@@ -1367,13 +1367,30 @@ async function handleCancelOrder(
   });
 }
 
-async function handleGetOrdersAnalytics(supabase: any) {
+async function handleGetOrdersAnalytics(supabase: any, month?: string) {
   try {
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    // month format: "YYYY-MM" or undefined (defaults to current month)
+    let periodStart: Date;
+    let periodEnd: Date;
+    let prevStart: Date;
+    let prevEnd: Date;
 
-    // Fetch all orders with course info
+    if (month) {
+      const [y, m] = month.split('-').map(Number);
+      periodStart = new Date(y, m - 1, 1);
+      periodEnd = new Date(y, m, 0, 23, 59, 59, 999); // last day of month
+      // Previous = same month last year? No - previous month
+      prevStart = new Date(y, m - 2, 1);
+      prevEnd = new Date(y, m - 1, 0, 23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      periodEnd = now;
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    }
+
+    // Fetch all orders
     const { data: allOrders, error } = await supabase
       .from('orders')
       .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, installments, courses(title)');
@@ -1382,14 +1399,13 @@ async function handleGetOrdersAnalytics(supabase: any) {
 
     const orders = allOrders || [];
 
-    // Split into current (last 30d) and previous (30-60d) periods
-    const current = orders.filter((o: any) => new Date(o.created_at) >= thirtyDaysAgo);
-    const previous = orders.filter((o: any) => {
-      const d = new Date(o.created_at);
-      return d >= sixtyDaysAgo && d < thirtyDaysAgo;
-    });
+    const inPeriod = (d: string) => { const dt = new Date(d); return dt >= periodStart && dt <= periodEnd; };
+    const inPrev = (d: string) => { const dt = new Date(d); return dt >= prevStart && dt <= prevEnd; };
 
-    // --- Card 1: Revenue ---
+    const current = orders.filter((o: any) => inPeriod(o.created_at));
+    const previous = orders.filter((o: any) => inPrev(o.created_at));
+
+    // --- Revenue ---
     const GATEWAY_FEE = 70;
     const calcNet = (amount: number, pm: string | null) => {
       switch (pm) {
@@ -1401,12 +1417,12 @@ async function handleGetOrdersAnalytics(supabase: any) {
 
     const paidCurrent = current.filter((o: any) => o.status === 'paid');
     const paidPrevious = previous.filter((o: any) => o.status === 'paid');
-    
+
     const grossCurrent = paidCurrent.reduce((s: number, o: any) => s + (o.amount || 0), 0);
     const grossPrevious = paidPrevious.reduce((s: number, o: any) => s + (o.amount || 0), 0);
     const netCurrent = paidCurrent.reduce((s: number, o: any) => s + calcNet(o.amount || 0, o.payment_method), 0);
 
-    // --- Card 2: Order stats ---
+    // --- Order stats ---
     const countByStatus = (list: any[]) => ({
       total: list.length,
       paid: list.filter((o: any) => o.status === 'paid').length,
@@ -1418,12 +1434,12 @@ async function handleGetOrdersAnalytics(supabase: any) {
     const statsCurrent = countByStatus(current);
     const statsPrevious = countByStatus(previous);
 
-    // --- Card 3: Average ticket (exclude free) ---
-    const paidAllTime = orders.filter((o: any) => o.status === 'paid' && o.amount > 0);
+    // --- Average ticket (exclude free) ---
     const avgTicketCurrent = paidCurrent.length > 0 ? Math.round(paidCurrent.reduce((s: number, o: any) => s + o.amount, 0) / paidCurrent.length) : 0;
     const avgTicketPrevious = paidPrevious.length > 0 ? Math.round(paidPrevious.reduce((s: number, o: any) => s + o.amount, 0) / paidPrevious.length) : 0;
 
-    // Top selling courses (by count, exclude free)
+    // Top selling courses (paid only, all time)
+    const paidAllTime = orders.filter((o: any) => o.status === 'paid' && o.amount > 0);
     const courseCount: Record<string, { title: string; count: number; revenue: number }> = {};
     for (const o of paidAllTime) {
       const cid = o.course_id;
@@ -1434,58 +1450,50 @@ async function handleGetOrdersAnalytics(supabase: any) {
     }
     const topCourses = Object.values(courseCount).sort((a, b) => b.count - a.count).slice(0, 3);
 
-    // --- Card 4: Sales origin ---
-    // Check leads table for converted leads to determine checkout origin
+    // --- Sales origin: lead sources for converted leads ---
     const { data: leads } = await supabase
       .from('leads')
-      .select('source, status')
-      .eq('status', 'converted');
+      .select('source, status, form_id, converted_at');
 
+    // Filter converted leads in current period
+    const convertedCurrent = (leads || []).filter((l: any) => l.status === 'converted' && l.converted_at && inPeriod(l.converted_at));
+    const convertedPrevious = (leads || []).filter((l: any) => l.status === 'converted' && l.converted_at && inPrev(l.converted_at));
+
+    // Get form slugs for form-originated leads
+    const formIds = [...new Set(convertedCurrent.filter((l: any) => l.source === 'form' && l.form_id).map((l: any) => l.form_id))];
+    let formSlugs: Record<string, string> = {};
+    if (formIds.length > 0) {
+      const { data: forms } = await supabase
+        .from('lead_forms')
+        .select('id, slug')
+        .in('id', formIds);
+      for (const f of (forms || [])) {
+        formSlugs[f.id] = f.slug;
+      }
+    }
+
+    // Build source breakdown using form slug when available
     const sourceCount: Record<string, number> = {};
-    for (const l of (leads || [])) {
-      sourceCount[l.source] = (sourceCount[l.source] || 0) + 1;
+    for (const l of convertedCurrent) {
+      let label = l.source;
+      if (l.source === 'form' && l.form_id && formSlugs[l.form_id]) {
+        label = formSlugs[l.form_id];
+      }
+      sourceCount[label] = (sourceCount[label] || 0) + 1;
     }
     const topSources = Object.entries(sourceCount)
       .map(([source, count]) => ({ source, count: count as number }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // Payment method distribution (current period, paid only)
-    const pmCount: Record<string, number> = {};
-    for (const o of paidCurrent) {
-      const pm = o.payment_method || 'other';
-      pmCount[pm] = (pmCount[pm] || 0) + 1;
-    }
-    const pmPrevCount: Record<string, number> = {};
-    for (const o of paidPrevious) {
-      const pm = o.payment_method || 'other';
-      pmPrevCount[pm] = (pmPrevCount[pm] || 0) + 1;
-    }
-
-    const totalConverted = (leads || []).length;
-    const prevConverted = previous.filter((o: any) => o.status === 'paid' || o.status === 'free').length;
+    const totalConverted = convertedCurrent.length;
+    const prevTotalConverted = convertedPrevious.length;
 
     return new Response(JSON.stringify({
-      revenue: {
-        gross: grossCurrent,
-        net: Math.max(0, netCurrent),
-        previousGross: grossPrevious,
-      },
-      orders: {
-        current: statsCurrent,
-        previous: statsPrevious,
-      },
-      avgTicket: {
-        current: avgTicketCurrent,
-        previous: avgTicketPrevious,
-        topCourses,
-      },
-      salesOrigin: {
-        sources: topSources,
-        totalConverted,
-        paymentMethods: pmCount,
-        previousPaymentMethods: pmPrevCount,
-      },
+      revenue: { gross: grossCurrent, net: Math.max(0, netCurrent), previousGross: grossPrevious },
+      orders: { current: statsCurrent, previous: statsPrevious },
+      avgTicket: { current: avgTicketCurrent, previous: avgTicketPrevious, topCourses },
+      salesOrigin: { sources: topSources, totalConverted, previousTotalConverted: prevTotalConverted },
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

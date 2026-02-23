@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,14 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  ShoppingCart, DollarSign, TrendingUp, TrendingDown, Search, Loader2,
-  RotateCcw, XCircle, Clock, CalendarIcon, X, Gift, CreditCard, QrCode,
-  FileText, BarChart3, Target, Minus,
+  ShoppingCart, DollarSign, TrendingUp, TrendingDown, Search,
+  CalendarIcon, X, BarChart3, Target, Minus, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SalesTable, { Sale, fetchSalesData, formatCurrency } from '@/components/admin/SalesTable';
+import DashboardRevenueChart from '@/components/admin/DashboardRevenueChart';
 import { motion } from 'framer-motion';
 
 const PAGE_SIZE = 20;
@@ -37,30 +37,9 @@ interface AnalyticsData {
   salesOrigin: {
     sources: { source: string; count: number }[];
     totalConverted: number;
-    paymentMethods: Record<string, number>;
-    previousPaymentMethods: Record<string, number>;
+    previousTotalConverted: number;
   };
 }
-
-const sourceLabels: Record<string, string> = {
-  signup: 'Cadastro',
-  form: 'Formulário',
-  hotmart: 'Hotmart',
-  import: 'Importação',
-  manual: 'Manual',
-};
-
-const pmLabels: Record<string, string> = {
-  credit_card: 'Cartão',
-  pix: 'PIX',
-  boleto: 'Boleto',
-};
-
-const pmIcons: Record<string, React.ReactNode> = {
-  credit_card: <CreditCard className="h-3.5 w-3.5" />,
-  pix: <QrCode className="h-3.5 w-3.5" />,
-  boleto: <FileText className="h-3.5 w-3.5" />,
-};
 
 function PercentBadge({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0) return null;
@@ -87,6 +66,23 @@ function PercentBadge({ current, previous }: { current: number; previous: number
   );
 }
 
+function getMonthLabel(month: string) {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 1, 1);
+  return format(d, 'MMMM yyyy', { locale: ptBR });
+}
+
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftMonth(month: string, delta: number) {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export default function AdminOrders() {
   const [allSales, setAllSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,23 +95,24 @@ export default function AdminOrders() {
   const [totalCount, setTotalCount] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
 
-  useEffect(() => { loadAll(); }, [page]);
+  useEffect(() => { loadSales(); }, [page]);
+  useEffect(() => { fetchAnalytics(); }, [selectedMonth]);
 
-  const loadAll = async () => {
+  const loadSales = async () => {
     setLoading(true);
     const data = await fetchSalesData(page, PAGE_SIZE);
     setAllSales(data.sales);
     setTotalCount(data.totalCount);
     setLoading(false);
-    fetchAnalytics();
   };
 
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('pagarme', {
-        body: { action: 'get_orders_analytics' },
+        body: { action: 'get_orders_analytics', month: selectedMonth },
       });
       if (!error && data) setAnalytics(data);
     } catch (e) {
@@ -156,19 +153,34 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const a = analytics;
+  const isCurrentMonth = selectedMonth === getCurrentMonth();
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
-        <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
+      {/* Header with month selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
+          <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
+        </div>
+        <div className="flex items-center gap-1.5 bg-muted/50 rounded-xl p-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[130px] text-center capitalize">
+            {getMonthLabel(selectedMonth)}
+          </span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isCurrentMonth} onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Analytics Cards */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Receita Total */}
+      {/* Row 1: 3 Stat Cards */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+        {/* Receita Total */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0 }}>
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -193,9 +205,9 @@ export default function AdminOrders() {
           </Card>
         </motion.div>
 
-        {/* Card 2: Total de Pedidos */}
+        {/* Total de Pedidos */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -211,12 +223,19 @@ export default function AdminOrders() {
               ) : a ? (
                 <>
                   <p className="text-xl sm:text-2xl font-bold tracking-tight">{a.orders.current.total}</p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[11px] text-muted-foreground">
-                    <span className="text-success">{a.orders.current.paid} pagos</span>
-                    <span className="text-warning">{a.orders.current.pending} pendentes</span>
-                    <span>{a.orders.current.refunded} estornados</span>
-                    <span className="text-destructive">{a.orders.current.canceled} cancelados</span>
-                    <span className="text-primary">{a.orders.current.free} gratuitos</span>
+                  <div className="grid grid-cols-3 gap-x-2 gap-y-1 mt-2">
+                    {[
+                      { label: 'Pagos', value: a.orders.current.paid, color: 'text-success' },
+                      { label: 'Pendentes', value: a.orders.current.pending, color: 'text-warning' },
+                      { label: 'Gratuitos', value: a.orders.current.free, color: 'text-primary' },
+                      { label: 'Estornos', value: a.orders.current.refunded, color: 'text-muted-foreground' },
+                      { label: 'Cancelados', value: a.orders.current.canceled, color: 'text-destructive' },
+                    ].map(item => (
+                      <div key={item.label} className="flex items-center gap-1.5 text-[11px]">
+                        <span className={cn("font-semibold tabular-nums", item.color)}>{item.value}</span>
+                        <span className="text-muted-foreground">{item.label}</span>
+                      </div>
+                    ))}
                   </div>
                 </>
               ) : <p className="text-muted-foreground text-sm">—</p>}
@@ -224,9 +243,9 @@ export default function AdminOrders() {
           </Card>
         </motion.div>
 
-        {/* Card 3: Ticket Médio */}
+        {/* Ticket Médio */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -257,55 +276,53 @@ export default function AdminOrders() {
             </CardContent>
           </Card>
         </motion.div>
+      </div>
 
-        {/* Card 4: Origem de Vendas */}
+      {/* Row 2: Revenue Chart + Sales Origin */}
+      <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <DashboardRevenueChart />
+        </div>
+
+        {/* Origem de Vendas */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.15 }}>
-          <Card className="h-full overflow-hidden">
+          <Card className="h-full">
             <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-chart-5/10">
                     <Target className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5" />
                   </div>
                   <span className="text-xs sm:text-sm font-medium text-muted-foreground">Origem de Vendas</span>
                 </div>
+                {a && <PercentBadge current={a.salesOrigin.totalConverted} previous={a.salesOrigin.previousTotalConverted} />}
               </div>
               {analyticsLoading ? (
-                <div className="space-y-2"><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-full" /></div>
-              ) : a ? (
-                <>
-                  {/* Payment method breakdown */}
-                  <div className="space-y-1.5 mb-2">
-                    {Object.entries(a.salesOrigin.paymentMethods).map(([pm, count]) => {
-                      const total = Object.values(a.salesOrigin.paymentMethods).reduce((s, v) => s + v, 0);
-                      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                      return (
-                        <div key={pm} className="flex items-center gap-2 text-[11px]">
-                          <div className="flex items-center gap-1.5 w-16 shrink-0 text-muted-foreground">
-                            {pmIcons[pm]}
-                            <span>{pmLabels[pm] || pm}</span>
-                          </div>
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="text-foreground font-medium w-8 text-right">{pct}%</span>
+                <div className="space-y-3"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /></div>
+              ) : a && a.salesOrigin.sources.length > 0 ? (
+                <div className="space-y-2.5">
+                  {a.salesOrigin.sources.map((s, i) => {
+                    const total = a.salesOrigin.totalConverted || 1;
+                    const pct = Math.round((s.count / total) * 100);
+                    return (
+                      <div key={i} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-foreground font-medium">{s.source}</span>
+                          <span className="text-muted-foreground">{s.count} ({pct}%)</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                  {/* Lead sources */}
-                  {a.salesOrigin.sources.length > 0 && (
-                    <div className="pt-1.5 border-t space-y-0.5">
-                      {a.salesOrigin.sources.slice(0, 3).map((s, i) => (
-                        <div key={i} className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">{sourceLabels[s.source] || s.source}</span>
-                          <span className="font-medium text-foreground">{s.count} conversões</span>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-chart-5 rounded-full transition-all" style={{ width: `${pct}%` }} />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : <p className="text-muted-foreground text-sm">—</p>}
+                      </div>
+                    );
+                  })}
+                  <p className="text-[11px] text-muted-foreground pt-1 border-t mt-3">
+                    {a.salesOrigin.totalConverted} conversões no período
+                  </p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Nenhuma conversão no período</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -400,7 +417,7 @@ export default function AdminOrders() {
             totalPages={totalPages}
             onPageChange={setPage}
             showPagination={!hasActiveFilters}
-            onRefresh={loadAll}
+            onRefresh={() => { loadSales(); fetchAnalytics(); }}
           />
         </CardContent>
       </Card>
