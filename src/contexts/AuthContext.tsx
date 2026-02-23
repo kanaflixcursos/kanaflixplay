@@ -171,13 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
     }
 
-    // Update profile with phone and birth_date after signup
-    if (!error && data?.user && phone && birthDate) {
-      await supabase
-        .from('profiles')
-        .update({ phone, birth_date: birthDate })
-        .eq('user_id', data.user.id);
-    }
+    // Phone and birth_date are now handled by the handle_new_user DB trigger
+    // which extracts them from raw_user_meta_data, so no need to update profile here
 
     // Track signup event
     if (!error && data?.user) {
