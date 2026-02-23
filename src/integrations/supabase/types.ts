@@ -1236,6 +1236,7 @@ export type Database = {
         Returns: boolean
       }
       lead_stage_priority: { Args: { stage: string }; Returns: number }
+      mark_checkout_abandoned: { Args: never; Returns: undefined }
       promote_lead_on_checkout: {
         Args: { user_email: string }
         Returns: undefined

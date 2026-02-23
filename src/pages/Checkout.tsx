@@ -69,7 +69,7 @@ export default function Checkout() {
         // Promote lead to "opportunity" when visiting checkout
         supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
         // Track checkout started event
-        trackEvent('checkout_started', { course_id: courseId }, `/checkout/${courseId}`, user.id);
+        trackEvent('checkout_started', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
       }
     }
   }, [user, courseId]);
@@ -183,6 +183,7 @@ export default function Checkout() {
         setIsEnrolled(true);
         toast.success('Matrícula realizada com sucesso!');
         trackEvent('checkout_completed', { course_id: courseId, amount: 0, method: 'free' }, `/checkout/${courseId}`, user.id);
+        trackEvent('enrollment', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
       }
     } catch (error: any) {
       toast.error('Erro ao realizar matrícula: ' + error.message);
@@ -194,7 +195,8 @@ export default function Checkout() {
   const handlePaymentSuccess = () => {
     setIsEnrolled(true);
     if (user && courseId) {
-      trackEvent('checkout_completed', { course_id: courseId, amount: course?.price }, `/checkout/${courseId}`, user.id);
+      trackEvent('checkout_completed', { course_id: courseId, amount: course?.price, course_title: course?.title }, `/checkout/${courseId}`, user.id);
+      trackEvent('enrollment', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
     }
   };
 
