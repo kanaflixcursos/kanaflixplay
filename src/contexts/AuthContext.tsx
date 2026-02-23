@@ -157,11 +157,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? `${baseUrl}${redirectTo}`
       : baseUrl;
     
+    // Include UTM params in user metadata so the DB trigger can save them to profile
+    const utm = getStoredUtm();
+    const userData: Record<string, string | undefined> = { full_name: fullName, phone, birth_date: birthDate };
+    if (utm.utm_source) userData.utm_source = utm.utm_source;
+    if (utm.utm_medium) userData.utm_medium = utm.utm_medium;
+    if (utm.utm_campaign) userData.utm_campaign = utm.utm_campaign;
+
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
       password,
       options: {
-        data: { full_name: fullName, phone, birth_date: birthDate },
+        data: userData,
         emailRedirectTo: emailRedirectUrl,
       },
     });
@@ -174,8 +181,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Phone and birth_date are now handled by the handle_new_user DB trigger
     // which extracts them from raw_user_meta_data, so no need to update profile here
 
-    // Track signup event
+    // Clear UTMs after signup since they're now in user metadata
     if (!error && data?.user) {
+      if (utm.utm_source) clearStoredUtm();
       trackEvent('signup', {}, undefined, data.user.id);
     }
 
