@@ -166,7 +166,7 @@
 }
 
 .stat-card-value {
-  @apply text-3xl font-semibold tracking-tight text-foreground;
+  @apply text-[2rem] sm:text-[2.2rem] font-normal tracking-tight text-foreground;
 }
 
 .stat-card-description {
