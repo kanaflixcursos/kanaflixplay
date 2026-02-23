@@ -133,9 +133,6 @@ export default function DashboardRevenueCard() {
               </div>
               <span className="stat-card-label">Receita Total</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-success font-medium bg-success/10 px-2 py-1 rounded-full">
-              <TrendingUp className="h-3 w-3" />
-            </div>
           </div>
 
           {loading ? (

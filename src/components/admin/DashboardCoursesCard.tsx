@@ -52,9 +52,6 @@ export default function DashboardCoursesCard() {
               </div>
               <span className="stat-card-label">Total de Cursos</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-              <Clock className="h-3 w-3" />
-            </div>
           </div>
 
           {loading ? (
