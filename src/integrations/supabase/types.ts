@@ -232,6 +232,7 @@ export type Database = {
           sent_count: number
           status: string
           subject: string
+          tag: string | null
           target_filters: Json
           target_type: string
           total_recipients: number
@@ -248,6 +249,7 @@ export type Database = {
           sent_count?: number
           status?: string
           subject: string
+          tag?: string | null
           target_filters?: Json
           target_type?: string
           total_recipients?: number
@@ -264,6 +266,7 @@ export type Database = {
           sent_count?: number
           status?: string
           subject?: string
+          tag?: string | null
           target_filters?: Json
           target_type?: string
           total_recipients?: number
