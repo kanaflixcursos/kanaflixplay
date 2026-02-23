@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getStoredLandingUrl } from '@/lib/utm';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -113,12 +114,13 @@ export default function Login() {
 
     setIsLoading(true);
     
-    // Store redirect URL before signup
-    if (redirectTo !== '/') {
-      localStorage.setItem('kanaflix_redirect_after_confirm', redirectTo);
+    // Store redirect URL before signup — use landing URL from email CTA as fallback
+    const effectiveRedirect = redirectTo !== '/' ? redirectTo : getStoredLandingUrl();
+    if (effectiveRedirect && effectiveRedirect !== '/') {
+      localStorage.setItem('kanaflix_redirect_after_confirm', effectiveRedirect);
     }
     
-    const { error } = await signUp(email, password, fullName, redirectTo, phone, birthDate);
+    const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate);
     
     if (error) {
       toast.error('Erro ao criar conta: ' + error.message);
