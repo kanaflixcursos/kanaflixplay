@@ -178,6 +178,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('user_id', data.user.id);
     }
 
+    // Track signup event
+    if (!error && data?.user) {
+      trackEvent('signup', {}, undefined, data.user.id);
+    }
+
     return { error };
   };
 
