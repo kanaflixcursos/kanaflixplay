@@ -193,7 +193,7 @@ export default function Onboarding() {
           {/* Phone (WhatsApp) */}
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-sm font-medium">
-              WhatsApp
+              Celular
             </Label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

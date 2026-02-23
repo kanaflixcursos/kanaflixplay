@@ -460,7 +460,39 @@ export default function Login() {
                   />
                 </div>
               </div>
-              
+
+              <div className="space-y-2">
+                <Label htmlFor="signupPhone" className="text-sm font-medium">
+                  Celular <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <PhoneInput
+                    id="signupPhone"
+                    value={phone}
+                    onChange={setPhone}
+                    className="pl-10 h-11"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signupBirthDate" className="text-sm font-medium">
+                  Data de Nascimento <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="signupBirthDate"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                    className="pl-10 h-11"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="signupPassword" className="text-sm font-medium">
                   Senha
@@ -488,38 +520,6 @@ export default function Login() {
                       <Eye className="h-4 w-4" />
                     )}
                   </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signupPhone" className="text-sm font-medium">
-                  WhatsApp <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <PhoneInput
-                    id="signupPhone"
-                    value={phone}
-                    onChange={setPhone}
-                    className="pl-10 h-11"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signupBirthDate" className="text-sm font-medium">
-                  Data de Nascimento <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="signupBirthDate"
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="pl-10 h-11"
-                    required
-                  />
                 </div>
               </div>
 
