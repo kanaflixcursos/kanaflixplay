@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Users, FileText, Mail, MessageSquare, Ticket } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
+import CustomerJourneyTimeline from '@/components/admin/CustomerJourneyTimeline';
 
 const tools = [
   {
@@ -61,6 +62,8 @@ export default function MarketingHub() {
       </div>
 
       <FunnelRoadmap />
+
+      <CustomerJourneyTimeline showFilters limit={30} title="Jornada dos Visitantes" />
 
       {/* Tools grid */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
