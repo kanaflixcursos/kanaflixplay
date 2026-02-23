@@ -29,45 +29,68 @@ export default function FunnelRoadmap() {
   const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, qualified: 0, opportunities: 0, sales: 0 });
   const [loading, setLoading] = useState(true);
   const [utmFilter, setUtmFilter] = useState<string>('all');
+  const [campaignFilter, setCampaignFilter] = useState<string>('all');
+  const [contentFilter, setContentFilter] = useState<string>('all');
   const [utmSources, setUtmSources] = useState<string[]>([]);
+  const [utmCampaigns, setUtmCampaigns] = useState<string[]>([]);
+  const [utmContents, setUtmContents] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchSources();
+    fetchFilterOptions();
   }, []);
 
   useEffect(() => {
     fetchData();
-  }, [utmFilter]);
+  }, [utmFilter, campaignFilter, contentFilter]);
 
-  const fetchSources = async () => {
-    const { data: visits } = await supabase
-      .from('site_visits')
-      .select('utm_source')
-      .not('utm_source', 'is', null);
+  const fetchFilterOptions = async () => {
+    const [{ data: srcData }, { data: campData }, { data: contData }] = await Promise.all([
+      supabase.from('site_visits').select('utm_source').not('utm_source', 'is', null),
+      supabase.from('site_visits').select('utm_campaign').not('utm_campaign', 'is', null),
+      supabase.from('site_visits').select('utm_content').not('utm_content', 'is', null),
+    ]);
 
-    const sources = new Set<string>();
-    visits?.forEach(v => { if (v.utm_source) sources.add(v.utm_source); });
-    setUtmSources(Array.from(sources).sort());
+    const toUnique = (rows: { [k: string]: string | null }[] | null, key: string) =>
+      [...new Set((rows || []).map(r => r[key]).filter(Boolean) as string[])].sort();
+
+    setUtmSources(toUnique(srcData, 'utm_source'));
+    setUtmCampaigns(toUnique(campData, 'utm_campaign'));
+    setUtmContents(toUnique(contData, 'utm_content'));
   };
 
   const fetchData = async () => {
     setLoading(true);
-    const hasFilter = utmFilter !== 'all';
+    const hasSource = utmFilter !== 'all';
+    const hasCampaign = campaignFilter !== 'all';
+    const hasContent = contentFilter !== 'all';
+
+    const applyUtmFilters = (q: any) => {
+      if (hasSource) q = q.eq('utm_source', utmFilter);
+      if (hasCampaign) q = q.eq('utm_campaign', campaignFilter);
+      if (hasContent) q = q.eq('utm_content', contentFilter);
+      return q;
+    };
 
     // Visitors: unique visitor_ids from site_visits
     let visitQuery = supabase.from('site_visits').select('visitor_id');
-    if (hasFilter) visitQuery = visitQuery.eq('utm_source', utmFilter);
+    visitQuery = applyUtmFilters(visitQuery);
     const { data: visitorRows } = await visitQuery;
 
     // Leads
     let leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
-    if (hasFilter) leadsQuery = leadsQuery.eq('utm_source', utmFilter);
+    if (hasSource) leadsQuery = leadsQuery.eq('utm_source', utmFilter);
+    if (hasCampaign) leadsQuery = leadsQuery.eq('utm_campaign', campaignFilter);
+    if (hasContent) leadsQuery = leadsQuery.eq('utm_content', contentFilter);
 
     let qualifiedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified');
-    if (hasFilter) qualifiedQuery = qualifiedQuery.eq('utm_source', utmFilter);
+    if (hasSource) qualifiedQuery = qualifiedQuery.eq('utm_source', utmFilter);
+    if (hasCampaign) qualifiedQuery = qualifiedQuery.eq('utm_campaign', campaignFilter);
+    if (hasContent) qualifiedQuery = qualifiedQuery.eq('utm_content', contentFilter);
 
     let opportunityQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity');
-    if (hasFilter) opportunityQuery = opportunityQuery.eq('utm_source', utmFilter);
+    if (hasSource) opportunityQuery = opportunityQuery.eq('utm_source', utmFilter);
+    if (hasCampaign) opportunityQuery = opportunityQuery.eq('utm_campaign', campaignFilter);
+    if (hasContent) opportunityQuery = opportunityQuery.eq('utm_content', contentFilter);
 
     // Sales: orders with status paid
     // For UTM-filtered sales, we'd need to join with profiles. For now, show total.
@@ -101,21 +124,49 @@ export default function FunnelRoadmap() {
 
   return (
     <div className="space-y-3">
-      {/* UTM filter */}
-      {utmSources.length > 0 && (
-        <div className="flex items-center gap-2">
+      {/* UTM filters */}
+      {(utmSources.length > 0 || utmCampaigns.length > 0 || utmContents.length > 0) && (
+        <div className="flex items-center gap-2 flex-wrap">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select value={utmFilter} onValueChange={setUtmFilter}>
-            <SelectTrigger className="w-44 h-8 text-xs">
-              <SelectValue placeholder="Todas as origens" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as origens</SelectItem>
-              {utmSources.map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {utmSources.length > 0 && (
+            <Select value={utmFilter} onValueChange={setUtmFilter}>
+              <SelectTrigger className="w-40 h-8 text-xs">
+                <SelectValue placeholder="Origem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas origens</SelectItem>
+                {utmSources.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {utmCampaigns.length > 0 && (
+            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+              <SelectTrigger className="w-44 h-8 text-xs">
+                <SelectValue placeholder="Campanha" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas campanhas</SelectItem>
+                {utmCampaigns.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {utmContents.length > 0 && (
+            <Select value={contentFilter} onValueChange={setContentFilter}>
+              <SelectTrigger className="w-40 h-8 text-xs">
+                <SelectValue placeholder="Conteúdo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos conteúdos</SelectItem>
+                {utmContents.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 
