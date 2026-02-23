@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, role, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -19,7 +20,12 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Preserve full original URL (path + search params including UTMs) as redirect
+    const currentUrl = location.pathname + location.search;
+    const loginUrl = currentUrl !== '/' 
+      ? `/login?redirect=${encodeURIComponent(currentUrl)}`
+      : '/login';
+    return <Navigate to={loginUrl} replace />;
   }
 
   // Redirect imported users to onboarding
