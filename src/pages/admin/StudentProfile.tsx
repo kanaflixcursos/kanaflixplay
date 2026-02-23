@@ -43,6 +43,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import CustomerJourneyTimeline from '@/components/admin/CustomerJourneyTimeline';
 
 interface StudentData {
   id: string;
@@ -524,6 +525,9 @@ export default function StudentProfile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Customer Journey */}
+      <CustomerJourneyTimeline userId={userId} title="Jornada do Aluno" limit={30} />
 
       {/* Refund Confirmation Dialog */}
       <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
