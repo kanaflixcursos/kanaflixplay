@@ -11,11 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  Eye,
   UserPlus,
   ShoppingCart,
   CheckCircle,
-  LogIn,
   XCircle,
   GraduationCap,
   Activity,
@@ -38,7 +36,6 @@ interface JourneyEvent {
 }
 
 const eventConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string; bg: string }> = {
-  page_view: { icon: Eye, label: 'Visualizou página', color: 'text-muted-foreground', bg: 'bg-muted' },
   signup: { icon: UserPlus, label: 'Cadastro', color: 'text-chart-3', bg: 'bg-chart-3/15' },
   checkout_started: { icon: ShoppingCart, label: 'Checkout iniciado', color: 'text-warning', bg: 'bg-warning/15' },
   checkout_completed: { icon: CheckCircle, label: 'Compra concluída', color: 'text-success', bg: 'bg-success/15' },
@@ -106,6 +103,7 @@ export default function CustomerJourneyTimeline({
       query = query.eq('utm_source', utmFilter);
     }
     query = query.neq('event_type', 'login');
+    query = query.neq('event_type', 'page_view');
 
     const { data } = await query;
     setEvents((data as JourneyEvent[]) || []);
