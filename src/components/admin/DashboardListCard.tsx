@@ -50,9 +50,9 @@ export default function DashboardListCard({
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
-        <CardTitle className="flex items-center gap-2 text-base sm:text-lg text-left">
+        <CardTitle className="flex items-center gap-2 text-left">
           <Icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-          <span className="truncate">{title}</span>
+          <span className="stat-card-label">{title}</span>
         </CardTitle>
         {actionLabel && actionLink && (
           <Button variant="outline" size="sm" className="shrink-0 text-xs sm:text-sm h-8" asChild>

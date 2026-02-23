@@ -34,11 +34,11 @@ export default function DashboardLatestSignupsCard() {
   return (
     <Card className="overflow-hidden h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
-        <CardTitle className="flex items-center gap-3 text-base sm:text-lg">
-          <div className="p-2 rounded-xl bg-chart-5/10">
-            <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5 shrink-0" />
-          </div>
-          <span className="truncate">Últimos Cadastros</span>
+         <CardTitle className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-chart-5/10">
+              <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5 shrink-0" />
+            </div>
+            <span className="stat-card-label">Últimos Cadastros</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-between p-4 sm:p-6 pt-0">

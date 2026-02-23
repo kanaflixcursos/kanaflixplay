@@ -162,7 +162,7 @@
 }
 
 .stat-card-label {
-  @apply text-sm font-medium text-foreground;
+  @apply text-sm font-medium text-muted-foreground;
 }
 
 .stat-card-value {
