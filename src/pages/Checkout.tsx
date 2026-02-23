@@ -208,7 +208,7 @@ export default function Checkout() {
   // Redirect to login if not authenticated for paid courses
   useEffect(() => {
     if (!authLoading && !user && course && course.price > 0) {
-      const returnUrl = `/checkout/${courseId}`;
+      const returnUrl = `/checkout/${courseId}${window.location.search}`;
       navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
     }
   }, [authLoading, user, course, courseId, navigate]);
