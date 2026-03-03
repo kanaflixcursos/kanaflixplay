@@ -77,6 +77,18 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
     document: '',
     phone: ''
   });
+
+  const [address, setAddress] = useState({
+    zipCode: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: ''
+  });
+
+  const [loadingCep, setLoadingCep] = useState(false);
   
   const [card, setCard] = useState({
     number: '',
@@ -115,9 +127,42 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
     return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
   };
 
+  const formatCep = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
+  };
+
+  const fetchAddressByCep = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+    setLoadingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setAddress(a => ({
+          ...a,
+          street: data.logradouro || '',
+          neighborhood: data.bairro || '',
+          city: data.localidade || '',
+          state: data.uf || '',
+        }));
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!customer.name || !customer.email || !customer.document) {
       toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    if (!address.zipCode || !address.street || !address.number || !address.neighborhood || !address.city || !address.state) {
+      toast.error('Preencha todos os campos de endereço obrigatórios');
       return;
     }
 
@@ -146,7 +191,16 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
             name: customer.name,
             email: customer.email,
             document: customer.document.replace(/\D/g, ''),
-            phone: customer.phone?.replace(/\D/g, '')
+            phone: customer.phone?.replace(/\D/g, ''),
+            address: {
+              zipCode: address.zipCode.replace(/\D/g, ''),
+              street: address.street,
+              number: address.number,
+              complement: address.complement,
+              neighborhood: address.neighborhood,
+              city: address.city,
+              state: address.state,
+            }
           },
           card: paymentMethod === 'credit_card' ? {
             number: card.number,
@@ -199,6 +253,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
     setPaymentResult(null);
     setCustomer({ name: '', email: '', document: '', phone: '' });
     setCard({ number: '', holderName: '', expMonth: '', expYear: '', cvv: '' });
+    setAddress({ zipCode: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' });
   };
 
   const paymentMethods = [
@@ -433,6 +488,100 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                       className="h-11 bg-muted/30"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Address */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm text-foreground">Endereço</h4>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-zipCode" className="text-xs text-muted-foreground">CEP *</Label>
+                    <div className="relative">
+                      <Input
+                        id="m-zipCode"
+                        value={address.zipCode}
+                        onChange={(e) => {
+                          const formatted = formatCep(e.target.value);
+                          setAddress(a => ({ ...a, zipCode: formatted }));
+                          if (formatted.replace(/\D/g, '').length === 8) {
+                            fetchAddressByCep(formatted);
+                          }
+                        }}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className="h-11 bg-muted/30"
+                      />
+                      {loadingCep && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin text-muted-foreground" />}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-state" className="text-xs text-muted-foreground">Estado *</Label>
+                    <Input
+                      id="m-state"
+                      value={address.state}
+                      onChange={(e) => setAddress(a => ({ ...a, state: e.target.value.toUpperCase() }))}
+                      placeholder="UF"
+                      maxLength={2}
+                      className="h-11 bg-muted/30"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="m-street" className="text-xs text-muted-foreground">Rua *</Label>
+                  <Input
+                    id="m-street"
+                    value={address.street}
+                    onChange={(e) => setAddress(a => ({ ...a, street: e.target.value }))}
+                    placeholder="Nome da rua"
+                    className="h-11 bg-muted/30"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-number" className="text-xs text-muted-foreground">Número *</Label>
+                    <Input
+                      id="m-number"
+                      value={address.number}
+                      onChange={(e) => setAddress(a => ({ ...a, number: e.target.value }))}
+                      placeholder="Nº"
+                      className="h-11 bg-muted/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-complement" className="text-xs text-muted-foreground">Complemento</Label>
+                    <Input
+                      id="m-complement"
+                      value={address.complement}
+                      onChange={(e) => setAddress(a => ({ ...a, complement: e.target.value }))}
+                      placeholder="Apto, sala..."
+                      className="h-11 bg-muted/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="m-neighborhood" className="text-xs text-muted-foreground">Bairro *</Label>
+                    <Input
+                      id="m-neighborhood"
+                      value={address.neighborhood}
+                      onChange={(e) => setAddress(a => ({ ...a, neighborhood: e.target.value }))}
+                      placeholder="Bairro"
+                      className="h-11 bg-muted/30"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="m-city" className="text-xs text-muted-foreground">Cidade *</Label>
+                  <Input
+                    id="m-city"
+                    value={address.city}
+                    onChange={(e) => setAddress(a => ({ ...a, city: e.target.value }))}
+                    placeholder="Cidade"
+                    className="h-11 bg-muted/30"
+                  />
                 </div>
               </div>
             </div>
