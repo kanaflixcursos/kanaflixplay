@@ -152,13 +152,8 @@ function exportPDF(sales: Sale[]) {
   toast.success(`${sales.length} vendas prontas para impressão/PDF`);
 }
 
-function calculateNetForExport(amount: number, pm: string | null): number {
-  const fee = 70;
-  switch (pm) {
-    case 'pix': return amount - Math.round(amount * 0.79 / 100) - fee;
-    case 'boleto': return amount - 279 - fee;
-    default: return amount - fee;
-  }
+function calculateNetForExport(amount: number, _pm: string | null): number {
+  return amount; // No platform fees — net equals gross
 }
 
 function downloadBlob(blob: Blob, filename: string) {
