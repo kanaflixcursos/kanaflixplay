@@ -192,6 +192,13 @@ async function handleCreateOrder(
     });
   }
 
+  // Validate address
+  if (!customer.address || !customer.address.zipCode || !customer.address.street || !customer.address.number || !customer.address.neighborhood || !customer.address.city || !customer.address.state) {
+    return new Response(JSON.stringify({ error: 'Address fields are required (zipCode, street, number, neighborhood, city, state)' }), { 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    });
+  }
+
   // Validate customer document (CPF: 11 digits, CNPJ: 14 digits)
   const cleanDoc = String(customer.document).replace(/\D/g, '');
   if (cleanDoc.length !== 11 && cleanDoc.length !== 14) {
@@ -377,7 +384,15 @@ async function handleCreateOrder(
           area_code: customer.phone.substring(0, 2),
           number: customer.phone.substring(2)
         }
-      } : undefined
+      } : undefined,
+      address: {
+        line_1: `${customer.address.number}, ${customer.address.street}`,
+        line_2: [customer.address.complement, customer.address.neighborhood].filter(Boolean).join(', ') || undefined,
+        zip_code: customer.address.zipCode.replace(/\D/g, ''),
+        city: customer.address.city,
+        state: customer.address.state,
+        country: 'BR'
+      }
     },
     payments: []
   };
@@ -396,10 +411,11 @@ async function handleCreateOrder(
           exp_year: parseInt(card.expYear),
           cvv: card.cvv,
           billing_address: {
-            line_1: customer.address?.line1 || 'N/A',
-            zip_code: customer.address?.zipCode?.replace(/\D/g, '') || '00000000',
-            city: customer.address?.city || 'N/A',
-            state: customer.address?.state || 'SP',
+            line_1: `${customer.address.number}, ${customer.address.street}`,
+            line_2: [customer.address.complement, customer.address.neighborhood].filter(Boolean).join(', ') || undefined,
+            zip_code: customer.address.zipCode.replace(/\D/g, ''),
+            city: customer.address.city,
+            state: customer.address.state,
             country: 'BR'
           }
         }
