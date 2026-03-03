@@ -612,7 +612,7 @@ export default function CourseForm() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <Label htmlFor="price" className="text-sm font-medium">
-                        Valor do Curso
+                        Valor Base do Curso
                       </Label>
                       <CurrencyInput
                         id="price"
@@ -622,7 +622,7 @@ export default function CourseForm() {
                         className="h-12 text-lg"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Valor à vista que o aluno pagará
+                        Valor base de referência (não é o valor final cobrado do aluno)
                       </p>
                     </div>
 
@@ -639,17 +639,31 @@ export default function CourseForm() {
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          {paymentConfig?.payment_methods
-                            .find(m => m.id === 'credit_card')
-                            ?.installments?.options.map((option) => (
-                              <SelectItem key={option.number} value={option.number.toString()}>
-                                {option.label}
-                              </SelectItem>
-                            )) || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
-                              <SelectItem key={n} value={n.toString()}>
-                                {n === 1 ? 'À vista apenas' : `Até ${n}x`}
-                              </SelectItem>
-                            ))}
+                          {(() => {
+                            const basePrice = parseFloat(formData.price) || 0;
+                            const monthlyRate = 1.99 / 100;
+                            const options = paymentConfig?.payment_methods
+                              .find(m => m.id === 'credit_card')
+                              ?.installments?.options;
+                            const items = options || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => ({ number: n, label: n === 1 ? 'À vista' : `${n}x`, interest_rate: n <= 6 ? 0 : 4.07 }));
+                            return items.map((option: any) => {
+                              let total = basePrice;
+                              if (option.number > 6 && basePrice > 0) {
+                                total = basePrice * (1 + (option.interest_rate || 4.07) / 100);
+                              }
+                              const installmentValue = option.number > 0 ? total / option.number : total;
+                              const priceLabel = basePrice > 0
+                                ? option.number === 1
+                                  ? ` — R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                                  : ` — ${option.number}x de R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${option.number <= 6 ? ' sem juros' : ''} (total R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`
+                                : '';
+                              return (
+                                <SelectItem key={option.number} value={option.number.toString()}>
+                                  {option.number === 1 ? 'À vista' : `Até ${option.number}x`}{priceLabel}
+                                </SelectItem>
+                              );
+                            });
+                          })()}
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
@@ -711,29 +725,6 @@ export default function CourseForm() {
                     ) : null}
                   </div>
 
-                  {/* Card Brands */}
-                  {formData.payment_methods.includes('credit_card') && paymentConfig && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <Label className="text-sm font-medium">Bandeiras Aceitas</Label>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {paymentConfig.payment_methods
-                          .find(m => m.id === 'credit_card')
-                          ?.card_brands?.map((brand) => (
-                            <div 
-                              key={brand.id} 
-                              className="p-1.5 rounded-md border bg-card"
-                              title={brand.name}
-                            >
-                              <CardBrandIcon brand={brand.id} className="h-5 w-auto" />
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Installment Fee Info */}
                   {formData.payment_methods.includes('credit_card') && paymentConfig && (
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -741,86 +732,12 @@ export default function CourseForm() {
                       <div className="text-sm text-foreground">
                         <p className="font-medium">Taxas do cartão de crédito</p>
                         <p className="text-xs text-muted-foreground">
-                          1x: taxa de 3,25% · 2x a 6x: taxa de 3,79% · 7x a 12x: taxa de 4,07% sobre o valor total, referente ao custo de processamento. Taxas de PIX e Boleto são absorvidas.
+                          1x: taxa de 3,25% · 2x a 6x: taxa de 3,79% · 7x a 12x: taxa de 4,07% sobre o valor total · Juros ao cliente: 1,99% a.m. (7x–12x). Taxas de PIX e Boleto são absorvidas.
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Price Preview */}
-                  {formData.price && parseFloat(formData.price) > 0 && (
-                    (() => {
-                      const basePrice = parseFloat(formData.price);
-                      const installmentCount = parseInt(formData.installments);
-                      const installmentOption = paymentConfig?.payment_methods
-                        .find(m => m.id === 'credit_card')
-                        ?.installments?.options
-                        .find(o => o.number === installmentCount);
-                      
-                      const interestRate = installmentOption?.interest_rate || 0;
-                      const hasInterest = interestRate > 0;
-                      
-                      const totalWithInterest = hasInterest 
-                        ? basePrice * (1 + interestRate / 100)
-                        : basePrice;
-                      const installmentValue = totalWithInterest / installmentCount;
-                      
-                      const pixMethod = paymentConfig?.payment_methods.find(m => m.id === 'pix');
-                      const pixDiscount = pixMethod?.discount_percentage || 0;
-                      const pixPrice = basePrice * (1 - pixDiscount / 100);
-
-                      return (
-                        <div className="p-5 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
-                          <p className="text-sm font-medium text-foreground mb-4">Prévia do valor para o aluno</p>
-                          
-                          <div className="flex items-baseline gap-2 mb-4">
-                            <span className="text-3xl font-bold text-foreground">
-                              R$ {(basePrice * (1 + 3.25 / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                            <span className="text-sm text-muted-foreground">à vista no cartão</span>
-                            <span className="text-xs text-amber-600 dark:text-amber-400">(taxa de 3,25%)</span>
-                          </div>
-
-                          {installmentCount > 1 && (
-                            <div className="space-y-2 pt-3 border-t border-primary/10">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">
-                                  {installmentCount}x no cartão
-                                </span>
-                                <div className="text-right">
-                                  <span className="text-lg font-semibold text-foreground">
-                                    R$ {installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
-                                  {hasInterest && (
-                                    <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
-                                      (taxa de {interestRate}%)
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {hasInterest && (
-                                <p className="text-xs text-muted-foreground">
-                                  Total parcelado: R$ {totalWithInterest.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {formData.payment_methods.includes('pix') && pixDiscount > 0 && (
-                            <div className="flex items-center justify-between pt-3 mt-3 border-t border-primary/10">
-                              <div className="flex items-center gap-2">
-                                <QrCode className="h-4 w-4 text-primary" />
-                                <span className="text-sm text-muted-foreground">PIX ({pixDiscount}% off)</span>
-                              </div>
-                              <span className="text-lg font-semibold text-success">
-                                R$ {pixPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()
-                  )}
                 </div>
               )}
             </div>
