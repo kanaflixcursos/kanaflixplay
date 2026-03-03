@@ -725,19 +725,30 @@ export default function CourseForm() {
                     ) : null}
                   </div>
 
-                  {/* Installment Fee Info */}
-                  {formData.payment_methods.includes('credit_card') && paymentConfig && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-foreground">
-                        <p className="font-medium">Taxas do cartão de crédito</p>
-                        <p className="text-xs text-muted-foreground">
-                          1x: taxa de 3,25% · 2x a 6x: taxa de 3,79% · 7x a 12x: taxa de 4,07% sobre o valor total · Juros ao cliente: 1,99% a.m. (7x–12x). Taxas de PIX e Boleto são absorvidas.
-                        </p>
+                  {/* Fee Summary */}
+                  <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-medium text-foreground">Taxas do Gateway (Pagar.me)</p>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
+                      <div className="space-y-1.5">
+                        <p className="font-medium text-foreground text-xs">Cartão de Crédito</p>
+                        <p>• À vista (1x): 3,25%</p>
+                        <p>• 2x a 6x: 3,79%</p>
+                        <p>• 7x a 12x: 4,07%</p>
+                        <p>• Juros repassados ao cliente: 1,99% a.m. (7x–12x)</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="font-medium text-foreground text-xs">PIX e Boleto</p>
+                        <p>• PIX: R$ 0,79 por transação</p>
+                        <p>• Boleto: R$ 2,79 por boleto</p>
+                        <p className="pt-1 font-medium text-foreground text-xs">Fixas por transação</p>
+                        <p>• Gateway: R$ 0,35</p>
+                        <p>• Antifraude: R$ 0,35</p>
                       </div>
                     </div>
-                  )}
-
+                  </div>
                 </div>
               )}
             </div>
