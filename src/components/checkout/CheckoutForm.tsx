@@ -222,20 +222,11 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   }, [couponDiscountedPrice, paymentMethod]);
 
 
-  // Progressive fee calculation helper
+  // Fee calculation: only 7-12x installments are passed to customer (4.07%)
   const calculateProgressiveTotal = (basePrice: number, numInstallments: number): number => {
-    if (numInstallments <= 0) return basePrice;
-    
-    let totalFee = 0;
-    for (let i = 1; i <= numInstallments; i++) {
-      let rate: number;
-      if (i === 1) rate = 3.25;
-      else if (i <= 6) rate = 3.79;
-      else rate = 4.07;
-      totalFee += (basePrice * rate / 100) / numInstallments;
-    }
-    
-    return Math.round(basePrice + totalFee);
+    if (numInstallments <= 6) return basePrice; // sem juros
+    // 7-12x: 4.07% fee passed to customer
+    return Math.round(basePrice * (1 + 4.07 / 100));
   };
 
   // Calculate available installment options based on course price and config
@@ -541,14 +532,17 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     {selectedInstallment.number}x de {formatPrice(selectedInstallment.installmentAmount)}
                   </span>
                 </div>
-                {selectedInstallment.totalAmount > discountedPrice ? (
+              {selectedInstallment.number <= 6 ? (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Sem juros</span>
+                  </div>
+                ) : selectedInstallment.totalAmount > discountedPrice ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
                     <span>
                       Total: {formatPrice(selectedInstallment.totalAmount)} 
-                      <span className="text-xs ml-1">
-                        (juros progressivos)
-                      </span>
+                      <span className="text-xs ml-1">(com juros)</span>
                     </span>
                   </div>
                 ) : null}
@@ -799,7 +793,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       {availableInstallments.map((opt) => (
                         <SelectItem key={opt.number} value={opt.number.toString()}>
                           {opt.number}x de {formatPrice(opt.installmentAmount)}
-                          {opt.totalAmount > discountedPrice ? ` (Total: ${formatPrice(opt.totalAmount)})` : ' (à vista)'}
+                          {opt.number <= 6 ? ' sem juros' : ` (Total: ${formatPrice(opt.totalAmount)})`}
                         </SelectItem>
                       ))}
                     </SelectContent>

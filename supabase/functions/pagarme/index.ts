@@ -1082,17 +1082,17 @@ function handleGetPaymentConfig() {
           },
           options: [
             { number: 1, label: 'À vista' },
-            { number: 2, label: '2x com taxa' },
-            { number: 3, label: '3x com taxa' },
-            { number: 4, label: '4x com taxa' },
-            { number: 5, label: '5x com taxa' },
-            { number: 6, label: '6x com taxa' },
-            { number: 7, label: '7x com taxa' },
-            { number: 8, label: '8x com taxa' },
-            { number: 9, label: '9x com taxa' },
-            { number: 10, label: '10x com taxa' },
-            { number: 11, label: '11x com taxa' },
-            { number: 12, label: '12x com taxa' },
+            { number: 2, label: '2x sem juros' },
+            { number: 3, label: '3x sem juros' },
+            { number: 4, label: '4x sem juros' },
+            { number: 5, label: '5x sem juros' },
+            { number: 6, label: '6x sem juros' },
+            { number: 7, label: '7x com juros' },
+            { number: 8, label: '8x com juros' },
+            { number: 9, label: '9x com juros' },
+            { number: 10, label: '10x com juros' },
+            { number: 11, label: '11x com juros' },
+            { number: 12, label: '12x com juros' },
           ]
         }
       },
@@ -1414,12 +1414,15 @@ async function handleGetOrdersAnalytics(supabase: any, month?: string) {
     const previous = orders.filter((o: any) => inPrev(o.created_at));
 
     // --- Revenue ---
-    const GATEWAY_FEE = 70;
+    // Fees: PIX 0.79%, Boleto R$2.79, Credit 1x 3.25% / 2-6x 3.79% / 7-12x 4.07%
+    // Gateway R$0.35 + Antifraude R$0.35 = R$0.70 fixed per tx
+    const FIXED_FEE = 70; // R$0.35 gateway + R$0.35 antifraude
     const calcNet = (amount: number, pm: string | null) => {
       switch (pm) {
-        case 'pix': return amount - Math.round(amount * 0.79 / 100) - GATEWAY_FEE;
-        case 'boleto': return amount - 279 - GATEWAY_FEE;
-        default: return amount - GATEWAY_FEE;
+        case 'pix': return amount - Math.round(amount * 0.79 / 100) - FIXED_FEE;
+        case 'boleto': return amount - 279 - FIXED_FEE;
+        case 'credit_card': return amount - Math.round(amount * 3.25 / 100) - FIXED_FEE;
+        default: return amount - FIXED_FEE;
       }
     };
 

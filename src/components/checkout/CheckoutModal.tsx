@@ -519,7 +519,10 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                       onValueChange={(v) => setInstallments(parseInt(v))}
                       className="grid grid-cols-2 gap-2"
                     >
-                      {[1, 2, 3, 6, 10, 12].filter(n => course.price / n >= 500).map((n) => (
+                      {[1, 2, 3, 6, 10, 12].filter(n => course.price / n >= 500).map((n) => {
+                        const total = n <= 6 ? course.price : Math.round(course.price * (1 + 4.07 / 100));
+                        const perInstallment = Math.ceil(total / n);
+                        return (
                         <div 
                           key={n} 
                           className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -529,10 +532,12 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                         >
                           <RadioGroupItem value={n.toString()} id={`inst-${n}`} />
                           <Label htmlFor={`inst-${n}`} className="text-xs cursor-pointer flex-1">
-                            {n}x de {formatPrice(Math.ceil(course.price / n))}
+                            {n}x de {formatPrice(perInstallment)}
+                            {n <= 6 ? ' sem juros' : ''}
                           </Label>
                         </div>
-                      ))}
+                        );
+                      })}
                     </RadioGroup>
                   </div>
                 )}
