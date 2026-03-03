@@ -79,19 +79,8 @@ const statusLabels: Record<string, string> = {
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value / 100);
 
-const calculateNetAmount = (amount: number, paymentMethod: string | null): number => {
-  const gatewayFee = 70; // R$ 0,70 in cents
-  switch (paymentMethod) {
-    case 'pix':
-      return amount - Math.round(amount * 0.79 / 100) - gatewayFee;
-    case 'boleto':
-      return amount - 279 - gatewayFee; // R$ 2,79 + gateway
-    case 'credit_card':
-    case 'coupon':
-      return amount - gatewayFee; // MDR is passed to customer
-    default:
-      return amount - gatewayFee;
-  }
+const calculateNetAmount = (amount: number, _paymentMethod: string | null): number => {
+  return amount; // No platform fees — net equals gross
 };
 
 interface SalesTableProps {

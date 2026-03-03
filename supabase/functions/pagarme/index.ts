@@ -310,6 +310,14 @@ async function handleCreateOrder(
     console.log(`[Order] Coupon ${coupon.code} applied: discount ${discountAmount}, final price ${finalPrice}`);
   }
 
+  // Apply 3% PIX discount
+  let pixDiscount = 0;
+  if (paymentMethod === 'pix' && finalPrice > 0) {
+    pixDiscount = Math.round(finalPrice * 0.03);
+    finalPrice = Math.max(0, finalPrice - pixDiscount);
+    console.log(`[Order] PIX 3% discount applied: -${pixDiscount}, final price ${finalPrice}`);
+  }
+
   // If price is 0 after discount, auto-enroll without payment
   if (finalPrice <= 0) {
     const orderData = {
@@ -317,7 +325,7 @@ async function handleCreateOrder(
       user_id: userId,
       course_id: courseId,
       amount: 0,
-      discount_amount: discountAmount,
+      discount_amount: discountAmount + pixDiscount,
       coupon_id: validatedCouponId,
       status: 'paid',
       payment_method: 'coupon',
@@ -461,7 +469,7 @@ async function handleCreateOrder(
     user_id: userId,
     course_id: courseId,
     amount: finalPrice,
-    discount_amount: discountAmount > 0 ? discountAmount : null,
+    discount_amount: (discountAmount + pixDiscount) > 0 ? (discountAmount + pixDiscount) : null,
     coupon_id: validatedCouponId,
     status: charge?.status === 'paid' ? 'paid' : charge?.status === 'failed' ? 'failed' : 'pending',
     payment_method: paymentMethod,

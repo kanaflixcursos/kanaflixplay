@@ -203,14 +203,23 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
     setCouponCode('');
   };
 
-  // Calculate discounted price
-  const discountedPrice = useMemo(() => {
+  // Calculate discounted price (coupon)
+  const couponDiscountedPrice = useMemo(() => {
     if (!appliedCoupon) return course.price;
     if (appliedCoupon.discount_type === 'percentage') {
       return Math.max(0, Math.round(course.price * (1 - appliedCoupon.discount_value / 100)));
     }
     return Math.max(0, course.price - appliedCoupon.discount_value);
   }, [course.price, appliedCoupon]);
+
+  // Apply 3% PIX discount on top of coupon discount
+  const PIX_DISCOUNT_PERCENT = 3;
+  const discountedPrice = useMemo(() => {
+    if (paymentMethod === 'pix') {
+      return Math.max(0, Math.round(couponDiscountedPrice * (1 - PIX_DISCOUNT_PERCENT / 100)));
+    }
+    return couponDiscountedPrice;
+  }, [couponDiscountedPrice, paymentMethod]);
 
 
   // Progressive fee calculation helper
@@ -388,7 +397,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
       method: 'pix' as const, 
       icon: QrCode, 
       label: 'PIX',
-      badge: null,
+      badge: '3% off',
       description: 'Aprovação imediata'
     },
     { 
@@ -547,9 +556,17 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             ) : (
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-foreground">{formatPrice(discountedPrice)}</span>
-                {appliedCoupon && discountedPrice < course.price && (
-                  <span className="text-lg text-muted-foreground line-through">{formatPrice(course.price)}</span>
+                {(discountedPrice < couponDiscountedPrice || (appliedCoupon && couponDiscountedPrice < course.price)) && (
+                  <span className="text-lg text-muted-foreground line-through">
+                    {formatPrice(paymentMethod === 'pix' ? couponDiscountedPrice : course.price)}
+                  </span>
                 )}
+              </div>
+            )}
+            {paymentMethod === 'pix' && (
+              <div className="flex items-center gap-2 text-sm text-success">
+                <Zap className="h-4 w-4" />
+                <span><strong>3% de desconto</strong> no PIX</span>
               </div>
             )}
             {appliedCoupon && (
