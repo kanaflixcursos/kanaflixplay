@@ -58,20 +58,35 @@ export default function DashboardRevenueCard() {
     }
   };
 
+  const calcNet = (amount: number, pm: string | null) => {
+    const gateway = 35; // R$0.35 gateway
+    const antifraude = 35; // R$0.35 antifraude
+    const fixed = gateway + antifraude;
+    switch (pm) {
+      case 'pix': return amount - Math.round(amount * 0.79 / 100) - fixed;
+      case 'boleto': return amount - 279 - fixed;
+      case 'credit_card': return amount - Math.round(amount * 3.25 / 100) - fixed; // 1x rate as average
+      default: return amount - fixed;
+    }
+  };
+
   const fetchRevenue = async () => {
     setLoading(true);
     const startDate = getStartDate();
-    let query = supabase.from('orders').select('amount').eq('status', 'paid');
+    let query = supabase.from('orders').select('amount, payment_method').eq('status', 'paid');
     if (startDate) query = query.gte('paid_at', startDate.toISOString());
     const { data } = await query;
 
     let gross = 0;
+    let net = 0;
     data?.forEach(order => {
-      gross += order.amount || 0;
+      const amt = order.amount || 0;
+      gross += amt;
+      net += calcNet(amt, order.payment_method);
     });
 
     setGrossRevenue(gross);
-    setNetRevenue(gross); // No platform fees — net equals gross
+    setNetRevenue(Math.max(0, net));
     setLoading(false);
   };
 
