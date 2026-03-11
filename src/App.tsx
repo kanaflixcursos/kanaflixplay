@@ -2,19 +2,25 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
+// Layouts and Route Protection
+import StudentLayout from "@/components/layouts/StudentLayout";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
+import ScrollToTop from "@/components/ScrollToTop";
+
+// Page Components
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
-
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
-import StudentLayout from "@/components/layouts/StudentLayout";
+// Student Pages
 import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
 import NotificationsPage from "@/pages/student/Notifications";
@@ -24,7 +30,7 @@ import CatalogPage from "@/pages/student/Catalog";
 import SupportPage from "@/pages/student/Support";
 import TicketChatPage from "@/pages/student/TicketChat";
 
-import AdminLayout from "@/components/layouts/AdminLayout";
+// Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminCourses from "@/pages/admin/Courses";
 import CourseForm from "@/pages/admin/CourseForm";
@@ -44,10 +50,32 @@ import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
 import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
 
-import ProtectedRoute from "@/components/ProtectedRoute";
-import ScrollToTop from "@/components/ScrollToTop";
-
 const queryClient = new QueryClient();
+
+// Layout component for student routes
+const StudentRoutesLayout = () => (
+  <ProtectedRoute>
+    <StudentLayout>
+      <Outlet />
+    </StudentLayout>
+  </ProtectedRoute>
+);
+
+// Layout component for admin routes
+const AdminRoutesLayout = () => (
+  <ProtectedRoute requiredRole="admin">
+    <AdminLayout>
+      <Outlet />
+    </AdminLayout>
+  </ProtectedRoute>
+);
+
+// Admin routes without the main layout (e.g., for full-screen pages)
+const AdminRoutesNoLayout = () => (
+    <ProtectedRoute requiredRole="admin">
+        <Outlet />
+    </ProtectedRoute>
+);
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="kanaflix-theme">
@@ -63,290 +91,49 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              
               <Route path="/checkout/:courseId" element={<Checkout />} />
               
               {/* Student Routes */}
-              <Route path="/" element={<Index />} />
-              <Route
-                path="/courses/:courseId"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <CourseView />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/courses"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <StudentCoursesPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/catalog"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <CatalogPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <StudentProfile />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <NotificationsPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/purchases"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <PurchasesPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <SupportPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte/:ticketId"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <TicketChatPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              {/* Admin Routes */}
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminDashboard />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/courses"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminCourses />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/courses/new"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <CourseForm />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/courses/:courseId/edit"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <CourseForm />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              
-              <Route
-                path="/admin/students"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminStudents />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/students/:userId"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminStudentProfile />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/orders"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminOrders />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/comments"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminComments />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/featured-banner"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminFeaturedBanner />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminMarketing />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/leads"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminMarketingLeads />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/forms"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminMarketingForms />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/forms/:formId"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminFormDetail />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/email"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminMarketingEmail />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/email/:campaignId"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminCampaignEditor />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/coupons"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminMarketingCoupons />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/coupons/new"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminCouponForm />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/marketing/coupons/:couponId/edit"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminCouponForm />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/suporte"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminSupport />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/suporte/:ticketId"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminTicketChat />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/" element={<StudentRoutesLayout />}>
+                <Route index element={<Index />} />
+                <Route path="courses/:courseId" element={<CourseView />} />
+                <Route path="courses" element={<StudentCoursesPage />} />
+                <Route path="catalog" element={<CatalogPage />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="purchases" element={<PurchasesPage />} />
+                <Route path="suporte" element={<SupportPage />} />
+                <Route path="suporte/:ticketId" element={<TicketChatPage />} />
+              </Route>
 
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminRoutesLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="courses" element={<AdminCourses />} />
+                <Route path="courses/new" element={<CourseForm />} />
+                <Route path="courses/:courseId/edit" element={<CourseForm />} />
+                <Route path="students" element={<AdminStudents />} />
+                <Route path="students/:userId" element={<AdminStudentProfile />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="comments" element={<AdminComments />} />
+                <Route path="featured-banner" element={<AdminFeaturedBanner />} />
+                <Route path="marketing" element={<AdminMarketing />} />
+                <Route path="marketing/leads" element={<AdminMarketingLeads />} />
+                <Route path="marketing/forms" element={<AdminMarketingForms />} />
+                <Route path="marketing/forms/:formId" element={<AdminFormDetail />} />
+                <Route path="marketing/email" element={<AdminMarketingEmail />} />
+                <Route path="marketing/email/:campaignId" element={<AdminCampaignEditor />} />
+                <Route path="marketing/coupons" element={<AdminMarketingCoupons />} />
+                <Route path="marketing/coupons/new" element={<AdminCouponForm />} />
+                <Route path="marketing/coupons/:couponId/edit" element={<AdminCouponForm />} />
+              </Route>
+
+              {/* Admin routes that don't use the standard sidebar layout */}
+              <Route element={<AdminRoutesNoLayout />}>
+                <Route path="/admin/suporte" element={<AdminSupport />} />
+                <Route path="/admin/suporte/:ticketId" element={<AdminTicketChat />} />
+              </Route>
+              
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
