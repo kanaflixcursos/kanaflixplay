@@ -422,7 +422,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                     }`}
                   >
                     {badge && (
-                      <span className={`absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      <span className={`absolute -top-2 left-1/2 -translate-x-1/2 text-xs font-semibold px-2 py-0.5 rounded-full ${
                         method === 'pix' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                       }`}>
                         {badge}
