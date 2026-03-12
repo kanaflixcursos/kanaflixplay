@@ -323,7 +323,7 @@ export default function MarketingCoupons() {
                       </Badge>
                     )}
                     {coupon.max_uses == null && (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {coupon.used_count} usos
                       </Badge>
                     )}
