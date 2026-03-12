@@ -243,7 +243,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-[10px] text-muted-foreground">Texto</Label>
+                <Label className="text-xs text-muted-foreground">Texto</Label>
                 <Input value={block.content} onChange={e => onChange({ content: e.target.value })} className="h-8 text-sm" disabled={disabled} />
               </div>
               <div>
