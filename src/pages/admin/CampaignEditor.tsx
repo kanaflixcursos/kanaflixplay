@@ -252,7 +252,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-[10px] text-muted-foreground">Cor</Label>
+              <Label className="text-xs text-muted-foreground">Cor</Label>
               <input
                 type="color"
                 value={block.buttonColor || brand.primary}
