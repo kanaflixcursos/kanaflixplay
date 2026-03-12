@@ -82,7 +82,7 @@ export default function Login() {
     const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate);
     
     if (error) {
-      toast.error('Erro ao criar conta: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       toast.success('Conta criada! Verifique seu email para confirmar.');
     }
