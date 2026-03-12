@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import { translateError } from '@/lib/translate-error';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
