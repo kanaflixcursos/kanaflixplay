@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Copy, Trash2, FileText, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -281,12 +282,6 @@ export default function MarketingForms() {
                       <h3 className="font-medium text-foreground">{form.name}</h3>
                       {form.description && <p className="text-xs text-muted-foreground mt-0.5">{form.description}</p>}
                     </div>
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Switch checked={form.is_active} onCheckedChange={(v) => handleToggleActive(form.id, v)} />
-                      <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
-                        {form.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 mb-3">
@@ -296,15 +291,35 @@ export default function MarketingForms() {
                     <span className="text-xs text-muted-foreground">{form.fields.length} campos</span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7 text-destructive"
-                      onClick={() => handleDelete(form.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  <div className="flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2">
+                      <Switch checked={form.is_active} onCheckedChange={(v) => handleToggleActive(form.id, v)} />
+                      <span className="text-xs text-muted-foreground">{form.is_active ? 'Ativo' : 'Inativo'}</span>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir formulário</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir o formulário <strong>"{form.name}"</strong>? Essa ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => handleDelete(form.id)}
+                          >
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
 
                   <p className="text-xs text-muted-foreground mt-3">
