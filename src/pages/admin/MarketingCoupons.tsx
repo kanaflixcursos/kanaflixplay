@@ -308,7 +308,7 @@ export default function MarketingCoupons() {
                         if (!info) return null;
                         const Icon = info.icon;
                         return (
-                          <Badge key={pm} variant="outline" className="text-[10px]">
+                          <Badge key={pm} variant="outline" className="text-xs">
                             <Icon className="h-2.5 w-2.5 mr-1" />
                             {info.label}
                           </Badge>
