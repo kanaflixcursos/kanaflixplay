@@ -103,7 +103,7 @@ export default function Login() {
     });
     
     if (error) {
-      toast.error('Erro ao enviar email: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       setResetSent(true);
       toast.success('Email enviado! Verifique sua caixa de entrada.');
