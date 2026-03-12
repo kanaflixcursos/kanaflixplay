@@ -664,7 +664,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
             {/* Dates */}
             <Separator />
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Datas</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Datas</p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Criado em</span>
