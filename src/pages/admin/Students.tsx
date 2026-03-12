@@ -407,8 +407,7 @@ export default function AdminStudents() {
         toast.success(`Progresso de ${resetStudent.full_name} no curso "${courseName}" resetado com sucesso!`);
       }
       setResetDialogOpen(false);
-    } catch (error) {
-      console.error('Error resetting progress:', error);
+    } catch {
       toast.error('Erro ao resetar progresso');
     }
     setResetting(false);
