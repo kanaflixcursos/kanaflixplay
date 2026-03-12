@@ -125,9 +125,9 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
         ref={editorRef}
         contentEditable={!disabled}
         onInput={handleInput}
-        className="px-3 py-2 min-h-[80px] text-sm outline-none focus:ring-0 [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_div]:inline"
+        className="px-3 py-2 min-h-[80px] text-sm outline-none focus:ring-0 text-foreground [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_*]:text-inherit"
         data-placeholder={placeholder}
-        style={{ fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', whiteSpace: 'pre-wrap' }}
+        style={{ whiteSpace: 'pre-wrap' }}
         suppressContentEditableWarning
       />
     </div>
