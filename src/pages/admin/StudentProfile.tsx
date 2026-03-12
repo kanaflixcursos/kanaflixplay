@@ -271,7 +271,6 @@ export default function StudentProfile() {
       setLoading(true);
       await fetchStudentData();
     } catch (error: any) {
-      console.error('Refund error:', error);
       toast.error(error.message || 'Erro ao processar reembolso');
     }
 
