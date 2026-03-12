@@ -163,7 +163,7 @@ export default function StudentCourses() {
                 transition={{ duration: 0.3 }}>
 
                 <div
-                  className="relative overflow-hidden rounded-2xl text-white min-h-[140px] sm:min-h-[200px] px-5 py-6 sm:pl-[80px] sm:pr-[59px] sm:py-[56px]"
+                  className="relative overflow-hidden rounded-2xl text-white min-h-36 sm:min-h-52 px-5 py-6 sm:pl-20 sm:pr-16 sm:py-14"
                   style={{ background: `linear-gradient(135deg, ${b.gradient_from}, ${b.gradient_to})` }}>
 
                     {/* Image covering right side with gradient fade - hidden on mobile */}

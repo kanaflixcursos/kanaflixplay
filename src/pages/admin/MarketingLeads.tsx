@@ -231,7 +231,7 @@ export default function MarketingLeads() {
               <CardTitle className="card-title-compact flex items-center gap-2">
                 Leads
                 {hasActiveFilters && (
-                  <Badge variant="secondary" className="text-[10px] font-normal">
+                  <Badge variant="secondary" className="text-xs font-normal">
                     <Filter className="h-3 w-3 mr-1" /> Filtros ativos
                   </Badge>
                 )}
@@ -373,9 +373,9 @@ export default function MarketingLeads() {
                       <TableCell>
                         {lead.utm_source ? (
                           <div className="flex flex-col gap-0.5">
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
                             {lead.utm_campaign && (
-                              <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{lead.utm_campaign}</span>
+                              <span className="text-xs text-muted-foreground truncate max-w-28">{lead.utm_campaign}</span>
                             )}
                           </div>
                         ) : (
@@ -385,10 +385,10 @@ export default function MarketingLeads() {
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">
                           {(lead.tags || []).slice(0, 2).map(tag => (
-                            <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                            <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">{tag}</Badge>
                           ))}
                           {(lead.tags || []).length > 2 && (
-                            <span className="text-[10px] text-muted-foreground">+{lead.tags.length - 2}</span>
+                            <span className="text-xs text-muted-foreground">+{lead.tags.length - 2}</span>
                           )}
                           <Button
                             variant="ghost"

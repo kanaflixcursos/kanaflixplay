@@ -68,7 +68,7 @@ export default function DashboardCourseConfig() {
               <div className="flex items-center gap-2 mt-1">
                 <Badge 
                   variant="outline" 
-                  className={`text-[10px] px-1.5 py-0 h-5 gap-1 ${
+                  className={`text-xs px-1.5 py-0 h-5 gap-1 ${
                     course.is_published 
                       ? 'bg-success/20 text-success border-success/30' 
                       : 'bg-muted text-muted-foreground'
@@ -76,7 +76,7 @@ export default function DashboardCourseConfig() {
                 >
                   {course.is_published ? 'Publicado' : 'Rascunho'}
                 </Badge>
-                <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <PlayCircle className="h-3 w-3" />
                   {course.lesson_count} {course.lesson_count === 1 ? 'aula' : 'aulas'}
                 </span>

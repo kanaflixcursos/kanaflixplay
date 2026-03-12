@@ -417,7 +417,7 @@ export default function StudentProfile() {
             </CardTitle>
             {orders.length > 0 && (
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px] h-8">
+                <SelectTrigger className="w-36 h-8">
                   <Filter className="h-3.5 w-3.5 mr-2" />
                   <SelectValue placeholder="Filtrar" />
                 </SelectTrigger>

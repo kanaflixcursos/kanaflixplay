@@ -49,20 +49,20 @@ interface AnalyticsData {
 function PercentBadge({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0) return null;
   if (previous === 0) return (
-    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-[10px] gap-0.5 px-1.5 py-0 h-5">
+    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs gap-0.5 px-1.5 py-0 h-5">
       <TrendingUp className="h-3 w-3" /> Novo
     </Badge>
   );
   const pct = Math.round(((current - previous) / previous) * 100);
   if (pct === 0) return (
-    <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px] gap-0.5 px-1.5 py-0 h-5">
+    <Badge variant="outline" className="bg-muted text-muted-foreground text-xs gap-0.5 px-1.5 py-0 h-5">
       <Minus className="h-3 w-3" /> 0%
     </Badge>
   );
   const isUp = pct > 0;
   return (
     <Badge variant="outline" className={cn(
-      "text-[10px] gap-0.5 px-1.5 py-0 h-5",
+      "text-xs gap-0.5 px-1.5 py-0 h-5",
       isUp ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"
     )}>
       {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
@@ -319,7 +319,7 @@ export default function AdminOrders() {
                       { label: 'Estornos', value: a.orders.current.refunded, color: 'text-muted-foreground' },
                       { label: 'Cancelados', value: a.orders.current.canceled, color: 'text-destructive' },
                     ].map(item => (
-                      <div key={item.label} className="flex items-center gap-1.5 text-[11px]">
+                      <div key={item.label} className="flex items-center gap-1.5 text-xs">
                         <span className={cn("font-semibold tabular-nums", item.color)}>{item.value}</span>
                         <span className="text-muted-foreground">{item.label}</span>
                       </div>
@@ -352,8 +352,8 @@ export default function AdminOrders() {
                   {a.avgTicket.topCourses.length > 0 && (
                     <div className="mt-1.5 space-y-0.5">
                       {a.avgTicket.topCourses.map((c, i) => (
-                        <div key={i} className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground truncate max-w-[120px]">{c.title}</span>
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate max-w-28">{c.title}</span>
                           <span className="font-medium text-foreground shrink-0">{c.count} vendas</span>
                         </div>
                       ))}
@@ -404,7 +404,7 @@ export default function AdminOrders() {
                       </div>
                     );
                   })}
-                  <p className="text-[11px] text-muted-foreground pt-1 border-t mt-3">
+                  <p className="text-xs text-muted-foreground pt-1 border-t mt-3">
                     {a.salesOrigin.totalConverted} conversões no período
                   </p>
                 </div>

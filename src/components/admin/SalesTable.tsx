@@ -295,7 +295,7 @@ export default function SalesTable({
               <TableHead className="text-sm">Pagamento</TableHead>
               <TableHead className="text-sm">Status</TableHead>
               <TableHead className="text-sm">Data</TableHead>
-              <TableHead className="text-sm w-[100px] pr-4 sm:pr-6" />
+              <TableHead className="text-sm w-24 pr-4 sm:pr-6" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -318,7 +318,7 @@ export default function SalesTable({
                 <TableCell className="text-sm">
                   <Link
                     to={`/admin/students/${sale.user_id}`}
-                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-[180px]"
+                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
                   >
                     <Avatar className="h-7 w-7 shrink-0">
                       <AvatarImage src={sale.user_avatar || undefined} />
@@ -331,7 +331,7 @@ export default function SalesTable({
                     </span>
                   </Link>
                 </TableCell>
-                <TableCell className="text-sm max-w-[180px] truncate">
+                <TableCell className="text-sm max-w-44 truncate">
                   {sale.course_title || '—'}
                 </TableCell>
                 <TableCell className="text-sm whitespace-nowrap">
@@ -560,13 +560,13 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {/* Course */}
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Produto</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Produto</p>
               <p className="font-medium text-sm">{sale.course_title || 'N/A'}</p>
             </div>
 
             {/* Buyer */}
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Comprador</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Comprador</p>
               <p className="font-medium text-sm">{d?.buyer?.name || sale.user_name || 'N/A'}</p>
               <p className="text-xs text-muted-foreground">{d?.buyer?.email || sale.user_email || ''}</p>
               {d?.buyer?.phone && <p className="text-xs text-muted-foreground">{d.buyer.phone}</p>}
@@ -577,7 +577,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
             {/* Financial */}
             {!isFree && (
               <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Valores</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Valores</p>
                 <div className="space-y-1.5 text-sm">
                   {d?.course?.original_price != null && d.course.original_price !== sale.amount && (
                     <div className="flex justify-between">
@@ -607,7 +607,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {isFree && (
               <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Valor</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Valor</p>
                 <p className="text-sm font-medium text-primary">Inscrição Gratuita</p>
               </div>
             )}
@@ -617,7 +617,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
               <>
                 <Separator />
                 <div>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Pagamento</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Pagamento</p>
                   <div className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Método</span>
@@ -664,7 +664,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
             {/* Dates */}
             <Separator />
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Datas</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Datas</p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Criado em</span>
@@ -691,7 +691,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {/* Gateway ID */}
             {d?.gateway?.gateway_id && (
-              <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1">
+              <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
                 <p>Gateway ID: {d.gateway.gateway_id}</p>
                 {d.gateway.last_transaction?.id && <p>Transação: {d.gateway.last_transaction.id}</p>}
               </div>
@@ -743,7 +743,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
               </div>
             )}
 
-            <p className="text-[10px] text-muted-foreground text-center pt-1">ID: {sale.id}</p>
+            <p className="text-xs text-muted-foreground text-center pt-1">ID: {sale.id}</p>
           </div>
         )}
       </DialogContent>

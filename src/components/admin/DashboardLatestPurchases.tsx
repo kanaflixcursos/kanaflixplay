@@ -143,7 +143,7 @@ export default function DashboardLatestPurchases() {
                   {formatCurrency(purchase.amount)}
                 </span>
                 {purchase.payment_method && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1">
                     {paymentMethodIcons[purchase.payment_method]}
                     {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
                   </Badge>
@@ -151,12 +151,12 @@ export default function DashboardLatestPurchases() {
               </div>
               <Badge 
                 variant="outline" 
-                className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
+                className={`text-xs px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
               >
                 {statusLabels[purchase.status] || purchase.status}
               </Badge>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-xs text-muted-foreground mt-1.5">
               {formatDistanceToNow(new Date(purchase.created_at), { addSuffix: true, locale: ptBR })}
             </p>
           </DashboardListItem>
@@ -225,7 +225,7 @@ export default function DashboardLatestPurchases() {
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">ID: {selectedPurchase.id}</p>
+              <p className="text-xs text-muted-foreground">ID: {selectedPurchase.id}</p>
             </div>
           )}
         </DialogContent>

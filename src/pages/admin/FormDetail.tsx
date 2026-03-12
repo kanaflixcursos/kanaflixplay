@@ -473,7 +473,7 @@ export default function FormDetail() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{form.name}</h1>
-              <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-[10px]">
+              <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
                 {form.is_active ? 'Ativo' : 'Inativo'}
               </Badge>
             </div>
@@ -534,11 +534,11 @@ export default function FormDetail() {
                         <td className="p-3 text-muted-foreground">{lead.email}</td>
                         <td className="p-3 text-muted-foreground">{lead.phone || '—'}</td>
                         <td className="p-3">
-                          <Badge variant={leadStatusMap[lead.status]?.variant || 'secondary'} className="text-[10px]">
+                          <Badge variant={leadStatusMap[lead.status]?.variant || 'secondary'} className="text-xs">
                             {leadStatusMap[lead.status]?.label || lead.status}
                           </Badge>
                         </td>
-                        <td className="p-3 text-xs max-w-[280px]">
+                        <td className="p-3 text-xs max-w-72">
                           {lead.custom_data && Object.keys(lead.custom_data).length > 0 ? (
                             <div className="space-y-1.5">
                               {Object.entries(lead.custom_data).map(([key, value]) => {
@@ -548,7 +548,7 @@ export default function FormDetail() {
                                 const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
                                 return (
                                   <div key={key} className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{displayLabel}</span>
+                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{displayLabel}</span>
                                     <span className="text-foreground">{displayValue}</span>
                                   </div>
                                 );
@@ -648,7 +648,7 @@ export default function FormDetail() {
                         </SelectContent>
                       </Select>
                       <div className="flex items-center gap-1">
-                        <Label className="text-[10px] text-muted-foreground">Obrig.</Label>
+                        <Label className="text-xs text-muted-foreground">Obrig.</Label>
                         <Switch checked={field.required} onCheckedChange={(v) => updateField(i, { required: v })} />
                       </div>
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeField(i)}>
@@ -672,7 +672,7 @@ export default function FormDetail() {
                             </Button>
                           </div>
                         ))}
-                        <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addOption(i)}>
+                        <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => addOption(i)}>
                           <Plus className="h-2.5 w-2.5 mr-0.5" /> Opção
                         </Button>
                       </div>

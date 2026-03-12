@@ -294,13 +294,13 @@ export default function MarketingCoupons() {
                   <div className="flex flex-wrap gap-1.5">
                     {coupon.course_titles.length > 0 ? (
                       coupon.course_titles.map((title, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-[10px]">
+                        <Badge key={idx} variant="secondary" className="text-xs">
                           <BookOpen className="h-2.5 w-2.5 mr-1" />
                           {title}
                         </Badge>
                       ))
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">Todos os cursos</Badge>
+                      <Badge variant="outline" className="text-xs">Todos os cursos</Badge>
                     )}
                     {coupon.payment_methods.length > 0 ? (
                       coupon.payment_methods.map(pm => {
@@ -308,29 +308,29 @@ export default function MarketingCoupons() {
                         if (!info) return null;
                         const Icon = info.icon;
                         return (
-                          <Badge key={pm} variant="outline" className="text-[10px]">
+                          <Badge key={pm} variant="outline" className="text-xs">
                             <Icon className="h-2.5 w-2.5 mr-1" />
                             {info.label}
                           </Badge>
                         );
                       })
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">Todas formas pgto</Badge>
+                      <Badge variant="outline" className="text-xs">Todas formas pgto</Badge>
                     )}
                     {coupon.max_uses != null && (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {coupon.used_count}/{coupon.max_uses} usos
                       </Badge>
                     )}
                     {coupon.max_uses == null && (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {coupon.used_count} usos
                       </Badge>
                     )}
                     {coupon.expires_at && (
                       <Badge
                         variant={new Date(coupon.expires_at) < new Date() ? 'destructive' : 'outline'}
-                        className="text-[10px]"
+                        className="text-xs"
                       >
                         <Calendar className="h-2.5 w-2.5 mr-1" />
                         {new Date(coupon.expires_at).toLocaleDateString('pt-BR')}

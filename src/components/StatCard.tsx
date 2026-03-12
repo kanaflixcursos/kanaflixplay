@@ -60,7 +60,7 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
             <>
               <div className="stat-card-value truncate">{value}</div>
               {description && (
-                <p className="stat-card-description text-[10px] sm:text-xs mt-0.5">{description}</p>
+                <p className="stat-card-description text-xs mt-0.5">{description}</p>
               )}
             </>
           )}

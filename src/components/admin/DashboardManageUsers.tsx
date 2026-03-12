@@ -113,7 +113,7 @@ export default function DashboardManageUsers() {
                   <p className="text-xs sm:text-sm font-medium truncate">
                     {user.full_name || 'Sem nome'}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     {user.email}
                   </p>
                 </div>

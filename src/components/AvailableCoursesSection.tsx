@@ -147,7 +147,7 @@ export default function AvailableCoursesSection() {
       {loading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden shrink-0 w-[160px] sm:w-[200px]">
+            <Card key={i} className="overflow-hidden shrink-0 w-40 sm:w-48">
               <Skeleton className="aspect-[4/5] w-full" />
               <div className="p-4 space-y-3">
                 <Skeleton className="h-3 w-1/2" />
@@ -161,15 +161,14 @@ export default function AvailableCoursesSection() {
         <div
           ref={scrollRef}
           onScroll={updateScrollButtons}
-          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mb-2 [scrollbar-width:none]"
         >
           {courses.map((course) => (
             <Link
               key={course.id}
               to={`/checkout/${course.id}`}
               data-card
-              className="shrink-0 w-[160px] sm:w-[200px] snap-start"
+              className="shrink-0 w-40 sm:w-48 snap-start"
             >
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
                 {/* Thumbnail */}
@@ -192,12 +191,12 @@ export default function AvailableCoursesSection() {
                   {/* Category + Duration */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {course.category_name && (
-                      <Badge variant="secondary" className="text-[10px] font-medium">
+                      <Badge variant="secondary" className="text-xs font-medium">
                         {course.category_name}
                       </Badge>
                     )}
                     {course.total_duration > 0 && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
                       </span>
@@ -209,7 +208,7 @@ export default function AvailableCoursesSection() {
                   {/* Price + Cart */}
                   <div className="flex items-center justify-between pt-1.5 border-t border-border mt-auto">
                     <div>
-                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground">Preço</span>
                       <p className="text-sm font-semibold text-primary leading-tight">
                         {formatPrice(course.price)}
                       </p>
@@ -219,7 +218,7 @@ export default function AvailableCoursesSection() {
                         <ShoppingCart className="h-3.5 w-3.5 text-primary" />
                       </div>
                     ) : (
-                      <Badge variant="secondary" className="text-[10px] font-semibold text-primary uppercase">
+                      <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
                         Matricular
                       </Badge>
                     )}

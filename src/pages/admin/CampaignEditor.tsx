@@ -243,16 +243,16 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label className="text-[10px] text-muted-foreground">Texto</Label>
+                <Label className="text-xs text-muted-foreground">Texto</Label>
                 <Input value={block.content} onChange={e => onChange({ content: e.target.value })} className="h-8 text-sm" disabled={disabled} />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">URL</Label>
+                <Label className="text-xs text-muted-foreground">URL</Label>
                 <Input value={block.buttonUrl || ''} onChange={e => onChange({ buttonUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-[10px] text-muted-foreground">Cor</Label>
+              <Label className="text-xs text-muted-foreground">Cor</Label>
               <input
                 type="color"
                 value={block.buttonColor || brand.primary}
@@ -273,11 +273,11 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
         {block.type === 'image' && (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px] text-muted-foreground">URL da imagem</Label>
+              <Label className="text-xs text-muted-foreground">URL da imagem</Label>
               <Input value={block.imageUrl || ''} onChange={e => onChange({ imageUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
             </div>
             <div>
-              <Label className="text-[10px] text-muted-foreground">Texto alternativo</Label>
+              <Label className="text-xs text-muted-foreground">Texto alternativo</Label>
               <Input value={block.imageAlt || ''} onChange={e => onChange({ imageAlt: e.target.value })} className="h-8 text-sm" disabled={disabled} />
             </div>
           </div>
@@ -291,7 +291,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
 
         {block.type === 'spacer' && (
           <div className="flex items-center gap-2">
-            <Label className="text-[10px] text-muted-foreground">Altura</Label>
+            <Label className="text-xs text-muted-foreground">Altura</Label>
             <Input
               type="number"
               value={block.height || 24}
@@ -623,7 +623,7 @@ export default function CampaignEditor() {
                 </div>
               )}
 
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Use <code className="bg-muted px-1 rounded">{'{{name}}'}</code> para inserir o nome do destinatário
               </p>
             </TabsContent>
@@ -635,7 +635,7 @@ export default function CampaignEditor() {
                   <div>
                     <Label className="text-xs">Tag de Rastreamento</Label>
                     <Input value={campaignTag} onChange={e => { setCampaignTag(e.target.value); setTagManuallyEdited(true); }} placeholder="ex: black-friday-2026" className="h-9 font-mono text-xs" disabled={!isDraft} />
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Usada como utm_campaign nos links do email</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Usada como utm_campaign nos links do email</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -689,7 +689,7 @@ export default function CampaignEditor() {
             <CardContent className="p-0">
               <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Preview</span>
-                <span className="text-[10px] text-muted-foreground truncate ml-2">{subject || 'Sem assunto'}</span>
+                <span className="text-xs text-muted-foreground truncate ml-2">{subject || 'Sem assunto'}</span>
               </div>
               <iframe
                 srcDoc={previewHtml}

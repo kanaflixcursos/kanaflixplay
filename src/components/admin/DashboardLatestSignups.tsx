@@ -97,7 +97,7 @@ export default function DashboardLatestSignups() {
                 <p className="text-xs text-muted-foreground truncate">
                   {user.email}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(user.created_at), {
                     addSuffix: true,
                     locale: ptBR,

@@ -93,7 +93,7 @@ export default function CatalogPage() {
           </div>
 
           {categories.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide [scrollbar-width:none]">
               <Button
                 variant={selectedCategory === null ? 'default' : 'outline'}
                 size="sm"
@@ -161,7 +161,7 @@ export default function CatalogPage() {
               <h2 className="text-base sm:text-lg font-semibold tracking-tight mb-3 sm:mb-4 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 {category.name}
-                <Badge variant="outline" className="text-[10px] sm:text-xs font-normal ml-1">
+                <Badge variant="outline" className="text-xs font-normal ml-1">
                   {categoryCourses.length} {categoryCourses.length === 1 ? 'curso' : 'cursos'}
                 </Badge>
               </h2>
@@ -174,7 +174,7 @@ export default function CatalogPage() {
               <h2 className="text-base sm:text-lg font-semibold tracking-tight mb-3 sm:mb-4 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Outros Cursos
-                <Badge variant="outline" className="text-[10px] sm:text-xs font-normal ml-1">
+                <Badge variant="outline" className="text-xs font-normal ml-1">
                   {uncategorized.length} {uncategorized.length === 1 ? 'curso' : 'cursos'}
                 </Badge>
               </h2>
@@ -198,7 +198,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
           <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col relative">
             {course.is_enrolled && (
               <div className="absolute top-2 right-2 z-10">
-                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-primary-foreground text-[10px] font-bold uppercase gap-1 shadow-md">
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-primary-foreground text-xs font-bold uppercase gap-1 shadow-sm">
                   <CheckCircle className="h-3 w-3" />
                   Já Possui
                 </Badge>
@@ -222,7 +222,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
 
             <div className="p-2.5 sm:p-4 flex flex-col flex-1 gap-1.5 sm:gap-2">
               {course.total_duration > 0 && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {formatDuration(course.total_duration)} de aula
                 </span>
@@ -230,20 +230,20 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
 
               <h3 className="text-xs sm:text-sm font-semibold leading-snug line-clamp-2">{course.title}</h3>
               {course.description && (
-                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 hidden sm:block">
+                <p className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">
                   {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
                 </p>
               )}
 
               <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-border mt-auto">
                 <div>
-                  <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Preço</span>
                   <p className="text-xs sm:text-sm font-semibold text-primary leading-tight">
                     {formatPrice(course.price)}
                   </p>
                 </div>
                 {course.is_enrolled ? (
-                  <Badge variant="secondary" className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
+                  <Badge variant="secondary" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
                     Acessar
                   </Badge>
                 ) : course.price && course.price > 0 ? (
@@ -251,7 +251,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
                     <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                   </div>
                 ) : (
-                  <Badge variant="secondary" className="text-[10px] sm:text-xs font-semibold text-primary uppercase">
+                  <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
                     Matricular
                   </Badge>
                 )}

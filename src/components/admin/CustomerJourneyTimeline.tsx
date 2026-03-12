@@ -185,7 +185,7 @@ export default function CustomerJourneyTimeline({
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-foreground">{cfg.label}</span>
                             {event.utm_source && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
                                 {event.utm_source}
                               </Badge>
                             )}

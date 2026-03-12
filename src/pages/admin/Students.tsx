@@ -648,7 +648,7 @@ export default function AdminStudents() {
                     >{student.full_name}</span>
                     <Badge
                       variant={student.role === 'admin' ? 'default' : 'secondary'}
-                      className="text-[10px] px-1.5 py-0 h-5 shrink-0"
+                      className="text-xs px-1.5 py-0 h-5 shrink-0"
                     >
                       {roleLabels[student.role] || student.role}
                     </Badge>
@@ -657,11 +657,11 @@ export default function AdminStudents() {
                 </div>
 
                 <div className="hidden md:flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
-                  <div className="text-center min-w-[60px]">
+                  <div className="text-center min-w-16">
                     <span className="font-medium text-foreground">{student.enrolledCourses}</span>
                     <span className="ml-1">cursos</span>
                   </div>
-                  <div className="min-w-[120px] text-xs">
+                  <div className="min-w-28 text-xs">
                     {formatDateTime(student.last_seen_at)}
                   </div>
                 </div>

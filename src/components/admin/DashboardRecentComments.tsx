@@ -77,10 +77,10 @@ export default function DashboardRecentComments() {
               <p className="text-xs sm:text-sm font-medium">
                 {comment.user_name || 'Usuário'}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {comment.content}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {formatDistanceToNow(new Date(comment.created_at), {
                   addSuffix: true,
                   locale: ptBR,
@@ -93,7 +93,7 @@ export default function DashboardRecentComments() {
               </Link>
             </Button>
           </div>
-          <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 truncate">
+          <p className="text-xs text-primary mt-1.5 sm:mt-2 truncate">
             Em: {comment.lesson_title}
           </p>
         </DashboardListItem>

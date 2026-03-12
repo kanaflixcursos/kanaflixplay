@@ -233,7 +233,7 @@ export default function MarketingForms() {
                               </Button>
                             </div>
                           ))}
-                          <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addOption(i)}>
+                          <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => addOption(i)}>
                             <Plus className="h-2.5 w-2.5 mr-0.5" /> Opção
                           </Button>
                         </div>
@@ -283,17 +283,17 @@ export default function MarketingForms() {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <Switch checked={form.is_active} onCheckedChange={(v) => handleToggleActive(form.id, v)} />
-                      <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                      <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
                         {form.is_active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 mb-3">
-                    <code className="text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded truncate flex-1">
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded truncate flex-1">
                       /{form.slug}
                     </code>
-                    <span className="text-[10px] text-muted-foreground">{form.fields.length} campos</span>
+                    <span className="text-xs text-muted-foreground">{form.fields.length} campos</span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
@@ -307,7 +307,7 @@ export default function MarketingForms() {
                     </Button>
                   </div>
 
-                  <p className="text-[10px] text-muted-foreground mt-3">
+                  <p className="text-xs text-muted-foreground mt-3">
                     Criado em {format(new Date(form.created_at), 'dd/MM/yyyy')}
                   </p>
                 </CardContent>
