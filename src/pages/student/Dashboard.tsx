@@ -8,7 +8,6 @@ import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
-import AvailableCoursesSection from '@/components/AvailableCoursesSection';
 import { motion } from 'framer-motion';
 
 interface EnrolledCourse {
