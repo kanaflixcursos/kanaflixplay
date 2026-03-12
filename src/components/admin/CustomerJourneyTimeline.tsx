@@ -68,6 +68,7 @@ export default function CustomerJourneyTimeline({
   const [utmFilter, setUtmFilter] = useState('all');
   const [utmSources, setUtmSources] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [courseNames, setCourseNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchEvents();
@@ -88,6 +89,19 @@ export default function CustomerJourneyTimeline({
     }
   };
 
+  const fetchCourseNames = async (courseIds: string[]) => {
+    if (courseIds.length === 0) return;
+    // Filter out IDs we already have
+    const missing = courseIds.filter(id => !courseNames[id]);
+    if (missing.length === 0) return;
+    const { data } = await supabase.from('courses').select('id, title').in('id', missing);
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach(c => { map[c.id] = c.title; });
+      setCourseNames(prev => ({ ...prev, ...map }));
+    }
+  };
+
   const fetchEvents = async () => {
     setLoading(true);
     let query = supabase
@@ -102,7 +116,22 @@ export default function CustomerJourneyTimeline({
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
     const { data } = await query;
-    setEvents((data as JourneyEvent[]) || []);
+    const result = (data as JourneyEvent[]) || [];
+    setEvents(result);
+
+    // Extract course IDs from event_data and page_path
+    const courseIds = new Set<string>();
+    result.forEach(e => {
+      const ed = e.event_data as Record<string, unknown> | null;
+      if (ed?.course_id) courseIds.add(String(ed.course_id));
+      // Also extract from page_path like /checkout/123
+      if (e.page_path) {
+        const match = e.page_path.match(/\/checkout\/([^/?]+)/);
+        if (match) courseIds.add(match[1]);
+      }
+    });
+    fetchCourseNames(Array.from(courseIds));
+
     setLoading(false);
   };
 
@@ -176,6 +205,19 @@ export default function CustomerJourneyTimeline({
                     const Icon = cfg.icon;
                     const eventData = event.event_data as Record<string, unknown> | null;
 
+                    // Resolve course name from event_data or page_path
+                    let courseName: string | null = null;
+                    if (eventData?.course_title) {
+                      courseName = String(eventData.course_title);
+                    } else if (eventData?.course_id && courseNames[String(eventData.course_id)]) {
+                      courseName = courseNames[String(eventData.course_id)];
+                    } else if (event.page_path) {
+                      const match = event.page_path.match(/\/checkout\/([^/?]+)/);
+                      if (match && courseNames[match[1]]) {
+                        courseName = courseNames[match[1]];
+                      }
+                    }
+
                     return (
                       <div key={event.id} className="relative flex items-start gap-3 py-2 pl-0">
                         <div className={`relative z-10 flex items-center justify-center h-9 w-9 rounded-full shrink-0 ${cfg.bg}`}>
@@ -184,6 +226,11 @@ export default function CustomerJourneyTimeline({
                         <div className="flex-1 min-w-0 pt-0.5">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-foreground">{cfg.label}</span>
+                            {courseName && (
+                              <Badge variant="secondary" className="text-xs px-1.5 py-0 h-4 font-normal">
+                                {courseName}
+                              </Badge>
+                            )}
                             {event.utm_source && (
                               <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
                                 {event.utm_source}
@@ -192,18 +239,6 @@ export default function CustomerJourneyTimeline({
                           </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                             <span>{formatTime(event.created_at)}</span>
-                            {event.page_path && event.page_path !== '/' && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate max-w-[200px]">{event.page_path}</span>
-                              </>
-                            )}
-                            {eventData?.course_title && (
-                              <>
-                                <span>•</span>
-                                <span className="truncate max-w-[200px]">{String(eventData.course_title)}</span>
-                              </>
-                            )}
                           </div>
                         </div>
                       </div>
