@@ -72,7 +72,7 @@ export default function AdminStudents() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
