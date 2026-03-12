@@ -86,7 +86,7 @@ export default function MarketingHub() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-foreground">{tool.title}</h3>
                     {tool.comingSoon && (
-                      <span className="text-[10px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
                         Em breve
                       </span>
                     )}

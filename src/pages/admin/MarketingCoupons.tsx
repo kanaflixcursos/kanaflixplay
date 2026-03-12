@@ -330,7 +330,7 @@ export default function MarketingCoupons() {
                     {coupon.expires_at && (
                       <Badge
                         variant={new Date(coupon.expires_at) < new Date() ? 'destructive' : 'outline'}
-                        className="text-[10px]"
+                        className="text-xs"
                       >
                         <Calendar className="h-2.5 w-2.5 mr-1" />
                         {new Date(coupon.expires_at).toLocaleDateString('pt-BR')}

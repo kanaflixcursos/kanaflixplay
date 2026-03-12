@@ -307,7 +307,7 @@ export default function MarketingForms() {
                     </Button>
                   </div>
 
-                  <p className="text-[10px] text-muted-foreground mt-3">
+                  <p className="text-xs text-muted-foreground mt-3">
                     Criado em {format(new Date(form.created_at), 'dd/MM/yyyy')}
                   </p>
                 </CardContent>

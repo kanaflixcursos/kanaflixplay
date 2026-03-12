@@ -661,7 +661,7 @@ export default function AdminStudents() {
                     <span className="font-medium text-foreground">{student.enrolledCourses}</span>
                     <span className="ml-1">cursos</span>
                   </div>
-                  <div className="min-w-[120px] text-xs">
+                  <div className="min-w-28 text-xs">
                     {formatDateTime(student.last_seen_at)}
                   </div>
                 </div>
