@@ -331,7 +331,7 @@ export default function SalesTable({
                     </span>
                   </Link>
                 </TableCell>
-                <TableCell className="text-sm max-w-[180px] truncate">
+                <TableCell className="text-sm max-w-44 truncate">
                   {sale.course_title || '—'}
                 </TableCell>
                 <TableCell className="text-sm whitespace-nowrap">

@@ -76,7 +76,7 @@ export default function DashboardCourseConfig() {
                 >
                   {course.is_published ? 'Publicado' : 'Rascunho'}
                 </Badge>
-                <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <PlayCircle className="h-3 w-3" />
                   {course.lesson_count} {course.lesson_count === 1 ? 'aula' : 'aulas'}
                 </span>
