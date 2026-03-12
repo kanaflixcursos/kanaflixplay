@@ -156,7 +156,7 @@ export default function DashboardLatestPurchases() {
                 {statusLabels[purchase.status] || purchase.status}
               </Badge>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-xs text-muted-foreground mt-1.5">
               {formatDistanceToNow(new Date(purchase.created_at), { addSuffix: true, locale: ptBR })}
             </p>
           </DashboardListItem>
