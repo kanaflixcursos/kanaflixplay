@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
+import { translateError } from '@/lib/translate-error';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
