@@ -293,7 +293,7 @@ export default function AdminStudents() {
       fetchData();
       setDeleteDialogOpen(false);
     } catch (error: any) {
-      console.error('Delete error:', error);
+      // Error handled by toast
       toast.error(error.message || 'Erro ao excluir usuário');
     }
     setDeleting(false);
