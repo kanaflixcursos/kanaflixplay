@@ -120,7 +120,6 @@ export default function PandavideoPlayerWithProgress({
     if (data.message === 'panda_allData' && data.playerData?.duration && data.playerData.duration > 0) {
       if (totalDurationRef.current === 0) {
         totalDurationRef.current = data.playerData.duration;
-        console.log('[Pandavideo] Duration set from panda_allData:', data.playerData.duration);
       }
     }
 
@@ -140,7 +139,6 @@ export default function PandavideoPlayerWithProgress({
       if (duration > 0 && !hasMarkedCompleteRef.current) {
         const percentWatched = (currentTime / duration) * 100;
         if (percentWatched >= 90) {
-          console.log('[Pandavideo] 90% reached! Marking as complete.');
           hasMarkedCompleteRef.current = true;
           saveProgress(currentTime, true);
           onComplete?.();

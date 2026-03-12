@@ -185,8 +185,8 @@ export default function Checkout() {
         trackEvent('checkout_completed', { course_id: courseId, amount: 0, method: 'free' }, `/checkout/${courseId}`, user.id);
         trackEvent('enrollment', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
       }
-    } catch (error: any) {
-      toast.error('Erro ao realizar matrícula: ' + error.message);
+    } catch {
+      toast.error('Erro ao realizar matrícula. Tente novamente.');
     } finally {
       setCheckingEnrollment(false);
     }

@@ -115,7 +115,6 @@ export default function AdminStudents() {
       .order('created_at', { ascending: false });
 
     if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
       setLoading(false);
       return;
     }
@@ -294,7 +293,7 @@ export default function AdminStudents() {
       fetchData();
       setDeleteDialogOpen(false);
     } catch (error: any) {
-      console.error('Delete error:', error);
+      // Error handled by toast
       toast.error(error.message || 'Erro ao excluir usuário');
     }
     setDeleting(false);
@@ -408,8 +407,7 @@ export default function AdminStudents() {
         toast.success(`Progresso de ${resetStudent.full_name} no curso "${courseName}" resetado com sucesso!`);
       }
       setResetDialogOpen(false);
-    } catch (error) {
-      console.error('Error resetting progress:', error);
+    } catch {
       toast.error('Erro ao resetar progresso');
     }
     setResetting(false);
@@ -453,8 +451,7 @@ export default function AdminStudents() {
       toast.success(`${grantStudent.full_name} matriculado em "${courseName}" com sucesso!`);
       setGrantCourseDialogOpen(false);
       fetchData();
-    } catch (error) {
-      console.error('Error granting course:', error);
+    } catch {
       toast.error('Erro ao conceder curso');
     }
     setGranting(false);

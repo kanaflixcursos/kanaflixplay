@@ -152,7 +152,6 @@ export default function StudentProfile() {
       .single();
 
     if (profileError || !profile) {
-      console.error('Profile not found:', profileError);
       navigate('/admin/students');
       return;
     }
@@ -272,7 +271,6 @@ export default function StudentProfile() {
       setLoading(true);
       await fetchStudentData();
     } catch (error: any) {
-      console.error('Refund error:', error);
       toast.error(error.message || 'Erro ao processar reembolso');
     }
 
@@ -304,7 +302,6 @@ export default function StudentProfile() {
       setLoading(true);
       await fetchStudentData();
     } catch (error: any) {
-      console.error('Cancel error:', error);
       toast.error(error.message || 'Erro ao cancelar pedido');
     }
 
