@@ -559,9 +559,9 @@ export default function CampaignEditor() {
       </div>
 
       {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4" style={{ minHeight: '600px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ minHeight: '600px' }}>
         {/* Left column: config + blocks */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="space-y-4">
           <Tabs defaultValue="content" className="w-full">
             <TabsList className="w-full grid grid-cols-2">
               <TabsTrigger value="content">Conteúdo</TabsTrigger>
