@@ -560,7 +560,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {/* Course */}
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Produto</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Produto</p>
               <p className="font-medium text-sm">{sale.course_title || 'N/A'}</p>
             </div>
 
