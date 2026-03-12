@@ -222,7 +222,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
 
             <div className="p-2.5 sm:p-4 flex flex-col flex-1 gap-1.5 sm:gap-2">
               {course.total_duration > 0 && (
-                <span className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {formatDuration(course.total_duration)} de aula
                 </span>
