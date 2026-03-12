@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, UserCheck } from 'lucide-react';
-import { subDays } from 'date-fns';
+import { Users } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useStudentStats } from '@/hooks/queries/useStudents';
 
 function StatCardSkeleton() {
   return (
@@ -16,24 +14,9 @@ function StatCardSkeleton() {
 }
 
 export default function DashboardStudentsCard() {
-  const [totalStudents, setTotalStudents] = useState(0);
-  const [activeStudents, setActiveStudents] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-    const [{ count: total }, { count: active }] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('last_seen_at', sevenDaysAgo),
-    ]);
-    setTotalStudents(total || 0);
-    setActiveStudents(active || 0);
-    setLoading(false);
-  };
+  const { data, isLoading: loading } = useStudentStats();
+  const totalStudents = data?.totalStudents ?? 0;
+  const activeStudents = data?.activeStudents ?? 0;
 
   return (
     <motion.div
