@@ -49,7 +49,7 @@ interface AnalyticsData {
 function PercentBadge({ current, previous }: { current: number; previous: number }) {
   if (previous === 0 && current === 0) return null;
   if (previous === 0) return (
-    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-[10px] gap-0.5 px-1.5 py-0 h-5">
+    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs gap-0.5 px-1.5 py-0 h-5">
       <TrendingUp className="h-3 w-3" /> Novo
     </Badge>
   );
