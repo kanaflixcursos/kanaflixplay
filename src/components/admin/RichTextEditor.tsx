@@ -21,6 +21,28 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
     }
   }, [value]);
 
+  const normalizeContent = useCallback(() => {
+    if (!editorRef.current) return;
+    // When toggling lists off, browsers leave <div> wrappers that change typography.
+    // Replace orphan <div> wrappers (not inside lists) with simple line breaks.
+    const divs = editorRef.current.querySelectorAll('div:not(li > div)');
+    divs.forEach(div => {
+      // Only replace top-level divs that aren't structural
+      if (div.parentElement === editorRef.current) {
+        const br = document.createElement('br');
+        const frag = document.createDocumentFragment();
+        while (div.firstChild) frag.appendChild(div.firstChild);
+        frag.appendChild(br);
+        div.replaceWith(frag);
+      }
+    });
+    // Remove empty trailing <br>
+    const last = editorRef.current.lastChild;
+    if (last && last.nodeName === 'BR' && last.previousSibling?.nodeName === 'BR') {
+      last.remove();
+    }
+  }, []);
+
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
     isUpdatingRef.current = true;
@@ -31,8 +53,16 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
   const exec = useCallback((command: string, val?: string) => {
     editorRef.current?.focus();
     document.execCommand(command, false, val);
-    handleInput();
-  }, [handleInput]);
+    // Normalize after list commands to prevent typography changes
+    if (command === 'insertUnorderedList' || command === 'insertOrderedList') {
+      requestAnimationFrame(() => {
+        normalizeContent();
+        handleInput();
+      });
+    } else {
+      handleInput();
+    }
+  }, [handleInput, normalizeContent]);
 
   const handleLink = useCallback(() => {
     const url = prompt('URL do link:', 'https://');
