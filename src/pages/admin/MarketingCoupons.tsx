@@ -315,7 +315,7 @@ export default function MarketingCoupons() {
                         );
                       })
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">Todas formas pgto</Badge>
+                      <Badge variant="outline" className="text-xs">Todas formas pgto</Badge>
                     )}
                     {coupon.max_uses != null && (
                       <Badge variant="outline" className="text-[10px]">
