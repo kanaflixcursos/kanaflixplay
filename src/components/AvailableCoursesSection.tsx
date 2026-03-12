@@ -168,7 +168,7 @@ export default function AvailableCoursesSection() {
               key={course.id}
               to={`/checkout/${course.id}`}
               data-card
-              className="shrink-0 w-[160px] sm:w-[200px] snap-start"
+              className="shrink-0 w-40 sm:w-48 snap-start"
             >
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
                 {/* Thumbnail */}
