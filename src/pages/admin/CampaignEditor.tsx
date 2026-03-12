@@ -416,7 +416,7 @@ export default function CampaignEditor() {
   };
 
   const handleSaveAndSend = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    if (!validateRequired()) return;
     setSaving(true);
     const payload = buildPayload();
 
