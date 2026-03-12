@@ -538,7 +538,7 @@ export default function FormDetail() {
                             {leadStatusMap[lead.status]?.label || lead.status}
                           </Badge>
                         </td>
-                        <td className="p-3 text-xs max-w-[280px]">
+                        <td className="p-3 text-xs max-w-72">
                           {lead.custom_data && Object.keys(lead.custom_data).length > 0 ? (
                             <div className="space-y-1.5">
                               {Object.entries(lead.custom_data).map(([key, value]) => {
