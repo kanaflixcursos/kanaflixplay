@@ -37,25 +37,10 @@ export default function FunnelRoadmap() {
 
     const { data: visitorRows } = await supabase.from('site_visits').select('visitor_id');
 
-    // Leads
-    let leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
-    if (hasSource) leadsQuery = leadsQuery.eq('utm_source', utmFilter);
-    if (hasCampaign) leadsQuery = leadsQuery.eq('utm_campaign', campaignFilter);
-    if (hasContent) leadsQuery = leadsQuery.eq('utm_content', contentFilter);
-
-    let qualifiedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified');
-    if (hasSource) qualifiedQuery = qualifiedQuery.eq('utm_source', utmFilter);
-    if (hasCampaign) qualifiedQuery = qualifiedQuery.eq('utm_campaign', campaignFilter);
-    if (hasContent) qualifiedQuery = qualifiedQuery.eq('utm_content', contentFilter);
-
-    let opportunityQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity');
-    if (hasSource) opportunityQuery = opportunityQuery.eq('utm_source', utmFilter);
-    if (hasCampaign) opportunityQuery = opportunityQuery.eq('utm_campaign', campaignFilter);
-    if (hasContent) opportunityQuery = opportunityQuery.eq('utm_content', contentFilter);
-
-    // Sales: orders with status paid
-    // For UTM-filtered sales, we'd need to join with profiles. For now, show total.
-    let salesQuery = supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid');
+    const leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
+    const qualifiedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified');
+    const opportunityQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity');
+    const salesQuery = supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid');
 
     const [
       { count: totalLeads },
