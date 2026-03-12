@@ -67,9 +67,6 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from('lesson_progress').delete().eq('user_id', user.id);
         await supabaseAdmin.from('lesson_comments').delete().eq('user_id', user.id);
         await supabaseAdmin.from('notifications').delete().eq('user_id', user.id);
-        await supabaseAdmin.from('support_ticket_reads').delete().eq('user_id', user.id);
-        await supabaseAdmin.from('support_ticket_messages').delete().eq('user_id', user.id);
-        await supabaseAdmin.from('support_tickets').delete().eq('user_id', user.id);
         await supabaseAdmin.from('user_roles').delete().eq('user_id', user.id);
         await supabaseAdmin.from('profiles').delete().eq('user_id', user.id);
 

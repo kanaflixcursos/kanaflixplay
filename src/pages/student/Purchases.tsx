@@ -121,34 +121,18 @@ export default function Purchases() {
     setSubmittingRefund(true);
 
     try {
-      // 1. Create support ticket for refund
-      const { data: ticket, error: ticketError } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: user.id,
-          subject: `Solicitação de Reembolso - ${refundingOrder.course?.title || 'Pedido'}`,
-          message: refundReason.trim(),
-          category: 'refund',
-          priority: 'high',
-        })
-        .select()
-        .single();
-
-      if (ticketError) throw ticketError;
-
-      // 2. Create refund request linked to ticket
+      // Create refund request
       const { error: refundError } = await supabase
         .from('refund_requests')
         .insert({
           order_id: refundingOrder.id,
           user_id: user.id,
           reason: refundReason.trim(),
-          ticket_id: ticket.id,
         });
 
       if (refundError) throw refundError;
 
-      toast.success('Solicitação de reembolso enviada! Acompanhe pelo Suporte.');
+      toast.success('Solicitação de reembolso enviada!');
       setRefundingOrder(null);
       setRefundReason('');
       fetchOrders();
