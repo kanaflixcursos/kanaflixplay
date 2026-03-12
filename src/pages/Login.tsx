@@ -49,7 +49,7 @@ export default function Login() {
     const { error } = await signIn(email, password);
     
     if (error) {
-      toast.error('Erro ao entrar: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       toast.success('Login realizado com sucesso!');
       navigate(redirectTo);
