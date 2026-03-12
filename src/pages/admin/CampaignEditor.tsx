@@ -291,7 +291,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
 
         {block.type === 'spacer' && (
           <div className="flex items-center gap-2">
-            <Label className="text-[10px] text-muted-foreground">Altura</Label>
+            <Label className="text-xs text-muted-foreground">Altura</Label>
             <Input
               type="number"
               value={block.height || 24}
