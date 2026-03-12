@@ -68,7 +68,7 @@ export default function DashboardCourseConfig() {
               <div className="flex items-center gap-2 mt-1">
                 <Badge 
                   variant="outline" 
-                  className={`text-[10px] px-1.5 py-0 h-5 gap-1 ${
+                  className={`text-xs px-1.5 py-0 h-5 gap-1 ${
                     course.is_published 
                       ? 'bg-success/20 text-success border-success/30' 
                       : 'bg-muted text-muted-foreground'
