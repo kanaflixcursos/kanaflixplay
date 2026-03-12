@@ -196,7 +196,7 @@ export default function AvailableCoursesSection() {
                       </Badge>
                     )}
                     {course.total_duration > 0 && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
                       </span>
