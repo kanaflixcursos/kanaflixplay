@@ -237,7 +237,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
 
               <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-border mt-auto">
                 <div>
-                  <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-muted-foreground">Preço</span>
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Preço</span>
                   <p className="text-xs sm:text-sm font-semibold text-primary leading-tight">
                     {formatPrice(course.price)}
                   </p>
