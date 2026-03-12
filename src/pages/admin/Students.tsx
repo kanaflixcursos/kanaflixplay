@@ -115,7 +115,6 @@ export default function AdminStudents() {
       .order('created_at', { ascending: false });
 
     if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
       setLoading(false);
       return;
     }
