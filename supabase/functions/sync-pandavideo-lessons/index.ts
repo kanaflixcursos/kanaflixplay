@@ -222,14 +222,7 @@ Deno.serve(async (req) => {
         console.log(`Found ${videos.length} total videos across all folders`);
         
         if (videos.length > 0) {
-          console.log(`First video sample:`, JSON.stringify({
-            id: videos[0].id,
-            title: videos[0].title,
-            status: videos[0].status,
-            thumbnail: videos[0].thumbnail,
-            thumbnail_url: videos[0].thumbnail_url,
-            cover: videos[0].cover,
-          }));
+          console.log(`First video ID: ${videos[0].id}, status: ${videos[0].status}`);
         }
 
         // Get existing lessons for this course
