@@ -78,7 +78,7 @@ function defaultBlock(type: BlockType): EmailBlock {
     case 'button':
       return { id: generateId(), type, content: 'Clique aqui', buttonUrl: 'https://', buttonColor: brand.primary };
     case 'image':
-      return { id: generateId(), type, content: '', imageUrl: '', imageAlt: 'Imagem' };
+      return { id: generateId(), type, content: '', imageUrl: '', imageAlt: 'Imagem', imageWidth: 100 };
     case 'divider':
       return { id: generateId(), type, content: '' };
     case 'spacer':
