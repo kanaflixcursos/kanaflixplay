@@ -648,7 +648,7 @@ export default function AdminStudents() {
                     >{student.full_name}</span>
                     <Badge
                       variant={student.role === 'admin' ? 'default' : 'secondary'}
-                      className="text-[10px] px-1.5 py-0 h-5 shrink-0"
+                      className="text-xs px-1.5 py-0 h-5 shrink-0"
                     >
                       {roleLabels[student.role] || student.role}
                     </Badge>
