@@ -230,7 +230,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
 
               <h3 className="text-xs sm:text-sm font-semibold leading-snug line-clamp-2">{course.title}</h3>
               {course.description && (
-                <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 hidden sm:block">
+                <p className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">
                   {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
                 </p>
               )}
