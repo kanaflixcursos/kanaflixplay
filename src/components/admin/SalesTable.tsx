@@ -743,7 +743,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
               </div>
             )}
 
-            <p className="text-[10px] text-muted-foreground text-center pt-1">ID: {sale.id}</p>
+            <p className="text-xs text-muted-foreground text-center pt-1">ID: {sale.id}</p>
           </div>
         )}
       </DialogContent>
