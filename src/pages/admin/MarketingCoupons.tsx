@@ -318,7 +318,7 @@ export default function MarketingCoupons() {
                       <Badge variant="outline" className="text-xs">Todas formas pgto</Badge>
                     )}
                     {coupon.max_uses != null && (
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-xs">
                         {coupon.used_count}/{coupon.max_uses} usos
                       </Badge>
                     )}
