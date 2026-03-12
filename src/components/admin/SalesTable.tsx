@@ -295,7 +295,7 @@ export default function SalesTable({
               <TableHead className="text-sm">Pagamento</TableHead>
               <TableHead className="text-sm">Status</TableHead>
               <TableHead className="text-sm">Data</TableHead>
-              <TableHead className="text-sm w-[100px] pr-4 sm:pr-6" />
+              <TableHead className="text-sm w-24 pr-4 sm:pr-6" />
             </TableRow>
           </TableHeader>
           <TableBody>
