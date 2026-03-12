@@ -133,10 +133,10 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                     <NavLink
                       to={item.url}
                       end={item.url === homeEnd}
-                      className="flex items-center gap-3 px-6 py-5 rounded-md text-[15px]"
+                      className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
-                      <item.icon className="h-[18px] w-[18px]" />
+                      <item.icon className="h-4.5 w-4.5" />
                       <span className="flex-1">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
