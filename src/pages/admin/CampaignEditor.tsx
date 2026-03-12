@@ -102,11 +102,13 @@ function blocksToHtml(blocks: EmailBlock[]): string {
         return `<${b.level || 'h1'} style="margin: 0 0 16px; font-size: ${size}; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily}; letter-spacing: -0.03em;">${escapeHtml(b.content)}</${b.level || 'h1'}>`;
       }
       case 'text':
-        return `<p style="margin: 0 0 16px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily}; text-align: ${b.align || 'left'};">${escapeHtml(b.content).replace(/\n/g, '<br>')}</p>`;
+        return `<p style="margin: 0 0 16px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily}; text-align: ${b.align || 'left'};">${b.content || ''}</p>`;
       case 'button':
         return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;"><tr><td align="center"><a href="${escapeHtml(b.buttonUrl || '#')}" style="display: inline-block; background: ${b.buttonColor || brand.primary}; color: ${brand.white}; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 500; font-size: 15px; font-family: ${fontFamily}; letter-spacing: -0.01em;">${escapeHtml(b.content)}</a></td></tr></table>`;
-      case 'image':
-        return b.imageUrl ? `<div style="margin: 16px 0; text-align: center;"><img src="${escapeHtml(b.imageUrl)}" alt="${escapeHtml(b.imageAlt || '')}" style="max-width: 100%; border-radius: 8px;" /></div>` : '';
+      case 'image': {
+        const w = b.imageWidth || 100;
+        return b.imageUrl ? `<div style="margin: 16px 0; text-align: center;"><img src="${escapeHtml(b.imageUrl)}" alt="${escapeHtml(b.imageAlt || '')}" style="width: ${w}%; max-width: 100%; border-radius: 8px;" /></div>` : '';
+      }
       case 'divider':
         return `<hr style="border: none; border-top: 1px solid ${brand.border}; margin: 24px 0;" />`;
       case 'spacer':
