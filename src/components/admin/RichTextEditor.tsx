@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { Bold, Italic, Underline, Link, List, ListOrdered, Strikethrough } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -62,6 +62,31 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
     onChange(editorRef.current.innerHTML);
     requestAnimationFrame(() => { isUpdatingRef.current = false; });
   }, [onChange]);
+
+  const isSelectionInsideList = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return false;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode) return false;
+    const anchorElement = anchorNode.nodeType === Node.ELEMENT_NODE
+      ? (anchorNode as Element)
+      : anchorNode.parentElement;
+    return Boolean(anchorElement?.closest('li, ul, ol'));
+  }, []);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    if (isSelectionInsideList()) return;
+
+    event.preventDefault();
+    editorRef.current?.focus();
+    document.execCommand('insertLineBreak');
+
+    requestAnimationFrame(() => {
+      normalizeContent();
+      handleInput();
+    });
+  }, [handleInput, isSelectionInsideList, normalizeContent]);
 
   const exec = useCallback((command: string, val?: string) => {
     editorRef.current?.focus();
