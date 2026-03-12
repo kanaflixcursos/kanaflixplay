@@ -102,7 +102,7 @@ export default {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
+  				'Google Sans',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -116,7 +116,6 @@ export default {
   			],
   			heading: [
   				'Google Sans',
-  				'Inter',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif'
