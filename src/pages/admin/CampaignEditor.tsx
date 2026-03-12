@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,10 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy, Upload, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy, Upload, Loader2, Bold } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
-import RichTextEditor from '@/components/admin/RichTextEditor';
 
 // ── Block types & helpers ──────────────────────────────────────────────
 
@@ -155,8 +155,6 @@ function htmlToBlocks(html: string): EmailBlock[] | null {
   return null;
 }
 
-// ── Block type metadata ────────────────────────────────────────────────
-
 const blockTypeMeta: Record<BlockType, { icon: typeof Type; label: string }> = {
   heading: { icon: Type, label: 'Título' },
   text: { icon: AlignLeft, label: 'Texto' },
@@ -165,6 +163,85 @@ const blockTypeMeta: Record<BlockType, { icon: typeof Type; label: string }> = {
   divider: { icon: Minus, label: 'Divisor' },
   spacer: { icon: Minus, label: 'Espaço' },
 };
+
+// ── Inline text editor with bold + auto <br/> ─────────────────────────
+
+function TextBlockEditor({ value, onChange, placeholder, disabled }: {
+  value: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const insert = '<br/>\n';
+      const next = value.slice(0, start) + insert + value.slice(end);
+      onChange(next);
+      requestAnimationFrame(() => {
+        ta.focus();
+        const pos = start + insert.length;
+        ta.selectionStart = pos;
+        ta.selectionEnd = pos;
+      });
+    }
+  };
+
+  const handleBold = () => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    if (start === end) return;
+
+    const selected = value.slice(start, end);
+    const boldMatch = selected.match(/^<b>([\s\S]*)<\/b>$/);
+    const replacement = boldMatch ? boldMatch[1] : `<b>${selected}</b>`;
+    const next = value.slice(0, start) + replacement + value.slice(end);
+    onChange(next);
+
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = start;
+      ta.selectionEnd = start + replacement.length;
+    });
+  };
+
+  return (
+    <div className="border rounded-md overflow-hidden bg-background">
+      {!disabled && (
+        <div className="flex items-center gap-0.5 px-2 py-1 border-b bg-muted/30">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            title="Negrito (selecione o texto primeiro)"
+            onMouseDown={e => { e.preventDefault(); handleBold(); }}
+          >
+            <Bold className="h-3.5 w-3.5" />
+          </Button>
+          <span className="text-[10px] text-muted-foreground ml-1">Selecione o texto e clique para negritar</span>
+        </div>
+      )}
+      <Textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="border-0 rounded-none focus-visible:ring-0 min-h-[80px] resize-y text-sm font-mono"
+      />
+    </div>
+  );
+}
 
 // ── Image block editor with upload ─────────────────────────────────────
 
@@ -176,7 +253,7 @@ function ImageBlockEditor({ block, onChange, disabled }: {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return; }
@@ -261,7 +338,7 @@ function ImageBlockEditor({ block, onChange, disabled }: {
   );
 }
 
-// ── Inline block editor component ─────────────────────────────────────
+// ── Block editor component ─────────────────────────────────────────────
 
 function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disabled }: {
   block: EmailBlock;
@@ -276,7 +353,6 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
 
   return (
     <div className="group border rounded-lg bg-card transition-colors hover:border-primary/30">
-      {/* Block header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 rounded-t-lg">
         <meta.icon className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground flex-1">{meta.label}</span>
@@ -295,7 +371,6 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
         )}
       </div>
 
-      {/* Block content editing */}
       <div className="p-3 space-y-2">
         {block.type === 'heading' && (
           <>
@@ -319,7 +394,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
 
         {block.type === 'text' && (
           <>
-            <RichTextEditor
+            <TextBlockEditor
               value={block.content}
               onChange={html => onChange({ content: html })}
               placeholder="Texto do email... Use {{name}} para o nome"
@@ -508,7 +583,6 @@ export default function CampaignEditor() {
     setSaving(true);
     const payload = buildPayload();
 
-    // Save first
     let savedId = campaignId;
     if (isNew) {
       const { data: inserted, error } = await supabase.from('email_campaigns').insert(payload).select('id').single();
@@ -520,14 +594,12 @@ export default function CampaignEditor() {
     }
     setSaving(false);
 
-    // Fetch the saved campaign to send
     const { data: freshCampaign } = await supabase.from('email_campaigns').select('*').eq('id', savedId).single();
     if (!freshCampaign) { toast.error('Campanha não encontrada'); return; }
     const c = freshCampaign as unknown as Campaign;
     if (c.status !== 'draft') { toast.error('Campanha já foi enviada'); return; }
     setCampaign(c);
 
-    // Now send
     setSending(true);
     try {
       let recipients: { email: string; name?: string }[] = [];
@@ -583,7 +655,6 @@ export default function CampaignEditor() {
     toast.success('Campanha duplicada como rascunho');
     navigate('/admin/marketing/email');
   };
-
 
   const addBlock = (type: BlockType) => {
     setBlocks(prev => [...prev, defaultBlock(type)]);
@@ -663,9 +734,7 @@ export default function CampaignEditor() {
               <TabsTrigger value="settings">Configurações</TabsTrigger>
             </TabsList>
 
-            {/* ── Content tab ── */}
             <TabsContent value="content" className="space-y-3 mt-3">
-              {/* Subject inline */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Nome da Campanha</Label>
@@ -681,7 +750,6 @@ export default function CampaignEditor() {
                 </div>
               </div>
 
-              {/* Blocks */}
               <div className="space-y-2">
                 {blocks.map((block, i) => (
                   <BlockEditor
@@ -697,7 +765,6 @@ export default function CampaignEditor() {
                 ))}
               </div>
 
-              {/* Add block bar */}
               {isDraft && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {addableBlocks.map(item => {
@@ -716,7 +783,6 @@ export default function CampaignEditor() {
               </p>
             </TabsContent>
 
-            {/* ── Settings tab ── */}
             <TabsContent value="settings" className="mt-3">
               <Card>
                 <CardContent className="p-4 space-y-4">
