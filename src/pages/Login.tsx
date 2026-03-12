@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Separator } from '@/components/ui/separator';
+
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
 import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { motion } from 'framer-motion';
