@@ -198,7 +198,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
           <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col relative">
             {course.is_enrolled && (
               <div className="absolute top-2 right-2 z-10">
-                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-primary-foreground text-[10px] font-bold uppercase gap-1 shadow-md">
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-primary-foreground text-xs font-bold uppercase gap-1 shadow-sm">
                   <CheckCircle className="h-3 w-3" />
                   Já Possui
                 </Badge>
