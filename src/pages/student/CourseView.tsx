@@ -96,7 +96,6 @@ export default function CourseView() {
       if (!isMounted) return;
 
       if (courseError) {
-        console.error('Error fetching course:', courseError);
         navigate('/courses');
         return;
       }

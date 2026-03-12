@@ -295,7 +295,7 @@ Deno.serve(async (req) => {
             embedUrl = `https://player-vz-910d72b1-f0c.tv.pandavideo.com.br/embed/?v=${video.id}`;
           }
           
-          console.log(`Video ${video.id} embed URL: ${embedUrl}`);
+          // URL built successfully
           
           // Duration comes from 'length' field in Pandavideo API (in seconds)
           const durationSeconds = videoDetails?.length || video.length || videoDetails?.duration || video.duration || 0;

@@ -451,8 +451,7 @@ export default function AdminStudents() {
       toast.success(`${grantStudent.full_name} matriculado em "${courseName}" com sucesso!`);
       setGrantCourseDialogOpen(false);
       fetchData();
-    } catch (error) {
-      console.error('Error granting course:', error);
+    } catch {
       toast.error('Erro ao conceder curso');
     }
     setGranting(false);

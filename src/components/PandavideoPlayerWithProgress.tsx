@@ -139,7 +139,6 @@ export default function PandavideoPlayerWithProgress({
       if (duration > 0 && !hasMarkedCompleteRef.current) {
         const percentWatched = (currentTime / duration) * 100;
         if (percentWatched >= 90) {
-          console.log('[Pandavideo] 90% reached! Marking as complete.');
           hasMarkedCompleteRef.current = true;
           saveProgress(currentTime, true);
           onComplete?.();

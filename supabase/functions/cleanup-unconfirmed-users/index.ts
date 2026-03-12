@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
         if (user.created_at && user.created_at > threeHoursAgo) continue;
 
 
-        console.log(`Deleting unconfirmed user: ${user.id} (${user.email}), created: ${user.created_at}`);
+        console.log(`Deleting unconfirmed user: ${user.id}, created: ${user.created_at}`);
 
         // Delete related data first
         await supabaseAdmin.from('orders').delete().eq('user_id', user.id);

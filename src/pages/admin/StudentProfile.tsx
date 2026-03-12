@@ -302,7 +302,6 @@ export default function StudentProfile() {
       setLoading(true);
       await fetchStudentData();
     } catch (error: any) {
-      console.error('Cancel error:', error);
       toast.error(error.message || 'Erro ao cancelar pedido');
     }
 

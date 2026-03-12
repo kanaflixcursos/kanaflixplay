@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Email updated for user ${user_id} to ${new_email}`);
+    console.log(`Email updated for user ${user_id}`);
 
     return new Response(
       JSON.stringify({ 
