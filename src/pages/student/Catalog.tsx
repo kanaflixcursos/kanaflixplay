@@ -1,29 +1,13 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ShoppingCart, Clock, CheckCircle, Search, X } from 'lucide-react';
-
-interface CatalogCourse {
-  id: string;
-  title: string;
-  description: string | null;
-  thumbnail_url: string | null;
-  price: number | null;
-  category_id: string | null;
-  total_duration: number;
-  is_enrolled: boolean;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
+import { useCatalogCourses, useCategories } from '@/hooks/queries/useCourses';
+import type { CatalogCourse } from '@/services/courseService';
 
 function formatPrice(cents: number | null): string {
   if (!cents || cents === 0) return 'Gratuito';
@@ -37,69 +21,27 @@ function formatDuration(minutes: number): string {
 }
 
 export default function CatalogPage() {
-  const { user } = useAuth();
-  const [courses, setCourses] = useState<CatalogCourse[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: courses = [], isLoading: loadingCourses } = useCatalogCourses();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
+  const loading = loadingCourses || loadingCategories;
+
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchCatalog = async () => {
-      if (!user) return;
-
-      const [categoriesRes, coursesRes, enrollmentsRes] = await Promise.all([
-        supabase.from('course_categories').select('id, name').order('name'),
-        supabase.from('courses').select('id, title, description, thumbnail_url, price, category_id').eq('is_published', true),
-        supabase.from('course_enrollments').select('course_id').eq('user_id', user.id),
-      ]);
-
-      const enrolledIds = new Set(enrollmentsRes.data?.map(e => e.course_id) || []);
-      setCategories(categoriesRes.data || []);
-
-      const coursesWithData = await Promise.all(
-        (coursesRes.data || []).map(async (course) => {
-          const { data: lessons } = await supabase
-            .from('lessons')
-            .select('duration_minutes')
-            .eq('course_id', course.id);
-
-          const total_duration = lessons?.reduce((sum, l) => sum + (l.duration_minutes || 0), 0) || 0;
-
-          return {
-            ...course,
-            total_duration,
-            is_enrolled: enrolledIds.has(course.id),
-          };
-        })
-      );
-
-      setCourses(coursesWithData);
-      setLoading(false);
-    };
-
-    fetchCatalog();
-  }, [user]);
-
-  // Filter courses
   const filteredCourses = useMemo(() => {
     let result = courses;
-
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
         c => c.title.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
       );
     }
-
     if (selectedCategory) {
       result = result.filter(c => c.category_id === selectedCategory);
     }
-
     return result;
   }, [courses, search, selectedCategory]);
 
-  // Group filtered courses by category
   const coursesByCategory = categories
     .map(cat => ({
       category: cat,
@@ -109,7 +51,6 @@ export default function CatalogPage() {
 
   const uncategorized = filteredCourses.filter(c => !c.category_id);
 
-  // Categories with course counts (for filter chips)
   const categoryCountsMap = useMemo(() => {
     const map = new Map<string, number>();
     courses.forEach(c => {
@@ -124,7 +65,6 @@ export default function CatalogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Catálogo de Cursos</h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -132,10 +72,8 @@ export default function CatalogPage() {
         </p>
       </div>
 
-      {/* Search + Filters */}
       {!loading && (
         <div className="space-y-3">
-          {/* Search bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -154,7 +92,6 @@ export default function CatalogPage() {
             )}
           </div>
 
-          {/* Category filter chips */}
           {categories.length > 0 && (
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
               <Button
@@ -183,7 +120,6 @@ export default function CatalogPage() {
         </div>
       )}
 
-      {/* Content */}
       {loading ? (
         <div className="space-y-8">
           <Skeleton className="h-11 w-full" />
@@ -217,10 +153,8 @@ export default function CatalogPage() {
           </Button>
         </div>
       ) : selectedCategory ? (
-        // When filtering by category, show flat grid
         <CourseGrid courses={filteredCourses} />
       ) : (
-        // Default: grouped by category
         <div className="space-y-10">
           {coursesByCategory.map(({ category, courses: categoryCourses }) => (
             <section key={category.id}>
