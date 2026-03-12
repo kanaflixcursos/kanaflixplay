@@ -531,14 +531,19 @@ export default function CampaignEditor() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar'}
-          </Button>
-          {!isNew && isDraft && (
-            <Button onClick={handleSend} disabled={sending}>
-              <Send className="h-4 w-4 mr-1" /> {sending ? 'Enviando...' : 'Enviar'}
+          {isDraft && (
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving || sending}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar Rascunho'}
             </Button>
           )}
+          {isDraft && (
+            <Button onClick={handleSaveAndSend} disabled={saving || sending}>
+              <Send className="h-4 w-4 mr-1" /> {sending ? 'Enviando...' : 'Salvar e Enviar'}
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleDuplicate} disabled={saving || sending}>
+            <Copy className="h-4 w-4 mr-1" /> Duplicar
+          </Button>
         </div>
       </div>
 
