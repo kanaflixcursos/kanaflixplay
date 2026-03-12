@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -18,6 +20,8 @@ import {
   GraduationCap,
   Activity,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,14 +48,11 @@ const eventConfig: Record<string, { icon: React.ComponentType<{ className?: stri
 };
 
 interface CustomerJourneyTimelineProps {
-  /** Filter events by user_id (for student profile) */
   userId?: string;
-  /** Show UTM/source filters (for marketing hub) */
   showFilters?: boolean;
-  /** Max events to display */
   limit?: number;
-  /** Card title override */
   title?: string;
+  defaultVisible?: number;
 }
 
 export default function CustomerJourneyTimeline({
@@ -59,12 +60,14 @@ export default function CustomerJourneyTimeline({
   showFilters = false,
   limit = 50,
   title = 'Jornada do Cliente',
+  defaultVisible = 15,
 }: CustomerJourneyTimelineProps) {
   const [events, setEvents] = useState<JourneyEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventFilter, setEventFilter] = useState('all');
   const [utmFilter, setUtmFilter] = useState('all');
   const [utmSources, setUtmSources] = useState<string[]>([]);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -93,17 +96,10 @@ export default function CustomerJourneyTimeline({
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
-    if (eventFilter !== 'all') {
-      query = query.eq('event_type', eventFilter);
-    }
-    if (utmFilter !== 'all') {
-      query = query.eq('utm_source', utmFilter);
-    }
-    query = query.neq('event_type', 'login');
-    query = query.neq('event_type', 'page_view');
+    if (userId) query = query.eq('user_id', userId);
+    if (eventFilter !== 'all') query = query.eq('event_type', eventFilter);
+    if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
+    query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
     const { data } = await query;
     setEvents((data as JourneyEvent[]) || []);
@@ -112,6 +108,9 @@ export default function CustomerJourneyTimeline({
 
   const formatTime = (dateStr: string) =>
     format(new Date(dateStr), "dd/MM/yy 'às' HH:mm", { locale: ptBR });
+
+  const visibleEvents = showAll ? events : events.slice(0, defaultVisible);
+  const hasMore = events.length > defaultVisible;
 
   return (
     <Card>
@@ -167,54 +166,64 @@ export default function CustomerJourneyTimeline({
             <p className="text-sm text-muted-foreground">Nenhum evento registrado</p>
           </div>
         ) : (
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-[18px] top-3 bottom-3 w-px bg-border" />
+          <>
+            <ScrollArea className={showAll && hasMore ? 'h-[480px]' : undefined}>
+              <div className="relative">
+                <div className="absolute left-[18px] top-3 bottom-3 w-px bg-border" />
+                <div className="space-y-1">
+                  {visibleEvents.map((event) => {
+                    const cfg = eventConfig[event.event_type] || eventConfig.signup;
+                    const Icon = cfg.icon;
+                    const eventData = event.event_data as Record<string, unknown> | null;
 
-            <div className="space-y-1">
-              {events.map((event) => {
-                const cfg = eventConfig[event.event_type] || eventConfig.page_view;
-                const Icon = cfg.icon;
-                const eventData = event.event_data as Record<string, unknown> | null;
-
-                return (
-                  <div key={event.id} className="relative flex items-start gap-3 py-2 pl-0">
-                    {/* Icon dot */}
-                    <div className={`relative z-10 flex items-center justify-center h-9 w-9 rounded-full shrink-0 ${cfg.bg}`}>
-                      <Icon className={`h-4 w-4 ${cfg.color}`} />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-foreground">{cfg.label}</span>
-                        {event.utm_source && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                            {event.utm_source}
-                          </Badge>
-                        )}
+                    return (
+                      <div key={event.id} className="relative flex items-start gap-3 py-2 pl-0">
+                        <div className={`relative z-10 flex items-center justify-center h-9 w-9 rounded-full shrink-0 ${cfg.bg}`}>
+                          <Icon className={`h-4 w-4 ${cfg.color}`} />
+                        </div>
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-foreground">{cfg.label}</span>
+                            {event.utm_source && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                {event.utm_source}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                            <span>{formatTime(event.created_at)}</span>
+                            {event.page_path && event.page_path !== '/' && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate max-w-[200px]">{event.page_path}</span>
+                              </>
+                            )}
+                            {eventData?.course_title && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate max-w-[200px]">{String(eventData.course_title)}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                        <span>{formatTime(event.created_at)}</span>
-                        {event.page_path && event.page_path !== '/' && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate max-w-[200px]">{event.page_path}</span>
-                          </>
-                        )}
-                        {eventData?.course_title && (
-                          <>
-                            <span>•</span>
-                            <span className="truncate max-w-[200px]">{String(eventData.course_title)}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </ScrollArea>
+            {hasMore && (
+              <div className="pt-3 flex justify-center">
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowAll(prev => !prev)}>
+                  {showAll ? (
+                    <><ChevronUp className="h-3.5 w-3.5 mr-1" /> Mostrar menos</>
+                  ) : (
+                    <><ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver todos ({events.length})</>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
