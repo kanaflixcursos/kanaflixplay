@@ -250,7 +250,7 @@ export default function SalesTable({
                         <AlertDialogDescription className="space-y-2">
                           <p>Você está prestes a iniciar o reembolso do pedido do curso <strong>{sale.course_title}</strong>.</p>
                           <p>Valor: <strong>{formatCurrency(sale.amount)}</strong></p>
-                          <p className="text-muted-foreground">Um ticket de suporte será criado para acompanhar o processo.</p>
+                          <p className="text-muted-foreground">Uma solicitação de reembolso será criada.</p>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
