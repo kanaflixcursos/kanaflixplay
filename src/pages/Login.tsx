@@ -39,42 +39,7 @@ export default function Login() {
     }
   }, [user, navigate, redirectTo]);
 
-  const handleHotmartAccess = async () => {
-    if (!hotmartEmail) {
-      toast.error('Digite seu email');
-      return;
-    }
-    setHotmartLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('hotmart-access', {
-        body: { action: 'check', email: hotmartEmail },
-      });
-      if (error) throw error;
-      if (!data.found) {
-        toast.error('Email não encontrado na lista de acesso Hotmart.');
-        setHotmartLoading(false);
-        return;
-      }
-      if (data.completed) {
-        toast.info('Você já completou o cadastro. Faça login normalmente.');
-        setActiveTab('signin');
-        setEmail(hotmartEmail);
-        setHotmartLoading(false);
-        return;
-      }
-      // Send magic link
-      const { error: linkError } = await supabase.functions.invoke('hotmart-access', {
-        body: { action: 'send_magic_link', email: hotmartEmail },
-      });
-      if (linkError) throw linkError;
-      setHotmartSent(true);
-      toast.success('Link de acesso enviado para seu email!');
-    } catch (error: any) {
-      const msg = error?.message || 'Erro ao processar acesso';
-      toast.error(msg);
-    }
-    setHotmartLoading(false);
-  };
+
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
