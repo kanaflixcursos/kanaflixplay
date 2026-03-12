@@ -548,7 +548,7 @@ export default function FormDetail() {
                                 const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
                                 return (
                                   <div key={key} className="flex flex-col gap-0.5">
-                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{displayLabel}</span>
+                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{displayLabel}</span>
                                     <span className="text-foreground">{displayValue}</span>
                                   </div>
                                 );
