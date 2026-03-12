@@ -124,40 +124,23 @@ export default function SalesTable({
   const handleRefund = async (sale: Sale) => {
     setRefunding(true);
     try {
-      // Create refund request
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Não autenticado');
 
-      // Create support ticket
-      const { data: ticket, error: ticketError } = await supabase
-        .from('support_tickets')
-        .insert({
-          user_id: sale.user_id,
-          subject: `Reembolso - ${sale.course_title || 'Pedido'}`,
-          message: `Solicitação de reembolso iniciada pelo administrador para o pedido ${sale.id.slice(0, 8)}.`,
-          category: 'refund',
-          priority: 'high',
-        })
-        .select('id')
-        .single();
-
-      if (ticketError) throw ticketError;
-
-      // Create refund request linked to ticket
+      // Create refund request
       const { error: refundError } = await supabase
         .from('refund_requests')
         .insert({
           order_id: sale.id,
           user_id: sale.user_id,
           reason: 'Reembolso iniciado pelo administrador',
-          ticket_id: ticket.id,
         });
 
       if (refundError) throw refundError;
 
       toast.success('Solicitação de reembolso criada!');
       setSelectedSale(null);
-      navigate(`/admin/suporte/${ticket.id}`);
+      onRefresh?.();
     } catch (error: any) {
       console.error('Error creating refund:', error);
       toast.error(error.message || 'Erro ao criar solicitação de reembolso');
