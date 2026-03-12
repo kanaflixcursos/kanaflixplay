@@ -161,8 +161,7 @@ export default function AvailableCoursesSection() {
         <div
           ref={scrollRef}
           onScroll={updateScrollButtons}
-          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mb-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mb-2 [scrollbar-width:none]"
         >
           {courses.map((course) => (
             <Link
