@@ -143,7 +143,7 @@ export default function DashboardLatestPurchases() {
                   {formatCurrency(purchase.amount)}
                 </span>
                 {purchase.payment_method && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                  <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1">
                     {paymentMethodIcons[purchase.payment_method]}
                     {paymentMethodLabels[purchase.payment_method] || purchase.payment_method}
                   </Badge>
