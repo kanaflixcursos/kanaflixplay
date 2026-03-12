@@ -536,8 +536,8 @@ export default function CourseView() {
           {/* Lesson Info - Outside the player card */}
           {selectedLesson && (
             <div className="space-y-3 md:space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-                <div className="space-y-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                 <div className="space-y-1 min-w-0 flex items-center">
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     {[
                       selectedLesson.module_id && modules.find(m => m.id === selectedLesson.module_id)
