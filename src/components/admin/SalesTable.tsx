@@ -318,7 +318,7 @@ export default function SalesTable({
                 <TableCell className="text-sm">
                   <Link
                     to={`/admin/students/${sale.user_id}`}
-                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-[180px]"
+                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
                   >
                     <Avatar className="h-7 w-7 shrink-0">
                       <AvatarImage src={sale.user_avatar || undefined} />
