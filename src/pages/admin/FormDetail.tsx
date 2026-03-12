@@ -534,7 +534,7 @@ export default function FormDetail() {
                         <td className="p-3 text-muted-foreground">{lead.email}</td>
                         <td className="p-3 text-muted-foreground">{lead.phone || '—'}</td>
                         <td className="p-3">
-                          <Badge variant={leadStatusMap[lead.status]?.variant || 'secondary'} className="text-[10px]">
+                          <Badge variant={leadStatusMap[lead.status]?.variant || 'secondary'} className="text-xs">
                             {leadStatusMap[lead.status]?.label || lead.status}
                           </Badge>
                         </td>
