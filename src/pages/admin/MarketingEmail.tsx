@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil, MailOpen } from 'lucide-react';
+import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil, MailOpen, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
