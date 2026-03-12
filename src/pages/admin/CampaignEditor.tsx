@@ -247,7 +247,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
                 <Input value={block.content} onChange={e => onChange({ content: e.target.value })} className="h-8 text-sm" disabled={disabled} />
               </div>
               <div>
-                <Label className="text-[10px] text-muted-foreground">URL</Label>
+                <Label className="text-xs text-muted-foreground">URL</Label>
                 <Input value={block.buttonUrl || ''} onChange={e => onChange({ buttonUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
               </div>
             </div>
