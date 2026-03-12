@@ -224,11 +224,9 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
 
         {block.type === 'text' && (
           <>
-            <Textarea
+            <RichTextEditor
               value={block.content}
-              onChange={e => onChange({ content: e.target.value })}
-              rows={3}
-              className="text-sm resize-none"
+              onChange={html => onChange({ content: html })}
               placeholder="Texto do email... Use {{name}} para o nome"
               disabled={disabled}
             />
