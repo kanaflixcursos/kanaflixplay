@@ -13,48 +13,27 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  Loader2, 
-  Image as ImageIcon,
-  Video,
-  DollarSign,
-  ClipboardCheck,
-  Sparkles,
-  CreditCard,
-  QrCode,
-  Barcode,
-  Info,
-  Plus,
+  ArrowLeft, ArrowRight, Check, Loader2,
+  Image as ImageIcon, Video, DollarSign, ClipboardCheck,
+  Sparkles, CreditCard, QrCode, Barcode, Info, Plus,
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { CardBrandIcon } from '@/components/CardBrandIcon';
 import CourseLessonsOrganizer, { CourseLessonsOrganizerRef } from '@/components/admin/CourseLessonsOrganizer';
-
-interface CardBrand {
-  id: string;
-  name: string;
-  icon: string;
-}
-
-interface InstallmentOption {
-  number: number;
-  interest_rate: number;
-  label: string;
-}
+import { useCategories } from '@/hooks/queries/useCourses';
+import { type CourseFormData, initialCourseFormData, validateCourseStep } from '@/lib/validations/course';
 
 interface PaymentMethodConfig {
   id: string;
   name: string;
   enabled: boolean;
   icon: string;
-  card_brands?: CardBrand[];
+  card_brands?: { id: string; name: string; icon: string }[];
   installments?: {
     max: number;
     min_amount_per_installment: number;
-    options: InstallmentOption[];
+    options: { number: number; interest_rate: number; label: string }[];
   };
   description?: string;
   discount_percentage?: number;
@@ -64,54 +43,9 @@ interface PaymentMethodConfig {
 
 interface PaymentConfig {
   payment_methods: PaymentMethodConfig[];
-  currency: {
-    code: string;
-    symbol: string;
-    decimal_separator: string;
-    thousands_separator: string;
-  };
-  limits: {
-    min_amount: number;
-    max_amount: number;
-  };
+  currency: { code: string; symbol: string; decimal_separator: string; thousands_separator: string };
+  limits: { min_amount: number; max_amount: number };
 }
-
-interface CourseCategory {
-  id: string;
-  name: string;
-}
-
-interface FormData {
-  title: string;
-  description: string;
-  thumbnail_url: string;
-  pandavideo_folder_id: string;
-  pandavideo_folder_name: string;
-  is_sequential: boolean;
-  save_as_draft: boolean;
-  pricing_type: 'free' | 'paid';
-  price: string;
-  payment_methods: string[];
-  installments: string;
-  category_id: string;
-  launch_date: string;
-}
-
-const initialFormData: FormData = {
-  title: '',
-  description: '',
-  thumbnail_url: '',
-  pandavideo_folder_id: '',
-  pandavideo_folder_name: '',
-  is_sequential: true,
-  save_as_draft: false,
-  pricing_type: 'free',
-  price: '',
-  payment_methods: [],
-  installments: '1',
-  category_id: '',
-  launch_date: '',
-};
 
 const STEPS = [
   { id: 1, title: 'Informações Básicas', icon: ImageIcon },
@@ -126,28 +60,26 @@ export default function CourseForm() {
   const isEditing = Boolean(courseId);
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] = useState<CourseFormData>(initialCourseFormData);
   const [saving, setSaving] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(isEditing);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [loadingPaymentConfig, setLoadingPaymentConfig] = useState(false);
-  const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [localCategories, setLocalCategories] = useState<{ id: string; name: string }[]>([]);
 
   const lessonsOrganizerRef = useRef<CourseLessonsOrganizerRef>(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Use React Query for categories
+  const { data: queriedCategories = [] } = useCategories();
+  const categories = localCategories.length > 0 ? localCategories : queriedCategories;
 
-  const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('course_categories')
-      .select('id, name')
-      .order('name');
-    if (data) setCategories(data);
-  };
+  useEffect(() => {
+    if (queriedCategories.length > 0 && localCategories.length === 0) {
+      setLocalCategories(queriedCategories);
+    }
+  }, [queriedCategories]);
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -156,12 +88,9 @@ export default function CourseForm() {
       .insert({ name: newCategoryName.trim() })
       .select('id, name')
       .single();
-    if (error) {
-      toast.error('Erro ao criar categoria');
-      return;
-    }
+    if (error) { toast.error('Erro ao criar categoria'); return; }
     if (data) {
-      setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      setLocalCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
       setFormData(prev => ({ ...prev, category_id: data.id }));
       setNewCategoryName('');
       setShowNewCategory(false);
@@ -169,9 +98,7 @@ export default function CourseForm() {
   };
 
   useEffect(() => {
-    if (courseId) {
-      fetchCourse();
-    }
+    if (courseId) fetchCourse();
     fetchPaymentConfig();
   }, [courseId]);
 
@@ -196,7 +123,6 @@ export default function CourseForm() {
       if (response.ok) {
         const config = await response.json();
         setPaymentConfig(config);
-        
         if (formData.payment_methods.length === 0) {
           const enabledMethods = config.payment_methods
             .filter((m: PaymentMethodConfig) => m.enabled)
@@ -204,8 +130,8 @@ export default function CourseForm() {
           setFormData(prev => ({ ...prev, payment_methods: enabledMethods }));
         }
       }
-    } catch (error) {
-      console.error('Error fetching payment config:', error);
+    } catch {
+      // Payment config fetch is non-critical
     } finally {
       setLoadingPaymentConfig(false);
     }
@@ -235,71 +161,37 @@ export default function CourseForm() {
       pricing_type: data.price && data.price > 0 ? 'paid' : 'free',
       price: data.price ? (data.price / 100).toFixed(2) : '',
       payment_methods: ['pix', 'credit_card', 'boleto'],
-      installments: String((data as any).max_installments || 12),
-      category_id: (data as any).category_id || '',
-      launch_date: (data as any).launch_date ? (data as any).launch_date.split('T')[0] : '',
+      installments: String(data.max_installments || 12),
+      category_id: data.category_id || '',
+      launch_date: data.launch_date ? data.launch_date.split('T')[0] : '',
     });
 
     setLoadingCourse(false);
   };
 
-  const handleFolderChange = (folderId: string, folderName: string) => {
-    setFormData(prev => ({
-      ...prev,
-      pandavideo_folder_id: folderId,
-      pandavideo_folder_name: folderName,
-    }));
+  const updateField = <K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
   };
 
   const togglePaymentMethod = (methodId: string) => {
     const current = formData.payment_methods;
-    if (current.includes(methodId)) {
-      setFormData({ ...formData, payment_methods: current.filter(m => m !== methodId) });
-    } else {
-      setFormData({ ...formData, payment_methods: [...current, methodId] });
-    }
-  };
-
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        if (!formData.title.trim()) {
-          toast.error('O nome do curso é obrigatório');
-          return false;
-        }
-        return true;
-      case 2:
-        return true;
-      case 3:
-        if (formData.pricing_type === 'paid') {
-          if (!formData.price || parseFloat(formData.price) <= 0) {
-            toast.error('Informe um valor válido para o curso');
-            return false;
-          }
-          if (formData.payment_methods.length === 0) {
-            toast.error('Selecione pelo menos um método de pagamento');
-            return false;
-          }
-        }
-        return true;
-      default:
-        return true;
-    }
+    updateField('payment_methods',
+      current.includes(methodId)
+        ? current.filter(m => m !== methodId)
+        : [...current, methodId]
+    );
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
-    }
+    const error = validateCourseStep(currentStep, formData);
+    if (error) { toast.error(error); return; }
+    setCurrentStep(prev => Math.min(prev + 1, 4));
   };
 
-  const handleBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
+  const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleSave = async () => {
     setSaving(true);
-
     try {
       const priceInCents = formData.pricing_type === 'paid' && formData.price 
         ? Math.round(parseFloat(formData.price) * 100) 
@@ -336,15 +228,13 @@ export default function CourseForm() {
         savedCourseId = data.id;
       }
 
-      // Delegate all module + lesson saving to the organizer
       if (savedCourseId && lessonsOrganizerRef.current) {
         await lessonsOrganizerRef.current.save(savedCourseId);
       }
 
       toast.success(isEditing ? 'Curso atualizado!' : 'Curso criado com sucesso!');
       navigate('/admin/courses');
-    } catch (error) {
-      console.error('Error saving course:', error);
+    } catch {
       toast.error('Erro ao salvar curso');
     } finally {
       setSaving(false);
@@ -384,15 +274,12 @@ export default function CourseForm() {
           const Icon = step.icon;
           const isActive = currentStep === step.id;
           const isCompleted = currentStep > step.id;
-
           return (
             <div key={step.id} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                    isCompleted
-                      ? 'bg-primary text-primary-foreground'
-                      : isActive
+                    isCompleted || isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
                   }`}
@@ -421,15 +308,13 @@ export default function CourseForm() {
                 <Label>Capa do Curso</Label>
                 <ImageUpload
                   value={formData.thumbnail_url}
-                  onChange={(url) => setFormData({ ...formData, thumbnail_url: url })}
+                  onChange={(url) => updateField('thumbnail_url', url)}
                   bucket="course-covers"
                   aspectRatio="4/5"
                   maxWidth={1080}
                   maxHeight={1350}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Tamanho recomendado: 1080x1350px
-                </p>
+                <p className="text-xs text-muted-foreground">Tamanho recomendado: 1080x1350px</p>
               </div>
 
               <div className="space-y-4">
@@ -438,7 +323,7 @@ export default function CourseForm() {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) => updateField('title', e.target.value)}
                     placeholder="Digite o nome do curso"
                   />
                 </div>
@@ -448,7 +333,7 @@ export default function CourseForm() {
                   <div className="flex items-center gap-2">
                     <Select
                       value={formData.category_id}
-                      onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                      onValueChange={(value) => updateField('category_id', value)}
                     >
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -459,13 +344,7 @@ export default function CourseForm() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowNewCategory(!showNewCategory)}
-                      title="Criar nova categoria"
-                    >
+                    <Button type="button" variant="outline" size="icon" onClick={() => setShowNewCategory(!showNewCategory)} title="Criar nova categoria">
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -475,12 +354,7 @@ export default function CourseForm() {
                         placeholder="Nome da nova categoria..."
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleCreateCategory();
-                          }
-                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
                       />
                       <Button type="button" size="sm" onClick={handleCreateCategory} disabled={!newCategoryName.trim()}>
                         Criar
@@ -494,7 +368,7 @@ export default function CourseForm() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => updateField('description', e.target.value)}
                     placeholder="Descreva o conteúdo do curso..."
                     rows={5}
                   />
@@ -506,41 +380,36 @@ export default function CourseForm() {
                     id="launch_date"
                     type="date"
                     value={formData.launch_date}
-                    onChange={(e) => setFormData({ ...formData, launch_date: e.target.value })}
+                    onChange={(e) => updateField('launch_date', e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Se definida, o curso ficará em pré-venda até esta data
-                  </p>
+                  <p className="text-xs text-muted-foreground">Se definida, o curso ficará em pré-venda até esta data</p>
                 </div>
 
                 <div className="flex items-center space-x-3 pt-2">
                   <Checkbox
                     id="is_sequential"
                     checked={formData.is_sequential}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, is_sequential: checked === true })
-                    }
+                    onCheckedChange={(checked) => updateField('is_sequential', checked === true)}
                   />
                   <div className="space-y-1">
-                    <Label htmlFor="is_sequential" className="cursor-pointer">
-                      Progressão sequencial obrigatória
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Alunos precisam assistir 90% de cada aula para desbloquear a próxima
-                    </p>
+                    <Label htmlFor="is_sequential" className="cursor-pointer">Progressão sequencial obrigatória</Label>
+                    <p className="text-xs text-muted-foreground">Alunos precisam assistir 90% de cada aula para desbloquear a próxima</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 2: Lessons — unified component for both create & edit */}
+          {/* Step 2: Lessons */}
           {currentStep === 2 && (
             <CourseLessonsOrganizer
               ref={lessonsOrganizerRef}
               courseId={isEditing ? courseId : undefined}
               pandavideoFolderId={formData.pandavideo_folder_id}
-              onFolderChange={handleFolderChange}
+              onFolderChange={(folderId, folderName) => {
+                updateField('pandavideo_folder_id', folderId);
+                updateField('pandavideo_folder_name', folderName);
+              }}
               showFolderSelector={true}
             />
           )}
@@ -548,7 +417,6 @@ export default function CourseForm() {
           {/* Step 3: Pricing */}
           {currentStep === 3 && (
             <div className="space-y-8">
-              {/* Pricing Type Selection */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-primary" />
@@ -556,83 +424,58 @@ export default function CourseForm() {
                 </div>
                 <RadioGroup
                   value={formData.pricing_type}
-                  onValueChange={(value: 'free' | 'paid') => 
-                    setFormData({ ...formData, pricing_type: value })
-                  }
+                  onValueChange={(value: 'free' | 'paid') => updateField('pricing_type', value)}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  <div 
+                  <div
                     className={`relative flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                      formData.pricing_type === 'free' 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/50'
+                      formData.pricing_type === 'free' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setFormData({ ...formData, pricing_type: 'free' })}
+                    onClick={() => updateField('pricing_type', 'free')}
                   >
                     <RadioGroupItem value="free" id="free" className="mt-1" />
                     <div className="space-y-1">
-                      <Label htmlFor="free" className="font-semibold cursor-pointer text-base">
-                        Conteúdo Gratuito
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Acesso livre para todos os alunos cadastrados
-                      </p>
+                      <Label htmlFor="free" className="font-semibold cursor-pointer text-base">Conteúdo Gratuito</Label>
+                      <p className="text-sm text-muted-foreground">Acesso livre para todos os alunos cadastrados</p>
                     </div>
-                    {formData.pricing_type === 'free' && (
-                      <Sparkles className="absolute top-4 right-4 h-5 w-5 text-primary" />
-                    )}
+                    {formData.pricing_type === 'free' && <Sparkles className="absolute top-4 right-4 h-5 w-5 text-primary" />}
                   </div>
-                  <div 
+                  <div
                     className={`relative flex items-start gap-4 p-5 rounded-xl border-2 cursor-pointer transition-all ${
-                      formData.pricing_type === 'paid' 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-primary/50'
+                      formData.pricing_type === 'paid' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setFormData({ ...formData, pricing_type: 'paid' })}
+                    onClick={() => updateField('pricing_type', 'paid')}
                   >
                     <RadioGroupItem value="paid" id="paid" className="mt-1" />
                     <div className="space-y-1">
-                      <Label htmlFor="paid" className="font-semibold cursor-pointer text-base">
-                        Conteúdo Pago
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Defina um valor e aceite pagamentos online
-                      </p>
+                      <Label htmlFor="paid" className="font-semibold cursor-pointer text-base">Conteúdo Pago</Label>
+                      <p className="text-sm text-muted-foreground">Defina um valor e aceite pagamentos online</p>
                     </div>
-                    {formData.pricing_type === 'paid' && (
-                      <DollarSign className="absolute top-4 right-4 h-5 w-5 text-primary" />
-                    )}
+                    {formData.pricing_type === 'paid' && <DollarSign className="absolute top-4 right-4 h-5 w-5 text-primary" />}
                   </div>
                 </RadioGroup>
               </div>
 
               {formData.pricing_type === 'paid' && (
                 <div className="space-y-6 pt-6 border-t">
-                  {/* Price and Installments */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                      <Label htmlFor="price" className="text-sm font-medium">
-                        Valor Base do Curso
-                      </Label>
+                      <Label htmlFor="price" className="text-sm font-medium">Valor Base do Curso</Label>
                       <CurrencyInput
                         id="price"
                         value={formData.price}
-                        onChange={(value) => setFormData({ ...formData, price: value })}
+                        onChange={(value) => updateField('price', value)}
                         placeholder="0,00"
                         className="h-12 text-lg"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Valor base de referência (não é o valor final cobrado do aluno)
-                      </p>
+                      <p className="text-xs text-muted-foreground">Valor base de referência (não é o valor final cobrado do aluno)</p>
                     </div>
 
                     <div className="space-y-3">
-                      <Label htmlFor="installments" className="text-sm font-medium">
-                        Parcelamento Máximo
-                      </Label>
+                      <Label htmlFor="installments" className="text-sm font-medium">Parcelamento Máximo</Label>
                       <Select
                         value={formData.installments}
-                        onValueChange={(value) => setFormData({ ...formData, installments: value })}
+                        onValueChange={(value) => updateField('installments', value)}
                         disabled={!formData.payment_methods.includes('credit_card')}
                       >
                         <SelectTrigger className={`h-12 ${!formData.payment_methods.includes('credit_card') ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -641,11 +484,10 @@ export default function CourseForm() {
                         <SelectContent>
                           {(() => {
                             const basePrice = parseFloat(formData.price) || 0;
-                            const monthlyRate = 1.99 / 100;
                             const options = paymentConfig?.payment_methods
                               .find(m => m.id === 'credit_card')
                               ?.installments?.options;
-                            const items = options || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => ({ number: n, label: n === 1 ? 'À vista' : `${n}x`, interest_rate: n <= 6 ? 0 : 4.07 }));
+                            const items = options || [1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ number: n, label: n === 1 ? 'À vista' : `${n}x`, interest_rate: n <= 6 ? 0 : 4.07 }));
                             return items.map((option: any) => {
                               let total = basePrice;
                               if (option.number > 6 && basePrice > 0) {
@@ -667,36 +509,30 @@ export default function CourseForm() {
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        {formData.payment_methods.includes('credit_card') 
+                        {formData.payment_methods.includes('credit_card')
                           ? 'Quantidade de parcelas no cartão de crédito'
                           : 'Selecione Cartão de Crédito para habilitar parcelamento'}
                       </p>
                     </div>
                   </div>
 
-                  {/* Payment Methods */}
                   <div className="space-y-4">
                     <Label className="text-sm font-medium">Métodos de Pagamento Aceitos</Label>
                     {loadingPaymentConfig ? (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[1, 2, 3].map((i) => (
-                          <Skeleton key={i} className="h-24 rounded-xl" />
-                        ))}
+                        {[1,2,3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
                       </div>
                     ) : paymentConfig ? (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {paymentConfig.payment_methods.map((method) => {
                           const isSelected = formData.payment_methods.includes(method.id);
-                          const IconComponent = method.id === 'credit_card' ? CreditCard : 
-                                                method.id === 'pix' ? QrCode : Barcode;
+                          const IconComponent = method.id === 'credit_card' ? CreditCard : method.id === 'pix' ? QrCode : Barcode;
                           return (
                             <div
                               key={method.id}
                               onClick={() => togglePaymentMethod(method.id)}
                               className={`flex flex-col gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                                isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/50'
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -710,13 +546,9 @@ export default function CourseForm() {
                                   className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                 />
                               </div>
-                              {method.description && (
-                                <p className="text-xs text-muted-foreground">{method.description}</p>
-                              )}
+                              {method.description && <p className="text-xs text-muted-foreground">{method.description}</p>}
                               {method.discount_percentage != null && method.discount_percentage > 0 && (
-                                <Badge variant="secondary" className="w-fit text-xs">
-                                  {method.discount_percentage}% de desconto
-                                </Badge>
+                                <Badge variant="secondary" className="w-fit text-xs">{method.discount_percentage}% de desconto</Badge>
                               )}
                             </div>
                           );
@@ -725,7 +557,6 @@ export default function CourseForm() {
                     ) : null}
                   </div>
 
-                  {/* Fee Summary */}
                   <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
                     <div className="flex items-center gap-2">
                       <Info className="h-4 w-4 text-muted-foreground" />
@@ -765,7 +596,6 @@ export default function CourseForm() {
               </CardHeader>
 
               <div className="space-y-4">
-                {/* Basic Info Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     formData.title ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
@@ -775,13 +605,10 @@ export default function CourseForm() {
                   <div className="flex-1">
                     <p className="font-medium">Informações Básicas</p>
                     <p className="text-sm text-muted-foreground">{formData.title || 'Sem título'}</p>
-                    {formData.thumbnail_url && (
-                      <p className="text-xs text-success mt-1">✓ Capa adicionada</p>
-                    )}
+                    {formData.thumbnail_url && <p className="text-xs text-success mt-1">✓ Capa adicionada</p>}
                   </div>
                 </div>
 
-                {/* Videos Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                     organizerLessons.length > 0 ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning-foreground'
@@ -791,14 +618,11 @@ export default function CourseForm() {
                   <div className="flex-1">
                     <p className="font-medium">Aulas do Curso</p>
                     <p className="text-sm text-muted-foreground">
-                      {organizerLessons.length > 0 
-                        ? `${organizerLessons.length} aulas configuradas`
-                        : 'Nenhuma aula selecionada (opcional)'}
+                      {organizerLessons.length > 0 ? `${organizerLessons.length} aulas configuradas` : 'Nenhuma aula selecionada (opcional)'}
                     </p>
                   </div>
                 </div>
 
-                {/* Pricing Check */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-success/10 text-success">
                     <Check className="h-4 w-4" />
@@ -806,13 +630,13 @@ export default function CourseForm() {
                   <div className="flex-1">
                     <p className="font-medium">Precificação</p>
                     <p className="text-sm text-muted-foreground">
-                      {formData.pricing_type === 'free' 
-                        ? 'Conteúdo Gratuito' 
+                      {formData.pricing_type === 'free'
+                        ? 'Conteúdo Gratuito'
                         : `R$ ${parseFloat(formData.price || '0').toFixed(2)} - até ${formData.installments}x`}
                     </p>
                     {formData.pricing_type === 'paid' && formData.payment_methods.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Pagamento: {formData.payment_methods.map(m => 
+                        Pagamento: {formData.payment_methods.map(m =>
                           paymentConfig?.payment_methods.find(pm => pm.id === m)?.name || m
                         ).join(', ')}
                       </p>
@@ -820,23 +644,16 @@ export default function CourseForm() {
                   </div>
                 </div>
 
-                {/* Draft Option */}
                 <div className="flex items-start gap-3 p-4 rounded-lg border">
                   <Checkbox
                     id="save_as_draft"
                     checked={formData.save_as_draft}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, save_as_draft: checked as boolean })
-                    }
+                    onCheckedChange={(checked) => updateField('save_as_draft', checked as boolean)}
                     className="mt-0.5"
                   />
                   <div className="flex-1">
-                    <Label htmlFor="save_as_draft" className="cursor-pointer font-medium">
-                      Salvar como rascunho
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      O curso não ficará visível para os alunos até ser publicado
-                    </p>
+                    <Label htmlFor="save_as_draft" className="cursor-pointer font-medium">Salvar como rascunho</Label>
+                    <p className="text-sm text-muted-foreground">O curso não ficará visível para os alunos até ser publicado</p>
                   </div>
                 </div>
               </div>
@@ -847,10 +664,7 @@ export default function CourseForm() {
 
       {/* Footer Navigation */}
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={currentStep === 1 ? () => navigate('/admin/courses') : handleBack}
-        >
+        <Button variant="outline" onClick={currentStep === 1 ? () => navigate('/admin/courses') : handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           {currentStep === 1 ? 'Cancelar' : 'Voltar'}
         </Button>
