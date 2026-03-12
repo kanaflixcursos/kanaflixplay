@@ -290,10 +290,10 @@ export default function MarketingForms() {
                   </div>
 
                   <div className="flex items-center gap-1.5 mb-3">
-                    <code className="text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded truncate flex-1">
+                    <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded truncate flex-1">
                       /{form.slug}
                     </code>
-                    <span className="text-[10px] text-muted-foreground">{form.fields.length} campos</span>
+                    <span className="text-xs text-muted-foreground">{form.fields.length} campos</span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
