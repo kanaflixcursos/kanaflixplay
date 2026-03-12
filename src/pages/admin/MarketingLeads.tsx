@@ -373,9 +373,9 @@ export default function MarketingLeads() {
                       <TableCell>
                         {lead.utm_source ? (
                           <div className="flex flex-col gap-0.5">
-                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
                             {lead.utm_campaign && (
-                              <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{lead.utm_campaign}</span>
+                              <span className="text-xs text-muted-foreground truncate max-w-28">{lead.utm_campaign}</span>
                             )}
                           </div>
                         ) : (
