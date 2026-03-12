@@ -471,16 +471,7 @@ export default function CourseView() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
-          {!isPreviewMode ? (
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              <span>{completedCount}/{requiredLessons.length} aulas</span>
-              <span>•</span>
-              <span>{progressPercent}%</span>
-            </div>
-          ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground">Preview gratuito</p>
-          )}
+          <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{selectedLesson?.title || course.title}</h1>
         </div>
       </div>
 
