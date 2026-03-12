@@ -478,54 +478,6 @@ export default function CampaignEditor() {
     navigate('/admin/marketing/email');
   };
 
-  const handleSend = async () => {
-    if (!campaign || campaign.status !== 'draft') return;
-    setSending(true);
-    try {
-      let recipients: { email: string; name?: string }[] = [];
-      if (campaign.target_type === 'leads') {
-        let query = supabase.from('leads').select('email, name');
-        if (campaign.target_filters?.status) query = query.eq('status', campaign.target_filters.status);
-        if (campaign.target_filters?.tag) query = query.contains('tags', [campaign.target_filters.tag]);
-        const { data } = await query;
-        recipients = (data || []) as { email: string; name?: string }[];
-      } else if (campaign.target_type === 'students') {
-        const { data } = await supabase.from('profiles').select('email, full_name');
-        recipients = (data || []).filter(p => p.email).map(p => ({ email: p.email!, name: p.full_name || undefined }));
-      }
-      if (recipients.length === 0) { toast.error('Nenhum destinatário encontrado'); setSending(false); return; }
-
-      await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: recipients.length }).eq('id', campaign.id);
-      let sentCount = 0;
-      let failedCount = 0;
-      const batchSize = 5;
-
-      for (let i = 0; i < recipients.length; i += batchSize) {
-        const batch = recipients.slice(i, i + batchSize);
-        const results = await Promise.allSettled(
-          batch.map(r =>
-            supabase.functions.invoke('send-email', {
-              body: { action: 'campaign', to: r.email, data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id, campaignTag: campaign.tag || '' } },
-            })
-          )
-        );
-        results.forEach(r => r.status === 'fulfilled' ? sentCount++ : failedCount++);
-      }
-
-      await supabase.from('email_campaigns').update({
-        status: failedCount === recipients.length ? 'failed' : 'sent',
-        sent_count: sentCount, failed_count: failedCount, sent_at: new Date().toISOString(),
-      }).eq('id', campaign.id);
-      toast.success(`Campanha enviada: ${sentCount} emails enviados, ${failedCount} falhas`);
-      navigate('/admin/marketing/email');
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao enviar campanha');
-      await supabase.from('email_campaigns').update({ status: 'failed' }).eq('id', campaign!.id);
-    } finally {
-      setSending(false);
-    }
-  };
 
   const addBlock = (type: BlockType) => {
     setBlocks(prev => [...prev, defaultBlock(type)]);
