@@ -273,7 +273,7 @@ function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disab
         {block.type === 'image' && (
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px] text-muted-foreground">URL da imagem</Label>
+              <Label className="text-xs text-muted-foreground">URL da imagem</Label>
               <Input value={block.imageUrl || ''} onChange={e => onChange({ imageUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
             </div>
             <div>
