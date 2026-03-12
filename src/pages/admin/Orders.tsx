@@ -62,7 +62,7 @@ function PercentBadge({ current, previous }: { current: number; previous: number
   const isUp = pct > 0;
   return (
     <Badge variant="outline" className={cn(
-      "text-[10px] gap-0.5 px-1.5 py-0 h-5",
+      "text-xs gap-0.5 px-1.5 py-0 h-5",
       isUp ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"
     )}>
       {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
