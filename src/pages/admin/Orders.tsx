@@ -55,7 +55,7 @@ function PercentBadge({ current, previous }: { current: number; previous: number
   );
   const pct = Math.round(((current - previous) / previous) * 100);
   if (pct === 0) return (
-    <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px] gap-0.5 px-1.5 py-0 h-5">
+    <Badge variant="outline" className="bg-muted text-muted-foreground text-xs gap-0.5 px-1.5 py-0 h-5">
       <Minus className="h-3 w-3" /> 0%
     </Badge>
   );
