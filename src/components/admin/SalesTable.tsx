@@ -691,7 +691,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {/* Gateway ID */}
             {d?.gateway?.gateway_id && (
-              <div className="text-[10px] text-muted-foreground space-y-0.5 pt-1">
+              <div className="text-xs text-muted-foreground space-y-0.5 pt-1">
                 <p>Gateway ID: {d.gateway.gateway_id}</p>
                 {d.gateway.last_transaction?.id && <p>Transação: {d.gateway.last_transaction.id}</p>}
               </div>
