@@ -59,6 +59,10 @@ const PRODUCTION_URL = 'https://cursos.kanaflix.com.br';
 const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
+function slugify(text: string): string {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
 }
@@ -378,8 +382,22 @@ export default function CampaignEditor() {
     return { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
   };
 
+  const validateRequired = (): boolean => {
+    if (!name.trim()) { toast.error('Preencha o nome da campanha'); return false; }
+    if (!subject.trim()) { toast.error('Preencha o assunto do email'); return false; }
+    const headingBlock = blocks.find(b => b.type === 'heading');
+    if (!headingBlock || !headingBlock.content.trim()) { toast.error('Preencha o título do email'); return false; }
+    const textBlock = blocks.find(b => b.type === 'text');
+    if (!textBlock || !textBlock.content.trim()) { toast.error('Preencha o texto do email'); return false; }
+    const buttonBlock = blocks.find(b => b.type === 'button');
+    if (buttonBlock && (!buttonBlock.buttonUrl || buttonBlock.buttonUrl === 'https://' || !buttonBlock.buttonUrl.trim())) {
+      toast.error('Preencha a URL do botão'); return false;
+    }
+    return true;
+  };
+
   const handleSaveDraft = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    if (!validateRequired()) return;
     setSaving(true);
     const payload = buildPayload();
 
@@ -398,7 +416,7 @@ export default function CampaignEditor() {
   };
 
   const handleSaveAndSend = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    if (!validateRequired()) return;
     setSaving(true);
     const payload = buildPayload();
 
@@ -566,7 +584,7 @@ export default function CampaignEditor() {
                   <Input value={name} onChange={e => {
                     const v = e.target.value;
                     setName(v);
-                    if (!tagManuallyEdited) setCampaignTag(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                    if (!tagManuallyEdited) setCampaignTag(slugify(v));
                   }} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
                 </div>
                 <div>
