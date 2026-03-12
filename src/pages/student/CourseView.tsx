@@ -598,8 +598,8 @@ export default function CourseView() {
         </div>
 
         {/* Lessons Sidebar - Collapsible on mobile */}
-        <div className="flex flex-col order-last lg:order-last">
-          <Card className="lg:sticky lg:top-6 flex-1 flex flex-col">
+        <div className="space-y-4 order-last lg:order-last">
+          <Card className="lg:sticky lg:top-6">
             <CardHeader className="pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
                 <span className="card-title-compact text-sm sm:text-base">Conteúdo</span>
@@ -634,8 +634,8 @@ export default function CourseView() {
               <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
               }
             </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-hidden">
-              <div className="h-full max-h-[300px] lg:max-h-none overflow-y-auto">
+            <CardContent className="p-0">
+              <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
                   {modules.length > 0 ?
                   <>
