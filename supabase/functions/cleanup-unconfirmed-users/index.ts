@@ -58,8 +58,6 @@ Deno.serve(async (req) => {
         // Skip if created less than 3 hours ago
         if (user.created_at && user.created_at > threeHoursAgo) continue;
 
-        // Skip imported users (they use magic link flow, not email confirmation)
-        if (user.user_metadata?.imported_user) continue;
 
         console.log(`Deleting unconfirmed user: ${user.id} (${user.email}), created: ${user.created_at}`);
 
