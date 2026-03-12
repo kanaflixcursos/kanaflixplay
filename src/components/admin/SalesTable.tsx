@@ -566,7 +566,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {/* Buyer */}
             <div>
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Comprador</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Comprador</p>
               <p className="font-medium text-sm">{d?.buyer?.name || sale.user_name || 'N/A'}</p>
               <p className="text-xs text-muted-foreground">{d?.buyer?.email || sale.user_email || ''}</p>
               {d?.buyer?.phone && <p className="text-xs text-muted-foreground">{d.buyer.phone}</p>}
