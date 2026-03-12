@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil, MailOpen } from 'lucide-react';
+import { ArrowLeft, Plus, Mail, Send, Eye, Trash2, Users, CheckCircle, XCircle, Pencil, MailOpen, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -73,6 +73,19 @@ export default function MarketingEmail() {
   const handleDelete = async (id: string) => {
     await supabase.from('email_campaigns').delete().eq('id', id);
     toast.success('Campanha excluída');
+    fetchCampaigns();
+  };
+
+  const handleDuplicate = async (c: Campaign) => {
+    const { error } = await supabase.from('email_campaigns').insert({
+      name: `${c.name} (cópia)`,
+      subject: c.subject,
+      html_content: c.html_content,
+      target_type: c.target_type,
+      target_filters: c.target_filters,
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Campanha duplicada');
     fetchCampaigns();
   };
 
@@ -169,20 +182,13 @@ export default function MarketingEmail() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => navigate(`/admin/marketing/email/${c.id}`)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/email/${c.id}`)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => handleDelete(c.id)}
-                            >
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDuplicate(c)}>
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(c.id)}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </div>

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick } from 'lucide-react';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
 
@@ -371,46 +371,73 @@ export default function CampaignEditor() {
   const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject), [blocks, subject]);
   const finalHtml = useMemo(() => blocksToHtml(blocks), [blocks]);
 
-  const handleSave = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
-    setSaving(true);
+  const buildPayload = () => {
     const filters: Record<string, string> = {};
     if (targetStatus !== 'all') filters.status = targetStatus;
     if (targetTag) filters.tag = targetTag;
-    const payload = { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
+    return { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
+  };
+
+  const handleSaveDraft = async () => {
+    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    setSaving(true);
+    const payload = buildPayload();
 
     if (isNew) {
       const { error } = await supabase.from('email_campaigns').insert(payload);
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success('Campanha criada como rascunho');
+      toast.success('Rascunho salvo');
       navigate('/admin/marketing/email');
     } else {
       const { error } = await supabase.from('email_campaigns').update(payload).eq('id', campaignId);
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success('Campanha salva!');
+      toast.success('Rascunho atualizado');
       fetchCampaign();
     }
     setSaving(false);
   };
 
-  const handleSend = async () => {
-    if (!campaign || campaign.status !== 'draft') return;
+  const handleSaveAndSend = async () => {
+    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    setSaving(true);
+    const payload = buildPayload();
+
+    // Save first
+    let savedId = campaignId;
+    if (isNew) {
+      const { data: inserted, error } = await supabase.from('email_campaigns').insert(payload).select('id').single();
+      if (error || !inserted) { toast.error(error?.message || 'Erro ao salvar'); setSaving(false); return; }
+      savedId = inserted.id;
+    } else {
+      const { error } = await supabase.from('email_campaigns').update(payload).eq('id', campaignId);
+      if (error) { toast.error(error.message); setSaving(false); return; }
+    }
+    setSaving(false);
+
+    // Fetch the saved campaign to send
+    const { data: freshCampaign } = await supabase.from('email_campaigns').select('*').eq('id', savedId).single();
+    if (!freshCampaign) { toast.error('Campanha não encontrada'); return; }
+    const c = freshCampaign as unknown as Campaign;
+    if (c.status !== 'draft') { toast.error('Campanha já foi enviada'); return; }
+    setCampaign(c);
+
+    // Now send
     setSending(true);
     try {
       let recipients: { email: string; name?: string }[] = [];
-      if (campaign.target_type === 'leads') {
+      if (c.target_type === 'leads') {
         let query = supabase.from('leads').select('email, name');
-        if (campaign.target_filters?.status) query = query.eq('status', campaign.target_filters.status);
-        if (campaign.target_filters?.tag) query = query.contains('tags', [campaign.target_filters.tag]);
+        if (c.target_filters?.status) query = query.eq('status', c.target_filters.status);
+        if (c.target_filters?.tag) query = query.contains('tags', [c.target_filters.tag]);
         const { data } = await query;
         recipients = (data || []) as { email: string; name?: string }[];
-      } else if (campaign.target_type === 'students') {
+      } else if (c.target_type === 'students') {
         const { data } = await supabase.from('profiles').select('email, full_name');
         recipients = (data || []).filter(p => p.email).map(p => ({ email: p.email!, name: p.full_name || undefined }));
       }
       if (recipients.length === 0) { toast.error('Nenhum destinatário encontrado'); setSending(false); return; }
 
-      await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: recipients.length }).eq('id', campaign.id);
+      await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: recipients.length }).eq('id', c.id);
       let sentCount = 0;
       let failedCount = 0;
       const batchSize = 5;
@@ -420,7 +447,7 @@ export default function CampaignEditor() {
         const results = await Promise.allSettled(
           batch.map(r =>
             supabase.functions.invoke('send-email', {
-              body: { action: 'campaign', to: r.email, data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id, campaignTag: campaign.tag || '' } },
+              body: { action: 'campaign', to: r.email, data: { subject: c.subject, htmlContent: c.html_content, recipientName: r.name || '', campaignId: c.id, campaignTag: c.tag || '' } },
             })
           )
         );
@@ -430,17 +457,27 @@ export default function CampaignEditor() {
       await supabase.from('email_campaigns').update({
         status: failedCount === recipients.length ? 'failed' : 'sent',
         sent_count: sentCount, failed_count: failedCount, sent_at: new Date().toISOString(),
-      }).eq('id', campaign.id);
-      toast.success(`Campanha enviada: ${sentCount} emails enviados, ${failedCount} falhas`);
+      }).eq('id', c.id);
+      toast.success(`Campanha enviada: ${sentCount} emails, ${failedCount} falhas`);
       navigate('/admin/marketing/email');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao enviar campanha');
-      await supabase.from('email_campaigns').update({ status: 'failed' }).eq('id', campaign!.id);
+      await supabase.from('email_campaigns').update({ status: 'failed' }).eq('id', c.id);
     } finally {
       setSending(false);
     }
   };
+
+  const handleDuplicate = async () => {
+    const payload = buildPayload();
+    payload.name = `${payload.name} (cópia)`;
+    const { error } = await supabase.from('email_campaigns').insert({ ...payload, status: 'draft' } as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Campanha duplicada como rascunho');
+    navigate('/admin/marketing/email');
+  };
+
 
   const addBlock = (type: BlockType) => {
     setBlocks(prev => [...prev, defaultBlock(type)]);
@@ -494,14 +531,19 @@ export default function CampaignEditor() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleSave} disabled={saving}>
-            <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar'}
-          </Button>
-          {!isNew && isDraft && (
-            <Button onClick={handleSend} disabled={sending}>
-              <Send className="h-4 w-4 mr-1" /> {sending ? 'Enviando...' : 'Enviar'}
+          {isDraft && (
+            <Button variant="outline" onClick={handleSaveDraft} disabled={saving || sending}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar Rascunho'}
             </Button>
           )}
+          {isDraft && (
+            <Button onClick={handleSaveAndSend} disabled={saving || sending}>
+              <Send className="h-4 w-4 mr-1" /> {sending ? 'Enviando...' : 'Salvar e Enviar'}
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleDuplicate} disabled={saving || sending}>
+            <Copy className="h-4 w-4 mr-1" /> Duplicar
+          </Button>
         </div>
       </div>
 
