@@ -68,6 +68,7 @@ export default function CustomerJourneyTimeline({
   const [utmFilter, setUtmFilter] = useState('all');
   const [utmSources, setUtmSources] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [courseNames, setCourseNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchEvents();
@@ -88,6 +89,19 @@ export default function CustomerJourneyTimeline({
     }
   };
 
+  const fetchCourseNames = async (courseIds: string[]) => {
+    if (courseIds.length === 0) return;
+    // Filter out IDs we already have
+    const missing = courseIds.filter(id => !courseNames[id]);
+    if (missing.length === 0) return;
+    const { data } = await supabase.from('courses').select('id, title').in('id', missing);
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach(c => { map[c.id] = c.title; });
+      setCourseNames(prev => ({ ...prev, ...map }));
+    }
+  };
+
   const fetchEvents = async () => {
     setLoading(true);
     let query = supabase
@@ -102,7 +116,22 @@ export default function CustomerJourneyTimeline({
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
     const { data } = await query;
-    setEvents((data as JourneyEvent[]) || []);
+    const result = (data as JourneyEvent[]) || [];
+    setEvents(result);
+
+    // Extract course IDs from event_data and page_path
+    const courseIds = new Set<string>();
+    result.forEach(e => {
+      const ed = e.event_data as Record<string, unknown> | null;
+      if (ed?.course_id) courseIds.add(String(ed.course_id));
+      // Also extract from page_path like /checkout/123
+      if (e.page_path) {
+        const match = e.page_path.match(/\/checkout\/([^/?]+)/);
+        if (match) courseIds.add(match[1]);
+      }
+    });
+    fetchCourseNames(Array.from(courseIds));
+
     setLoading(false);
   };
 
