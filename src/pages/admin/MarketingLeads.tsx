@@ -231,7 +231,7 @@ export default function MarketingLeads() {
               <CardTitle className="card-title-compact flex items-center gap-2">
                 Leads
                 {hasActiveFilters && (
-                  <Badge variant="secondary" className="text-[10px] font-normal">
+                  <Badge variant="secondary" className="text-xs font-normal">
                     <Filter className="h-3 w-3 mr-1" /> Filtros ativos
                   </Badge>
                 )}
