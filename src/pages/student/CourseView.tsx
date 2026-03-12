@@ -8,20 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { 
-  ArrowLeft, 
-  Play, 
-  CheckCircle, 
-  Circle, 
-  Loader2, 
-  FileText, 
+import {
+  ArrowLeft,
+  Play,
+  CheckCircle,
+  Circle,
+  Loader2,
+  FileText,
   Download,
   Clock,
   Lock,
   Unlock,
   CalendarClock,
-  ShoppingCart
-} from 'lucide-react';
+  ShoppingCart } from
+'lucide-react';
 import LessonComments from '@/components/LessonComments';
 import PandavideoPlayerWithProgress from '@/components/PandavideoPlayerWithProgress';
 
@@ -69,7 +69,7 @@ export default function CourseView() {
   const { courseId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -82,16 +82,16 @@ export default function CourseView() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchCourseData = async () => {
       if (!courseId) return;
 
       // Fetch course
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('*')
-        .eq('id', courseId)
-        .single();
+      const { data: courseData, error: courseError } = await supabase.
+      from('courses').
+      select('*').
+      eq('id', courseId).
+      single();
 
       if (!isMounted) return;
 
@@ -106,12 +106,12 @@ export default function CourseView() {
       // Check enrollment (only if user is logged in)
       let enrolled = false;
       if (user) {
-        const { data: enrollment } = await supabase
-          .from('course_enrollments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('course_id', courseId)
-          .single();
+        const { data: enrollment } = await supabase.
+        from('course_enrollments').
+        select('id').
+        eq('user_id', user.id).
+        eq('course_id', courseId).
+        single();
 
         if (!isMounted) return;
         enrolled = !!enrollment;
@@ -120,18 +120,18 @@ export default function CourseView() {
 
       // Fetch lessons and modules (RLS allows viewing published course lessons)
       const [{ data: lessonsData }, { data: modulesData }] = await Promise.all([
-        supabase
-          .from('lessons')
-          .select('*')
-          .eq('course_id', courseId)
-          .eq('is_hidden', false)
-          .order('order_index'),
-        supabase
-          .from('course_modules')
-          .select('*')
-          .eq('course_id', courseId)
-          .order('order_index'),
-      ]);
+      supabase.
+      from('lessons').
+      select('*').
+      eq('course_id', courseId).
+      eq('is_hidden', false).
+      order('order_index'),
+      supabase.
+      from('course_modules').
+      select('*').
+      eq('course_id', courseId).
+      order('order_index')]
+      );
 
       if (!isMounted) return;
 
@@ -140,17 +140,17 @@ export default function CourseView() {
         if (lessonsData && lessonsData.length > 0) {
           setIsPreviewMode(true);
           setModules((modulesData || []) as Module[]);
-          
+
           const mods = (modulesData || []) as Module[];
-          const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
-          
-          const sortedLessons = [...(lessonsData || [])].map(lesson => ({
+          const moduleOrderMap = new Map(mods.map((m) => [m.id, m.order_index]));
+
+          const sortedLessons = [...(lessonsData || [])].map((lesson) => ({
             ...lesson,
             completed: false,
-            materials: [],
+            materials: []
           })).sort((a, b) => {
-            const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
-            const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+            const aModOrder = a.module_id ? moduleOrderMap.get(a.module_id) ?? 999 : -1;
+            const bModOrder = b.module_id ? moduleOrderMap.get(b.module_id) ?? 999 : -1;
             if (aModOrder !== bModOrder) return aModOrder - bModOrder;
             return a.order_index - b.order_index;
           });
@@ -169,22 +169,22 @@ export default function CourseView() {
       setModules((modulesData || []) as Module[]);
 
       // Fetch progress
-      const { data: progressData } = await supabase
-        .from('lesson_progress')
-        .select('lesson_id, completed')
-        .eq('user_id', user.id);
+      const { data: progressData } = await supabase.
+      from('lesson_progress').
+      select('lesson_id, completed').
+      eq('user_id', user.id);
 
       if (!isMounted) return;
 
-      const progressMap = new Map(progressData?.map(p => [p.lesson_id, p.completed]) || []);
+      const progressMap = new Map(progressData?.map((p) => [p.lesson_id, p.completed]) || []);
 
       // Fetch materials for all lessons
-      const lessonIds = (lessonsData || []).map(l => l.id);
-      const { data: materialsData } = await supabase
-        .from('lesson_materials')
-        .select('*')
-        .in('lesson_id', lessonIds)
-        .order('order_index');
+      const lessonIds = (lessonsData || []).map((l) => l.id);
+      const { data: materialsData } = await supabase.
+      from('lesson_materials').
+      select('*').
+      in('lesson_id', lessonIds).
+      order('order_index');
 
       if (!isMounted) return;
 
@@ -196,28 +196,28 @@ export default function CourseView() {
         materialsByLesson[material.lesson_id].push(material);
       });
 
-      const lessonsWithProgress = (lessonsData || []).map(lesson => ({
+      const lessonsWithProgress = (lessonsData || []).map((lesson) => ({
         ...lesson,
         completed: progressMap.get(lesson.id) || false,
-        materials: materialsByLesson[lesson.id] || [],
+        materials: materialsByLesson[lesson.id] || []
       }));
 
       // Sort lessons to match module display order
       const mods = (modulesData || []) as Module[];
-      const moduleOrderMap = new Map(mods.map(m => [m.id, m.order_index]));
-      
+      const moduleOrderMap = new Map(mods.map((m) => [m.id, m.order_index]));
+
       const sortedLessons = [...lessonsWithProgress].sort((a, b) => {
-        const aModOrder = a.module_id ? (moduleOrderMap.get(a.module_id) ?? 999) : -1;
-        const bModOrder = b.module_id ? (moduleOrderMap.get(b.module_id) ?? 999) : -1;
+        const aModOrder = a.module_id ? moduleOrderMap.get(a.module_id) ?? 999 : -1;
+        const bModOrder = b.module_id ? moduleOrderMap.get(b.module_id) ?? 999 : -1;
         if (aModOrder !== bModOrder) return aModOrder - bModOrder;
         return a.order_index - b.order_index;
       });
 
       setLessons(sortedLessons);
-      
+
       // Auto-select first incomplete or first lesson only on initial load
       if (!selectedLesson) {
-        const firstIncomplete = sortedLessons.find(l => !l.completed);
+        const firstIncomplete = sortedLessons.find((l) => !l.completed);
         setSelectedLesson(firstIncomplete || sortedLessons[0] || null);
       }
 
@@ -225,44 +225,44 @@ export default function CourseView() {
     };
 
     fetchCourseData();
-    
+
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, user?.id]);
 
   const handleMarkComplete = async (lessonId: string) => {
     if (!user) return;
 
-    const { error } = await supabase
-      .from('lesson_progress')
-      .upsert({
-        user_id: user.id,
-        lesson_id: lessonId,
-        completed: true,
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,lesson_id'
-      });
+    const { error } = await supabase.
+    from('lesson_progress').
+    upsert({
+      user_id: user.id,
+      lesson_id: lessonId,
+      completed: true,
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'user_id,lesson_id'
+    });
 
     if (error) {
       toast.error('Erro ao marcar aula como concluída');
     } else {
-      const updatedLessons = lessons.map(l => 
-        l.id === lessonId ? { ...l, completed: true } : l
+      const updatedLessons = lessons.map((l) =>
+      l.id === lessonId ? { ...l, completed: true } : l
       );
       setLessons(updatedLessons);
-      
+
       if (selectedLesson?.id === lessonId) {
         setSelectedLesson({ ...selectedLesson, completed: true });
       }
-      
+
       toast.success('Aula concluída!');
-      
+
       // Auto advance to next lesson
-      const currentIndex = lessons.findIndex(l => l.id === lessonId);
+      const currentIndex = lessons.findIndex((l) => l.id === lessonId);
       if (currentIndex < lessons.length - 1) {
         const nextLesson = updatedLessons[currentIndex + 1];
         setSelectedLesson(nextLesson);
@@ -323,7 +323,7 @@ export default function CourseView() {
     }
 
     if (!course?.is_sequential) {
-      return new Set(lessons.map(l => l.id));
+      return new Set(lessons.map((l) => l.id));
     }
 
     const unlocked = new Set<string>();
@@ -344,13 +344,13 @@ export default function CourseView() {
   }, [lessons, course?.is_sequential, isPreviewMode, isPreSale]);
 
   // Separate required and optional lessons
-  const optionalModuleIds = new Set(modules.filter(m => m.is_optional).map(m => m.id));
-  const requiredLessons = lessons.filter(l => !l.module_id || !optionalModuleIds.has(l.module_id));
-  const optionalLessons = lessons.filter(l => l.module_id && optionalModuleIds.has(l.module_id));
-  
+  const optionalModuleIds = new Set(modules.filter((m) => m.is_optional).map((m) => m.id));
+  const requiredLessons = lessons.filter((l) => !l.module_id || !optionalModuleIds.has(l.module_id));
+  const optionalLessons = lessons.filter((l) => l.module_id && optionalModuleIds.has(l.module_id));
+
   const unlockedCount = unlockedLessonIds.size;
-  const completedCount = requiredLessons.filter(l => l.completed).length;
-  const progressPercent = requiredLessons.length > 0 ? Math.round((completedCount / requiredLessons.length) * 100) : 0;
+  const completedCount = requiredLessons.filter((l) => l.completed).length;
+  const progressPercent = requiredLessons.length > 0 ? Math.round(completedCount / requiredLessons.length * 100) : 0;
   const isLessonLocked = (lessonId: string) => !unlockedLessonIds.has(lessonId);
 
   // Detect when a new lesson gets unlocked and trigger animation
@@ -360,62 +360,62 @@ export default function CourseView() {
       const unlockedArray = Array.from(unlockedLessonIds);
       const newlyUnlockedId = unlockedArray[unlockedArray.length - 1];
       setJustUnlockedId(newlyUnlockedId);
-      
+
       // Clear the animation after 2 seconds
       const timer = setTimeout(() => {
         setJustUnlockedId(null);
       }, 2000);
-      
+
       return () => clearTimeout(timer);
     }
     prevUnlockedCountRef.current = unlockedCount;
   }, [unlockedCount, unlockedLessonIds, course?.is_sequential]);
 
-  const LessonSidebarItem = ({ lesson, index }: { lesson: Lesson; index: number }) => {
+  const LessonSidebarItem = ({ lesson, index }: {lesson: Lesson;index: number;}) => {
     const locked = isLessonLocked(lesson.id);
     const isJustUnlocked = justUnlockedId === lesson.id;
     return (
       <button
         className={`w-full text-left p-3 rounded-lg transition-all flex items-center gap-3 ${
-          isJustUnlocked
-            ? 'bg-success/20 ring-2 ring-success animate-pulse'
-            : selectedLesson?.id === lesson.id 
-              ? 'bg-primary/10 ring-1 ring-primary' 
-              : locked 
-                ? 'opacity-60 cursor-not-allowed' 
-                : ''
-        }`}
-        onClick={() => setSelectedLesson(lesson)}
-      >
+        isJustUnlocked ?
+        'bg-success/20 ring-2 ring-success animate-pulse' :
+        selectedLesson?.id === lesson.id ?
+        'bg-primary/10 ring-1 ring-primary' :
+        locked ?
+        'opacity-60 cursor-not-allowed' :
+        ''}`
+        }
+        onClick={() => setSelectedLesson(lesson)}>
+        
         <div className="shrink-0">
-          {isJustUnlocked ? (
-            <Unlock className="h-4 w-4 text-success animate-bounce" />
-          ) : locked ? (
-            <Lock className="h-4 w-4 text-muted-foreground" />
-          ) : lesson.completed ? (
-            <CheckCircle className="h-4 w-4 text-success" />
-          ) : (
-            <Circle className="h-4 w-4 text-muted-foreground" />
-          )}
+          {isJustUnlocked ?
+          <Unlock className="h-4 w-4 text-success animate-bounce" /> :
+          locked ?
+          <Lock className="h-4 w-4 text-muted-foreground" /> :
+          lesson.completed ?
+          <CheckCircle className="h-4 w-4 text-success" /> :
+
+          <Circle className="h-4 w-4 text-muted-foreground" />
+          }
         </div>
         <div className="relative w-14 h-9 rounded overflow-hidden bg-muted shrink-0">
-          {lesson.thumbnail_url ? (
-            <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
+          {lesson.thumbnail_url ?
+          <img src={lesson.thumbnail_url} alt={lesson.title} className="w-full h-full object-cover" /> :
+
+          <div className="w-full h-full flex items-center justify-center">
               <Play className="h-3 w-3 text-muted-foreground" />
             </div>
-          )}
-          {locked && (
-            <div className="absolute inset-0 bg-foreground/70 flex items-center justify-center">
+          }
+          {locked &&
+          <div className="absolute inset-0 bg-foreground/70 flex items-center justify-center">
               <Lock className="h-3 w-3 text-background" />
             </div>
-          )}
-          {selectedLesson?.id === lesson.id && !locked && (
-            <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
+          }
+          {selectedLesson?.id === lesson.id && !locked &&
+          <div className="absolute inset-0 bg-primary/30 flex items-center justify-center">
               <Play className="h-3 w-3 text-primary-foreground fill-primary-foreground" />
             </div>
-          )}
+          }
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium line-clamp-2 leading-tight">
@@ -425,16 +425,16 @@ export default function CourseView() {
             {lesson.duration_minutes && <span>{formatDuration(lesson.duration_minutes)}</span>}
           </div>
         </div>
-      </button>
-    );
+      </button>);
+
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+      </div>);
+
   }
 
   if (!course) {
@@ -452,8 +452,8 @@ export default function CourseView() {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Pre-sale banner */}
-      {isPreSale && (
-        <div className="flex items-start gap-3 p-4 bg-chart-4/10 border border-chart-4/30 rounded-xl">
+      {isPreSale &&
+      <div className="flex items-start gap-3 p-4 bg-chart-4/10 border border-chart-4/30 rounded-xl">
           <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-sm text-foreground">
@@ -464,7 +464,7 @@ export default function CourseView() {
             </p>
           </div>
         </div>
-      )}
+      }
       {/* Header - Mobile optimized */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="w-fit">
@@ -480,44 +480,44 @@ export default function CourseView() {
         {/* Main Content Area */}
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Video Player */}
-          {selectedLesson?.video_url ? (
-            <div className="w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
+          {selectedLesson?.video_url ?
+          <div className="w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
               <PandavideoPlayerWithProgress
-                key={selectedLesson.id}
-                videoUrl={selectedLesson.video_url}
-                lessonId={selectedLesson.id}
-                title={selectedLesson.title}
-                durationMinutes={selectedLesson.duration_minutes}
-                isLocked={isLessonLocked(selectedLesson.id)}
-                lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
-                lockMessage={isPreviewMode ? 'Adquira o curso para desbloquear todas as aulas' : isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
-                onComplete={isPreviewMode ? undefined : () => {
-                  // Update local state when auto-completed
-                  const updatedLessons = lessons.map(l => 
-                    l.id === selectedLesson.id ? { ...l, completed: true } : l
-                  );
-                  setLessons(updatedLessons);
-                  setSelectedLesson({ ...selectedLesson, completed: true });
-                  toast.success('Aula concluída!');
-                  
-                  // Auto advance to next lesson
-                  const currentIndex = lessons.findIndex(l => l.id === selectedLesson.id);
-                  if (currentIndex < lessons.length - 1) {
-                    const nextLesson = updatedLessons[currentIndex + 1];
-                    setSelectedLesson(nextLesson);
-                  }
-                }}
-              />
-            </div>
-          ) : (
-            <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
+              key={selectedLesson.id}
+              videoUrl={selectedLesson.video_url}
+              lessonId={selectedLesson.id}
+              title={selectedLesson.title}
+              durationMinutes={selectedLesson.duration_minutes}
+              isLocked={isLessonLocked(selectedLesson.id)}
+              lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
+              lockMessage={isPreviewMode ? 'Adquira o curso para desbloquear todas as aulas' : isPreSale ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}` : undefined}
+              onComplete={isPreviewMode ? undefined : () => {
+                // Update local state when auto-completed
+                const updatedLessons = lessons.map((l) =>
+                l.id === selectedLesson.id ? { ...l, completed: true } : l
+                );
+                setLessons(updatedLessons);
+                setSelectedLesson({ ...selectedLesson, completed: true });
+                toast.success('Aula concluída!');
+
+                // Auto advance to next lesson
+                const currentIndex = lessons.findIndex((l) => l.id === selectedLesson.id);
+                if (currentIndex < lessons.length - 1) {
+                  const nextLesson = updatedLessons[currentIndex + 1];
+                  setSelectedLesson(nextLesson);
+                }
+              }} />
+            
+            </div> :
+
+          <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
               <Play className="h-16 w-16 text-muted-foreground" />
             </div>
-      )}
+          }
 
       {/* Preview mode banner */}
-      {isPreviewMode && (
-        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+      {isPreviewMode &&
+          <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
           <Play className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="font-medium text-sm text-foreground">
@@ -532,24 +532,24 @@ export default function CourseView() {
             {isPaidCourse ? 'Comprar' : 'Matricular-se'}
           </Button>
         </div>
-      )}
+          }
           {/* Lesson Info - Outside the player card */}
-          {selectedLesson && (
-            <div className="space-y-3 md:space-y-4">
+          {selectedLesson &&
+          <div className="space-y-3 md:space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
                  <div className="space-y-1 min-w-0 flex items-center">
                   <p className="text-xs sm:text-sm text-muted-foreground">
                     {[
-                      selectedLesson.module_id && modules.find(m => m.id === selectedLesson.module_id)
-                        ? modules.find(m => m.id === selectedLesson.module_id)?.title
-                        : null,
-                      `Aula ${lessons.findIndex(l => l.id === selectedLesson.id) + 1}`,
-                      selectedLesson.duration_minutes ? formatDuration(selectedLesson.duration_minutes) : null
-                    ].filter(Boolean).join(' · ')}
+                  selectedLesson.module_id && modules.find((m) => m.id === selectedLesson.module_id) ?
+                  modules.find((m) => m.id === selectedLesson.module_id)?.title :
+                  null,
+                  `Aula ${lessons.findIndex((l) => l.id === selectedLesson.id) + 1}`,
+                  selectedLesson.duration_minutes ? formatDuration(selectedLesson.duration_minutes) : null].
+                  filter(Boolean).join(' · ')}
                   </p>
                 </div>
-                {!isPreviewMode && selectedLesson.completed ? (
-                  <TooltipProvider>
+                {!isPreviewMode && selectedLesson.completed ?
+              <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Badge variant="secondary" className="gap-1 shrink-0 cursor-help">
@@ -561,29 +561,29 @@ export default function CourseView() {
                         <p>Aula completada automaticamente após assistir 90% do vídeo</p>
                       </TooltipContent>
                     </Tooltip>
-                  </TooltipProvider>
-                ) : !isPreviewMode && !course.is_sequential && (
-                  <Button 
-                    onClick={() => handleMarkComplete(selectedLesson.id)}
-                    className="shrink-0 text-xs sm:text-sm"
-                    size="sm"
-                  >
+                  </TooltipProvider> :
+              !isPreviewMode && !course.is_sequential &&
+              <Button
+                onClick={() => handleMarkComplete(selectedLesson.id)}
+                className="shrink-0 text-xs sm:text-sm"
+                size="sm">
+                
                     <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Marcar como concluída</span>
+                    <span className="hidden sm:inline">Concluído</span>
                     <span className="sm:hidden">Concluir</span>
                   </Button>
-                )}
+              }
               </div>
 
               {/* Comments Section - only for enrolled users */}
-              {!isPreviewMode && (
-                <>
+              {!isPreviewMode &&
+            <>
                   <Separator />
                   <LessonComments lessonId={selectedLesson.id} />
                 </>
-              )}
-              {isPreviewMode && (
-                <div className="p-6 bg-muted/50 rounded-xl text-center space-y-3">
+            }
+              {isPreviewMode &&
+            <div className="p-6 bg-muted/50 rounded-xl text-center space-y-3">
                   <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
                   <p className="text-sm font-medium">Gostou do que viu?</p>
                   <p className="text-xs text-muted-foreground">Adquira o curso completo para acessar todas as aulas, materiais e comentários.</p>
@@ -592,9 +592,9 @@ export default function CourseView() {
                     {isPaidCourse ? 'Comprar Curso' : 'Matricular-se'}
                   </Button>
                 </div>
-              )}
+            }
             </div>
-          )}
+          }
         </div>
 
         {/* Lessons Sidebar - Collapsible on mobile */}
@@ -607,13 +607,13 @@ export default function CourseView() {
               </div>
               
               {/* Progress bar - hide in preview mode */}
-              {!isPreviewMode ? (
-                <>
+              {!isPreviewMode ?
+              <>
                   <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
-                    <div 
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
+                    <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }} />
+                  
                   </div>
                   
                   {/* Stats row */}
@@ -622,76 +622,76 @@ export default function CourseView() {
                       <CheckCircle className="h-3 w-3" />
                       {completedCount}/{requiredLessons.length} concluídas
                     </span>
-                    {course?.is_sequential && (
-                      <span className="flex items-center gap-1">
+                    {course?.is_sequential &&
+                  <span className="flex items-center gap-1">
                         <Unlock className="h-3 w-3" />
                         {unlockedCount}/{requiredLessons.length} desbloqueadas
                       </span>
-                    )}
+                  }
                   </div>
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
-              )}
+                </> :
+
+              <p className="text-xs text-muted-foreground mt-2">{lessons.length} aulas • Prévia da 1ª aula</p>
+              }
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
                 <div className="p-2 space-y-1">
-                  {modules.length > 0 ? (
-                    <>
+                  {modules.length > 0 ?
+                  <>
                       {/* Lessons without module */}
-                      {lessons.filter(l => !l.module_id).map((lesson, i) => (
-                        <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
-                      ))}
+                      {lessons.filter((l) => !l.module_id).map((lesson, i) =>
+                    <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                    )}
                       {/* Required modules */}
-                      {modules.filter(m => !m.is_optional).map((mod) => {
-                        const moduleLessons = lessons.filter(l => l.module_id === mod.id);
-                        if (moduleLessons.length === 0) return null;
-                        return (
-                          <div key={mod.id} className="pt-3 first:pt-0">
+                      {modules.filter((m) => !m.is_optional).map((mod) => {
+                      const moduleLessons = lessons.filter((l) => l.module_id === mod.id);
+                      if (moduleLessons.length === 0) return null;
+                      return (
+                        <div key={mod.id} className="pt-3 first:pt-0">
                             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-3 pb-1">
                               {mod.title}
                             </p>
-                            {moduleLessons.map((lesson) => (
-                              <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
-                            ))}
-                          </div>
-                        );
-                      })}
+                            {moduleLessons.map((lesson) =>
+                          <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                          )}
+                          </div>);
+
+                    })}
                       {/* Optional modules separator */}
-                      {optionalLessons.length > 0 && (
-                        <>
+                      {optionalLessons.length > 0 &&
+                    <>
                           <Separator className="my-3" />
-                          {modules.filter(m => m.is_optional).map((mod) => {
-                            const moduleLessons = lessons.filter(l => l.module_id === mod.id);
-                            if (moduleLessons.length === 0) return null;
-                            return (
-                              <div key={mod.id} className="pt-2">
+                          {modules.filter((m) => m.is_optional).map((mod) => {
+                        const moduleLessons = lessons.filter((l) => l.module_id === mod.id);
+                        if (moduleLessons.length === 0) return null;
+                        return (
+                          <div key={mod.id} className="pt-2">
                                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-3 pb-1">
                                   {mod.title}
                                 </p>
-                                {moduleLessons.map((lesson) => (
-                                  <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
-                                ))}
-                              </div>
-                            );
-                          })}
+                                {moduleLessons.map((lesson) =>
+                            <LessonSidebarItem key={lesson.id} lesson={lesson} index={lessons.indexOf(lesson)} />
+                            )}
+                              </div>);
+
+                      })}
                         </>
-                      )}
-                    </>
-                  ) : (
-                    lessons.map((lesson, index) => (
-                      <LessonSidebarItem key={lesson.id} lesson={lesson} index={index} />
-                    ))
-                  )}
+                    }
+                    </> :
+
+                  lessons.map((lesson, index) =>
+                  <LessonSidebarItem key={lesson.id} lesson={lesson} index={index} />
+                  )
+                  }
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Materials below lesson list */}
-          {selectedLesson && selectedLesson.materials.length > 0 && (
-            <Card>
+          {selectedLesson && selectedLesson.materials.length > 0 &&
+          <Card>
               <CardHeader className="py-4">
                 <h3 className="card-title-compact flex items-center gap-2">
                   <Download className="h-4 w-4" />
@@ -700,14 +700,14 @@ export default function CourseView() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="grid gap-2">
-                  {selectedLesson.materials.map((material) => (
-                    <a
-                      key={material.id}
-                      href={material.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                    >
+                  {selectedLesson.materials.map((material) =>
+                <a
+                  key={material.id}
+                  href={material.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                  
                       {getFileIcon(material.file_type)}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
@@ -719,13 +719,13 @@ export default function CourseView() {
                       </div>
                       <Download className="h-4 w-4 text-muted-foreground shrink-0" />
                     </a>
-                  ))}
+                )}
                 </div>
               </CardContent>
             </Card>
-          )}
+          }
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
