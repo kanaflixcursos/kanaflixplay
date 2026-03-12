@@ -174,7 +174,7 @@ export default function CatalogPage() {
               <h2 className="text-base sm:text-lg font-semibold tracking-tight mb-3 sm:mb-4 flex items-center gap-2">
                 <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Outros Cursos
-                <Badge variant="outline" className="text-[10px] sm:text-xs font-normal ml-1">
+                <Badge variant="outline" className="text-xs font-normal ml-1">
                   {uncategorized.length} {uncategorized.length === 1 ? 'curso' : 'cursos'}
                 </Badge>
               </h2>
