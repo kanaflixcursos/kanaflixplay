@@ -166,6 +166,101 @@ const blockTypeMeta: Record<BlockType, { icon: typeof Type; label: string }> = {
   spacer: { icon: Minus, label: 'Espaço' },
 };
 
+// ── Image block editor with upload ─────────────────────────────────────
+
+function ImageBlockEditor({ block, onChange, disabled }: {
+  block: EmailBlock;
+  onChange: (updates: Partial<EmailBlock>) => void;
+  disabled: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Máximo 5MB'); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `campaigns/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+      const { error } = await supabase.storage.from('email-assets').upload(path, file, { cacheControl: '3600' });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('email-assets').getPublicUrl(path);
+      onChange({ imageUrl: urlData.publicUrl });
+      toast.success('Imagem enviada');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao enviar');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading || disabled} />
+
+      {block.imageUrl ? (
+        <div className="space-y-2">
+          <div className="relative rounded-md overflow-hidden border bg-muted" style={{ maxHeight: 160 }}>
+            <img src={block.imageUrl} alt={block.imageAlt || ''} className="w-full h-full object-contain" style={{ maxHeight: 160 }} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" className="text-xs h-7" onClick={() => inputRef.current?.click()} disabled={disabled || uploading}>
+              {uploading ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Enviando...</> : 'Trocar imagem'}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="text-xs h-7 text-destructive" onClick={() => onChange({ imageUrl: '' })} disabled={disabled}>
+              Remover
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading || disabled}
+          className="w-full border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-1.5 hover:border-primary/50 hover:bg-muted/50 transition-colors"
+        >
+          {uploading ? (
+            <><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /><span className="text-xs text-muted-foreground">Enviando...</span></>
+          ) : (
+            <><Upload className="h-6 w-6 text-muted-foreground" /><span className="text-xs text-muted-foreground">Clique para enviar imagem</span></>
+          )}
+        </button>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label className="text-xs text-muted-foreground">URL da imagem</Label>
+          <Input value={block.imageUrl || ''} onChange={e => onChange({ imageUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Texto alternativo</Label>
+          <Input value={block.imageAlt || ''} onChange={e => onChange({ imageAlt: e.target.value })} className="h-8 text-sm" disabled={disabled} />
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Largura</Label>
+          <span className="text-xs font-mono text-muted-foreground">{block.imageWidth || 100}%</span>
+        </div>
+        <Slider
+          value={[block.imageWidth || 100]}
+          onValueChange={([v]) => onChange({ imageWidth: v })}
+          min={20}
+          max={100}
+          step={5}
+          disabled={disabled}
+          className="w-full"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Inline block editor component ─────────────────────────────────────
 
 function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disabled }: {
