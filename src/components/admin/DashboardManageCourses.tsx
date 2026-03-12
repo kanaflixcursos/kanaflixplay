@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { BookOpen, PlayCircle, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Course {
   id: string;
@@ -24,26 +25,25 @@ interface Course {
   is_published: boolean;
 }
 
+async function fetchRecentCourses(): Promise<Course[]> {
+  const { data } = await supabase
+    .from('courses')
+    .select('id, title, is_published')
+    .order('created_at', { ascending: false })
+    .limit(5);
+  return data || [];
+}
+
 export default function DashboardManageCourses() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
-  const fetchCourses = async () => {
-    const { data } = await supabase
-      .from('courses')
-      .select('id, title, is_published')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    setCourses(data || []);
-    setLoading(false);
-  };
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ['courses', 'dashboard-recent'],
+    queryFn: fetchRecentCourses,
+    staleTime: 1000 * 60 * 2,
+  });
 
   const handleDelete = async (courseId: string, courseTitle: string) => {
     if (deleteConfirmText !== courseTitle) {
@@ -58,13 +58,13 @@ export default function DashboardManageCourses() {
       toast.error('Erro ao excluir curso');
     } else {
       toast.success('Curso excluído com sucesso');
-      setCourses(courses.filter(c => c.id !== courseId));
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     }
     setDeletingCourseId(null);
     setDeleteConfirmText('');
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="overflow-hidden">
         <CardHeader className="p-4 sm:p-6">
