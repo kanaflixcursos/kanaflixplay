@@ -382,8 +382,22 @@ export default function CampaignEditor() {
     return { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
   };
 
+  const validateRequired = (): boolean => {
+    if (!name.trim()) { toast.error('Preencha o nome da campanha'); return false; }
+    if (!subject.trim()) { toast.error('Preencha o assunto do email'); return false; }
+    const headingBlock = blocks.find(b => b.type === 'heading');
+    if (!headingBlock || !headingBlock.content.trim()) { toast.error('Preencha o título do email'); return false; }
+    const textBlock = blocks.find(b => b.type === 'text');
+    if (!textBlock || !textBlock.content.trim()) { toast.error('Preencha o texto do email'); return false; }
+    const buttonBlock = blocks.find(b => b.type === 'button');
+    if (buttonBlock && (!buttonBlock.buttonUrl || buttonBlock.buttonUrl === 'https://' || !buttonBlock.buttonUrl.trim())) {
+      toast.error('Preencha a URL do botão'); return false;
+    }
+    return true;
+  };
+
   const handleSaveDraft = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    if (!validateRequired()) return;
     setSaving(true);
     const payload = buildPayload();
 
