@@ -1,100 +1,205 @@
-import { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { getStoredUtm, clearStoredUtm } from '@/lib/utm';
 import { trackEvent } from '@/hooks/useTrackEvent';
-import { authService, SignUpData } from '@/features/auth/services/authService';
-import { userService } from '@/features/auth/services/userService';
-import { AuthContextType, User, Session, UserRole } from '@/features/auth/types';
+
+type UserRole = 'admin' | 'student' | null;
+
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  role: UserRole;
+  loading: boolean;
+  profileComplete: boolean | null;
+  recheckProfile: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<UserRole | null>(null);
+  const [role, setRole] = useState<UserRole>(null);
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
-  const handleAuthChange = useCallback(async (event: string, session: Session | null) => {
-    setSession(session);
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-
-    if (currentUser) {
-      // Fetch role and profile status in parallel
-      const [userRole, isProfileComplete] = await Promise.all([
-        userService.getUserRole(currentUser.id),
-        userService.isProfileComplete(currentUser.id),
-      ]);
-      
-      setRole(userRole);
-      setProfileComplete(isProfileComplete);
-
-      // Update last seen in the background
-      userService.updateLastSeen(currentUser.id);
-      
-      if (event === 'SIGNED_IN') {
-        trackEvent('login', {}, '/login', currentUser.id);
-        const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
-        if (redirectAfterConfirm) {
-          localStorage.removeItem('kanaflix_redirect_after_confirm');
-          // Use a short delay to ensure state has propagated before redirect
-          setTimeout(() => { window.location.href = redirectAfterConfirm; }, 100);
-        }
-      }
-    } else {
-      setRole(null);
-      setProfileComplete(null);
+  const fetchUserRole = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+    
+    if (!error && data) {
+      setRole(data.role as UserRole);
     }
-    setLoading(false);
-  }, []);
+  };
 
-  const recheckProfile = useCallback(async () => {
+  const checkProfileComplete = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('phone, birth_date')
+      .eq('user_id', userId)
+      .single();
+    
+    const complete = !!(data?.phone && data?.birth_date);
+    setProfileComplete(complete);
+  };
+
+  const recheckProfile = async () => {
     if (user) {
-      const isComplete = await userService.isProfileComplete(user.id);
-      setProfileComplete(isComplete);
+      await checkProfileComplete(user.id);
     }
-  }, [user]);
+  };
 
-  const signOut = useCallback(async () => {
-    await authService.signOut();
-    // State will be cleared by onAuthStateChange listener
-  }, []);
+  const updateLastSeen = async (userId: string) => {
+    const utm = getStoredUtm();
+    const updateData: Record<string, string> = { last_seen_at: new Date().toISOString() };
+    
+    // First-touch UTM attribution: only set if profile doesn't have UTM yet
+    if (utm.utm_source) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('utm_source')
+        .eq('user_id', userId)
+        .single();
+      
+      if (!profile?.utm_source) {
+        updateData.utm_source = utm.utm_source;
+        if (utm.utm_medium) updateData.utm_medium = utm.utm_medium;
+        if (utm.utm_campaign) updateData.utm_campaign = utm.utm_campaign;
+        clearStoredUtm();
+      }
+    }
+    
+    await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('user_id', userId);
+  };
 
   useEffect(() => {
-    // Immediately check the session on mount
-    authService.getSession().then(session => {
-        handleAuthChange('INITIAL_SESSION', session);
-    }).catch(error => {
-        console.error("Error getting initial session:", error);
-        setLoading(false);
-    });
-
-    // Listen for future auth state changes
-    const subscription = authService.onAuthStateChange((event, session) => {
-        // Avoid re-processing the initial session event if it's fired again by the listener
-        if (event !== 'INITIAL_SESSION') {
-            handleAuthChange(event, session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setTimeout(() => fetchUserRole(session.user.id), 0);
+          setTimeout(() => checkProfileComplete(session.user.id), 0);
+          setTimeout(() => updateLastSeen(session.user.id), 0);
+          
+          // Handle redirect after email confirmation
+          if (event === 'SIGNED_IN') {
+            // Only track login for password-based sign-ins, not initial loads
+            trackEvent('login', {}, '/login', session.user.id);
+            const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
+            if (redirectAfterConfirm) {
+              localStorage.removeItem('kanaflix_redirect_after_confirm');
+              setTimeout(() => {
+                window.location.href = redirectAfterConfirm;
+              }, 100);
+            }
+          }
+        } else {
+          setRole(null);
+          setProfileComplete(null);
         }
+        
+        setLoading(false);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+        checkProfileComplete(session.user.id);
+        updateLastSeen(session.user.id);
+      }
+      
+      setLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [handleAuthChange]);
+    return () => subscription.unsubscribe();
+  }, []);
 
-  const value = {
-    user,
-    session,
-    role,
-    loading,
-    profileComplete,
-    recheckProfile,
-    // The context will no longer expose signIn and signUp directly
-    // Components should use the service or a dedicated hook
-    signOut,
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => {
+    // Check if email already exists in profiles
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingProfile) {
+      return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
+    }
+
+    // Use the published URL for email confirmation redirect
+    const baseUrl = import.meta.env.PROD 
+      ? 'https://cursos.kanaflix.com.br'
+      : window.location.origin;
+    
+    // If there's a custom redirect, include it in the email link
+    const emailRedirectUrl = redirectTo && redirectTo !== '/' 
+      ? `${baseUrl}${redirectTo}`
+      : baseUrl;
+    
+    // Include UTM params in user metadata so the DB trigger can save them to profile
+    const utm = getStoredUtm();
+    const userData: Record<string, string | undefined> = { full_name: fullName, phone, birth_date: birthDate };
+    if (utm.utm_source) userData.utm_source = utm.utm_source;
+    if (utm.utm_medium) userData.utm_medium = utm.utm_medium;
+    if (utm.utm_campaign) userData.utm_campaign = utm.utm_campaign;
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.toLowerCase().trim(),
+      password,
+      options: {
+        data: userData,
+        emailRedirectTo: emailRedirectUrl,
+      },
+    });
+
+    // Supabase returns a user with identities = [] if email already exists
+    if (data?.user && data.user.identities?.length === 0) {
+      return { error: new Error('Este email já está cadastrado. Tente fazer login.') };
+    }
+
+    // Phone and birth_date are now handled by the handle_new_user DB trigger
+    // which extracts them from raw_user_meta_data, so no need to update profile here
+
+    // Clear UTMs after signup since they're now in user metadata
+    if (!error && data?.user) {
+      if (utm.utm_source) clearStoredUtm();
+      trackEvent('signup', {}, undefined, data.user.id);
+    }
+
+    return { error };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setRole(null);
+    setProfileComplete(null);
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, session, role, loading, profileComplete, recheckProfile, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
