@@ -294,7 +294,7 @@ export default function MarketingCoupons() {
                   <div className="flex flex-wrap gap-1.5">
                     {coupon.course_titles.length > 0 ? (
                       coupon.course_titles.map((title, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-[10px]">
+                        <Badge key={idx} variant="secondary" className="text-xs">
                           <BookOpen className="h-2.5 w-2.5 mr-1" />
                           {title}
                         </Badge>
