@@ -598,8 +598,8 @@ export default function CourseView() {
         </div>
 
         {/* Lessons Sidebar - Collapsible on mobile */}
-        <div className="space-y-4 order-last lg:order-last">
-          <Card className="lg:sticky lg:top-6">
+        <div className="flex flex-col order-last lg:order-last">
+          <Card className="lg:sticky lg:top-6 flex-1 flex flex-col">
             <CardHeader className="pb-2 sm:pb-3">
               <div className="flex items-center justify-between">
                 <span className="card-title-compact text-sm sm:text-base">Conteúdo</span>
