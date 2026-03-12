@@ -635,7 +635,7 @@ export default function CampaignEditor() {
                   <div>
                     <Label className="text-xs">Tag de Rastreamento</Label>
                     <Input value={campaignTag} onChange={e => { setCampaignTag(e.target.value); setTagManuallyEdited(true); }} placeholder="ex: black-friday-2026" className="h-9 font-mono text-xs" disabled={!isDraft} />
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Usada como utm_campaign nos links do email</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Usada como utm_campaign nos links do email</p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
