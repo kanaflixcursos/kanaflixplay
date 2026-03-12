@@ -69,53 +69,7 @@ export default function FunnelRoadmap() {
   const values = [data.visitors, data.leads, data.qualified, data.opportunities, data.sales];
 
   return (
-    <div className="space-y-3">
-      {/* UTM filters */}
-      {(utmSources.length > 0 || utmCampaigns.length > 0 || utmContents.length > 0) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          {utmSources.length > 0 && (
-            <Select value={utmFilter} onValueChange={setUtmFilter}>
-              <SelectTrigger className="w-40 h-8 text-xs">
-                <SelectValue placeholder="Origem" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas origens</SelectItem>
-                {utmSources.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {utmCampaigns.length > 0 && (
-            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
-              <SelectTrigger className="w-44 h-8 text-xs">
-                <SelectValue placeholder="Campanha" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas campanhas</SelectItem>
-                {utmCampaigns.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          {utmContents.length > 0 && (
-            <Select value={contentFilter} onValueChange={setContentFilter}>
-              <SelectTrigger className="w-40 h-8 text-xs">
-                <SelectValue placeholder="Conteúdo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos conteúdos</SelectItem>
-                {utmContents.map(s => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      )}
-
+    <div>
       <div className="flex items-stretch gap-0">
         {stages.map((stage, i) => {
           const rate = i > 0 ? calcRate(values[i], values[i - 1]) : null;
