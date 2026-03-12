@@ -28,6 +28,7 @@ interface EmailBlock {
   buttonColor?: string;
   imageUrl?: string;
   imageAlt?: string;
+  imageWidth?: number;
   height?: number;
 }
 
