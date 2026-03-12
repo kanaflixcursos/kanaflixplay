@@ -35,11 +35,7 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      if (user.user_metadata?.needs_onboarding) {
-        navigate('/onboarding');
-      } else {
-        navigate(redirectTo);
-      }
+      navigate(redirectTo);
     }
   }, [user, navigate, redirectTo]);
 
