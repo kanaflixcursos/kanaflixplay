@@ -309,57 +309,6 @@ export default function Login() {
               >
                 Esqueceu sua senha?
               </button>
-
-              {/* Hotmart Access */}
-              <div className="relative my-2">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
-                  ou
-                </span>
-              </div>
-
-              {hotmartSent ? (
-                <div className="text-center space-y-3 py-2">
-                  <div className="w-12 h-12 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                    <Mail className="h-6 w-6 text-primary" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Link de acesso enviado para <strong className="text-foreground">{hotmartEmail}</strong>. Verifique seu email.
-                  </p>
-                  <Button variant="ghost" size="sm" onClick={() => setHotmartSent(false)}>
-                    Tentar outro email
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      value={hotmartEmail}
-                      onChange={(e) => setHotmartEmail(e.target.value)}
-                      placeholder="Email cadastrado na Hotmart"
-                      className="pl-10 h-11"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11"
-                    onClick={handleHotmartAccess}
-                    disabled={hotmartLoading}
-                  >
-                    {hotmartLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Verificando...
-                      </>
-                    ) : (
-                      '🔥 Acesso Hotmart'
-                    )}
-                  </Button>
-                </div>
-              )}
             </form>
           )}
 

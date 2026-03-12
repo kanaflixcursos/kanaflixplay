@@ -125,9 +125,17 @@ export default function StudentDashboard() {
 
   const totalCourses = enrolledCourses.length;
 
-  // Show welcome experience for users with no courses
+  // Show available courses for users with no enrollments
   if (!loading && enrolledCourses.length === 0) {
-    return <WelcomeExperience />;
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
+          <p className="text-muted-foreground text-sm mt-1">Explore nossos cursos disponíveis e comece a aprender!</p>
+        </div>
+        <AvailableCoursesSection />
+      </div>
+    );
   }
 
   return (

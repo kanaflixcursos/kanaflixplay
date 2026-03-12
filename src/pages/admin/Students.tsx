@@ -858,7 +858,7 @@ export default function AdminStudents() {
         </DialogContent>
       </Dialog>
 
-      <ImportUsersDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImported={fetchData} />
+      
     </div>
   );
 }
