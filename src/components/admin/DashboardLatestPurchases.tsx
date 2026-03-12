@@ -151,7 +151,7 @@ export default function DashboardLatestPurchases() {
               </div>
               <Badge 
                 variant="outline" 
-                className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
+                className={`text-xs px-1.5 py-0 h-5 ${statusColors[purchase.status] || ''}`}
               >
                 {statusLabels[purchase.status] || purchase.status}
               </Badge>
