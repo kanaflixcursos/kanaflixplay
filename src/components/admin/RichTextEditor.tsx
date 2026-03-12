@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, type KeyboardEvent } from 'react';
 import { Bold, Italic, Underline, Link, List, ListOrdered, Strikethrough } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -63,6 +63,31 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
     requestAnimationFrame(() => { isUpdatingRef.current = false; });
   }, [onChange]);
 
+  const isSelectionInsideList = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return false;
+    const anchorNode = selection.anchorNode;
+    if (!anchorNode) return false;
+    const anchorElement = anchorNode.nodeType === Node.ELEMENT_NODE
+      ? (anchorNode as Element)
+      : anchorNode.parentElement;
+    return Boolean(anchorElement?.closest('li, ul, ol'));
+  }, []);
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    if (isSelectionInsideList()) return;
+
+    event.preventDefault();
+    editorRef.current?.focus();
+    document.execCommand('insertLineBreak');
+
+    requestAnimationFrame(() => {
+      normalizeContent();
+      handleInput();
+    });
+  }, [handleInput, isSelectionInsideList, normalizeContent]);
+
   const exec = useCallback((command: string, val?: string) => {
     editorRef.current?.focus();
     document.execCommand(command, false, val);
@@ -125,6 +150,7 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
         ref={editorRef}
         contentEditable={!disabled}
         onInput={handleInput}
+        onKeyDown={handleKeyDown}
         className="px-3 py-2 min-h-[80px] text-sm outline-none focus:ring-0 text-foreground [&_a]:text-primary [&_a]:underline [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:mb-1 [&_*]:text-inherit"
         data-placeholder={placeholder}
         style={{ whiteSpace: 'pre-wrap' }}
