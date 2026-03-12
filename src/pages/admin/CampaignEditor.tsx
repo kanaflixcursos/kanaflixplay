@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Send, Plus, Trash2, GripVertical, Image, Type, AlignLeft, Minus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
+
+// ── Block types & helpers ──────────────────────────────────────────────
 
 type BlockType = 'heading' | 'text' | 'button' | 'image' | 'divider' | 'spacer';
 
@@ -19,17 +21,12 @@ interface EmailBlock {
   id: string;
   type: BlockType;
   content: string;
-  // heading
   level?: 'h1' | 'h2' | 'h3';
-  // text
   align?: 'left' | 'center' | 'right';
-  // button
   buttonUrl?: string;
   buttonColor?: string;
-  // image
   imageUrl?: string;
   imageAlt?: string;
-  // spacer
   height?: number;
 }
 
@@ -49,7 +46,6 @@ type Campaign = {
   created_at: string;
 };
 
-// Brand constants matching send-email edge function
 const brand = {
   primary: '#e67635',
   text: '#171717',
@@ -87,6 +83,10 @@ function defaultBlock(type: BlockType): EmailBlock {
 const BLOCKS_MARKER = '<!-- BLOCKS:';
 const BLOCKS_MARKER_END = ' -->';
 
+function escapeHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function blocksToHtml(blocks: EmailBlock[]): string {
   const html = blocks.map(b => {
     switch (b.type) {
@@ -109,12 +109,7 @@ function blocksToHtml(blocks: EmailBlock[]): string {
         return '';
     }
   }).join('\n');
-  // Embed blocks JSON as a hidden comment for reliable round-tripping
   return html + '\n' + BLOCKS_MARKER + JSON.stringify(blocks) + BLOCKS_MARKER_END;
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function renderPreviewHtml(blocks: EmailBlock[], subject: string): string {
@@ -138,10 +133,8 @@ ${content}
 </td></tr></table></body></html>`;
 }
 
-// Parse stored HTML back into blocks (best-effort, for editing existing campaigns)
 function htmlToBlocks(html: string): EmailBlock[] | null {
   if (!html) return null;
-  // Extract embedded blocks JSON from the comment marker
   const markerIndex = html.indexOf(BLOCKS_MARKER);
   if (markerIndex === -1) return null;
   const jsonStart = markerIndex + BLOCKS_MARKER.length;
@@ -150,9 +143,169 @@ function htmlToBlocks(html: string): EmailBlock[] | null {
   try {
     const parsed = JSON.parse(html.slice(jsonStart, jsonEnd));
     if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-  } catch { /* ignore parse errors */ }
+  } catch { /* ignore */ }
   return null;
 }
+
+// ── Block type metadata ────────────────────────────────────────────────
+
+const blockTypeMeta: Record<BlockType, { icon: typeof Type; label: string }> = {
+  heading: { icon: Type, label: 'Título' },
+  text: { icon: AlignLeft, label: 'Texto' },
+  button: { icon: MousePointerClick, label: 'Botão' },
+  image: { icon: Image, label: 'Imagem' },
+  divider: { icon: Minus, label: 'Divisor' },
+  spacer: { icon: Minus, label: 'Espaço' },
+};
+
+// ── Inline block editor component ─────────────────────────────────────
+
+function BlockEditor({ block, onChange, onRemove, onMove, isFirst, isLast, disabled }: {
+  block: EmailBlock;
+  onChange: (updates: Partial<EmailBlock>) => void;
+  onRemove: () => void;
+  onMove: (dir: -1 | 1) => void;
+  isFirst: boolean;
+  isLast: boolean;
+  disabled: boolean;
+}) {
+  const meta = blockTypeMeta[block.type];
+
+  return (
+    <div className="group border rounded-lg bg-card transition-colors hover:border-primary/30">
+      {/* Block header */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30 rounded-t-lg">
+        <meta.icon className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs font-medium text-muted-foreground flex-1">{meta.label}</span>
+        {!disabled && (
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(-1)} disabled={isFirst}>
+              <ChevronUp className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onMove(1)} disabled={isLast}>
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={onRemove}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Block content editing */}
+      <div className="p-3 space-y-2">
+        {block.type === 'heading' && (
+          <>
+            <Input
+              value={block.content}
+              onChange={e => onChange({ content: e.target.value })}
+              className="h-8 text-sm font-medium"
+              placeholder="Título..."
+              disabled={disabled}
+            />
+            <Select value={block.level || 'h1'} onValueChange={v => onChange({ level: v as 'h1' | 'h2' | 'h3' })} disabled={disabled}>
+              <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="h1">Grande</SelectItem>
+                <SelectItem value="h2">Médio</SelectItem>
+                <SelectItem value="h3">Pequeno</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+
+        {block.type === 'text' && (
+          <>
+            <Textarea
+              value={block.content}
+              onChange={e => onChange({ content: e.target.value })}
+              rows={3}
+              className="text-sm resize-none"
+              placeholder="Texto do email... Use {{name}} para o nome"
+              disabled={disabled}
+            />
+            <Select value={block.align || 'left'} onValueChange={v => onChange({ align: v as 'left' | 'center' | 'right' })} disabled={disabled}>
+              <SelectTrigger className="h-8 text-xs w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Esquerda</SelectItem>
+                <SelectItem value="center">Centro</SelectItem>
+                <SelectItem value="right">Direita</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+
+        {block.type === 'button' && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Texto</Label>
+                <Input value={block.content} onChange={e => onChange({ content: e.target.value })} className="h-8 text-sm" disabled={disabled} />
+              </div>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">URL</Label>
+                <Input value={block.buttonUrl || ''} onChange={e => onChange({ buttonUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-[10px] text-muted-foreground">Cor</Label>
+              <input
+                type="color"
+                value={block.buttonColor || brand.primary}
+                onChange={e => onChange({ buttonColor: e.target.value })}
+                className="h-7 w-10 rounded border cursor-pointer"
+                disabled={disabled}
+              />
+              <Input
+                value={block.buttonColor || brand.primary}
+                onChange={e => onChange({ buttonColor: e.target.value })}
+                className="h-8 w-28 font-mono text-xs"
+                disabled={disabled}
+              />
+            </div>
+          </div>
+        )}
+
+        {block.type === 'image' && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">URL da imagem</Label>
+              <Input value={block.imageUrl || ''} onChange={e => onChange({ imageUrl: e.target.value })} className="h-8 text-sm" placeholder="https://..." disabled={disabled} />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Texto alternativo</Label>
+              <Input value={block.imageAlt || ''} onChange={e => onChange({ imageAlt: e.target.value })} className="h-8 text-sm" disabled={disabled} />
+            </div>
+          </div>
+        )}
+
+        {block.type === 'divider' && (
+          <div className="flex items-center justify-center py-1">
+            <div className="w-full border-t border-border" />
+          </div>
+        )}
+
+        {block.type === 'spacer' && (
+          <div className="flex items-center gap-2">
+            <Label className="text-[10px] text-muted-foreground">Altura</Label>
+            <Input
+              type="number"
+              value={block.height || 24}
+              onChange={e => onChange({ height: parseInt(e.target.value) || 24 })}
+              className="h-8 w-20 text-sm"
+              min={8}
+              max={120}
+              disabled={disabled}
+            />
+            <span className="text-xs text-muted-foreground">px</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────
 
 export default function CampaignEditor() {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -164,7 +317,6 @@ export default function CampaignEditor() {
   const [sending, setSending] = useState(false);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
 
-  // Form state
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
   const [campaignTag, setCampaignTag] = useState('');
@@ -174,13 +326,11 @@ export default function CampaignEditor() {
   const [targetTag, setTargetTag] = useState('');
   const [availableTags, setAvailableTags] = useState<string[]>([]);
 
-  // Block editor
   const [blocks, setBlocks] = useState<EmailBlock[]>([
     defaultBlock('heading'),
     defaultBlock('text'),
     defaultBlock('button'),
   ]);
-  const [selectedBlockIndex, setSelectedBlockIndex] = useState<number | null>(0);
 
   const fetchCampaign = useCallback(async () => {
     if (isNew || !campaignId) return;
@@ -192,20 +342,17 @@ export default function CampaignEditor() {
       setName(c.name);
       setSubject(c.subject);
       setCampaignTag(c.tag || '');
-      setTagManuallyEdited(true); // Don't auto-generate for existing campaigns
+      setTagManuallyEdited(true);
       setTargetType(c.target_type);
       setTargetStatus(c.target_filters?.status || 'all');
       setTargetTag(c.target_filters?.tag || '');
-
-      // Try to parse blocks from stored HTML
       const parsed = htmlToBlocks(c.html_content);
       if (parsed) {
         setBlocks(parsed);
       } else {
-        // Legacy campaign with raw HTML — create a single text block with notice
         setBlocks([
           { id: generateId(), type: 'heading', content: 'Campanha importada', level: 'h1' },
-          { id: generateId(), type: 'text', content: 'Esta campanha foi criada com HTML manual. Edite os blocos abaixo para recriá-la visualmente.', align: 'left' },
+          { id: generateId(), type: 'text', content: 'Esta campanha foi criada com HTML manual. Edite os blocos abaixo.', align: 'left' },
         ]);
       }
     }
@@ -225,23 +372,12 @@ export default function CampaignEditor() {
   const finalHtml = useMemo(() => blocksToHtml(blocks), [blocks]);
 
   const handleSave = async () => {
-    if (!name || !subject) {
-      toast.error('Preencha nome e assunto');
-      return;
-    }
+    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
     setSaving(true);
     const filters: Record<string, string> = {};
     if (targetStatus !== 'all') filters.status = targetStatus;
     if (targetTag) filters.tag = targetTag;
-
-    const payload = {
-      name,
-      subject,
-      tag: campaignTag || null,
-      html_content: finalHtml,
-      target_type: targetType,
-      target_filters: filters,
-    };
+    const payload = { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
 
     if (isNew) {
       const { error } = await supabase.from('email_campaigns').insert(payload);
@@ -260,10 +396,8 @@ export default function CampaignEditor() {
   const handleSend = async () => {
     if (!campaign || campaign.status !== 'draft') return;
     setSending(true);
-
     try {
       let recipients: { email: string; name?: string }[] = [];
-
       if (campaign.target_type === 'leads') {
         let query = supabase.from('leads').select('email, name');
         if (campaign.target_filters?.status) query = query.eq('status', campaign.target_filters.status);
@@ -274,15 +408,9 @@ export default function CampaignEditor() {
         const { data } = await supabase.from('profiles').select('email, full_name');
         recipients = (data || []).filter(p => p.email).map(p => ({ email: p.email!, name: p.full_name || undefined }));
       }
-
-      if (recipients.length === 0) {
-        toast.error('Nenhum destinatário encontrado com os filtros selecionados');
-        setSending(false);
-        return;
-      }
+      if (recipients.length === 0) { toast.error('Nenhum destinatário encontrado'); setSending(false); return; }
 
       await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: recipients.length }).eq('id', campaign.id);
-
       let sentCount = 0;
       let failedCount = 0;
       const batchSize = 5;
@@ -292,11 +420,7 @@ export default function CampaignEditor() {
         const results = await Promise.allSettled(
           batch.map(r =>
             supabase.functions.invoke('send-email', {
-              body: {
-                action: 'campaign',
-                to: r.email,
-                data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id, campaignTag: campaign.tag || '' },
-              },
+              body: { action: 'campaign', to: r.email, data: { subject: campaign.subject, htmlContent: campaign.html_content, recipientName: r.name || '', campaignId: campaign.id, campaignTag: campaign.tag || '' } },
             })
           )
         );
@@ -305,11 +429,8 @@ export default function CampaignEditor() {
 
       await supabase.from('email_campaigns').update({
         status: failedCount === recipients.length ? 'failed' : 'sent',
-        sent_count: sentCount,
-        failed_count: failedCount,
-        sent_at: new Date().toISOString(),
+        sent_count: sentCount, failed_count: failedCount, sent_at: new Date().toISOString(),
       }).eq('id', campaign.id);
-
       toast.success(`Campanha enviada: ${sentCount} emails enviados, ${failedCount} falhas`);
       navigate('/admin/marketing/email');
     } catch (err) {
@@ -322,12 +443,7 @@ export default function CampaignEditor() {
   };
 
   const addBlock = (type: BlockType) => {
-    const newBlock = defaultBlock(type);
-    const insertAt = selectedBlockIndex !== null ? selectedBlockIndex + 1 : blocks.length;
-    const newBlocks = [...blocks];
-    newBlocks.splice(insertAt, 0, newBlock);
-    setBlocks(newBlocks);
-    setSelectedBlockIndex(insertAt);
+    setBlocks(prev => [...prev, defaultBlock(type)]);
   };
 
   const updateBlock = (index: number, updates: Partial<EmailBlock>) => {
@@ -336,7 +452,6 @@ export default function CampaignEditor() {
 
   const removeBlock = (index: number) => {
     setBlocks(blocks.filter((_, i) => i !== index));
-    setSelectedBlockIndex(null);
   };
 
   const moveBlock = (index: number, dir: -1 | 1) => {
@@ -345,7 +460,6 @@ export default function CampaignEditor() {
     const newBlocks = [...blocks];
     [newBlocks[index], newBlocks[newIndex]] = [newBlocks[newIndex], newBlocks[index]];
     setBlocks(newBlocks);
-    setSelectedBlockIndex(newIndex);
   };
 
   if (loading) {
@@ -357,8 +471,15 @@ export default function CampaignEditor() {
     );
   }
 
-  const selectedBlock = selectedBlockIndex !== null ? blocks[selectedBlockIndex] : null;
   const isDraft = isNew || campaign?.status === 'draft';
+  const addableBlocks: { type: BlockType; label: string }[] = [
+    { type: 'heading', label: 'Título' },
+    { type: 'text', label: 'Texto' },
+    { type: 'button', label: 'Botão' },
+    { type: 'image', label: 'Imagem' },
+    { type: 'divider', label: 'Divisor' },
+    { type: 'spacer', label: 'Espaço' },
+  ];
 
   return (
     <div className="space-y-4">
@@ -384,280 +505,136 @@ export default function CampaignEditor() {
         </div>
       </div>
 
-      {/* Config row */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <Label className="text-xs">Nome da Campanha</Label>
-              <Input value={name} onChange={e => {
-                const newName = e.target.value;
-                setName(newName);
-                if (!tagManuallyEdited) {
-                  setCampaignTag(newName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-                }
-              }} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
-            </div>
-            <div>
-              <Label className="text-xs">Assunto do Email</Label>
-              <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Ex: 🔥 Oferta especial" className="h-9" disabled={!isDraft} />
-            </div>
-            <div>
-              <Label className="text-xs">Tag de Rastreamento</Label>
-              <Input value={campaignTag} onChange={e => {
-                setCampaignTag(e.target.value);
-                setTagManuallyEdited(true);
-              }} placeholder="ex: black-friday-2026" className="h-9 font-mono text-xs" disabled={!isDraft} />
-              <p className="text-[10px] text-muted-foreground mt-0.5">Usada como utm_campaign nos links</p>
-            </div>
-            <div>
-              <Label className="text-xs">Público-alvo</Label>
-              <Select value={targetType} onValueChange={setTargetType} disabled={!isDraft}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="leads">Leads</SelectItem>
-                  <SelectItem value="students">Alunos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {targetType === 'leads' && (
-              <div>
-                <Label className="text-xs">Filtro Status</Label>
-                <Select value={targetStatus} onValueChange={setTargetStatus} disabled={!isDraft}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    {Object.entries(leadStatusMap).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          {targetType === 'leads' && availableTags.length > 0 && (
-            <div className="mt-3 max-w-xs">
-              <Label className="text-xs">Filtrar por Tag</Label>
-              <Select value={targetTag} onValueChange={setTargetTag} disabled={!isDraft}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhuma</SelectItem>
-                  {availableTags.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4" style={{ minHeight: '600px' }}>
+        {/* Left column: config + blocks */}
+        <div className="lg:col-span-3 space-y-4">
+          <Tabs defaultValue="content" className="w-full">
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="content">Conteúdo</TabsTrigger>
+              <TabsTrigger value="settings">Configurações</TabsTrigger>
+            </TabsList>
 
-      {/* Editor + Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4" style={{ minHeight: '600px' }}>
-        {/* Left: Block editor */}
-        <div className="space-y-3">
-          {/* Add block toolbar */}
-          {isDraft && (
-            <Card>
-              <CardContent className="p-3">
-                <Label className="text-xs text-muted-foreground mb-2 block">Adicionar bloco</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {([
-                    { type: 'heading' as BlockType, icon: Type, label: 'Título' },
-                    { type: 'text' as BlockType, icon: AlignLeft, label: 'Texto' },
-                    { type: 'button' as BlockType, icon: Send, label: 'Botão' },
-                    { type: 'image' as BlockType, icon: Image, label: 'Imagem' },
-                    { type: 'divider' as BlockType, icon: Minus, label: 'Divisor' },
-                  ]).map(item => (
-                    <Button key={item.type} variant="outline" size="sm" className="text-xs h-7" onClick={() => addBlock(item.type)}>
-                      <item.icon className="h-3 w-3 mr-1" /> {item.label}
-                    </Button>
-                  ))}
+            {/* ── Content tab ── */}
+            <TabsContent value="content" className="space-y-3 mt-3">
+              {/* Subject inline */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Nome da Campanha</Label>
+                  <Input value={name} onChange={e => {
+                    const v = e.target.value;
+                    setName(v);
+                    if (!tagManuallyEdited) setCampaignTag(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                  }} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div>
+                  <Label className="text-xs">Assunto do Email</Label>
+                  <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Ex: 🔥 Oferta especial" className="h-9" disabled={!isDraft} />
+                </div>
+              </div>
 
-          {/* Block list */}
-          <div className="space-y-2">
-            {blocks.map((block, i) => (
-              <Card
-                key={block.id}
-                className={`cursor-pointer transition-all ${selectedBlockIndex === i ? 'ring-2 ring-primary' : 'hover:border-primary/20'}`}
-                onClick={() => setSelectedBlockIndex(i)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-start gap-2">
-                    <div className="flex flex-col gap-0.5 pt-1">
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={(e) => { e.stopPropagation(); moveBlock(i, -1); }} disabled={i === 0 || !isDraft}>
-                        <GripVertical className="h-3 w-3 rotate-180" />
-                      </button>
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" onClick={(e) => { e.stopPropagation(); moveBlock(i, 1); }} disabled={i === blocks.length - 1 || !isDraft}>
-                        <GripVertical className="h-3 w-3" />
-                      </button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                          {block.type === 'heading' ? 'Título' : block.type === 'text' ? 'Texto' : block.type === 'button' ? 'Botão' : block.type === 'image' ? 'Imagem' : block.type === 'divider' ? 'Divisor' : 'Espaço'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-foreground truncate">
-                        {block.type === 'divider' ? '—————' : block.type === 'spacer' ? `${block.height}px` : block.content || '(vazio)'}
-                      </p>
-                    </div>
-                    {isDraft && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-destructive" onClick={(e) => { e.stopPropagation(); removeBlock(i); }}>
-                        <Trash2 className="h-3 w-3" />
+              {/* Blocks */}
+              <div className="space-y-2">
+                {blocks.map((block, i) => (
+                  <BlockEditor
+                    key={block.id}
+                    block={block}
+                    onChange={updates => updateBlock(i, updates)}
+                    onRemove={() => removeBlock(i)}
+                    onMove={dir => moveBlock(i, dir)}
+                    isFirst={i === 0}
+                    isLast={i === blocks.length - 1}
+                    disabled={!isDraft}
+                  />
+                ))}
+              </div>
+
+              {/* Add block bar */}
+              {isDraft && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {addableBlocks.map(item => {
+                    const meta = blockTypeMeta[item.type];
+                    return (
+                      <Button key={item.type} variant="outline" size="sm" className="text-xs h-7" onClick={() => addBlock(item.type)}>
+                        <meta.icon className="h-3 w-3 mr-1" /> {item.label}
                       </Button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <p className="text-[10px] text-muted-foreground">
+                Use <code className="bg-muted px-1 rounded">{'{{name}}'}</code> para inserir o nome do destinatário
+              </p>
+            </TabsContent>
+
+            {/* ── Settings tab ── */}
+            <TabsContent value="settings" className="mt-3">
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <div>
+                    <Label className="text-xs">Tag de Rastreamento</Label>
+                    <Input value={campaignTag} onChange={e => { setCampaignTag(e.target.value); setTagManuallyEdited(true); }} placeholder="ex: black-friday-2026" className="h-9 font-mono text-xs" disabled={!isDraft} />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Usada como utm_campaign nos links do email</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Público-alvo</Label>
+                      <Select value={targetType} onValueChange={setTargetType} disabled={!isDraft}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="leads">Leads</SelectItem>
+                          <SelectItem value="students">Alunos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {targetType === 'leads' && (
+                      <div>
+                        <Label className="text-xs">Filtro de Status</Label>
+                        <Select value={targetStatus} onValueChange={setTargetStatus} disabled={!isDraft}>
+                          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            {Object.entries(leadStatusMap).map(([key, { label }]) => (
+                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                   </div>
+
+                  {targetType === 'leads' && availableTags.length > 0 && (
+                    <div className="max-w-xs">
+                      <Label className="text-xs">Filtrar por Tag</Label>
+                      <Select value={targetTag} onValueChange={setTargetTag} disabled={!isDraft}>
+                        <SelectTrigger className="h-9"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Nenhuma</SelectItem>
+                          {availableTags.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
-
-          {/* Selected block editor */}
-          {selectedBlock && isDraft && (
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Editar {selectedBlock.type === 'heading' ? 'Título' : selectedBlock.type === 'text' ? 'Texto' : selectedBlock.type === 'button' ? 'Botão' : selectedBlock.type === 'image' ? 'Imagem' : selectedBlock.type === 'divider' ? 'Divisor' : 'Espaço'}
-                </Label>
-
-                {(selectedBlock.type === 'heading' || selectedBlock.type === 'text' || selectedBlock.type === 'button') && (
-                  <div>
-                    <Label className="text-xs">Conteúdo</Label>
-                    {selectedBlock.type === 'text' ? (
-                      <Textarea
-                        value={selectedBlock.content}
-                        onChange={e => updateBlock(selectedBlockIndex!, { content: e.target.value })}
-                        rows={4}
-                        className="text-sm"
-                        placeholder="Texto do email... Use {{name}} para o nome"
-                      />
-                    ) : (
-                      <Input
-                        value={selectedBlock.content}
-                        onChange={e => updateBlock(selectedBlockIndex!, { content: e.target.value })}
-                        className="h-9"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {selectedBlock.type === 'heading' && (
-                  <div>
-                    <Label className="text-xs">Nível</Label>
-                    <Select value={selectedBlock.level || 'h1'} onValueChange={v => updateBlock(selectedBlockIndex!, { level: v as 'h1' | 'h2' | 'h3' })}>
-                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="h1">Grande (H1)</SelectItem>
-                        <SelectItem value="h2">Médio (H2)</SelectItem>
-                        <SelectItem value="h3">Pequeno (H3)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {selectedBlock.type === 'text' && (
-                  <div>
-                    <Label className="text-xs">Alinhamento</Label>
-                    <Select value={selectedBlock.align || 'left'} onValueChange={v => updateBlock(selectedBlockIndex!, { align: v as 'left' | 'center' | 'right' })}>
-                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="left">Esquerda</SelectItem>
-                        <SelectItem value="center">Centro</SelectItem>
-                        <SelectItem value="right">Direita</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {selectedBlock.type === 'button' && (
-                  <>
-                    <div>
-                      <Label className="text-xs">URL do link</Label>
-                      <Input
-                        value={selectedBlock.buttonUrl || ''}
-                        onChange={e => updateBlock(selectedBlockIndex!, { buttonUrl: e.target.value })}
-                        placeholder="https://..."
-                        className="h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Cor do botão</Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={selectedBlock.buttonColor || brand.primary}
-                          onChange={e => updateBlock(selectedBlockIndex!, { buttonColor: e.target.value })}
-                          className="h-9 w-12 rounded border cursor-pointer"
-                        />
-                        <Input
-                          value={selectedBlock.buttonColor || brand.primary}
-                          onChange={e => updateBlock(selectedBlockIndex!, { buttonColor: e.target.value })}
-                          className="h-9 flex-1 font-mono text-xs"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {selectedBlock.type === 'image' && (
-                  <>
-                    <div>
-                      <Label className="text-xs">URL da imagem</Label>
-                      <Input
-                        value={selectedBlock.imageUrl || ''}
-                        onChange={e => updateBlock(selectedBlockIndex!, { imageUrl: e.target.value })}
-                        placeholder="https://..."
-                        className="h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Texto alternativo</Label>
-                      <Input
-                        value={selectedBlock.imageAlt || ''}
-                        onChange={e => updateBlock(selectedBlockIndex!, { imageAlt: e.target.value })}
-                        className="h-9"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {selectedBlock.type === 'spacer' && (
-                  <div>
-                    <Label className="text-xs">Altura (px)</Label>
-                    <Input
-                      type="number"
-                      value={selectedBlock.height || 24}
-                      onChange={e => updateBlock(selectedBlockIndex!, { height: parseInt(e.target.value) || 24 })}
-                      className="h-9"
-                      min={8}
-                      max={120}
-                    />
-                  </div>
-                )}
-
-                <p className="text-[10px] text-muted-foreground">
-                  Use <code className="bg-muted px-1 rounded">{'{{name}}'}</code> para inserir o nome do destinatário
-                </p>
-              </CardContent>
-            </Card>
-          )}
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Right: Live preview */}
-        <div className="sticky top-4">
+        {/* Right column: live preview */}
+        <div className="lg:col-span-2 sticky top-4">
           <Card className="overflow-hidden">
             <CardContent className="p-0">
               <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Preview do Email</span>
-                <span className="text-[10px] text-muted-foreground">{subject || 'Sem assunto'}</span>
+                <span className="text-xs font-medium text-muted-foreground">Preview</span>
+                <span className="text-[10px] text-muted-foreground truncate ml-2">{subject || 'Sem assunto'}</span>
               </div>
               <iframe
                 srcDoc={previewHtml}
                 className="w-full bg-white"
-                style={{ height: '560px' }}
+                style={{ height: '600px' }}
                 title="Email preview"
                 sandbox="allow-same-origin"
               />
