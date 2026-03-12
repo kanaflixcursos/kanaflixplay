@@ -147,7 +147,7 @@ export default function AvailableCoursesSection() {
       {loading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden shrink-0 w-[160px] sm:w-[200px]">
+            <Card key={i} className="overflow-hidden shrink-0 w-40 sm:w-48">
               <Skeleton className="aspect-[4/5] w-full" />
               <div className="p-4 space-y-3">
                 <Skeleton className="h-3 w-1/2" />
