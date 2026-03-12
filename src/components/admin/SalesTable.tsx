@@ -607,7 +607,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
 
             {isFree && (
               <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Valor</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Valor</p>
                 <p className="text-sm font-medium text-primary">Inscrição Gratuita</p>
               </div>
             )}
