@@ -1,6 +1,5 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,8 +52,6 @@ import {
   Document,
   Edit,
   Delete,
-  Show,
-  Folder,
   Swap,
   MoreCircle,
   Send,
@@ -71,53 +68,30 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  thumbnail_url: string;
-  is_published: boolean;
-  is_featured: boolean;
-  created_at: string;
-  pandavideo_folder_id: string | null;
-  pandavideo_folder_name?: string;
-  last_synced_at: string | null;
-  price: number | null;
-  category_id: string | null;
-  lessonCount: number;
-  enrollmentCount: number;
-  totalDurationMinutes: number;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface PandaFolder {
-  id: string;
-  name: string;
-}
+import { useAdminCourses, useCategories, usePandaFolders, useInvalidateCourses } from '@/hooks/queries/useCourses';
+import { deleteCourse, syncPandavideoLessons } from '@/services/courseService';
+import type { AdminCourse } from '@/services/courseService';
 
 export default function AdminCourses() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  const { data: courses = [], isLoading: loading } = useAdminCourses();
+  const { data: categories = [] } = useCategories();
+  const { data: pandaFolders = [] } = usePandaFolders();
+  const invalidateCourses = useInvalidateCourses();
+
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
-  const [pandaFolders, setPandaFolders] = useState<PandaFolder[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: Course | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; course: AdminCourse | null }>({
     open: false,
     course: null,
   });
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
   
-  const [linkDialog, setLinkDialog] = useState<{ open: boolean; course: Course | null }>({
+  const [linkDialog, setLinkDialog] = useState<{ open: boolean; course: AdminCourse | null }>({
     open: false,
     course: null,
   });
@@ -129,7 +103,6 @@ export default function AdminCourses() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
 
-  // Computed stats
   const totalStudents = useMemo(() => courses.reduce((sum, c) => sum + c.enrollmentCount, 0), [courses]);
   const bestSellingCourse = useMemo(() => {
     if (courses.length === 0) return null;
@@ -153,146 +126,36 @@ export default function AdminCourses() {
     if (!categoryId) return null;
     return categories.find(c => c.id === categoryId)?.name || null;
   };
-  const fetchPandaFolders = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) return;
-
-      const response = await fetch(
-        `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=folders`,
-        {
-          headers: {
-            Authorization: `Bearer ${sessionData.session.access_token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const folders = data.folders || data || [];
-        setPandaFolders(folders);
-      }
-    } catch (error) {
-      console.error('Error fetching panda folders:', error);
-    }
-  };
-
-  const fetchCourses = async () => {
-    const { data: coursesData, error } = await supabase
-      .from('courses')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching courses:', error);
-      setLoading(false);
-      return;
-    }
-
-    const coursesWithStats = await Promise.all(
-      (coursesData || []).map(async (course) => {
-        const [{ count: lessonCount }, { count: enrollmentCount }, { data: lessonDurations }] = await Promise.all([
-          supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('course_id', course.id),
-          supabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('course_id', course.id),
-          supabase.from('lessons').select('duration_minutes').eq('course_id', course.id),
-        ]);
-
-        const totalDurationMinutes = (lessonDurations || []).reduce((sum, lesson) => sum + (lesson.duration_minutes || 0), 0);
-
-        return {
-          ...course,
-          lessonCount: lessonCount || 0,
-          enrollmentCount: enrollmentCount || 0,
-          totalDurationMinutes,
-        };
-      })
-    );
-
-    setCourses(coursesWithStats);
-    setLoading(false);
-  };
-
-  const fetchCategories = async () => {
-    const { data } = await supabase.from('course_categories').select('id, name').order('name');
-    setCategories(data || []);
-  };
-
-  useEffect(() => {
-    fetchCourses();
-    fetchPandaFolders();
-    fetchCategories();
-  }, []);
-
-  const getFolderName = (folderId: string | null) => {
-    if (!folderId) return null;
-    const folder = pandaFolders.find(f => f.id === folderId);
-    return folder?.name || 'Carregando...';
-  };
 
   const handleDelete = async () => {
     if (!deleteDialog.course) return;
-    
     const course = deleteDialog.course;
-    const expectedText = course.title.toLowerCase();
-    
-    if (deleteConfirmation.toLowerCase() !== expectedText) {
+    if (deleteConfirmation.toLowerCase() !== course.title.toLowerCase()) {
       toast.error('O texto de confirmação não confere');
       return;
     }
-    
     setDeleting(true);
-
-    const { error } = await supabase
-      .from('courses')
-      .delete()
-      .eq('id', course.id);
-
-    if (error) {
-      toast.error('Erro ao excluir curso');
-    } else {
+    try {
+      await deleteCourse(course.id);
       toast.success('Curso excluído com sucesso!');
-      fetchCourses();
+      invalidateCourses();
+    } catch {
+      toast.error('Erro ao excluir curso');
     }
-    
     setDeleting(false);
     setDeleteDialog({ open: false, course: null });
     setDeleteConfirmation('');
   };
 
   const handleSyncCourse = async (courseId?: string) => {
-    if (courseId) {
-      setSyncing(courseId);
-    } else {
-      setSyncingAll(true);
-    }
+    if (courseId) setSyncing(courseId);
+    else setSyncingAll(true);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast.error('Você precisa estar autenticado');
-        return;
-      }
-
-      const url = courseId 
-        ? `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/sync-pandavideo-lessons?course_id=${courseId}`
-        : `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/sync-pandavideo-lessons`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao sincronizar');
-      }
-
+      const data = await syncPandavideoLessons(courseId);
       toast.success(`Sincronização concluída: ${data.created} criadas, ${data.updated} atualizadas, ${data.deleted} removidas`);
-      fetchCourses();
-    } catch (error) {
-      console.error('Sync error:', error);
+      invalidateCourses();
+    } catch {
       toast.error('Erro ao sincronizar aulas');
     } finally {
       setSyncing(null);
@@ -304,25 +167,15 @@ export default function AdminCourses() {
     if (!minutes || minutes === 0) return null;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}min`;
-    }
+    if (hours > 0) return `${hours}h ${mins}min`;
     return `${mins}min`;
   };
 
-  const getCourseLink = (course: Course) => {
-    const baseUrl = 'https://cursos.kanaflix.com.br';
-    return `${baseUrl}/checkout/${course.id}`;
-  };
+  const getCourseLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/checkout/${course.id}`;
+  const getPreviewLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/courses/${course.id}`;
 
-  const getPreviewLink = (course: Course) => {
-    const baseUrl = 'https://cursos.kanaflix.com.br';
-    return `${baseUrl}/courses/${course.id}`;
-  };
-
-  const handleCopyLink = async (course: Course) => {
-    const link = getCourseLink(course);
-    await navigator.clipboard.writeText(link);
+  const handleCopyLink = async (course: AdminCourse) => {
+    await navigator.clipboard.writeText(getCourseLink(course));
     setCopied(true);
     toast.success('Link copiado!');
     setTimeout(() => setCopied(false), 2000);
@@ -333,7 +186,7 @@ export default function AdminCourses() {
     return `R$ ${(price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
-  const CourseActions = ({ course }: { course: Course }) => (
+  const CourseActions = ({ course }: { course: AdminCourse }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon">
@@ -354,7 +207,6 @@ export default function AdminCourses() {
             <span className="ml-2">Sincronizar Aulas</span>
           </DropdownMenuItem>
         )}
-        
         <DropdownMenuItem onClick={() => setLinkDialog({ open: true, course })}>
           <Send size={16} />
           <span className="ml-2">Link Compartilhável</span>
@@ -371,9 +223,8 @@ export default function AdminCourses() {
     </DropdownMenu>
   );
 
-  const MobileCourseCard = ({ course }: { course: Course }) => {
+  const MobileCourseCard = ({ course }: { course: AdminCourse }) => {
     const isExpanded = expandedCourseId === course.id;
-
     return (
       <Collapsible open={isExpanded} onOpenChange={() => setExpandedCourseId(isExpanded ? null : course.id)}>
         <div className="p-4 border rounded-lg bg-card">
@@ -468,7 +319,6 @@ export default function AdminCourses() {
         </div>
       </motion.div>
 
-      {/* Stat Cards */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -486,7 +336,6 @@ export default function AdminCourses() {
         />
       </motion.div>
 
-      {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -634,11 +483,7 @@ export default function AdminCourses() {
               <div className="space-y-2">
                 <Label>Link de Checkout</Label>
                 <div className="flex gap-2">
-                  <Input 
-                    readOnly 
-                    value={getCourseLink(linkDialog.course)} 
-                    className="text-sm"
-                  />
+                  <Input readOnly value={getCourseLink(linkDialog.course)} className="text-sm" />
                   <Button 
                     size="icon" 
                     onClick={() => linkDialog.course && handleCopyLink(linkDialog.course)}
@@ -652,11 +497,7 @@ export default function AdminCourses() {
               <div className="space-y-2">
                 <Label>Link de Preview</Label>
                 <div className="flex gap-2">
-                  <Input 
-                    readOnly 
-                    value={getPreviewLink(linkDialog.course)} 
-                    className="text-sm"
-                  />
+                  <Input readOnly value={getPreviewLink(linkDialog.course)} className="text-sm" />
                   <Button 
                     size="icon" 
                     onClick={() => {
@@ -675,11 +516,7 @@ export default function AdminCourses() {
               <div className="space-y-2">
                 <Label>Course ID</Label>
                 <div className="flex gap-2">
-                  <Input 
-                    readOnly 
-                    value={linkDialog.course.id} 
-                    className="text-sm font-mono"
-                  />
+                  <Input readOnly value={linkDialog.course.id} className="text-sm font-mono" />
                   <Button 
                     size="icon" 
                     onClick={() => {
