@@ -191,7 +191,7 @@ export default function AvailableCoursesSection() {
                   {/* Category + Duration */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {course.category_name && (
-                      <Badge variant="secondary" className="text-[10px] font-medium">
+                      <Badge variant="secondary" className="text-xs font-medium">
                         {course.category_name}
                       </Badge>
                     )}
