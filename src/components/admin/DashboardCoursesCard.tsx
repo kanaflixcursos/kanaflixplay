@@ -67,7 +67,7 @@ export default function DashboardCoursesCard() {
                   <span className="font-medium text-foreground truncate block max-w-[180px]">
                     {lastCourse.title}
                   </span>
-                  <span className="text-[10px] sm:text-xs">
+                  <span className="text-xs">
                     {formatDistanceToNow(new Date(lastCourse.created_at), { addSuffix: true, locale: ptBR })}
                   </span>
                 </div>

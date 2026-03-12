@@ -577,7 +577,7 @@ function OrderDetailModal({ sale, onClose, onRefund, refunding, onCancel }: Orde
             {/* Financial */}
             {!isFree && (
               <div>
-                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Valores</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Valores</p>
                 <div className="space-y-1.5 text-sm">
                   {d?.course?.original_price != null && d.course.original_price !== sale.amount && (
                     <div className="flex justify-between">

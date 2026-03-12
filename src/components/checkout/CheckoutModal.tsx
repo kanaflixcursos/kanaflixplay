@@ -432,7 +432,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                     <span className={`text-xs font-medium ${paymentMethod === method ? 'text-primary' : 'text-foreground'}`}>
                       {label}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{description}</span>
+                    <span className="text-xs text-muted-foreground">{description}</span>
                   </button>
                 ))}
               </div>

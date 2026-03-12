@@ -225,7 +225,7 @@ export default function DashboardLatestPurchases() {
                   </p>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground">ID: {selectedPurchase.id}</p>
+              <p className="text-xs text-muted-foreground">ID: {selectedPurchase.id}</p>
             </div>
           )}
         </DialogContent>

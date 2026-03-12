@@ -93,7 +93,7 @@ export default function DashboardRecentComments() {
               </Link>
             </Button>
           </div>
-          <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 truncate">
+          <p className="text-xs text-primary mt-1.5 sm:mt-2 truncate">
             Em: {comment.lesson_title}
           </p>
         </DashboardListItem>

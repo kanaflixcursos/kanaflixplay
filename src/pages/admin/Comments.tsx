@@ -251,7 +251,7 @@ export default function AdminComments() {
                   <span>{comment.lesson_title}</span>
                 </div>
 
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {format(new Date(comment.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </p>
               </div>

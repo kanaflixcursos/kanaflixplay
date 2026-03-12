@@ -352,8 +352,8 @@ export default function AdminOrders() {
                   {a.avgTicket.topCourses.length > 0 && (
                     <div className="mt-1.5 space-y-0.5">
                       {a.avgTicket.topCourses.map((c, i) => (
-                        <div key={i} className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground truncate max-w-[120px]">{c.title}</span>
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground truncate max-w-28">{c.title}</span>
                           <span className="font-medium text-foreground shrink-0">{c.count} vendas</span>
                         </div>
                       ))}

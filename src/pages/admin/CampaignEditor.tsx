@@ -689,7 +689,7 @@ export default function CampaignEditor() {
             <CardContent className="p-0">
               <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Preview</span>
-                <span className="text-[10px] text-muted-foreground truncate ml-2">{subject || 'Sem assunto'}</span>
+                <span className="text-xs text-muted-foreground truncate ml-2">{subject || 'Sem assunto'}</span>
               </div>
               <iframe
                 srcDoc={previewHtml}
