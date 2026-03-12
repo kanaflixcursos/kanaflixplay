@@ -473,7 +473,7 @@ export default function FormDetail() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{form.name}</h1>
-              <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-[10px]">
+              <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
                 {form.is_active ? 'Ativo' : 'Inativo'}
               </Badge>
             </div>
