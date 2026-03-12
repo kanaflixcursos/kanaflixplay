@@ -672,7 +672,7 @@ export default function FormDetail() {
                             </Button>
                           </div>
                         ))}
-                        <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addOption(i)}>
+                        <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => addOption(i)}>
                           <Plus className="h-2.5 w-2.5 mr-0.5" /> Opção
                         </Button>
                       </div>

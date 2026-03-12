@@ -385,10 +385,10 @@ export default function MarketingLeads() {
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">
                           {(lead.tags || []).slice(0, 2).map(tag => (
-                            <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0">{tag}</Badge>
+                            <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">{tag}</Badge>
                           ))}
                           {(lead.tags || []).length > 2 && (
-                            <span className="text-[10px] text-muted-foreground">+{lead.tags.length - 2}</span>
+                            <span className="text-xs text-muted-foreground">+{lead.tags.length - 2}</span>
                           )}
                           <Button
                             variant="ghost"

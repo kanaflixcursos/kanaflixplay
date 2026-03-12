@@ -623,7 +623,7 @@ export default function CampaignEditor() {
                 </div>
               )}
 
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Use <code className="bg-muted px-1 rounded">{'{{name}}'}</code> para inserir o nome do destinatário
               </p>
             </TabsContent>
