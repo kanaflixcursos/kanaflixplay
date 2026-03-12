@@ -657,7 +657,7 @@ export default function AdminStudents() {
                 </div>
 
                 <div className="hidden md:flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
-                  <div className="text-center min-w-[60px]">
+                  <div className="text-center min-w-16">
                     <span className="font-medium text-foreground">{student.enrolledCourses}</span>
                     <span className="ml-1">cursos</span>
                   </div>
