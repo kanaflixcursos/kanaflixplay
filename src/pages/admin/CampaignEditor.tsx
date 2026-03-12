@@ -371,26 +371,111 @@ export default function CampaignEditor() {
   const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject), [blocks, subject]);
   const finalHtml = useMemo(() => blocksToHtml(blocks), [blocks]);
 
-  const handleSave = async () => {
-    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
-    setSaving(true);
+  const buildPayload = () => {
     const filters: Record<string, string> = {};
     if (targetStatus !== 'all') filters.status = targetStatus;
     if (targetTag) filters.tag = targetTag;
-    const payload = { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
+    return { name, subject, tag: campaignTag || null, html_content: finalHtml, target_type: targetType, target_filters: filters };
+  };
+
+  const handleSaveDraft = async () => {
+    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    setSaving(true);
+    const payload = buildPayload();
 
     if (isNew) {
       const { error } = await supabase.from('email_campaigns').insert(payload);
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success('Campanha criada como rascunho');
+      toast.success('Rascunho salvo');
       navigate('/admin/marketing/email');
     } else {
       const { error } = await supabase.from('email_campaigns').update(payload).eq('id', campaignId);
       if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success('Campanha salva!');
+      toast.success('Rascunho atualizado');
       fetchCampaign();
     }
     setSaving(false);
+  };
+
+  const handleSaveAndSend = async () => {
+    if (!name || !subject) { toast.error('Preencha nome e assunto'); return; }
+    setSaving(true);
+    const payload = buildPayload();
+
+    // Save first
+    let savedId = campaignId;
+    if (isNew) {
+      const { data: inserted, error } = await supabase.from('email_campaigns').insert(payload).select('id').single();
+      if (error || !inserted) { toast.error(error?.message || 'Erro ao salvar'); setSaving(false); return; }
+      savedId = inserted.id;
+    } else {
+      const { error } = await supabase.from('email_campaigns').update(payload).eq('id', campaignId);
+      if (error) { toast.error(error.message); setSaving(false); return; }
+    }
+    setSaving(false);
+
+    // Fetch the saved campaign to send
+    const { data: freshCampaign } = await supabase.from('email_campaigns').select('*').eq('id', savedId).single();
+    if (!freshCampaign) { toast.error('Campanha não encontrada'); return; }
+    const c = freshCampaign as unknown as Campaign;
+    if (c.status !== 'draft') { toast.error('Campanha já foi enviada'); return; }
+    setCampaign(c);
+
+    // Now send
+    setSending(true);
+    try {
+      let recipients: { email: string; name?: string }[] = [];
+      if (c.target_type === 'leads') {
+        let query = supabase.from('leads').select('email, name');
+        if (c.target_filters?.status) query = query.eq('status', c.target_filters.status);
+        if (c.target_filters?.tag) query = query.contains('tags', [c.target_filters.tag]);
+        const { data } = await query;
+        recipients = (data || []) as { email: string; name?: string }[];
+      } else if (c.target_type === 'students') {
+        const { data } = await supabase.from('profiles').select('email, full_name');
+        recipients = (data || []).filter(p => p.email).map(p => ({ email: p.email!, name: p.full_name || undefined }));
+      }
+      if (recipients.length === 0) { toast.error('Nenhum destinatário encontrado'); setSending(false); return; }
+
+      await supabase.from('email_campaigns').update({ status: 'sending', total_recipients: recipients.length }).eq('id', c.id);
+      let sentCount = 0;
+      let failedCount = 0;
+      const batchSize = 5;
+
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        const batch = recipients.slice(i, i + batchSize);
+        const results = await Promise.allSettled(
+          batch.map(r =>
+            supabase.functions.invoke('send-email', {
+              body: { action: 'campaign', to: r.email, data: { subject: c.subject, htmlContent: c.html_content, recipientName: r.name || '', campaignId: c.id, campaignTag: c.tag || '' } },
+            })
+          )
+        );
+        results.forEach(r => r.status === 'fulfilled' ? sentCount++ : failedCount++);
+      }
+
+      await supabase.from('email_campaigns').update({
+        status: failedCount === recipients.length ? 'failed' : 'sent',
+        sent_count: sentCount, failed_count: failedCount, sent_at: new Date().toISOString(),
+      }).eq('id', c.id);
+      toast.success(`Campanha enviada: ${sentCount} emails, ${failedCount} falhas`);
+      navigate('/admin/marketing/email');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao enviar campanha');
+      await supabase.from('email_campaigns').update({ status: 'failed' }).eq('id', c.id);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    const payload = buildPayload();
+    payload.name = `${payload.name} (cópia)`;
+    const { error } = await supabase.from('email_campaigns').insert({ ...payload, status: 'draft' } as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Campanha duplicada como rascunho');
+    navigate('/admin/marketing/email');
   };
 
   const handleSend = async () => {
