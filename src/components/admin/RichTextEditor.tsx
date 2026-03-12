@@ -23,11 +23,29 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
 
   const normalizeContent = useCallback(() => {
     if (!editorRef.current) return;
-    // When toggling lists off, browsers leave <div> wrappers that change typography.
-    // Replace orphan <div> wrappers (not inside lists) with simple line breaks.
+    // Remove <font> tags browsers inject (preserve children)
+    const fonts = editorRef.current.querySelectorAll('font');
+    fonts.forEach(font => {
+      const frag = document.createDocumentFragment();
+      while (font.firstChild) frag.appendChild(font.firstChild);
+      font.replaceWith(frag);
+    });
+    // Remove inline color/font-size styles from spans
+    const spans = editorRef.current.querySelectorAll('span[style]');
+    spans.forEach(span => {
+      (span as HTMLElement).style.removeProperty('color');
+      (span as HTMLElement).style.removeProperty('font-size');
+      (span as HTMLElement).style.removeProperty('font-family');
+      // If span has no remaining styles, unwrap it
+      if (!(span as HTMLElement).getAttribute('style')?.trim()) {
+        const frag = document.createDocumentFragment();
+        while (span.firstChild) frag.appendChild(span.firstChild);
+        span.replaceWith(frag);
+      }
+    });
+    // Replace orphan <div> wrappers with line breaks
     const divs = editorRef.current.querySelectorAll('div:not(li > div)');
     divs.forEach(div => {
-      // Only replace top-level divs that aren't structural
       if (div.parentElement === editorRef.current) {
         const br = document.createElement('br');
         const frag = document.createDocumentFragment();
@@ -36,11 +54,6 @@ export default function RichTextEditor({ value, onChange, placeholder, disabled 
         div.replaceWith(frag);
       }
     });
-    // Remove empty trailing <br>
-    const last = editorRef.current.lastChild;
-    if (last && last.nodeName === 'BR' && last.previousSibling?.nodeName === 'BR') {
-      last.remove();
-    }
   }, []);
 
   const handleInput = useCallback(() => {
