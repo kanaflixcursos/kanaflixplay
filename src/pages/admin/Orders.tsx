@@ -319,7 +319,7 @@ export default function AdminOrders() {
                       { label: 'Estornos', value: a.orders.current.refunded, color: 'text-muted-foreground' },
                       { label: 'Cancelados', value: a.orders.current.canceled, color: 'text-destructive' },
                     ].map(item => (
-                      <div key={item.label} className="flex items-center gap-1.5 text-[11px]">
+                      <div key={item.label} className="flex items-center gap-1.5 text-xs">
                         <span className={cn("font-semibold tabular-nums", item.color)}>{item.value}</span>
                         <span className="text-muted-foreground">{item.label}</span>
                       </div>
