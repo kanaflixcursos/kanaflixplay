@@ -471,16 +471,7 @@ export default function CourseView() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{course.title}</h1>
-          {!isPreviewMode ? (
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              <span>{completedCount}/{requiredLessons.length} aulas</span>
-              <span>•</span>
-              <span>{progressPercent}%</span>
-            </div>
-          ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground">Preview gratuito</p>
-          )}
+          <h1 className="text-lg sm:text-xl font-medium line-clamp-1">{selectedLesson?.title || course.title}</h1>
         </div>
       </div>
 
@@ -547,18 +538,15 @@ export default function CourseView() {
             <div className="space-y-3 md:space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                 <div className="space-y-1 min-w-0">
-                  {selectedLesson.module_id && modules.find(m => m.id === selectedLesson.module_id) && (
-                    <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wide">
-                      {modules.find(m => m.id === selectedLesson.module_id)?.title}
-                    </p>
-                  )}
-                  <h2 className="text-lg sm:text-2xl font-medium line-clamp-2">{selectedLesson.title}</h2>
-                  {selectedLesson.duration_minutes && (
-                    <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {formatDuration(selectedLesson.duration_minutes)}
-                    </div>
-                  )}
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {[
+                      selectedLesson.module_id && modules.find(m => m.id === selectedLesson.module_id)
+                        ? modules.find(m => m.id === selectedLesson.module_id)?.title
+                        : null,
+                      `Aula ${lessons.findIndex(l => l.id === selectedLesson.id) + 1}`,
+                      selectedLesson.duration_minutes ? formatDuration(selectedLesson.duration_minutes) : null
+                    ].filter(Boolean).join(' · ')}
+                  </p>
                 </div>
                 {!isPreviewMode && selectedLesson.completed ? (
                   <TooltipProvider>
