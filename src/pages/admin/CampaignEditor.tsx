@@ -584,7 +584,7 @@ export default function CampaignEditor() {
                   <Input value={name} onChange={e => {
                     const v = e.target.value;
                     setName(v);
-                    if (!tagManuallyEdited) setCampaignTag(v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+                    if (!tagManuallyEdited) setCampaignTag(slugify(v));
                   }} placeholder="Ex: Black Friday" className="h-9" disabled={!isDraft} />
                 </div>
                 <div>
