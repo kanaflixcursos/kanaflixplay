@@ -218,7 +218,7 @@ export default function AvailableCoursesSection() {
                         <ShoppingCart className="h-3.5 w-3.5 text-primary" />
                       </div>
                     ) : (
-                      <Badge variant="secondary" className="text-[10px] font-semibold text-primary uppercase">
+                      <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
                         Matricular
                       </Badge>
                     )}

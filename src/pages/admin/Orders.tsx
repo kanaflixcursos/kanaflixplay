@@ -404,7 +404,7 @@ export default function AdminOrders() {
                       </div>
                     );
                   })}
-                  <p className="text-[11px] text-muted-foreground pt-1 border-t mt-3">
+                  <p className="text-xs text-muted-foreground pt-1 border-t mt-3">
                     {a.salesOrigin.totalConverted} conversões no período
                   </p>
                 </div>

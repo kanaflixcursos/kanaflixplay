@@ -555,7 +555,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
             className="flex-1"
           />
           <Button onClick={handleAddModule} disabled={!newModuleTitle.trim()} size="sm">
-            <Plus set="light" size={16} style={{ marginRight: 4 }} />
+            <Plus set="light" size={16} className="mr-1" />
             Módulo
           </Button>
         </div>

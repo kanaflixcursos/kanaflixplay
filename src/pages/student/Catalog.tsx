@@ -251,7 +251,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
                     <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                   </div>
                 ) : (
-                  <Badge variant="secondary" className="text-[10px] sm:text-xs font-semibold text-primary uppercase">
+                  <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
                     Matricular
                   </Badge>
                 )}
