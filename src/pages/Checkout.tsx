@@ -5,7 +5,7 @@ import { trackEvent } from '@/hooks/useTrackEvent';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckoutForm } from '@/components/checkout/CheckoutForm';
+import { CheckoutForm } from '@/features/checkout/CheckoutForm';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
