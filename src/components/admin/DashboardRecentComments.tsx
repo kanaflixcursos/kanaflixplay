@@ -77,10 +77,10 @@ export default function DashboardRecentComments() {
               <p className="text-xs sm:text-sm font-medium">
                 {comment.user_name || 'Usuário'}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {comment.content}
               </p>
-              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {formatDistanceToNow(new Date(comment.created_at), {
                   addSuffix: true,
                   locale: ptBR,
