@@ -559,9 +559,6 @@ export default function AdminStudents() {
           <Button variant="outline" size="icon" onClick={handleExportCSV} title="Exportar CSV">
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
           </Button>
         </div>
       </motion.div>
