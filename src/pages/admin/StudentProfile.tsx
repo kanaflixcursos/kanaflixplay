@@ -152,7 +152,6 @@ export default function StudentProfile() {
       .single();
 
     if (profileError || !profile) {
-      console.error('Profile not found:', profileError);
       navigate('/admin/students');
       return;
     }
