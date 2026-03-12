@@ -648,7 +648,7 @@ export default function FormDetail() {
                         </SelectContent>
                       </Select>
                       <div className="flex items-center gap-1">
-                        <Label className="text-[10px] text-muted-foreground">Obrig.</Label>
+                        <Label className="text-xs text-muted-foreground">Obrig.</Label>
                         <Switch checked={field.required} onCheckedChange={(v) => updateField(i, { required: v })} />
                       </div>
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeField(i)}>
