@@ -76,6 +76,19 @@ export default function MarketingEmail() {
     fetchCampaigns();
   };
 
+  const handleDuplicate = async (c: Campaign) => {
+    const { error } = await supabase.from('email_campaigns').insert({
+      name: `${c.name} (cópia)`,
+      subject: c.subject,
+      html_content: c.html_content,
+      target_type: c.target_type,
+      target_filters: c.target_filters,
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success('Campanha duplicada');
+    fetchCampaigns();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
