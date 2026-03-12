@@ -300,7 +300,7 @@ export default function MarketingCoupons() {
                         </Badge>
                       ))
                     ) : (
-                      <Badge variant="outline" className="text-[10px]">Todos os cursos</Badge>
+                      <Badge variant="outline" className="text-xs">Todos os cursos</Badge>
                     )}
                     {coupon.payment_methods.length > 0 ? (
                       coupon.payment_methods.map(pm => {
