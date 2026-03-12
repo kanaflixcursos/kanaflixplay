@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
+import RichTextEditor from '@/components/admin/RichTextEditor';
 
 // ── Block types & helpers ──────────────────────────────────────────────
 
