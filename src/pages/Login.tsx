@@ -29,9 +29,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [resetSent, setResetSent] = useState(false);
-  const [hotmartEmail, setHotmartEmail] = useState('');
-  const [hotmartLoading, setHotmartLoading] = useState(false);
-  const [hotmartSent, setHotmartSent] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
