@@ -155,9 +155,9 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to="/"
-                      className="flex items-center gap-3 px-6 py-5 rounded-md text-[15px]"
+                      className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
                     >
-                      <ArrowLeft className="h-[18px] w-[18px]" />
+                      <ArrowLeft className="h-4.5 w-4.5" />
                       <span>Voltar ao LMS</span>
                     </NavLink>
                   </SidebarMenuButton>
