@@ -283,7 +283,7 @@ export default function MarketingForms() {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <Switch checked={form.is_active} onCheckedChange={(v) => handleToggleActive(form.id, v)} />
-                      <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                      <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
                         {form.is_active ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </div>
