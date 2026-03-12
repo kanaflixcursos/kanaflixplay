@@ -59,6 +59,10 @@ const PRODUCTION_URL = 'https://cursos.kanaflix.com.br';
 const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
+function slugify(text: string): string {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
 }
