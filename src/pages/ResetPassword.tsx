@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Eye, EyeOff, Lock, CheckCircle } from 'lucide-react';
+import { translateError } from '@/lib/translate-error';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -54,7 +55,7 @@ export default function ResetPassword() {
     const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
-      toast.error('Erro ao redefinir senha: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       setIsSuccess(true);
       toast.success('Senha redefinida com sucesso!');

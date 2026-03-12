@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import { translateError } from '@/lib/translate-error';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
@@ -48,7 +49,7 @@ export default function Login() {
     const { error } = await signIn(email, password);
     
     if (error) {
-      toast.error('Erro ao entrar: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       toast.success('Login realizado com sucesso!');
       navigate(redirectTo);
@@ -81,7 +82,7 @@ export default function Login() {
     const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate);
     
     if (error) {
-      toast.error('Erro ao criar conta: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       toast.success('Conta criada! Verifique seu email para confirmar.');
     }
@@ -102,7 +103,7 @@ export default function Login() {
     });
     
     if (error) {
-      toast.error('Erro ao enviar email: ' + error.message);
+      toast.error(translateError(error.message));
     } else {
       setResetSent(true);
       toast.success('Email enviado! Verifique sua caixa de entrada.');
