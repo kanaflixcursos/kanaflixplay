@@ -9,7 +9,6 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
-import Onboarding from "./pages/Onboarding";
 
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
@@ -21,8 +20,6 @@ import NotificationsPage from "@/pages/student/Notifications";
 import PurchasesPage from "@/pages/student/Purchases";
 import StudentCoursesPage from "@/pages/student/Courses";
 import CatalogPage from "@/pages/student/Catalog";
-import SupportPage from "@/pages/student/Support";
-import TicketChatPage from "@/pages/student/TicketChat";
 
 import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -32,8 +29,6 @@ import AdminStudents from "@/pages/admin/Students";
 import AdminStudentProfile from "@/pages/admin/StudentProfile";
 import AdminOrders from "@/pages/admin/Orders";
 import AdminComments from "@/pages/admin/Comments";
-import AdminSupport from "@/pages/admin/Support";
-import AdminTicketChat from "@/pages/admin/TicketChat";
 import AdminFeaturedBanner from "@/pages/admin/FeaturedBanner";
 import AdminMarketing from "@/pages/admin/Marketing";
 import AdminMarketingLeads from "@/pages/admin/MarketingLeads";
@@ -62,7 +57,6 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/onboarding" element={<Onboarding />} />
               
               <Route path="/checkout/:courseId" element={<Checkout />} />
               
@@ -124,26 +118,6 @@ const App = () => (
                   <ProtectedRoute>
                     <StudentLayout>
                       <PurchasesPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <SupportPage />
-                    </StudentLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/suporte/:ticketId"
-                element={
-                  <ProtectedRoute>
-                    <StudentLayout>
-                      <TicketChatPage />
                     </StudentLayout>
                   </ProtectedRoute>
                 }
@@ -327,22 +301,6 @@ const App = () => (
                     <AdminLayout>
                       <AdminCouponForm />
                     </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/suporte"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminSupport />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/suporte/:ticketId"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminTicketChat />
                   </ProtectedRoute>
                 }
               />

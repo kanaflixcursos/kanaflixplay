@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useSupportNotifications } from '@/hooks/useSupportNotifications';
 import { NavLink } from '@/components/NavLink';
 import SidebarLogo from '@/components/SidebarLogo';
 import SidebarProfileBox from '@/components/SidebarProfileBox';
@@ -23,7 +22,6 @@ import {
   Users,
   ArrowLeft,
   ShoppingCart,
-  HelpCircle,
   Home,
   Shield,
   Compass,
@@ -37,7 +35,6 @@ const studentMenuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Cursos', url: '/courses', icon: GraduationCap },
   { title: 'Compras', url: '/purchases', icon: ShoppingBag },
-  { title: 'Suporte', url: '/suporte', icon: HelpCircle },
   { title: 'Explorar', url: '/catalog', icon: Compass },
 ];
 
@@ -48,7 +45,6 @@ const adminMenuItems = [
   { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
   { title: 'Banner Destaque', url: '/admin/featured-banner', icon: Star },
   { title: 'Marketing', url: '/admin/marketing', icon: Megaphone },
-  { title: 'Suporte', url: '/admin/suporte', icon: HelpCircle },
 ];
 
 interface AppSidebarProps {
@@ -67,11 +63,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
 
   const isAdmin = variant === 'admin';
   const menuItems = isAdmin ? adminMenuItems : studentMenuItems;
-
-  const { unreadCount: pendingSupportCount } = useSupportNotifications({
-    userId: user?.id,
-    isAdmin,
-  });
 
   useEffect(() => {
     if (!user) return;
@@ -126,7 +117,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
 
   const userName = profile.full_name || (isAdmin ? 'Administrador' : 'Usuário');
   const userEmail = profile.email || user?.email || '';
-  const homeUrl = isAdmin ? '/' : '/admin';
   const homeEnd = isAdmin ? '/admin' : '/';
 
   return (
@@ -148,11 +138,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
                     >
                       <item.icon className="h-[18px] w-[18px]" />
                       <span className="flex-1">{item.title}</span>
-                      {item.title === 'Suporte' && pendingSupportCount > 0 && (
-                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5">
-                          {pendingSupportCount}
-                        </span>
-                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

@@ -12,9 +12,6 @@ verify_jwt = false
 [functions.send-email]
 verify_jwt = false
 
-[functions.hotmart-access]
-verify_jwt = false
-
 [functions.lead-capture]
 verify_jwt = false
 

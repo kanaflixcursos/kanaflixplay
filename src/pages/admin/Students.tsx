@@ -40,8 +40,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Upload, Download, X, ShieldCheck, ShieldOff, BookPlus } from 'lucide-react';
-import ImportUsersDialog from '@/components/admin/ImportUsersDialog';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Download, X, ShieldCheck, ShieldOff, BookPlus } from 'lucide-react';
+
 import PhoneInput from '@/components/PhoneInput';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,7 +72,7 @@ export default function AdminStudents() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  
 
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -559,10 +559,6 @@ export default function AdminStudents() {
           <Button variant="outline" size="icon" onClick={handleExportCSV} title="Exportar CSV">
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar
-          </Button>
         </div>
       </motion.div>
 
@@ -861,7 +857,7 @@ export default function AdminStudents() {
         </DialogContent>
       </Dialog>
 
-      <ImportUsersDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} onImported={fetchData} />
+      
     </div>
   );
 }

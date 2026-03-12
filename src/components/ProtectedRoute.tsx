@@ -20,17 +20,11 @@ export default function ProtectedRoute({ children, requiredRole }: ProtectedRout
   }
 
   if (!user) {
-    // Preserve full original URL (path + search params including UTMs) as redirect
     const currentUrl = location.pathname + location.search;
     const loginUrl = currentUrl !== '/' 
       ? `/login?redirect=${encodeURIComponent(currentUrl)}`
       : '/login';
     return <Navigate to={loginUrl} replace />;
-  }
-
-  // Redirect imported users to onboarding
-  if (user.user_metadata?.needs_onboarding) {
-    return <Navigate to="/onboarding" replace />;
   }
 
   if (requiredRole && role !== requiredRole) {
