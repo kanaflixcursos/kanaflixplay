@@ -93,7 +93,7 @@ export default function CatalogPage() {
           </div>
 
           {categories.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide [scrollbar-width:none]">
               <Button
                 variant={selectedCategory === null ? 'default' : 'outline'}
                 size="sm"
