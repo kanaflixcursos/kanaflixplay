@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy, Link2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
 
