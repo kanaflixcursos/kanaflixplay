@@ -310,6 +310,18 @@ export default function FormDetail() {
     add('                    payload[f.name] = f.type === "email" ? v.toLowerCase() : v');
     add('                }');
     add('            })');
+    add('');
+    add('            // Inject UTM attribution & visitor identity');
+    add('            try {');
+    add('                const firstRaw = localStorage.getItem("kanaflix_utm_first")');
+    add('                const lastRaw = localStorage.getItem("kanaflix_utm_last")');
+    add('                if (firstRaw) payload.utm_first = JSON.parse(firstRaw)');
+    add('                if (lastRaw) payload.utm_last = JSON.parse(lastRaw)');
+    add('                let visitorId = localStorage.getItem("kanaflix_visitor_id")');
+    add('                if (!visitorId) { visitorId = crypto.randomUUID(); localStorage.setItem("kanaflix_visitor_id", visitorId) }');
+    add('                payload.visitor_id = visitorId');
+    add('            } catch (_) {}');
+    add('');
     add('            const res = await fetch(API_BASE + "?form=" + encodeURIComponent(formSlug), {');
     add('                method: "POST",');
     add('                headers: { "Content-Type": "application/json" },');
