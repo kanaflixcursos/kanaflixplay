@@ -443,9 +443,13 @@ export type Database = {
           tags: string[]
           updated_at: string
           utm_campaign: string | null
+          utm_campaign_last: string | null
           utm_content: string | null
           utm_medium: string | null
+          utm_medium_last: string | null
           utm_source: string | null
+          utm_source_last: string | null
+          visitor_id: string | null
         }
         Insert: {
           converted_at?: string | null
@@ -461,9 +465,13 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           utm_campaign?: string | null
+          utm_campaign_last?: string | null
           utm_content?: string | null
           utm_medium?: string | null
+          utm_medium_last?: string | null
           utm_source?: string | null
+          utm_source_last?: string | null
+          visitor_id?: string | null
         }
         Update: {
           converted_at?: string | null
@@ -479,9 +487,13 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           utm_campaign?: string | null
+          utm_campaign_last?: string | null
           utm_content?: string | null
           utm_medium?: string | null
+          utm_medium_last?: string | null
           utm_source?: string | null
+          utm_source_last?: string | null
+          visitor_id?: string | null
         }
         Relationships: [
           {
