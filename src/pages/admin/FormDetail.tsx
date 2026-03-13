@@ -584,7 +584,7 @@ export default function FormDetail() {
                   <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Ex: Landing Page" />
                 </div>
                 <div>
-                  <Label>Slug (URL)</Label>
+                  <Label>Identificador</Label>
                   <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} placeholder="ex: landing-page" />
                 </div>
               </div>
