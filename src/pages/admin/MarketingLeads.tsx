@@ -52,7 +52,7 @@ export default function MarketingLeads() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [totalLeads, setTotalLeads] = useState(0);
-  const [newLeads, setNewLeads] = useState(0);
+  const [signedUpLeads, setSignedUpLeads] = useState(0);
   const [convertedLeads, setConvertedLeads] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allSources, setAllSources] = useState<string[]>([]);
@@ -99,13 +99,13 @@ export default function MarketingLeads() {
   }, [search, statusFilter, tagFilter, sourceFilter]);
 
   const fetchStats = useCallback(async () => {
-    const [{ count: total }, { count: newCount }, { count: converted }] = await Promise.all([
+    const [{ count: total }, { count: signedUp }, { count: converted }] = await Promise.all([
       supabase.from('leads').select('*', { count: 'exact', head: true }),
-      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).in('status', ['qualified', 'opportunity', 'converted']),
       supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted'),
     ]);
     setTotalLeads(total || 0);
-    setNewLeads(newCount || 0);
+    setSignedUpLeads(signedUp || 0);
     setConvertedLeads(converted || 0);
   }, []);
 
@@ -234,7 +234,7 @@ export default function MarketingLeads() {
 
       <div className="grid gap-3 grid-cols-3">
         <StatCard icon={Users} title="Total de Leads" value={totalLeads} loading={loading} iconColor="text-primary" iconBgColor="bg-primary/10" />
-        <StatCard icon={UserPlus} title="Novos" value={newLeads} loading={loading} iconColor="text-chart-4" iconBgColor="bg-chart-4/10" />
+        <StatCard icon={UserPlus} title="Cadastros" value={signedUpLeads} loading={loading} iconColor="text-chart-4" iconBgColor="bg-chart-4/10" />
         <StatCard icon={UserCheck} title="Convertidos" value={convertedLeads} loading={loading} iconColor="text-chart-2" iconBgColor="bg-chart-2/10" />
       </div>
 
