@@ -58,6 +58,7 @@ interface CustomerJourneyTimelineProps {
 
 export default function CustomerJourneyTimeline({
   userId,
+  visitorId,
   showFilters = false,
   limit = 50,
   title = 'Jornada do Cliente',
