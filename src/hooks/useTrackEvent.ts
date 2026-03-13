@@ -20,18 +20,37 @@ export type TrackEventType =
   | 'checkout_abandoned'
   | 'enrollment';
 
+/** Dedup key for session-level event deduplication */
+function dedupKey(eventType: string, courseId?: string): string {
+  return `kfx_evt_${eventType}_${courseId || 'global'}`;
+}
+
+/** Check if this event was already tracked in this session */
+export function wasAlreadyTracked(eventType: string, courseId?: string): boolean {
+  return sessionStorage.getItem(dedupKey(eventType, courseId)) === '1';
+}
+
+/** Mark event as tracked for this session */
+function markTracked(eventType: string, courseId?: string) {
+  sessionStorage.setItem(dedupKey(eventType, courseId), '1');
+}
+
 export async function trackEvent(
   eventType: TrackEventType,
   eventData: Record<string, unknown> = {},
   pagePath?: string,
   userId?: string
 ) {
-  captureUtmParams();
+  // Dedup checkout_started per course per session
+  const courseId = eventData.course_id as string | undefined;
+  if (eventType === 'checkout_started' && wasAlreadyTracked(eventType, courseId)) {
+    return;
+  }
 
   const visitorId = getVisitorId();
   const utm = getStoredUtm('first');
 
-  await supabase.from('user_events').insert([{
+  const { error } = await supabase.from('user_events').insert([{
     visitor_id: visitorId,
     user_id: userId || undefined,
     event_type: eventType,
@@ -41,6 +60,10 @@ export async function trackEvent(
     utm_medium: utm.utm_medium || undefined,
     utm_campaign: utm.utm_campaign || undefined,
   }]);
+
+  if (!error && eventType === 'checkout_started') {
+    markTracked(eventType, courseId);
+  }
 }
 
 /** Link all anonymous visitor events to a known user after identification */
