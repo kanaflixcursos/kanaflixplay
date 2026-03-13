@@ -13,12 +13,16 @@ export interface UtmParams {
 
 const UTM_KEYS: (keyof UtmParams)[] = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
+function hasAttribution(params: UtmParams): boolean {
+  return UTM_KEYS.some((key) => Boolean(params[key])) || Boolean(params.referrer);
+}
+
 /** Extract UTM params from current URL. If no UTMs and no external referrer → 'Direto'. */
 function extractUtmFromUrl(): UtmParams {
   const url = new URL(window.location.href);
   const params: UtmParams = {};
 
-  UTM_KEYS.forEach(key => {
+  UTM_KEYS.forEach((key) => {
     const val = url.searchParams.get(key);
     if (val) params[key] = val;
   });
@@ -36,20 +40,25 @@ function extractUtmFromUrl(): UtmParams {
   return params;
 }
 
+/** Current URL attribution snapshot */
+export function getCurrentUtmFromUrl(): UtmParams {
+  return extractUtmFromUrl();
+}
+
 /** Capture UTMs: first-touch (saved once) + last-touch (always updated when new UTMs present). */
 export function captureUtmParams(): void {
   const params = extractUtmFromUrl();
 
-  // First-touch: only save if we don't have one yet
+  // First-touch: save once when there's no stored attribution yet
   const existing = getStoredUtm('first');
-  if (!existing.utm_source) {
+  if (!hasAttribution(existing)) {
     localStorage.setItem(UTM_FIRST_KEY, JSON.stringify(params));
     localStorage.setItem(LANDING_URL_KEY, window.location.pathname + window.location.search);
   }
 
   // Last-touch: always update if URL has real UTMs (not just 'Direto' fallback)
   const url = new URL(window.location.href);
-  const hasRealUtm = UTM_KEYS.some(k => url.searchParams.get(k));
+  const hasRealUtm = UTM_KEYS.some((k) => url.searchParams.get(k));
   if (hasRealUtm) {
     localStorage.setItem(UTM_LAST_KEY, JSON.stringify(params));
   }

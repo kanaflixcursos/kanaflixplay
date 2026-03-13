@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getStoredUtm, clearStoredUtm } from '@/lib/utm';
-import { trackEvent } from '@/hooks/useTrackEvent';
+import { getStoredUtm } from '@/lib/utm';
+import { getVisitorId, linkVisitorToUser } from '@/hooks/useTrackEvent';
 
 type UserRole = 'admin' | 'student' | null;
 
@@ -72,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateData.utm_source = utm.utm_source;
         if (utm.utm_medium) updateData.utm_medium = utm.utm_medium;
         if (utm.utm_campaign) updateData.utm_campaign = utm.utm_campaign;
-        clearStoredUtm();
       }
     }
     
@@ -93,10 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => checkProfileComplete(session.user.id), 0);
           setTimeout(() => updateLastSeen(session.user.id), 0);
           
-          // Handle redirect after email confirmation
+          // Link anonymous journey events to this authenticated user
           if (event === 'SIGNED_IN') {
-            // Only track login for password-based sign-ins, not initial loads
-            // Login tracked via auth state change (no longer a tracked event type)
+            const visitorId = getVisitorId();
+            setTimeout(() => linkVisitorToUser(visitorId, session.user.id), 0);
+
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
               localStorage.removeItem('kanaflix_redirect_after_confirm');
@@ -122,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchUserRole(session.user.id);
         checkProfileComplete(session.user.id);
         updateLastSeen(session.user.id);
+        const visitorId = getVisitorId();
+        linkVisitorToUser(visitorId, session.user.id);
       }
       
       setLoading(false);
@@ -181,11 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Phone and birth_date are now handled by the handle_new_user DB trigger
     // which extracts them from raw_user_meta_data, so no need to update profile here
 
-    // Clear UTMs after signup since they're now in user metadata
-    if (!error && data?.user) {
-      if (utm.utm_source) clearStoredUtm();
-      // Signup no longer tracked as separate event — lead_captured handles attribution
-    }
+    // Signup no longer tracked as separate event — lead_captured handles attribution
 
     return { error };
   };
