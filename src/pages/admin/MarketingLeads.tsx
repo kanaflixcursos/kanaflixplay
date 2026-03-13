@@ -360,7 +360,7 @@ export default function MarketingLeads() {
                     </TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Origem</TableHead>
+                    <TableHead>Origem de Tráfego</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
