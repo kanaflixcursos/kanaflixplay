@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy } from 'lucide-react';
+import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft, Image, Minus, MousePointerClick, Copy, Link2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { leadStatusMap } from '@/lib/lead-constants';
 
@@ -694,10 +696,40 @@ export default function CampaignEditor() {
               <iframe
                 srcDoc={previewHtml}
                 className="w-full bg-white"
-                style={{ height: '600px' }}
+                style={{ height: '560px' }}
                 title="Email preview"
                 sandbox="allow-same-origin"
               />
+              <div className="px-4 py-3 border-t bg-muted/20 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <Link2 className="h-3.5 w-3.5" />
+                  UTMs automáticos nos links
+                </div>
+                <TooltipProvider>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="text-[10px] font-mono">utm_source=email</Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom"><p className="text-xs">Identifica que o tráfego veio de email</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="secondary" className="text-[10px] font-mono">utm_medium=campaign</Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom"><p className="text-xs">Identifica como campanha de marketing</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="text-[10px] font-mono border-primary/30 text-primary">
+                          utm_campaign={campaignTag || slugify(name) || '...'}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom"><p className="text-xs">Tag da campanha (campo "Tag de rastreamento")</p></TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
+              </div>
             </CardContent>
           </Card>
         </div>
