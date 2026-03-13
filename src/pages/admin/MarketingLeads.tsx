@@ -52,7 +52,7 @@ export default function MarketingLeads() {
   const [tagFilter, setTagFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [totalLeads, setTotalLeads] = useState(0);
-  const [newLeads, setNewLeads] = useState(0);
+  const [signedUpLeads, setSignedUpLeads] = useState(0);
   const [convertedLeads, setConvertedLeads] = useState(0);
   const [allTags, setAllTags] = useState<string[]>([]);
   const [allSources, setAllSources] = useState<string[]>([]);
