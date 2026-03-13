@@ -7,9 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Search, Download, ArrowLeft, Users, UserPlus, UserCheck, Tag, X, Plus, Filter, Trash2 } from 'lucide-react';
+import { Search, Download, ArrowLeft, Users, UserPlus, UserCheck, X, Filter, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -17,11 +15,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import StatCard from '@/components/StatCard';
 import { leadStatusMap } from '@/lib/lead-constants';
+import LeadOriginBadge from '@/components/admin/LeadOriginBadge';
+import LeadDetailDrawer from '@/components/admin/LeadDetailDrawer';
 
 type Lead = {
   id: string;
@@ -59,10 +58,9 @@ export default function MarketingLeads() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkStatusChanging, setBulkStatusChanging] = useState(false);
 
-  // Tag dialog
-  const [tagDialogOpen, setTagDialogOpen] = useState(false);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [newTag, setNewTag] = useState('');
+  // Detail drawer
+  const [drawerLead, setDrawerLead] = useState<Lead | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -85,7 +83,6 @@ export default function MarketingLeads() {
     const result = (data as Lead[]) || [];
     setLeads(result);
 
-    // Extract unique tags & sources
     const tags = new Set<string>();
     const sources = new Set<string>();
     result.forEach(l => {
@@ -133,26 +130,34 @@ export default function MarketingLeads() {
       status: newStatus,
       ...(newStatus === 'converted' ? { converted_at: new Date().toISOString() } : {}),
     }).eq('id', leadId);
+    // Update drawer lead if open
+    if (drawerLead?.id === leadId) {
+      setDrawerLead(prev => prev ? { ...prev, status: newStatus } : null);
+    }
     fetchLeads();
     fetchStats();
   };
 
-  const handleAddTag = async () => {
-    if (!selectedLead || !newTag.trim()) return;
-    const tag = newTag.trim().toLowerCase();
-    const updatedTags = [...new Set([...(selectedLead.tags || []), tag])];
-    await supabase.from('leads').update({ tags: updatedTags }).eq('id', selectedLead.id);
-    setNewTag('');
-    setSelectedLead({ ...selectedLead, tags: updatedTags });
+  const handleAddTag = async (leadId: string, tag: string) => {
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+    const updatedTags = [...new Set([...(lead.tags || []), tag])];
+    await supabase.from('leads').update({ tags: updatedTags }).eq('id', leadId);
+    if (drawerLead?.id === leadId) {
+      setDrawerLead(prev => prev ? { ...prev, tags: updatedTags } : null);
+    }
     toast.success(`Tag "${tag}" adicionada`);
     fetchLeads();
   };
 
-  const handleRemoveTag = async (tag: string) => {
-    if (!selectedLead) return;
-    const updatedTags = (selectedLead.tags || []).filter(t => t !== tag);
-    await supabase.from('leads').update({ tags: updatedTags }).eq('id', selectedLead.id);
-    setSelectedLead({ ...selectedLead, tags: updatedTags });
+  const handleRemoveTag = async (leadId: string, tag: string) => {
+    const lead = leads.find(l => l.id === leadId) || drawerLead;
+    if (!lead) return;
+    const updatedTags = (lead.tags || []).filter(t => t !== tag);
+    await supabase.from('leads').update({ tags: updatedTags }).eq('id', leadId);
+    if (drawerLead?.id === leadId) {
+      setDrawerLead(prev => prev ? { ...prev, tags: updatedTags } : null);
+    }
     fetchLeads();
   };
 
@@ -206,6 +211,11 @@ export default function MarketingLeads() {
     setBulkStatusChanging(false);
   };
 
+  const openLeadDrawer = (lead: Lead) => {
+    setDrawerLead(lead);
+    setDrawerOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -252,7 +262,6 @@ export default function MarketingLeads() {
               </div>
             </div>
 
-            {/* Advanced filters row */}
             <div className="flex items-center gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-32 h-8 text-xs">
@@ -347,9 +356,7 @@ export default function MarketingLeads() {
                     </TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Telefone</TableHead>
                     <TableHead>Origem</TableHead>
-                    <TableHead>UTM</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
@@ -357,8 +364,13 @@ export default function MarketingLeads() {
                 </TableHeader>
                 <TableBody>
                   {leads.map((lead) => (
-                    <TableRow key={lead.id} data-state={selectedIds.has(lead.id) ? 'selected' : undefined}>
-                      <TableCell>
+                    <TableRow
+                      key={lead.id}
+                      data-state={selectedIds.has(lead.id) ? 'selected' : undefined}
+                      className="cursor-pointer"
+                      onClick={() => openLeadDrawer(lead)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox
                           checked={selectedIds.has(lead.id)}
                           onCheckedChange={() => toggleSelect(lead.id)}
@@ -366,21 +378,13 @@ export default function MarketingLeads() {
                       </TableCell>
                       <TableCell className="font-medium">{lead.name || '—'}</TableCell>
                       <TableCell>{lead.email}</TableCell>
-                      <TableCell>{lead.phone || '—'}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">{lead.source}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {lead.utm_source ? (
-                          <div className="flex flex-col gap-0.5">
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0 w-fit">{lead.utm_source}</Badge>
-                            {lead.utm_campaign && (
-                              <span className="text-xs text-muted-foreground truncate max-w-28">{lead.utm_campaign}</span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
+                        <LeadOriginBadge
+                          source={lead.source}
+                          utmSource={lead.utm_source}
+                          utmMedium={lead.utm_medium}
+                          utmCampaign={lead.utm_campaign}
+                        />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">
@@ -390,17 +394,9 @@ export default function MarketingLeads() {
                           {(lead.tags || []).length > 2 && (
                             <span className="text-xs text-muted-foreground">+{lead.tags.length - 2}</span>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5"
-                            onClick={() => { setSelectedLead(lead); setTagDialogOpen(true); }}
-                          >
-                            <Tag className="h-3 w-3" />
-                          </Button>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select value={lead.status} onValueChange={(v) => handleStatusChange(lead.id, v)}>
                           <SelectTrigger className="h-7 w-28 text-xs">
                             <SelectValue />
@@ -424,41 +420,15 @@ export default function MarketingLeads() {
         </CardContent>
       </Card>
 
-      {/* Tag management dialog */}
-      <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-base">Tags — {selectedLead?.name || selectedLead?.email}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-1.5">
-              {(selectedLead?.tags || []).length === 0 && (
-                <p className="text-xs text-muted-foreground">Nenhuma tag</p>
-              )}
-              {(selectedLead?.tags || []).map(tag => (
-                <Badge key={tag} variant="secondary" className="text-xs gap-1 pr-1">
-                  {tag}
-                  <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 hover:text-destructive">
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Nova tag..."
-                className="h-8 text-sm"
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-              />
-              <Button size="sm" className="h-8" onClick={handleAddTag}>
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Lead detail drawer */}
+      <LeadDetailDrawer
+        lead={drawerLead}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onStatusChange={handleStatusChange}
+        onAddTag={handleAddTag}
+        onRemoveTag={handleRemoveTag}
+      />
 
       {/* Delete confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
