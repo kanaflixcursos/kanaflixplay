@@ -43,6 +43,7 @@ interface JourneyEvent {
 const eventConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string; bg: string }> = {
   lead_captured: { icon: UserPlus, label: 'Lead capturado', color: 'text-chart-3', bg: 'bg-chart-3/15' },
   signup: { icon: UserPlus, label: 'Cadastro', color: 'text-chart-3', bg: 'bg-chart-3/15' },
+  email_opened: { icon: MailOpen, label: 'Abriu e-mail', color: 'text-primary', bg: 'bg-primary/15' },
   checkout_started: { icon: ShoppingCart, label: 'Checkout iniciado', color: 'text-warning', bg: 'bg-warning/15' },
   checkout_completed: { icon: CheckCircle, label: 'Compra concluída', color: 'text-success', bg: 'bg-success/15' },
   checkout_abandoned: { icon: XCircle, label: 'Checkout abandonado', color: 'text-destructive', bg: 'bg-destructive/15' },
