@@ -53,6 +53,7 @@ const eventConfig: Record<string, { icon: React.ComponentType<{ className?: stri
 interface CustomerJourneyTimelineProps {
   userId?: string;
   visitorId?: string;
+  leadEmail?: string;
   showFilters?: boolean;
   limit?: number;
   title?: string;
@@ -62,6 +63,7 @@ interface CustomerJourneyTimelineProps {
 export default function CustomerJourneyTimeline({
   userId,
   visitorId,
+  leadEmail,
   showFilters = false,
   limit = 50,
   title = 'Jornada do Cliente',
