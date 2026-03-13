@@ -106,7 +106,7 @@ export default function FormDetail() {
 
   const handleSave = async () => {
     if (!formId || !formName || !formSlug) {
-      toast.error('Preencha nome e slug');
+      toast.error('Preencha nome e identificador');
       return;
     }
     if (formRedirect && !formRedirect.startsWith('https://')) {
@@ -124,7 +124,7 @@ export default function FormDetail() {
     }).eq('id', formId);
     setSaving(false);
     if (error) {
-      toast.error(error.message.includes('duplicate') ? 'Slug já existe' : error.message);
+      toast.error(error.message.includes('duplicate') ? 'Identificador já existe' : error.message);
       return;
     }
     toast.success('Formulário salvo!');
@@ -584,7 +584,7 @@ export default function FormDetail() {
                   <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Ex: Landing Page" />
                 </div>
                 <div>
-                  <Label>Slug (URL)</Label>
+                  <Label>Identificador</Label>
                   <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} placeholder="ex: landing-page" />
                 </div>
               </div>
