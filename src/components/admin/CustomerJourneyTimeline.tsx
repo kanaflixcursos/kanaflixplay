@@ -99,6 +99,7 @@ export default function CustomerJourneyTimeline({
       .limit(limit);
 
     if (userId) query = query.eq('user_id', userId);
+    if (visitorId && !userId) query = query.eq('visitor_id', visitorId);
     if (eventFilter !== 'all') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
