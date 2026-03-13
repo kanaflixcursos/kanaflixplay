@@ -385,30 +385,41 @@ Deno.serve(async (req) => {
       case 'campaign': {
         const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string; campaignTag?: string };
         subject = campaignData.subject || 'Novidades - Kanaflix Play';
+        const campaignSlug = campaignData.campaignTag || campaignData.campaignId || 'email';
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+
         // Strip embedded blocks JSON comment and replace variables
         let campaignContent = campaignData.htmlContent
           .replace(/<!-- BLOCKS:[\s\S]*? -->/g, '')
           .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
-        
-        // Always append UTM params to all href links — use tag as campaign name, fallback to campaign id
-        {
-          const campaignSlug = campaignData.campaignTag || campaignData.campaignId || 'email';
-          const utmParams = `utm_source=email&utm_medium=campaign&utm_campaign=${encodeURIComponent(campaignSlug)}`;
-          campaignContent = campaignContent.replace(
-            /href="(https?:\/\/[^"]+)"/g,
-            (_match: string, url: string) => {
-              const separator = url.includes('?') ? '&' : '?';
-              return `href="${url}${separator}${utmParams}"`;
-            }
-          );
-        }
-        
+
+        // Normalize links, append UTMs and route click tracking through email-tracking redirect
+        campaignContent = campaignContent.replace(HREF_REGEX, (_match: string, quote: string, rawUrl: string) => {
+          if (!shouldTrackLink(rawUrl)) {
+            return `href=${quote}${rawUrl}${quote}`;
+          }
+
+          const normalizedUrl = normalizeCampaignUrl(rawUrl);
+          if (!normalizedUrl) {
+            return `href=${quote}${rawUrl}${quote}`;
+          }
+
+          const urlWithUtm = appendUtmToUrl(normalizedUrl, campaignSlug);
+          const trackedUrl = buildTrackedClickUrl({
+            supabaseUrl,
+            campaignId: campaignData.campaignId || '',
+            recipientEmail: to,
+            targetUrl: urlWithUtm,
+          });
+
+          return `href=${quote}${trackedUrl}${quote}`;
+        });
+
         // Add tracking pixel if campaignId is provided
-        const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
         const trackingPixel = campaignData.campaignId
-          ? `<img src="${SUPABASE_URL}/functions/v1/email-tracking?cid=${encodeURIComponent(campaignData.campaignId)}&e=${encodeURIComponent(to)}" width="1" height="1" style="display:none;" alt="" />`
+          ? `<img src="${supabaseUrl}${EMAIL_TRACKING_FN_PATH}?cid=${encodeURIComponent(campaignData.campaignId)}&e=${encodeURIComponent(to)}" width="1" height="1" style="display:none;" alt="" />`
           : '';
-        
+
         html = emailTemplate(campaignContent + trackingPixel, subject);
         break;
       }
