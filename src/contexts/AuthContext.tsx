@@ -122,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchUserRole(session.user.id);
         checkProfileComplete(session.user.id);
         updateLastSeen(session.user.id);
+        const visitorId = getVisitorId();
+        linkVisitorToUser(visitorId, session.user.id);
       }
       
       setLoading(false);
