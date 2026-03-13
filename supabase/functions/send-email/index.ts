@@ -37,6 +37,51 @@ const fontImport = `
 
 // Font family stack
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const EMAIL_TRACKING_FN_PATH = "/functions/v1/email-tracking";
+const HREF_REGEX = /href=(["'])([^"']+)\1/g;
+
+function shouldTrackLink(url: string): boolean {
+  const lower = url.trim().toLowerCase();
+  return !(lower.startsWith("#") || lower.startsWith("mailto:") || lower.startsWith("tel:"));
+}
+
+function normalizeCampaignUrl(rawUrl: string): string | null {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("/")) return `${PRODUCTION_URL}${trimmed}`;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(trimmed)) return `https://${trimmed}`;
+
+  return null;
+}
+
+function appendUtmToUrl(url: string, campaignSlug: string): string {
+  const parsed = new URL(url);
+  if (!parsed.searchParams.get("utm_source")) parsed.searchParams.set("utm_source", "email");
+  if (!parsed.searchParams.get("utm_medium")) parsed.searchParams.set("utm_medium", "campaign");
+  if (!parsed.searchParams.get("utm_campaign")) parsed.searchParams.set("utm_campaign", campaignSlug);
+  return parsed.toString();
+}
+
+function buildTrackedClickUrl(input: {
+  supabaseUrl: string;
+  campaignId: string;
+  recipientEmail: string;
+  targetUrl: string;
+}) {
+  const { supabaseUrl, campaignId, recipientEmail, targetUrl } = input;
+  if (!supabaseUrl || !campaignId) return targetUrl;
+
+  const qs = new URLSearchParams({
+    mode: "click",
+    cid: campaignId,
+    e: recipientEmail.toLowerCase(),
+    u: targetUrl,
+  });
+
+  return `${supabaseUrl}${EMAIL_TRACKING_FN_PATH}?${qs.toString()}`;
+}
 
 // Light mesh gradient header matching system background
 const meshGradientHeader = `
