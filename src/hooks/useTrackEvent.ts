@@ -108,24 +108,28 @@ export async function trackEvent(
 
 /** Track raw page visits for top-of-funnel visitor analytics */
 export async function trackSiteVisit(pagePath?: string) {
-  const visitorId = getVisitorId();
-  const current = getCurrentUtmFromUrl();
-  const storedLast = getStoredUtm('last');
-  const storedFirst = getStoredUtm('first');
-  const activeUtm = current.utm_source ? current : (storedLast.utm_source ? storedLast : storedFirst);
+  try {
+    const visitorId = getVisitorId();
+    const current = getCurrentUtmFromUrl();
+    const storedLast = getStoredUtm('last');
+    const storedFirst = getStoredUtm('first');
+    const activeUtm = current.utm_source ? current : (storedLast.utm_source ? storedLast : storedFirst);
 
-  await supabase.from('site_visits').insert([
-    {
-      visitor_id: visitorId,
-      page_path: pagePath || window.location.pathname + window.location.search,
-      referrer: current.referrer || document.referrer || null,
-      utm_source: activeUtm.utm_source || null,
-      utm_medium: activeUtm.utm_medium || null,
-      utm_campaign: activeUtm.utm_campaign || null,
-      utm_content: activeUtm.utm_content || null,
-      utm_term: activeUtm.utm_term || null,
-    },
-  ]);
+    await supabase.from('site_visits').insert([
+      {
+        visitor_id: visitorId,
+        page_path: pagePath || window.location.pathname + window.location.search,
+        referrer: current.referrer || document.referrer || null,
+        utm_source: activeUtm.utm_source || null,
+        utm_medium: activeUtm.utm_medium || null,
+        utm_campaign: activeUtm.utm_campaign || null,
+        utm_content: activeUtm.utm_content || null,
+        utm_term: activeUtm.utm_term || null,
+      },
+    ]);
+  } catch (error) {
+    console.error('trackSiteVisit error:', error);
+  }
 }
 
 /** Link all anonymous visitor events to a known user after identification */
