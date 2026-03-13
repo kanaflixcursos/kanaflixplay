@@ -49,6 +49,7 @@ const eventConfig: Record<string, { icon: React.ComponentType<{ className?: stri
 
 interface CustomerJourneyTimelineProps {
   userId?: string;
+  visitorId?: string;
   showFilters?: boolean;
   limit?: number;
   title?: string;

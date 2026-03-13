@@ -40,7 +40,6 @@ interface CourseModule {
 }
 
 export default function Checkout() {
-  useTrackVisit('/checkout');
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
