@@ -72,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateData.utm_source = utm.utm_source;
         if (utm.utm_medium) updateData.utm_medium = utm.utm_medium;
         if (utm.utm_campaign) updateData.utm_campaign = utm.utm_campaign;
-        clearStoredUtm();
       }
     }
     
