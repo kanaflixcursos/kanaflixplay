@@ -156,14 +156,13 @@ export default function LeadDetailDrawer({ lead, open, onOpenChange, onStatusCha
           <Separator />
 
           {/* Journey Timeline */}
-          {lead.visitor_id && (
-            <CustomerJourneyTimeline
-              visitorId={lead.visitor_id}
-              title="Jornada do Lead"
-              defaultVisible={10}
-              limit={30}
-            />
-          )}
+          <CustomerJourneyTimeline
+            visitorId={lead.visitor_id || undefined}
+            leadEmail={lead.email}
+            title="Jornada do Lead"
+            defaultVisible={10}
+            limit={30}
+          />
         </div>
       </SheetContent>
     </Sheet>
