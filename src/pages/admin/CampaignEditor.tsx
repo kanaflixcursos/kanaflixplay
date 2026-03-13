@@ -556,14 +556,14 @@ export default function CampaignEditor() {
               <Save className="h-4 w-4 mr-1" /> {saving ? 'Salvando...' : 'Salvar Rascunho'}
             </Button>
           )}
+          <Button variant="outline" onClick={handleDuplicate} disabled={saving || sending}>
+            <Copy className="h-4 w-4 mr-1" /> Duplicar
+          </Button>
           {isDraft && (
             <Button onClick={handleSaveAndSend} disabled={saving || sending}>
               <Send className="h-4 w-4 mr-1" /> {sending ? 'Enviando...' : 'Salvar e Enviar'}
             </Button>
           )}
-          <Button variant="outline" onClick={handleDuplicate} disabled={saving || sending}>
-            <Copy className="h-4 w-4 mr-1" /> Duplicar
-          </Button>
         </div>
       </div>
 
