@@ -73,7 +73,7 @@ export default function CustomerJourneyTimeline({
 
   useEffect(() => {
     fetchEvents();
-  }, [userId, eventFilter, utmFilter]);
+  }, [userId, visitorId, eventFilter, utmFilter]);
 
   useEffect(() => {
     if (showFilters) fetchUtmSources();
