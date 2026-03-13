@@ -50,7 +50,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [checkingEnrollment, setCheckingEnrollment] = useState(false);
-  const hasTrackedCheckout = useRef(false);
+  
 
   useEffect(() => {
     if (courseId) {
