@@ -105,16 +105,60 @@ export default function CustomerJourneyTimeline({
 
     if (userId) query = query.eq('user_id', userId);
     if (visitorId && !userId) query = query.eq('visitor_id', visitorId);
-    if (eventFilter !== 'all') query = query.eq('event_type', eventFilter);
+    if (eventFilter !== 'all' && eventFilter !== 'email_opened') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
-    const { data } = await query;
+    // Skip user_events query if filtering only email_opened
+    const skipUserEvents = eventFilter === 'email_opened';
+    const { data } = skipUserEvents ? { data: [] } : await query;
     const rawEvents = (data as JourneyEvent[]) || [];
+
+    // Fetch email opens for this lead's email (merge into timeline)
+    let emailOpenEvents: JourneyEvent[] = [];
+    if (leadEmail && (eventFilter === 'all' || eventFilter === 'email_opened')) {
+      const { data: opens } = await supabase
+        .from('email_opens')
+        .select('id, campaign_id, recipient_email, opened_at')
+        .eq('recipient_email', leadEmail)
+        .order('opened_at', { ascending: false })
+        .limit(20);
+
+      if (opens && opens.length > 0) {
+        // Fetch campaign names for context
+        const campaignIds = [...new Set(opens.map(o => o.campaign_id))];
+        const { data: campaigns } = await supabase
+          .from('email_campaigns')
+          .select('id, name, subject')
+          .in('id', campaignIds);
+        const campMap = new Map(campaigns?.map(c => [c.id, c]) || []);
+
+        emailOpenEvents = opens.map(o => {
+          const camp = campMap.get(o.campaign_id);
+          return {
+            id: o.id,
+            event_type: 'email_opened',
+            page_path: null,
+            created_at: o.opened_at,
+            visitor_id: visitorId || '',
+            user_id: null,
+            utm_source: 'email',
+            utm_medium: 'campaign',
+            utm_campaign: camp?.name || null,
+            event_data: { campaign_subject: camp?.subject || null },
+          };
+        });
+      }
+    }
+
+    // Merge and sort all events
+    const allEvents = [...rawEvents, ...emailOpenEvents].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
 
     // Resolve course_id to course_title where missing
     const courseIds = new Set<string>();
-    rawEvents.forEach(e => {
+    allEvents.forEach(e => {
       const ed = e.event_data as Record<string, unknown> | null;
       if (ed?.course_id && !ed.course_title) courseIds.add(String(ed.course_id));
     });
@@ -128,7 +172,7 @@ export default function CustomerJourneyTimeline({
       courses?.forEach(c => coursesMap.set(c.id, c.title));
     }
 
-    const enrichedEvents = rawEvents.map(e => {
+    const enrichedEvents = allEvents.map(e => {
       const ed = e.event_data as Record<string, unknown> | null;
       if (ed?.course_id && !ed.course_title && coursesMap.has(String(ed.course_id))) {
         return { ...e, event_data: { ...ed, course_title: coursesMap.get(String(ed.course_id)) } };
