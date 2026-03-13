@@ -106,7 +106,7 @@ export default function FormDetail() {
 
   const handleSave = async () => {
     if (!formId || !formName || !formSlug) {
-      toast.error('Preencha nome e slug');
+      toast.error('Preencha nome e identificador');
       return;
     }
     if (formRedirect && !formRedirect.startsWith('https://')) {
