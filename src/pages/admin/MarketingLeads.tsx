@@ -32,9 +32,13 @@ type Lead = {
   tags: string[];
   created_at: string;
   form_id: string | null;
+  visitor_id: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_source_last: string | null;
+  utm_medium_last: string | null;
+  utm_campaign_last: string | null;
 };
 
 const statusMap = leadStatusMap;
@@ -356,7 +360,7 @@ export default function MarketingLeads() {
                     </TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Origem</TableHead>
+                    <TableHead>Origem de Tráfego</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
@@ -379,12 +383,7 @@ export default function MarketingLeads() {
                       <TableCell className="font-medium">{lead.name || '—'}</TableCell>
                       <TableCell>{lead.email}</TableCell>
                       <TableCell>
-                        <LeadOriginBadge
-                          source={lead.source}
-                          utmSource={lead.utm_source}
-                          utmMedium={lead.utm_medium}
-                          utmCampaign={lead.utm_campaign}
-                        />
+                        <LeadOriginBadge utmSource={lead.utm_source} />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">

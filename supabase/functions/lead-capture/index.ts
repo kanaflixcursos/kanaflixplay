@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // GET — return form config (fields only, no sensitive data)
+    // GET — return form config
     if (req.method === "GET") {
       const fields = form.fields as Array<{ name: string; label: string; type: string; required: boolean; options?: string[] }>;
       return new Response(
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
     // POST — capture lead
     const body = await req.json();
-    const { email } = body;
+    const { email, visitor_id, utm_first, utm_last } = body;
 
     if (!email) {
       return new Response(
@@ -67,7 +67,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return new Response(
@@ -77,7 +76,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate required fields
-    const fields = form.fields as Array<{ name: string; required: boolean }>;
+    const fields = form.fields as Array<{ name: string; required: boolean; type: string }>;
     for (const field of fields) {
       if (field.required && !body[field.name]) {
         return new Response(
@@ -87,14 +86,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Sanitize inputs
     const sanitize = (val: unknown) =>
       typeof val === "string" ? val.trim().slice(0, 500) : val;
 
-    // Map fields by type to extract name, phone, and custom data
-    const nameField = fields.find((f: { type: string }) => f.name === 'name');
-    const phoneField = fields.find((f: { type: string }) => f.type === 'phone');
-    const standardFields = new Set(['email', nameField?.name, phoneField?.name].filter(Boolean));
+    // Extract standard vs custom fields
+    const nameField = fields.find((f) => f.name === 'name');
+    const phoneField = fields.find((f) => f.type === 'phone');
+    const standardFields = new Set(['email', 'visitor_id', 'utm_first', 'utm_last', nameField?.name, phoneField?.name].filter(Boolean));
     const customData: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(body)) {
       if (!standardFields.has(k)) {
@@ -102,13 +100,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Parse UTM objects from frontend
+    const firstTouch = utm_first || {};
+    const lastTouch = utm_last || {};
+
     const { error: insertError } = await supabase.from("leads").insert({
       form_id: form.id,
       name: sanitize(body.name) as string || null,
       email: (sanitize(email) as string).toLowerCase(),
       phone: phoneField ? (sanitize(body[phoneField.name]) as string || null) : null,
       source: formSlug,
+      visitor_id: visitor_id || null,
       custom_data: Object.keys(customData).length > 0 ? customData : null,
+      // First-touch UTMs
+      utm_source: firstTouch.utm_source || null,
+      utm_medium: firstTouch.utm_medium || null,
+      utm_campaign: firstTouch.utm_campaign || null,
+      utm_content: firstTouch.utm_content || null,
+      // Last-touch UTMs
+      utm_source_last: lastTouch.utm_source || null,
+      utm_medium_last: lastTouch.utm_medium || null,
+      utm_campaign_last: lastTouch.utm_campaign || null,
     });
 
     if (insertError) {
@@ -117,6 +129,14 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Failed to save lead" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Link visitor events to this lead's visitor_id
+    if (visitor_id) {
+      await supabase
+        .from("user_events")
+        .update({ user_id: null }) // We don't have a user_id for leads, but visitor_id is already there
+        .eq("visitor_id", visitor_id);
     }
 
     const response: Record<string, unknown> = { success: true };

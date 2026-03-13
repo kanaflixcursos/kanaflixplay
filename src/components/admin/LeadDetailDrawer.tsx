@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Phone, Calendar, Tag, Globe, Megaphone, Plus, X } from 'lucide-react';
+import { Mail, Phone, Calendar, Plus, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { leadStatusMap } from '@/lib/lead-constants';
 import LeadOriginBadge from './LeadOriginBadge';
+import CustomerJourneyTimeline from './CustomerJourneyTimeline';
 import { useState } from 'react';
 
-interface Lead {
+export interface Lead {
   id: string;
   name: string | null;
   email: string;
@@ -21,9 +22,13 @@ interface Lead {
   tags: string[];
   created_at: string;
   form_id: string | null;
+  visitor_id: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_source_last: string | null;
+  utm_medium_last: string | null;
+  utm_campaign_last: string | null;
 }
 
 interface LeadDetailDrawerProps {
@@ -48,16 +53,16 @@ export default function LeadDetailDrawer({ lead, open, onOpenChange, onStatusCha
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader className="pb-4">
           <SheetTitle className="text-lg">{lead.name || 'Lead sem nome'}</SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Contact */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contato</h3>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="truncate">{lead.email}</span>
@@ -78,7 +83,7 @@ export default function LeadDetailDrawer({ lead, open, onOpenChange, onStatusCha
           <Separator />
 
           {/* Status */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</h3>
             <Select value={lead.status} onValueChange={(v) => onStatusChange(lead.id, v)}>
               <SelectTrigger className="w-full h-9">
@@ -94,39 +99,32 @@ export default function LeadDetailDrawer({ lead, open, onOpenChange, onStatusCha
 
           <Separator />
 
-          {/* Origin & UTM */}
+          {/* Attribution */}
           <div className="space-y-3">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Origem & Atribuição</h3>
-            <LeadOriginBadge
-              source={lead.source}
-              utmSource={lead.utm_source}
-              utmMedium={lead.utm_medium}
-              utmCampaign={lead.utm_campaign}
-            />
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Atribuição de Tráfego</h3>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">Fonte (source)</span>
-                <p className="font-medium">{lead.source || '—'}</p>
+                <span className="text-[10px] text-muted-foreground uppercase">Primeiro Clique</span>
+                <LeadOriginBadge utmSource={lead.utm_source} />
+                {lead.utm_medium && <p className="text-xs text-muted-foreground">{lead.utm_medium}</p>}
+                {lead.utm_campaign && <p className="text-xs text-muted-foreground truncate">{lead.utm_campaign}</p>}
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">utm_source</span>
-                <p className="font-medium">{lead.utm_source || '—'}</p>
+                <span className="text-[10px] text-muted-foreground uppercase">Último Clique</span>
+                <LeadOriginBadge utmSource={lead.utm_source_last} />
+                {lead.utm_medium_last && <p className="text-xs text-muted-foreground">{lead.utm_medium_last}</p>}
+                {lead.utm_campaign_last && <p className="text-xs text-muted-foreground truncate">{lead.utm_campaign_last}</p>}
               </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">utm_medium</span>
-                <p className="font-medium">{lead.utm_medium || '—'}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">utm_campaign</span>
-                <p className="font-medium">{lead.utm_campaign || '—'}</p>
-              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Formulário: <span className="font-medium text-foreground">{lead.source}</span>
             </div>
           </div>
 
           <Separator />
 
           {/* Tags */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tags</h3>
             <div className="flex flex-wrap gap-1.5">
               {(lead.tags || []).length === 0 && (
@@ -154,6 +152,18 @@ export default function LeadDetailDrawer({ lead, open, onOpenChange, onStatusCha
               </Button>
             </div>
           </div>
+
+          <Separator />
+
+          {/* Journey Timeline */}
+          {lead.visitor_id && (
+            <CustomerJourneyTimeline
+              visitorId={lead.visitor_id}
+              title="Jornada do Lead"
+              defaultVisible={10}
+              limit={30}
+            />
+          )}
         </div>
       </SheetContent>
     </Sheet>

@@ -12,12 +12,10 @@ import { translateError } from '@/lib/translate-error';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
-import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { motion } from 'framer-motion';
 import PhoneInput from '@/components/PhoneInput';
 
 export default function Login() {
-  useTrackVisit('/login');
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   

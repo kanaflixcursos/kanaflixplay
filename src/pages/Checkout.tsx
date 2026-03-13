@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import pagarmeLogo from '@/assets/pagarme-logo.svg';
-import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { trackEvent } from '@/hooks/useTrackEvent';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,7 +40,6 @@ interface CourseModule {
 }
 
 export default function Checkout() {
-  useTrackVisit('/checkout');
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();

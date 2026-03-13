@@ -40,6 +40,7 @@ interface JourneyEvent {
 }
 
 const eventConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; color: string; bg: string }> = {
+  lead_captured: { icon: UserPlus, label: 'Lead capturado', color: 'text-chart-3', bg: 'bg-chart-3/15' },
   signup: { icon: UserPlus, label: 'Cadastro', color: 'text-chart-3', bg: 'bg-chart-3/15' },
   checkout_started: { icon: ShoppingCart, label: 'Checkout iniciado', color: 'text-warning', bg: 'bg-warning/15' },
   checkout_completed: { icon: CheckCircle, label: 'Compra concluída', color: 'text-success', bg: 'bg-success/15' },
@@ -49,6 +50,7 @@ const eventConfig: Record<string, { icon: React.ComponentType<{ className?: stri
 
 interface CustomerJourneyTimelineProps {
   userId?: string;
+  visitorId?: string;
   showFilters?: boolean;
   limit?: number;
   title?: string;
@@ -57,6 +59,7 @@ interface CustomerJourneyTimelineProps {
 
 export default function CustomerJourneyTimeline({
   userId,
+  visitorId,
   showFilters = false,
   limit = 50,
   title = 'Jornada do Cliente',
@@ -71,7 +74,7 @@ export default function CustomerJourneyTimeline({
 
   useEffect(() => {
     fetchEvents();
-  }, [userId, eventFilter, utmFilter]);
+  }, [userId, visitorId, eventFilter, utmFilter]);
 
   useEffect(() => {
     if (showFilters) fetchUtmSources();
@@ -97,6 +100,7 @@ export default function CustomerJourneyTimeline({
       .limit(limit);
 
     if (userId) query = query.eq('user_id', userId);
+    if (visitorId && !userId) query = query.eq('visitor_id', visitorId);
     if (eventFilter !== 'all') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
