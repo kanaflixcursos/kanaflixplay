@@ -345,9 +345,10 @@ Deno.serve(async (req) => {
           .replace(/<!-- BLOCKS:[\s\S]*? -->/g, '')
           .replace(/\{\{name\}\}/g, campaignData.recipientName || '');
         
-        // Append UTM params to all href links in CTA buttons if campaign has a tag
-        if (campaignData.campaignTag) {
-          const utmParams = `utm_source=email&utm_medium=campaign&utm_campaign=${encodeURIComponent(campaignData.campaignTag)}`;
+        // Always append UTM params to all href links — use tag as campaign name, fallback to campaign id
+        {
+          const campaignSlug = campaignData.campaignTag || campaignData.campaignId || 'email';
+          const utmParams = `utm_source=email&utm_medium=campaign&utm_campaign=${encodeURIComponent(campaignSlug)}`;
           campaignContent = campaignContent.replace(
             /href="(https?:\/\/[^"]+)"/g,
             (_match: string, url: string) => {
