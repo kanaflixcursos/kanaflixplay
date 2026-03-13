@@ -124,7 +124,7 @@ export default function FormDetail() {
     }).eq('id', formId);
     setSaving(false);
     if (error) {
-      toast.error(error.message.includes('duplicate') ? 'Slug já existe' : error.message);
+      toast.error(error.message.includes('duplicate') ? 'Identificador já existe' : error.message);
       return;
     }
     toast.success('Formulário salvo!');
