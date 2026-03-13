@@ -180,11 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Phone and birth_date are now handled by the handle_new_user DB trigger
     // which extracts them from raw_user_meta_data, so no need to update profile here
 
-    // Clear UTMs after signup since they're now in user metadata
-    if (!error && data?.user) {
-      if (utm.utm_source) clearStoredUtm();
-      // Signup no longer tracked as separate event — lead_captured handles attribution
-    }
+    // Signup no longer tracked as separate event — lead_captured handles attribution
 
     return { error };
   };
