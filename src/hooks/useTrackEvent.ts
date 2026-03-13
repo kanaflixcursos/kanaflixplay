@@ -97,6 +97,8 @@ export async function trackEvent(
     if (!error && scope) {
       markTracked(eventType, scope);
     }
+  } catch (error) {
+    console.error('trackEvent error:', error);
   } finally {
     if (scope) {
       inFlightEventKeys.delete(dedupKey(eventType, scope));
