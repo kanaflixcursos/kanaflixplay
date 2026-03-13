@@ -32,9 +32,13 @@ type Lead = {
   tags: string[];
   created_at: string;
   form_id: string | null;
+  visitor_id: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
+  utm_source_last: string | null;
+  utm_medium_last: string | null;
+  utm_campaign_last: string | null;
 };
 
 const statusMap = leadStatusMap;
