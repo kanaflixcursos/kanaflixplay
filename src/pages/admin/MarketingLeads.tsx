@@ -99,13 +99,13 @@ export default function MarketingLeads() {
   }, [search, statusFilter, tagFilter, sourceFilter]);
 
   const fetchStats = useCallback(async () => {
-    const [{ count: total }, { count: newCount }, { count: converted }] = await Promise.all([
+    const [{ count: total }, { count: signedUp }, { count: converted }] = await Promise.all([
       supabase.from('leads').select('*', { count: 'exact', head: true }),
-      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).in('status', ['qualified', 'opportunity', 'converted']),
       supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'converted'),
     ]);
     setTotalLeads(total || 0);
-    setNewLeads(newCount || 0);
+    setSignedUpLeads(signedUp || 0);
     setConvertedLeads(converted || 0);
   }, []);
 
