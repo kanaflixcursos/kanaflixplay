@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getStoredUtm, clearStoredUtm } from '@/lib/utm';
-import { trackEvent } from '@/hooks/useTrackEvent';
+import { getStoredUtm } from '@/lib/utm';
+import { getVisitorId, linkVisitorToUser } from '@/hooks/useTrackEvent';
 
 type UserRole = 'admin' | 'student' | null;
 
