@@ -92,10 +92,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => checkProfileComplete(session.user.id), 0);
           setTimeout(() => updateLastSeen(session.user.id), 0);
           
-          // Handle redirect after email confirmation
+          // Link anonymous journey events to this authenticated user
           if (event === 'SIGNED_IN') {
-            // Only track login for password-based sign-ins, not initial loads
-            // Login tracked via auth state change (no longer a tracked event type)
+            const visitorId = getVisitorId();
+            setTimeout(() => linkVisitorToUser(visitorId, session.user.id), 0);
+
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
               localStorage.removeItem('kanaflix_redirect_after_confirm');
