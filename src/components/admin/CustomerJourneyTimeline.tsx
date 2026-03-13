@@ -282,6 +282,12 @@ export default function CustomerJourneyTimeline({
                                 <span className="truncate max-w-[200px]">{String(eventData.course_title)}</span>
                               </>
                             )}
+                            {eventData?.campaign_subject && (
+                              <>
+                                <span>•</span>
+                                <span className="truncate max-w-[200px]">{String(eventData.campaign_subject)}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
