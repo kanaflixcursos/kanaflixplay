@@ -184,7 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear UTMs after signup since they're now in user metadata
     if (!error && data?.user) {
       if (utm.utm_source) clearStoredUtm();
-      trackEvent('signup', {}, undefined, data.user.id);
+      // Signup no longer tracked as separate event — lead_captured handles attribution
     }
 
     return { error };

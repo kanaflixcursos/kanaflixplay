@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import pagarmeLogo from '@/assets/pagarme-logo.svg';
-import { useTrackVisit } from '@/hooks/useTrackVisit';
 import { trackEvent } from '@/hooks/useTrackEvent';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';

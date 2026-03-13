@@ -383,12 +383,7 @@ export default function MarketingLeads() {
                       <TableCell className="font-medium">{lead.name || '—'}</TableCell>
                       <TableCell>{lead.email}</TableCell>
                       <TableCell>
-                        <LeadOriginBadge
-                          source={lead.source}
-                          utmSource={lead.utm_source}
-                          utmMedium={lead.utm_medium}
-                          utmCampaign={lead.utm_campaign}
-                        />
+                        <LeadOriginBadge utmSource={lead.utm_source} />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">
