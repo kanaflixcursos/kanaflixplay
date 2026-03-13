@@ -102,7 +102,33 @@ export default function CustomerJourneyTimeline({
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
     const { data } = await query;
-    setEvents((data as JourneyEvent[]) || []);
+    const rawEvents = (data as JourneyEvent[]) || [];
+
+    // Resolve course_id to course_title where missing
+    const courseIds = new Set<string>();
+    rawEvents.forEach(e => {
+      const ed = e.event_data as Record<string, unknown> | null;
+      if (ed?.course_id && !ed.course_title) courseIds.add(String(ed.course_id));
+    });
+
+    let coursesMap = new Map<string, string>();
+    if (courseIds.size > 0) {
+      const { data: courses } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', [...courseIds]);
+      courses?.forEach(c => coursesMap.set(c.id, c.title));
+    }
+
+    const enrichedEvents = rawEvents.map(e => {
+      const ed = e.event_data as Record<string, unknown> | null;
+      if (ed?.course_id && !ed.course_title && coursesMap.has(String(ed.course_id))) {
+        return { ...e, event_data: { ...ed, course_title: coursesMap.get(String(ed.course_id)) } };
+      }
+      return e;
+    });
+
+    setEvents(enrichedEvents);
     setLoading(false);
   };
 
