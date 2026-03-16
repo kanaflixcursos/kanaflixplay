@@ -161,6 +161,13 @@ export function DesignProvider({ children }: { children: ReactNode }) {
 
 export function useDesign() {
   const ctx = useContext(DesignContext);
-  if (!ctx) throw new Error('useDesign must be used within DesignProvider');
+  if (!ctx) {
+    // Return safe defaults when used outside provider (e.g. login page)
+    return {
+      settings: DEFAULT_SETTINGS,
+      loading: false,
+      updateSettings: async () => {},
+    } as DesignContextType;
+  }
   return ctx;
 }
