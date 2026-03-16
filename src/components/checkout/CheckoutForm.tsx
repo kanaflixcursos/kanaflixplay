@@ -234,43 +234,15 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   }, [couponDiscountedPrice, paymentMethod]);
 
 
-  // Fee calculation: only 7-12x installments are passed to customer (4.07%)
-  const calculateProgressiveTotal = (basePrice: number, numInstallments: number): number => {
-    if (numInstallments <= 6) return basePrice; // sem juros
-    // 7-12x: 4.07% fee passed to customer
-    return Math.round(basePrice * (1 + 4.07 / 100));
-  };
+  // ─── Installment options using pricingCalculator ─────────────────
 
-  // Calculate available installment options based on course price and config
-  const availableInstallments = useMemo(() => {
-    const creditCardConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
-    if (!creditCardConfig?.installments) {
-      return [{ number: 1, label: 'À vista', totalAmount: calculateProgressiveTotal(discountedPrice, 1), installmentAmount: calculateProgressiveTotal(discountedPrice, 1) }];
-    }
+  const installmentOptions = useMemo(() => {
+    return calculateInstallments(couponDiscountedPrice);
+  }, [couponDiscountedPrice]);
 
-    const { options, min_amount_per_installment } = creditCardConfig.installments;
-    
-    return options
-      .filter(opt => {
-        const baseInstallmentAmount = discountedPrice / opt.number;
-        return baseInstallmentAmount >= min_amount_per_installment;
-      })
-      .map(opt => {
-        const totalAmount = calculateProgressiveTotal(discountedPrice, opt.number);
-        const installmentAmount = Math.ceil(totalAmount / opt.number);
-        
-        return {
-          ...opt,
-          totalAmount,
-          installmentAmount
-        };
-      });
-  }, [discountedPrice, paymentConfig]);
-
-  // Get the selected installment details
   const selectedInstallment = useMemo(() => {
-    return availableInstallments.find(opt => opt.number === installments) || availableInstallments[0];
-  }, [availableInstallments, installments]);
+    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+  }, [installmentOptions, installments]);
 
   // Reset installments when switching payment methods
   useEffect(() => {
