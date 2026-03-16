@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   ChartContainer,
   ChartTooltip,
@@ -9,9 +8,7 @@ import {
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell } from 'recharts';
 import { CreditCard, Loader2 } from 'lucide-react';
-import { startOfDay, subDays, subMonths, subYears } from 'date-fns';
-
-type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
+import type { DashboardDateRange } from '@/pages/admin/Dashboard';
 
 interface PaymentMethodData {
   method: string;
@@ -36,42 +33,28 @@ const chartConfig = {
   debit_card: { label: 'Débito', color: 'hsl(220, 60%, 55%)' },
 } satisfies ChartConfig;
 
-function getStartDate(period: Period): Date | null {
-  const now = new Date();
-  switch (period) {
-    case '1d': return startOfDay(now);
-    case '3d': return subDays(now, 3);
-    case '1w': return subDays(now, 7);
-    case '1m': return subMonths(now, 1);
-    case '6m': return subMonths(now, 6);
-    case '1y': return subYears(now, 1);
-    case 'all': return null;
-  }
-}
-
 interface Props {
-  period: Period;
+  dateRange: DashboardDateRange | null;
 }
 
-export default function DashboardPaymentMethodsChart({ period }: Props) {
+export default function DashboardPaymentMethodsChart({ dateRange }: Props) {
   const [data, setData] = useState<PaymentMethodData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
-  }, [period]);
+  }, [dateRange]);
 
   const fetchData = async () => {
     setLoading(true);
-    const startDate = getStartDate(period);
 
     let query = supabase
       .from('orders')
       .select('payment_method, amount')
       .eq('status', 'paid');
 
-    if (startDate) {
-      query = query.gte('paid_at', startDate.toISOString());
+    if (dateRange) {
+      query = query.gte('paid_at', dateRange.from).lte('paid_at', dateRange.to);
     }
 
     const { data: orders } = await query;
@@ -173,7 +156,6 @@ export default function DashboardPaymentMethodsChart({ period }: Props) {
               </BarChart>
             </ChartContainer>
 
-            {/* Legend summary */}
             <div className="grid grid-cols-2 gap-2">
               {data.filter(d => d.count > 0).map((item) => {
                 const pct = totalSales > 0 ? Math.round((item.count / totalSales) * 100) : 0;

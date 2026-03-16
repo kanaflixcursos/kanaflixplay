@@ -3,10 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign } from 'lucide-react';
-import { subDays, subMonths, subYears, startOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
-
-type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
+import type { DashboardDateRange } from '@/pages/admin/Dashboard';
 
 function StatCardSkeleton() {
   return (
@@ -18,30 +16,17 @@ function StatCardSkeleton() {
 }
 
 interface Props {
-  period: Period;
+  dateRange: DashboardDateRange | null;
 }
 
-export default function DashboardRevenueCard({ period }: Props) {
+export default function DashboardRevenueCard({ dateRange }: Props) {
   const [grossRevenue, setGrossRevenue] = useState(0);
   const [netRevenue, setNetRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRevenue();
-  }, [period]);
-
-  const getStartDate = () => {
-    const now = new Date();
-    switch (period) {
-      case '1d': return startOfDay(now);
-      case '3d': return subDays(now, 3);
-      case '1w': return subDays(now, 7);
-      case '1m': return subMonths(now, 1);
-      case '6m': return subMonths(now, 6);
-      case '1y': return subYears(now, 1);
-      case 'all': return null;
-    }
-  };
+  }, [dateRange]);
 
   const calcNet = (amount: number, pm: string | null) => {
     const gateway = 35;
@@ -57,9 +42,10 @@ export default function DashboardRevenueCard({ period }: Props) {
 
   const fetchRevenue = async () => {
     setLoading(true);
-    const startDate = getStartDate();
     let query = supabase.from('orders').select('amount, payment_method').eq('status', 'paid');
-    if (startDate) query = query.gte('paid_at', startDate.toISOString());
+    if (dateRange) {
+      query = query.gte('paid_at', dateRange.from).lte('paid_at', dateRange.to);
+    }
     const { data } = await query;
 
     let gross = 0;
