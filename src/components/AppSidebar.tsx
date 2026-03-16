@@ -29,11 +29,13 @@ import {
   ShoppingBag,
   Star,
   Megaphone,
+  Trophy,
 } from 'lucide-react';
 
 const studentMenuItems = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Cursos', url: '/courses', icon: GraduationCap },
+  { title: 'Meus Pontos', url: '/points', icon: Trophy },
   { title: 'Compras', url: '/purchases', icon: ShoppingBag },
   { title: 'Explorar', url: '/catalog', icon: Compass },
 ];
