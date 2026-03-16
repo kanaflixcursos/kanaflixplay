@@ -26,8 +26,8 @@ const tools = [
     title: 'Campanhas de Email',
     description: 'Envie emails em massa para seus leads e alunos',
     icon: Mail,
-    color: 'text-chart-2',
-    bg: 'bg-chart-2/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
     url: '/admin/marketing/email',
   },
   {
