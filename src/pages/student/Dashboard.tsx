@@ -131,10 +131,13 @@ export default function StudentDashboard() {
     const firstName = (user?.user_metadata?.full_name || 'Usuário').split(' ')[0];
     return (
       <div className="space-y-8">
-        {/* Hero welcome — full-width background with content constrained */}
-        <div
-          className="relative -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8"
-          style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
+        {/* Hero welcome — full-width banner, not a card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8"
+          style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
         >
           {/* Decorative elements */}
           <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
@@ -143,13 +146,8 @@ export default function StudentDashboard() {
           <div className="absolute bottom-12 left-[30%] h-3 w-3 rounded-full bg-white/20" />
           <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
 
-          {/* Constrained content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-6 p-6 sm:p-10 min-h-[340px] sm:min-h-[380px]"
-          >
+          {/* Content + Illustration side by side */}
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
             {/* Text content */}
             <div className="max-w-lg flex-1">
               <motion.div
@@ -159,7 +157,7 @@ export default function StudentDashboard() {
                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                Apresentamos o Kanaflix Play
+                Bem-vindo à plataforma
               </motion.div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight text-white">
@@ -206,27 +204,21 @@ export default function StudentDashboard() {
               </motion.div>
             </div>
 
-            {/* Photo with fade on both sides */}
+            {/* Illustration */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="hidden lg:block relative flex-shrink-0 w-[340px] xl:w-[420px] h-[300px] xl:h-[340px] rounded-2xl overflow-hidden"
+              className="hidden md:block flex-shrink-0"
             >
               <img
                 src={welcomeIllustration}
-                alt="Pessoa estudando online"
-                className="w-full h-full object-cover"
+                alt="Pessoa estudando em um ambiente acolhedor"
+                className="w-64 lg:w-80 xl:w-96 drop-shadow-2xl"
               />
-              {/* Fade left */}
-              <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#125C52] to-transparent" />
-              {/* Fade right */}
-              <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#1a7a6d] to-transparent" />
-              {/* Fade bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#125C52]/80 to-transparent" />
             </motion.div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* Available courses */}
         <motion.div
