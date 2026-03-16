@@ -229,6 +229,8 @@ export default function AvailableCoursesSection() {
             </Link>
           ))}
         </div>
+          <div className="absolute right-0 top-0 bottom-2 w-16 pointer-events-none bg-gradient-to-l from-background to-transparent z-10" />
+        </div>
       )}
     </div>
   );
