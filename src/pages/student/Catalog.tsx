@@ -235,6 +235,13 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
                 </p>
               )}
 
+              {course.points_reward > 0 && (
+                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <Star className="h-3 w-3 fill-current" />
+                  <span className="text-xs font-semibold">+{course.points_reward} pts</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-border mt-auto">
                 <div>
                   <span className="text-xs uppercase tracking-wider text-muted-foreground">Preço</span>

@@ -46,7 +46,7 @@ export async function fetchCatalogCourses(userId: string): Promise<CatalogCourse
   const [coursesRes, enrollmentsRes] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, title, description, thumbnail_url, price, category_id')
+      .select('id, title, description, thumbnail_url, price, category_id, points_reward')
       .eq('is_published', true),
     supabase
       .from('course_enrollments')
