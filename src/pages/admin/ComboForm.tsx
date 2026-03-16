@@ -40,7 +40,7 @@ export default function ComboForm() {
       setTitle(combo.title);
       setDescription(combo.description || '');
       setThumbnailUrl(combo.thumbnail_url || '');
-      setPrice(combo.price);
+      setPriceStr(combo.price ? String(combo.price) : '');
       setMaxInstallments(combo.max_installments);
       setIsActive(combo.is_active);
       setSelectedCourseIds(combo.courses.map(c => c.course_id));
