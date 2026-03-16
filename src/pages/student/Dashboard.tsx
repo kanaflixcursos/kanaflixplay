@@ -141,8 +141,8 @@ export default function StudentDashboard() {
             background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)',
             marginLeft: 'calc(-50vw + 50%)',
             marginRight: 'calc(-50vw + 50%)',
-            marginTop: '-1rem',
-            paddingTop: '1rem',
+            marginTop: 'calc(-1 * var(--main-pt, 1rem))',
+            paddingTop: 'var(--main-pt, 1rem)',
             paddingLeft: 'calc(50vw - 50%)',
             paddingRight: 'calc(50vw - 50%)',
           }}
