@@ -31,6 +31,7 @@ const TIPS = [
   { icon: ShoppingCart, label: 'Adquirir um curso', points: '50–180 pts', description: 'Cada curso concede uma quantidade de pontos definida — quanto maior o investimento, maior a recompensa.', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100/60 dark:bg-purple-900/30' },
   { icon: MessageCircle, label: 'Publicar um comentário', points: '+10 pts', description: 'Comente nas aulas para ajudar outros alunos e ganhar pontos.', color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-100/60 dark:bg-teal-900/30' },
   { icon: LogIn, label: 'Login diário', points: '+5 pts', description: 'Acesse a plataforma todos os dias para acumular pontos.', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100/60 dark:bg-amber-900/30' },
+  { icon: Sparkles, label: 'Em breve: recompensas!', points: '🎁', description: 'Sua pontuação poderá ser usada para ganhar descontos exclusivos, conteúdos extras e recompensas especiais.', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100/60 dark:bg-rose-900/30' },
 ];
 
 const PODIUM_STYLES = [
