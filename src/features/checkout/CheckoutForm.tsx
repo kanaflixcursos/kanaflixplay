@@ -29,6 +29,7 @@ interface Course {
   title: string;
   price: number;
   thumbnail_url?: string | null;
+  max_installments?: number;
 }
 
 interface CheckoutFormProps {
