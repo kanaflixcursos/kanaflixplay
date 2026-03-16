@@ -9,6 +9,7 @@ export interface CatalogCourse {
   category_id: string | null;
   total_duration: number;
   is_enrolled: boolean;
+  points_reward: number;
 }
 
 export interface AdminCourse {
