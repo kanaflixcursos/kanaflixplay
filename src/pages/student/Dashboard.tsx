@@ -279,6 +279,16 @@ export default function StudentDashboard() {
         {!loading && <ContinueWatchingCard />}
       </div>
 
+      {/* Level Badge Card */}
+      {!loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.05 }}>
+          <StudentLevelBadge points={stats.totalPoints} />
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

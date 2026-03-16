@@ -145,7 +145,7 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
       toast.error('Erro ao enviar resposta');
       console.error(error);
     } else {
-      toast.success('Resposta enviada!');
+      toast.success('Resposta enviada! +10 pontos ⭐');
       setReplyContent('');
       setReplyingTo(null);
       fetchComments();
