@@ -19,7 +19,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             <SidebarTrigger className="h-10 w-10 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-md hover:bg-card" />
           </div>
 
-          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden overflow-y-auto bg-muted/30">
+          <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden overflow-y-auto bg-muted/30" style={{ '--main-pt': '1rem' } as React.CSSProperties}>
             <div className="max-w-7xl mx-auto w-full">
               {children}
             </div>
