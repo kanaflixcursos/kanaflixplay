@@ -158,6 +158,7 @@ export default function AvailableCoursesSection() {
           ))}
         </div>
       ) : (
+        <div className="relative">
         <div
           ref={scrollRef}
           onScroll={updateScrollButtons}
