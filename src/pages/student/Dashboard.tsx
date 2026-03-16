@@ -246,10 +246,23 @@ export default function StudentDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}>
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
-        <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
+          <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
+        </div>
+
+        {/* Inline level badge — clickable */}
+        {!loading && (
+          <div 
+            onClick={() => navigate('/points')}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <StudentLevelBadge points={stats.totalPoints} compact />
+          </div>
+        )}
       </motion.div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
