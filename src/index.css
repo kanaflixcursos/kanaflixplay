@@ -150,10 +150,22 @@
 
 /* Icon color global rule — all Lucide icons inside icon containers inherit primary */
 .icon-box {
-  @apply p-2 rounded-xl bg-primary/10;
+  @apply p-2 rounded-xl bg-primary/10 shrink-0;
 }
 .icon-box > svg {
-  @apply text-primary;
+  @apply h-4 w-4 sm:h-5 sm:w-5 text-primary;
+}
+.icon-box-sm {
+  @apply p-1.5 rounded-lg bg-primary/10 shrink-0;
+}
+.icon-box-sm > svg {
+  @apply h-3.5 w-3.5 text-primary;
+}
+.icon-box-lg {
+  @apply p-2.5 rounded-xl bg-primary/10 shrink-0;
+}
+.icon-box-lg > svg {
+  @apply h-5 w-5 text-primary;
 }
 
 /* Layout */
