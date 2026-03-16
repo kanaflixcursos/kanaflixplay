@@ -130,8 +130,8 @@ export default function DashboardRevenueChart() {
         <CardHeader className="p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+              <div className="icon-box">
+                <TrendingUp />
               </div>
               <span className="stat-card-label">Gráfico de Faturamento</span>
             </CardTitle>
