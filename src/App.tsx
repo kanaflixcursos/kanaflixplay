@@ -39,6 +39,9 @@ import AdminFormDetail from "@/pages/admin/FormDetail";
 import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
 import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
+import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
+import AdminComboForm from "@/pages/admin/ComboForm";
+import ComboCheckout from "@/pages/ComboCheckout";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
