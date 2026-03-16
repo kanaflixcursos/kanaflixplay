@@ -355,8 +355,8 @@ export default function Checkout() {
                 {/* Course Stats */}
                 <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10">
-                      <BookOpen className="h-3.5 w-3.5 text-primary" />
+                    <div className="icon-box-sm">
+                      <BookOpen />
                     </div>
                     <span>{lessonCount} aulas</span>
                   </div>
