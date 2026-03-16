@@ -295,6 +295,7 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
         body: {
           action: 'create_order',
           courseId: course.id,
+          comboId: comboId || undefined,
           paymentMethod,
           couponId: appliedCoupon?.id || undefined,
           customer: {
