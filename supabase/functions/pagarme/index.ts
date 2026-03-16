@@ -325,11 +325,17 @@ async function handleCreateOrder(
     console.log(`[Order] PIX 3% discount applied: -${pixDiscount}, final price ${finalPrice}`);
   }
 
-  // Apply installment interest for credit card (MDR pass-through to buyer)
+  // Apply installment interest for credit card (exact multipliers from Pagar.me spreadsheet)
   if (paymentMethod === 'credit_card' && parsedInstallments > 1) {
-    const mdrRate = parsedInstallments <= 6 ? 0.0379 : 0.0407;
-    const priceWithInterest = Math.round(finalPrice / (1 - mdrRate));
-    console.log(`[Order] Installment interest applied: ${parsedInstallments}x, MDR ${mdrRate * 100}%, base ${finalPrice} -> total ${priceWithInterest}`);
+    const INSTALLMENT_MULTIPLIERS: Record<number, number> = {
+      1: 1.00000, 2: 1.04496, 3: 1.05729, 4: 1.06963, 5: 1.08196, 6: 1.09429,
+      7: 1.10662, 8: 1.11895, 9: 1.13129, 10: 1.14362, 11: 1.15595, 12: 1.16828
+    };
+    const multiplier = INSTALLMENT_MULTIPLIERS[parsedInstallments] || 1;
+    const basePriceReais = finalPrice / 100;
+    const totalWithInterest = Number((basePriceReais * multiplier).toFixed(2));
+    const priceWithInterest = Math.round(totalWithInterest * 100);
+    console.log(`[Order] Installment interest applied: ${parsedInstallments}x, multiplier ${multiplier}, base ${finalPrice} -> total ${priceWithInterest}`);
     finalPrice = priceWithInterest;
   }
 
