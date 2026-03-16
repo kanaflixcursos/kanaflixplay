@@ -85,7 +85,8 @@ export default function Purchases() {
       .from('orders')
       .select(`
         *,
-        course:courses(title, thumbnail_url)
+        course:courses(title, thumbnail_url),
+        combo:combos(title, thumbnail_url)
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
