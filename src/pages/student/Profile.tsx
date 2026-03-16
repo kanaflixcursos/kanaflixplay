@@ -403,6 +403,7 @@ export default function StudentProfile() {
                     value={birthDate}
                     onChange={setBirthDate}
                     maxDate={new Date()}
+                    showMonthYearPicker
                   />
                 </div>
               </div>
