@@ -258,12 +258,6 @@ export default function StudentDashboard() {
           loading={loading} />
         
         <StatCard
-          title="Tempo de Estudo"
-          value={formatStudyTime(stats.totalWatchedSeconds)}
-          icon={Clock}
-          loading={loading} />
-        
-        <StatCard
           title="Aulas Concluídas"
           value={stats.totalLessonsCompleted}
           icon={CheckCircle}
@@ -272,6 +266,12 @@ export default function StudentDashboard() {
         <StatCard
           title="Cursos Finalizados"
           value={stats.totalCoursesCompleted}
+          icon={Trophy}
+          loading={loading} />
+        
+        <StatCard
+          title="Minha Pontuação"
+          value={formatPoints(stats.totalPoints)}
           icon={Trophy}
           loading={loading} />
         
