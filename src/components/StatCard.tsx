@@ -2,8 +2,6 @@ import { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { useId } from 'react';
 
 interface StatCardProps {
   title: string;
