@@ -131,13 +131,10 @@ export default function StudentDashboard() {
     const firstName = (user?.user_metadata?.full_name || 'Usuário').split(' ')[0];
     return (
       <div className="space-y-8">
-        {/* Hero welcome — full-width banner, not a card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 w-[100vw]"
-          style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
+        {/* Hero welcome — full-width background with content constrained */}
+        <div
+          className="relative -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8"
+          style={{ marginLeft: 'calc(-50vw + 50%)', marginRight: 'calc(-50vw + 50%)', background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
         >
           {/* Decorative elements */}
           <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
@@ -146,8 +143,13 @@ export default function StudentDashboard() {
           <div className="absolute bottom-12 left-[30%] h-3 w-3 rounded-full bg-white/20" />
           <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
 
-          {/* Content + Illustration side by side */}
-          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
+          {/* Constrained content */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            className="relative z-10 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-6 p-6 sm:p-10 min-h-[340px] sm:min-h-[380px]"
+          >
             {/* Text content */}
             <div className="max-w-lg flex-1">
               <motion.div
@@ -204,22 +206,27 @@ export default function StudentDashboard() {
               </motion.div>
             </div>
 
-            {/* Photo */}
+            {/* Photo with fade on both sides */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="hidden lg:block absolute right-0 top-0 bottom-0 w-[40%]"
+              className="hidden lg:block relative flex-shrink-0 w-[340px] xl:w-[420px] h-[300px] xl:h-[340px] rounded-2xl overflow-hidden"
             >
               <img
                 src={welcomeIllustration}
                 alt="Pessoa estudando online"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#125C52] via-[#125C52]/60 to-transparent" />
+              {/* Fade left */}
+              <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#125C52] to-transparent" />
+              {/* Fade right */}
+              <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#1a7a6d] to-transparent" />
+              {/* Fade bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#125C52]/80 to-transparent" />
             </motion.div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* Available courses */}
         <motion.div
