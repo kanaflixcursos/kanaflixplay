@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, FileText, Mail, MessageSquare, Ticket } from 'lucide-react';
+import { Users, FileText, Mail, MessageSquare, Ticket, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
 import CustomerJourneyTimeline from '@/components/admin/CustomerJourneyTimeline';
