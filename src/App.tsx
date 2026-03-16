@@ -48,6 +48,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="kanaflix-theme">
+    <DesignProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
