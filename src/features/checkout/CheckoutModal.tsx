@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -17,6 +17,7 @@ import {
   formatPriceBRL, formatDocument, formatCardNumber, cleanCardNumber,
   formatPhone, formatCep, isValidDocument,
 } from "@/utils/paymentFormatter";
+import { calculateInstallments } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
@@ -370,22 +371,24 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                     <Input id="m-cvv" type="password" value={card.cvv} onChange={(e) => setCard(c => ({ ...c, cvv: e.target.value.replace(/\D/g, '') }))} placeholder="***" maxLength={4} className="h-11 text-center bg-muted/30" />
                   </div>
                 </div>
-                {course.price >= 10000 && (
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Parcelas</Label>
-                    <RadioGroup value={installments.toString()} onValueChange={(v) => setInstallments(parseInt(v))} className="grid grid-cols-2 gap-2">
-                      {[1, 2, 3, 6, 10, 12].filter(n => course.price / n >= 500).map((n) => (
-                        <div key={n} className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${installments === n ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`} onClick={() => setInstallments(n)}>
-                          <RadioGroupItem value={n.toString()} id={`inst-${n}`} />
-                          <Label htmlFor={`inst-${n}`} className="text-xs cursor-pointer flex-1">
-                            {n}x de {formatPriceBRL(Math.ceil(course.price / n))}
-                            {n <= 6 ? ' sem juros' : ''}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                )}
+                {(() => {
+                  const installmentOptions = calculateInstallments(course.price);
+                  return installmentOptions.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Parcelas *</Label>
+                      <RadioGroup value={installments.toString()} onValueChange={(v) => setInstallments(parseInt(v))} className="grid grid-cols-2 gap-2">
+                        {installmentOptions.map((opt) => (
+                          <div key={opt.number} className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${installments === opt.number ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`} onClick={() => setInstallments(opt.number)}>
+                            <RadioGroupItem value={opt.number.toString()} id={`inst-${opt.number}`} />
+                            <Label htmlFor={`inst-${opt.number}`} className="text-xs cursor-pointer flex-1">
+                              {opt.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

@@ -325,6 +325,14 @@ async function handleCreateOrder(
     console.log(`[Order] PIX 3% discount applied: -${pixDiscount}, final price ${finalPrice}`);
   }
 
+  // Apply installment interest for credit card (MDR pass-through to buyer)
+  if (paymentMethod === 'credit_card' && parsedInstallments > 1) {
+    const mdrRate = parsedInstallments <= 6 ? 0.0379 : 0.0407;
+    const priceWithInterest = Math.round(finalPrice / (1 - mdrRate));
+    console.log(`[Order] Installment interest applied: ${parsedInstallments}x, MDR ${mdrRate * 100}%, base ${finalPrice} -> total ${priceWithInterest}`);
+    finalPrice = priceWithInterest;
+  }
+
   // If price is 0 after discount, auto-enroll without payment
   if (finalPrice <= 0) {
     const orderData = {

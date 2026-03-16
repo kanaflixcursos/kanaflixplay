@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { calculateInstallments } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
@@ -234,43 +235,15 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   }, [couponDiscountedPrice, paymentMethod]);
 
 
-  // Fee calculation: only 7-12x installments are passed to customer (4.07%)
-  const calculateProgressiveTotal = (basePrice: number, numInstallments: number): number => {
-    if (numInstallments <= 6) return basePrice; // sem juros
-    // 7-12x: 4.07% fee passed to customer
-    return Math.round(basePrice * (1 + 4.07 / 100));
-  };
+  // ─── Installment options using pricingCalculator ─────────────────
 
-  // Calculate available installment options based on course price and config
-  const availableInstallments = useMemo(() => {
-    const creditCardConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
-    if (!creditCardConfig?.installments) {
-      return [{ number: 1, label: 'À vista', totalAmount: calculateProgressiveTotal(discountedPrice, 1), installmentAmount: calculateProgressiveTotal(discountedPrice, 1) }];
-    }
+  const installmentOptions = useMemo(() => {
+    return calculateInstallments(couponDiscountedPrice);
+  }, [couponDiscountedPrice]);
 
-    const { options, min_amount_per_installment } = creditCardConfig.installments;
-    
-    return options
-      .filter(opt => {
-        const baseInstallmentAmount = discountedPrice / opt.number;
-        return baseInstallmentAmount >= min_amount_per_installment;
-      })
-      .map(opt => {
-        const totalAmount = calculateProgressiveTotal(discountedPrice, opt.number);
-        const installmentAmount = Math.ceil(totalAmount / opt.number);
-        
-        return {
-          ...opt,
-          totalAmount,
-          installmentAmount
-        };
-      });
-  }, [discountedPrice, paymentConfig]);
-
-  // Get the selected installment details
   const selectedInstallment = useMemo(() => {
-    return availableInstallments.find(opt => opt.number === installments) || availableInstallments[0];
-  }, [availableInstallments, installments]);
+    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+  }, [installmentOptions, installments]);
 
   // Reset installments when switching payment methods
   useEffect(() => {
@@ -479,7 +452,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
-    ? selectedInstallment?.totalAmount || discountedPrice
+    ? selectedInstallment?.totalAmount || couponDiscountedPrice
     : discountedPrice;
 
   if (paymentResult) {
@@ -927,9 +900,9 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               </div>
               
               {/* Installments */}
-              {availableInstallments.length >= 1 && (
+              {installmentOptions.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Parcelas</Label>
+                  <Label className="text-xs text-muted-foreground">Parcelas *</Label>
                   <Select
                     value={installments.toString()}
                     onValueChange={(v) => setInstallments(parseInt(v))}
@@ -938,10 +911,9 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       <SelectValue placeholder="Selecione as parcelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInstallments.map((opt) => (
+                      {installmentOptions.map((opt) => (
                         <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.number}x de {formatPrice(opt.installmentAmount)}
-                          {opt.number <= 6 ? ' sem juros' : ` (Total: ${formatPrice(opt.totalAmount)})`}
+                          {opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>

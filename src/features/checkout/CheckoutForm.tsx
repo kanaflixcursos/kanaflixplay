@@ -22,6 +22,7 @@ import {
   formatPriceBRL, formatDocument, formatCardNumber, cleanCardNumber,
   formatPhone, formatCep, isValidDocument,
 } from "@/utils/paymentFormatter";
+import { calculateInstallments, type InstallmentDetail } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
@@ -177,7 +178,6 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   };
 
   // ─── Display-only price hints (server is authoritative) ─────────
-  // These are purely for UI preview. The Edge Function calculates the real amount.
 
   const displayBasePrice = course.price;
 
@@ -197,17 +197,15 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   const displayFinalPrice = displayPriceAfterCoupon - displayPixDiscount;
 
-  // ─── Installment options (display only) ─────────────────────────
+  // ─── Installment options using pricingCalculator ─────────────────
 
-  const availableInstallments = useMemo(() => {
-    const ccConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
-    if (!ccConfig?.installments) {
-      return [{ number: 1, label: 'À vista' }];
-    }
-    return ccConfig.installments.options.filter(opt => {
-      return displayFinalPrice / opt.number >= ccConfig.installments!.min_amount_per_installment;
-    });
-  }, [displayFinalPrice, paymentConfig]);
+  const installmentOptions: InstallmentDetail[] = useMemo(() => {
+    return calculateInstallments(displayPriceAfterCoupon);
+  }, [displayPriceAfterCoupon]);
+
+  const selectedInstallment = useMemo(() => {
+    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+  }, [installmentOptions, installments]);
 
   useEffect(() => {
     if (paymentMethod !== 'credit_card') setInstallments(1);
@@ -444,28 +442,45 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         {/* Price Header */}
         <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 border-b">
           <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-foreground">{formatPriceBRL(displayFinalPrice)}</span>
-              {displayFinalPrice < displayBasePrice && (
-                <span className="text-lg text-muted-foreground line-through">{formatPriceBRL(displayBasePrice)}</span>
-              )}
-            </div>
-            {paymentMethod === 'pix' && displayPixDiscount > 0 && (
-              <div className="flex items-center gap-2 text-sm text-success">
-                <Zap className="h-4 w-4" />
-                <span><strong>3% de desconto</strong> no PIX</span>
-              </div>
+            {paymentMethod === 'credit_card' && selectedInstallment ? (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-foreground">
+                    {selectedInstallment.number}x de {formatPriceBRL(selectedInstallment.installmentAmount)}
+                  </span>
+                </div>
+                {!selectedInstallment.hasInterest ? (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Sem juros</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Total: {formatPriceBRL(selectedInstallment.totalAmount)} <span className="text-xs ml-1">(com juros)</span></span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-foreground">{formatPriceBRL(displayFinalPrice)}</span>
+                  {displayFinalPrice < displayBasePrice && (
+                    <span className="text-lg text-muted-foreground line-through">{formatPriceBRL(displayBasePrice)}</span>
+                  )}
+                </div>
+                {paymentMethod === 'pix' && displayPixDiscount > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <Zap className="h-4 w-4" />
+                    <span><strong>3% de desconto</strong> no PIX</span>
+                  </div>
+                )}
+              </>
             )}
             {appliedCoupon && (
               <div className="flex items-center gap-2 text-sm text-success">
                 <Tag className="h-4 w-4" />
                 <span>Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}% off` : `${formatPriceBRL(appliedCoupon.discount_value)} off`}</span>
-              </div>
-            )}
-            {paymentMethod === 'credit_card' && installments > 1 && (
-              <div className="text-sm text-muted-foreground">
-                {installments}x de {formatPriceBRL(Math.ceil(displayFinalPrice / installments))}
-                {installments <= 6 ? ' sem juros' : ''}
               </div>
             )}
           </div>
@@ -652,18 +667,17 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                 </div>
               </div>
               
-              {availableInstallments.length > 1 && (
+              {installmentOptions.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Parcelas</Label>
+                  <Label className="text-xs text-muted-foreground">Parcelas *</Label>
                   <Select value={installments.toString()} onValueChange={(v) => setInstallments(parseInt(v))}>
                     <SelectTrigger className="h-11 bg-muted/30">
                       <SelectValue placeholder="Selecione as parcelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInstallments.map((opt) => (
+                      {installmentOptions.map((opt) => (
                         <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.number}x de {formatPriceBRL(Math.ceil(displayFinalPrice / opt.number))}
-                          {opt.number <= 6 ? ' sem juros' : ''}
+                          {opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -701,7 +715,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                Pagar {formatPriceBRL(displayFinalPrice)}
+                Pagar {formatPriceBRL(paymentMethod === 'credit_card' ? (selectedInstallment?.totalAmount || displayFinalPrice) : displayFinalPrice)}
               </>
             )}
           </Button>
