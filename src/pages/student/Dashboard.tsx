@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Trophy, Star } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
@@ -25,22 +25,17 @@ interface EnrolledCourse {
 }
 
 interface StudyStats {
-  totalWatchedSeconds: number;
   totalLessonsCompleted: number;
   totalCoursesCompleted: number;
+  totalPoints: number;
 }
 
-// Helper to format seconds into readable time
-const formatStudyTime = (seconds: number): string => {
-  if (seconds < 60) return `${seconds}s`;
-
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor(seconds % 3600 / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}min`;
+// Helper to format points
+const formatPoints = (points: number): string => {
+  if (points >= 1000) {
+    return `${(points / 1000).toFixed(1).replace(/\.0$/, '')}k`;
   }
-  return `${minutes}min`;
+  return `${points}`;
 };
 
 export default function StudentDashboard() {
@@ -48,9 +43,9 @@ export default function StudentDashboard() {
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StudyStats>({
-    totalWatchedSeconds: 0,
     totalLessonsCompleted: 0,
-    totalCoursesCompleted: 0
+    totalCoursesCompleted: 0,
+    totalPoints: 0
   });
 
   useEffect(() => {
@@ -72,13 +67,17 @@ export default function StudentDashboard() {
       }
 
       // Fetch all user progress at once for efficiency
-      const { data: allProgress } = await supabase.
-      from('lesson_progress').
-      select('lesson_id, completed, completed_at, watched_seconds').
-      eq('user_id', user.id);
+      const [{ data: allProgress }, { data: profileData }] = await Promise.all([
+        supabase.from('lesson_progress')
+          .select('lesson_id, completed, completed_at, watched_seconds')
+          .eq('user_id', user.id),
+        supabase.from('profiles')
+          .select('points')
+          .eq('user_id', user.id)
+          .single()
+      ]);
 
-      // Calculate total study time
-      const totalWatchedSeconds = allProgress?.reduce((sum, p) => sum + (p.watched_seconds || 0), 0) || 0;
+      const totalPoints = profileData?.points || 0;
       const totalLessonsCompleted = allProgress?.filter((p) => p.completed).length || 0;
 
       const coursesWithProgress = await Promise.all(
@@ -112,9 +111,9 @@ export default function StudentDashboard() {
       ).length;
 
       setStats({
-        totalWatchedSeconds,
         totalLessonsCompleted,
-        totalCoursesCompleted
+        totalCoursesCompleted,
+        totalPoints
       });
 
       setEnrolledCourses(coursesWithProgress);
@@ -259,12 +258,6 @@ export default function StudentDashboard() {
           loading={loading} />
         
         <StatCard
-          title="Tempo de Estudo"
-          value={formatStudyTime(stats.totalWatchedSeconds)}
-          icon={Clock}
-          loading={loading} />
-        
-        <StatCard
           title="Aulas Concluídas"
           value={stats.totalLessonsCompleted}
           icon={CheckCircle}
@@ -274,6 +267,12 @@ export default function StudentDashboard() {
           title="Cursos Finalizados"
           value={stats.totalCoursesCompleted}
           icon={Trophy}
+          loading={loading} />
+        
+        <StatCard
+          title="Minha Pontuação"
+          value={formatPoints(stats.totalPoints)}
+          icon={Star}
           loading={loading} />
         
         {!loading && <ContinueWatchingCard />}
