@@ -478,6 +478,7 @@ export default function PointsPage() {
               </AnimatePresence>
             </div>
           )}
+          </Card>
         </motion.div>
 
         {/* Coming soon */}
