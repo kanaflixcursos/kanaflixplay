@@ -201,8 +201,8 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   // ─── Installment options using pricingCalculator ─────────────────
 
   const installmentOptions = useMemo(() => {
-    return calculateInstallments(displayPriceAfterCoupon / 100);
-  }, [displayPriceAfterCoupon]);
+    return calculateInstallments(displayPriceAfterCoupon / 100, course.max_installments ?? 12);
+  }, [displayPriceAfterCoupon, course.max_installments]);
 
   const selectedInstallment = useMemo(() => {
     return installmentOptions.find(opt => opt.installments === installments) || installmentOptions[0];

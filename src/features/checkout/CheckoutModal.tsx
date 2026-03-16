@@ -373,7 +373,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                   </div>
                 </div>
                 {(() => {
-                  const installmentOptions = calculateInstallments(course.price / 100);
+                  const installmentOptions = calculateInstallments(course.price / 100, course.max_installments ?? 12);
                   return installmentOptions.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground">Parcelas *</Label>

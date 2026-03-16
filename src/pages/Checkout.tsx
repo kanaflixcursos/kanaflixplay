@@ -32,6 +32,7 @@ interface Course {
   is_published: boolean;
   launch_date: string | null;
   points_reward: number;
+  max_installments: number;
 }
 
 interface CourseModule {

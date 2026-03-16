@@ -24,11 +24,13 @@ const INSTALLMENT_MULTIPLIERS: Record<number, number> = {
 /**
  * Calcula as opções de parcelamento repassando os juros fixos do gateway.
  * @param basePrice Valor do curso à vista
+ * @param maxInstallments Número máximo de parcelas (default: 12)
  */
-export function calculateInstallments(basePrice: number): InstallmentOption[] {
+export function calculateInstallments(basePrice: number, maxInstallments: number = 12): InstallmentOption[] {
   const options: InstallmentOption[] = [];
+  const max = Math.min(Math.max(maxInstallments, 1), 12);
 
-  for (let n = 1; n <= 12; n++) {
+  for (let n = 1; n <= max; n++) {
     const multiplier = INSTALLMENT_MULTIPLIERS[n] || 1;
     const totalValue = basePrice * multiplier;
     const installmentValue = totalValue / n;
