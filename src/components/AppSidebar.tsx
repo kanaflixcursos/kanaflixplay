@@ -29,6 +29,7 @@ import {
   ShoppingBag,
   Star,
   Megaphone,
+  Paintbrush,
 } from 'lucide-react';
 
 const studentMenuItems = [
