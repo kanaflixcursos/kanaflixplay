@@ -43,7 +43,7 @@ interface PaymentResult {
   boleto?: { url: string; barcode: string; dueDate: string };
 }
 
-interface InstallmentOption {
+interface LocalInstallmentOption {
   number: number;
   label: string;
 }
