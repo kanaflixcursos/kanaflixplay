@@ -158,6 +158,7 @@ export default function AvailableCoursesSection() {
           ))}
         </div>
       ) : (
+        <div className="relative">
         <div
           ref={scrollRef}
           onScroll={updateScrollButtons}
@@ -227,6 +228,8 @@ export default function AvailableCoursesSection() {
               </Card>
             </Link>
           ))}
+        </div>
+          <div className="absolute right-0 top-0 bottom-2 w-16 pointer-events-none bg-gradient-to-l from-background to-transparent z-10" />
         </div>
       )}
     </div>
