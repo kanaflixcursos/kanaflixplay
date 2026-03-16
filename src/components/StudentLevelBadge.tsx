@@ -6,17 +6,52 @@ interface Level {
   name: string;
   minPoints: number;
   icon: React.ElementType;
+  /** Tailwind text color for labels */
   color: string;
+  /** CSS class for the icon badge container */
+  badgeClass: string;
+  /** Background for level rows */
   bgColor: string;
   borderColor: string;
-  textColor: string;
 }
 
 const LEVELS: Level[] = [
-  { name: 'Iniciante', minPoints: 0, icon: Shield, color: 'text-slate-500', bgColor: 'bg-slate-100 dark:bg-slate-800', borderColor: 'border-slate-200 dark:border-slate-700', textColor: 'text-slate-600 dark:text-slate-400' },
-  { name: 'Aprendiz', minPoints: 200, icon: BookOpen, color: 'text-blue-500', bgColor: 'bg-blue-50 dark:bg-blue-950', borderColor: 'border-blue-200 dark:border-blue-800', textColor: 'text-blue-600 dark:text-blue-400' },
-  { name: 'Avançado', minPoints: 800, icon: Award, color: 'text-amber-500', bgColor: 'bg-amber-50 dark:bg-amber-950', borderColor: 'border-amber-200 dark:border-amber-800', textColor: 'text-amber-600 dark:text-amber-400' },
-  { name: 'Especialista', minPoints: 2000, icon: Crown, color: 'text-purple-500', bgColor: 'bg-purple-50 dark:bg-purple-950', borderColor: 'border-purple-200 dark:border-purple-800', textColor: 'text-purple-600 dark:text-purple-400' },
+  {
+    name: 'Iniciante',
+    minPoints: 0,
+    icon: Shield,
+    color: 'text-slate-500 dark:text-slate-400',
+    badgeClass: 'level-silver',
+    bgColor: 'bg-slate-50 dark:bg-slate-900/50',
+    borderColor: 'border-slate-200 dark:border-slate-700',
+  },
+  {
+    name: 'Aprendiz',
+    minPoints: 200,
+    icon: BookOpen,
+    color: 'text-teal-600 dark:text-teal-400',
+    badgeClass: 'level-teal',
+    bgColor: 'bg-teal-50 dark:bg-teal-950/50',
+    borderColor: 'border-teal-200 dark:border-teal-800',
+  },
+  {
+    name: 'Avançado',
+    minPoints: 800,
+    icon: Award,
+    color: 'text-amber-600 dark:text-amber-400',
+    badgeClass: 'level-gold',
+    bgColor: 'bg-amber-50 dark:bg-amber-950/50',
+    borderColor: 'border-amber-200 dark:border-amber-800',
+  },
+  {
+    name: 'Especialista',
+    minPoints: 2000,
+    icon: Crown,
+    color: 'text-purple-600 dark:text-purple-400',
+    badgeClass: 'level-platinum',
+    bgColor: 'bg-purple-50 dark:bg-purple-950/50',
+    borderColor: 'border-purple-200 dark:border-purple-800',
+  },
 ];
 
 export function getStudentLevel(points: number): Level {
@@ -60,7 +95,9 @@ export default function StudentLevelBadge({ points, compact = false }: StudentLe
   if (compact) {
     return (
       <div className="flex items-center gap-2.5">
-        <Icon className={cn('h-4 w-4', level.color)} />
+        <div className={cn('level-badge-icon h-7 w-7', level.badgeClass)}>
+          <Icon className="h-3.5 w-3.5 relative z-10" />
+        </div>
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn('text-xs font-semibold', level.color)}>{level.name}</span>
@@ -76,7 +113,9 @@ export default function StudentLevelBadge({ points, compact = false }: StudentLe
 
   return (
     <div className="flex items-center gap-3">
-      <Icon className={cn('h-5 w-5', level.color)} />
+      <div className={cn('level-badge-icon h-10 w-10', level.badgeClass)}>
+        <Icon className="h-5 w-5 relative z-10" />
+      </div>
       <div>
         <p className={cn('text-sm font-semibold', level.color)}>{level.name}</p>
         <p className="text-xs text-muted-foreground">{points} pontos</p>
