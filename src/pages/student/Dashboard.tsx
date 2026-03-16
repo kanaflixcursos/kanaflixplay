@@ -10,6 +10,7 @@ import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
 import { getStudentLevel, getNextLevel, getProgressToNext } from '@/components/StudentLevelBadge';
+
 import { motion } from 'framer-motion';
 import welcomeIllustration from '@/assets/welcome-illustration.png';
 
