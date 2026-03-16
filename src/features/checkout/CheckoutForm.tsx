@@ -676,8 +676,10 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {installmentOptions.map((opt) => (
-                        <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.label}
+                        <SelectItem key={opt.installments} value={opt.installments.toString()}>
+                          {opt.installments === 1
+                            ? `1x de ${formatCurrency(opt.installmentValue)} sem juros`
+                            : `${opt.installments}x de ${formatCurrency(opt.installmentValue)} (Total ${formatCurrency(opt.totalValue)})`}
                         </SelectItem>
                       ))}
                     </SelectContent>
