@@ -219,3 +219,63 @@
 .sidebar-action-btn {
   @apply w-full justify-start gap-2 h-9 px-3;
 }
+
+/* Gamification — Level badge styles */
+.level-badge-icon {
+  @apply flex items-center justify-center rounded-2xl shrink-0 relative overflow-hidden;
+}
+.level-badge-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%);
+  background-size: 300% 300%;
+  animation: badge-shimmer 3s ease-in-out infinite;
+}
+
+/* Silver */
+.level-silver { background: linear-gradient(145deg, hsl(220 15% 90%), hsl(220 10% 80%)); }
+.level-silver svg { color: hsl(220 10% 45%); filter: drop-shadow(0 1px 2px hsl(220 10% 60% / 0.4)); }
+.dark .level-silver { background: linear-gradient(145deg, hsl(220 10% 30%), hsl(220 10% 22%)); }
+.dark .level-silver svg { color: hsl(220 10% 70%); }
+
+/* Teal */
+.level-teal { background: linear-gradient(145deg, hsl(172 60% 88%), hsl(172 50% 75%)); }
+.level-teal svg { color: hsl(172 65% 30%); filter: drop-shadow(0 1px 2px hsl(172 60% 40% / 0.4)); }
+.dark .level-teal { background: linear-gradient(145deg, hsl(172 40% 22%), hsl(172 45% 16%)); }
+.dark .level-teal svg { color: hsl(172 55% 55%); }
+
+/* Gold */
+.level-gold { background: linear-gradient(145deg, hsl(45 90% 85%), hsl(38 85% 65%)); }
+.level-gold svg { color: hsl(38 80% 35%); filter: drop-shadow(0 1px 2px hsl(38 80% 45% / 0.5)); }
+.dark .level-gold { background: linear-gradient(145deg, hsl(38 60% 25%), hsl(38 50% 18%)); }
+.dark .level-gold svg { color: hsl(38 80% 60%); }
+
+/* Platinum/Gradient gray */
+.level-platinum { background: linear-gradient(145deg, hsl(260 20% 88%), hsl(220 15% 75%), hsl(280 15% 80%)); }
+.level-platinum svg { color: hsl(260 25% 40%); filter: drop-shadow(0 1px 3px hsl(260 20% 50% / 0.5)); }
+.dark .level-platinum { background: linear-gradient(145deg, hsl(260 15% 25%), hsl(220 12% 20%), hsl(280 12% 25%)); }
+.dark .level-platinum svg { color: hsl(260 25% 70%); }
+
+@keyframes badge-shimmer {
+  0%, 100% { background-position: 200% 200%; }
+  50% { background-position: 0% 0%; }
+}
+
+@keyframes points-glow {
+  0%, 100% { text-shadow: 0 0 8px hsl(172 55% 45% / 0.3); }
+  50% { text-shadow: 0 0 20px hsl(172 55% 45% / 0.6); }
+}
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.points-glow-text {
+  animation: points-glow 2.5s ease-in-out infinite;
+}
+
+.animate-float-up {
+  animation: float-up 0.5s ease-out both;
+}
