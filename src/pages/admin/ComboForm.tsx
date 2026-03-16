@@ -206,7 +206,7 @@ export default function ComboForm() {
                 <span className="text-muted-foreground">Soma dos cursos:</span>
                 <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
               </div>
-              {price > 0 && discount > 0 && (
+              {priceInCents > 0 && discount > 0 && (
                 <div className="flex justify-between mt-1">
                   <span className="text-muted-foreground">Desconto do combo:</span>
                   <span className="font-semibold text-success">{discount}% off</span>
