@@ -200,9 +200,9 @@ export default function StudentDashboard() {
                 className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/15">
                 
                 {[
-                { icon: BookOpen, label: 'Cursos exclusivos' },
-                { icon: Clock, label: 'No seu ritmo' },
-                { icon: Trophy, label: 'Certificados' }].
+                { icon: BookOpen, label: 'Glaucoma e Retina' },
+                { icon: Clock, label: 'On-Demand' },
+                { icon: Trophy, label: 'Certificados de Conclusão' }].
                 map((item, i) =>
                 <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
                     <item.icon className="h-3.5 w-3.5 text-white/50" />
