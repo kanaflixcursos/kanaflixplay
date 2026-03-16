@@ -64,7 +64,7 @@ interface PaymentConfig {
   }>;
 }
 
-export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
+export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
