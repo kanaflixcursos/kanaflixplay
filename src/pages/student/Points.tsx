@@ -174,7 +174,7 @@ export default function PointsPage() {
     <div className="relative space-y-8">
       {/* Mesh gradient background — light & dark aware */}
       <div
-        className="pointer-events-none fixed inset-0 -z-10 opacity-40 dark:opacity-20"
+        className="pointer-events-none fixed inset-0 -z-10 opacity-70 dark:opacity-20"
         style={{
           background: `
             radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 50% 85%) 0%, transparent 70%),
