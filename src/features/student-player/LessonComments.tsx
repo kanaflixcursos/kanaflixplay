@@ -121,7 +121,7 @@ export default function LessonComments({ lessonId }: LessonCommentsProps) {
       toast.error('Erro ao enviar comentário');
       console.error(error);
     } else {
-      toast.success('Comentário enviado!');
+      toast.success('Comentário enviado! +10 pontos ⭐');
       setNewComment('');
       fetchComments();
     }
