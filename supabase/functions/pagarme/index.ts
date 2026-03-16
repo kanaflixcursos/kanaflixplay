@@ -1522,13 +1522,36 @@ async function handleRequestRefund(
       await restoreCouponUsage(supabase, order.coupon_id);
     }
 
-    // Revoke enrollment
+    // Revoke enrollment and deduct course points
     if (order.course_id) {
       await supabase
         .from('course_enrollments')
         .delete()
         .eq('user_id', userId)
         .eq('course_id', order.course_id);
+
+      // Deduct points_reward from user profile
+      const { data: course } = await supabase
+        .from('courses')
+        .select('points_reward')
+        .eq('id', order.course_id)
+        .single();
+
+      if (course?.points_reward > 0) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('points')
+          .eq('user_id', userId)
+          .single();
+
+        const newPoints = Math.max(0, (profile?.points || 0) - course.points_reward);
+        await supabase
+          .from('profiles')
+          .update({ points: newPoints })
+          .eq('user_id', userId);
+
+        console.log(`[AutoRefund] Deducted ${course.points_reward} points from user ${userId}`);
+      }
     }
 
     // Notify user
