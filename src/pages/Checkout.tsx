@@ -313,7 +313,7 @@ export default function Checkout() {
                 <div className="mt-4 space-y-2">
                   <h3 className="text-sm font-medium text-foreground mb-2">Conteúdo do curso</h3>
                   {modules.map((mod) => (
-                    <Collapsible key={mod.id} defaultOpen={modules.length <= 3}>
+                    <Collapsible key={mod.id} defaultOpen={false}>
                       <CollapsibleTrigger className="flex items-center gap-2 w-full text-left p-2.5 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
                         <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                         <span className="text-sm font-medium text-foreground flex-1">{mod.title}</span>
