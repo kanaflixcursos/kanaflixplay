@@ -23,6 +23,7 @@ import { CardBrandIcon } from '@/components/CardBrandIcon';
 import CourseLessonsOrganizer, { CourseLessonsOrganizerRef } from '@/components/admin/CourseLessonsOrganizer';
 import { useCategories } from '@/hooks/queries/useCourses';
 import { type CourseFormData, initialCourseFormData, validateCourseStep } from '@/lib/validations/course';
+import { calculateInstallments } from '@/utils/pricingCalculator';
 
 interface PaymentMethodConfig {
   id: string;
