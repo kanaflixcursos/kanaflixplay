@@ -26,6 +26,7 @@ import AdminLayout from "@/components/layouts/AdminLayout";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminCourses from "@/pages/admin/Courses";
 import CourseForm from "@/pages/admin/CourseForm";
+import CourseDetail from "@/pages/admin/CourseDetail";
 import AdminStudents from "@/pages/admin/Students";
 import AdminStudentProfile from "@/pages/admin/StudentProfile";
 import AdminOrders from "@/pages/admin/Orders";
