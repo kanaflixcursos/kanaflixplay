@@ -110,58 +110,39 @@ export default function CourseView() {
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Player */}
           {selectedLesson?.video_url ? (
-            <>
-              {/* Cinema gradient background - full bleed */}
-              <div className="absolute inset-x-0 pointer-events-none" style={{ top: 'var(--cinema-top, 0)', height: 'var(--cinema-h, 400px)' }}>
-                <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-transparent" />
+            <div className="relative -mx-4 md:-mx-6 lg:-mx-8 py-6 md:py-10 px-4 md:px-6 lg:px-8">
+              {/* Cinema gradient background — full bleed, no overflow clip */}
+              <div className="absolute inset-0 -inset-x-[50vw] left-1/2 -translate-x-1/2 w-screen pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-transparent" />
                 <div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] opacity-50"
+                  className="absolute inset-0 opacity-50"
                   style={{
                     background:
-                      'radial-gradient(ellipse at 25% 35%, hsl(var(--primary) / 0.5) 0%, transparent 45%), radial-gradient(ellipse at 75% 55%, hsl(220 60% 50% / 0.4) 0%, transparent 45%), radial-gradient(ellipse at 50% 45%, hsl(280 40% 50% / 0.3) 0%, transparent 50%), radial-gradient(ellipse at 60% 30%, hsl(340 50% 50% / 0.2) 0%, transparent 40%)',
+                      'radial-gradient(ellipse 60% 70% at 25% 40%, hsl(var(--primary) / 0.55) 0%, transparent 70%), radial-gradient(ellipse 50% 60% at 75% 50%, hsl(220 60% 50% / 0.45) 0%, transparent 70%), radial-gradient(ellipse 70% 50% at 50% 60%, hsl(280 40% 50% / 0.35) 0%, transparent 70%), radial-gradient(ellipse 40% 50% at 60% 25%, hsl(340 50% 50% / 0.25) 0%, transparent 60%)',
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
               </div>
-              <div
-                className="relative py-6 md:py-10"
-                ref={(el) => {
-                  if (el) {
-                    const parent = el.closest('.lg\\:col-span-2');
-                    if (parent) {
-                      const rect = el.getBoundingClientRect();
-                      const parentRect = parent.getBoundingClientRect();
-                      const top = rect.top - parentRect.top;
-                      const root = el.closest('.space-y-4');
-                      if (root) {
-                        (root as HTMLElement).style.setProperty('--cinema-top', `${top}px`);
-                        (root as HTMLElement).style.setProperty('--cinema-h', `${rect.height}px`);
-                      }
-                    }
+              <div className="relative w-full rounded-lg overflow-hidden shadow-2xl">
+                <PlayerWithProgress
+                  key={selectedLesson.id}
+                  videoUrl={selectedLesson.video_url}
+                  lessonId={selectedLesson.id}
+                  title={selectedLesson.title}
+                  durationMinutes={selectedLesson.duration_minutes}
+                  isLocked={isLessonLocked(selectedLesson.id)}
+                  lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
+                  lockMessage={
+                    isPreviewMode
+                      ? 'Adquira o curso para desbloquear todas as aulas'
+                      : isPreSale
+                      ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}`
+                      : undefined
                   }
-                }}
-              >
-                <div className="w-full rounded-lg overflow-hidden shadow-2xl">
-                  <PlayerWithProgress
-                    key={selectedLesson.id}
-                    videoUrl={selectedLesson.video_url}
-                    lessonId={selectedLesson.id}
-                    title={selectedLesson.title}
-                    durationMinutes={selectedLesson.duration_minutes}
-                    isLocked={isLessonLocked(selectedLesson.id)}
-                    lockTitle={isPreviewMode ? 'Conteúdo Exclusivo' : isPreSale ? 'Em Breve' : undefined}
-                    lockMessage={
-                      isPreviewMode
-                        ? 'Adquira o curso para desbloquear todas as aulas'
-                        : isPreSale
-                        ? `Disponível a partir de ${new Date(course.launch_date!).toLocaleDateString('pt-BR')}`
-                        : undefined
-                    }
-                    onComplete={isPreviewMode ? undefined : handleAutoComplete}
-                  />
-                </div>
+                  onComplete={isPreviewMode ? undefined : handleAutoComplete}
+                />
               </div>
-            </>
+            </div>
           ) : (
             <div className="aspect-video bg-muted flex items-center justify-center rounded-lg">
               <Play className="h-16 w-16 text-muted-foreground" />
