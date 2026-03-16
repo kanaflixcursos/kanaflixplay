@@ -391,8 +391,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-chart-5/10">
-                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5" />
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <span className="stat-card-label">Origem de Vendas</span>
                 </div>
