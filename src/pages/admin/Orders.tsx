@@ -206,7 +206,7 @@ export default function AdminOrders() {
     setAnalyticsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('pagarme', {
-        body: { action: 'get_orders_analytics', month: selectedMonth },
+        body: { action: 'get_orders_analytics', month: 'all', dateRange: analyticsDateRange },
       });
       if (!error && data) setAnalytics(data);
     } catch (e) {
