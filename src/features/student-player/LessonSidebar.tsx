@@ -1,6 +1,5 @@
 import { Play, CheckCircle, Circle, Lock, Unlock } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { LessonData, ModuleData } from '@/services/lessonService';
 
 interface LessonSidebarProps {
@@ -95,43 +94,42 @@ export default function LessonSidebar({
     );
   };
 
-  return (
-    <Card className="lg:sticky lg:top-6">
-      <CardHeader className="pb-2 sm:pb-3">
-        <div className="flex items-center justify-between">
-          <span className="card-title-compact text-sm sm:text-base">Conteúdo</span>
-          <span className="text-xs sm:text-sm text-muted-foreground">{getTotalDuration()}</span>
+    <div className="lg:sticky lg:top-6 bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
+      <div className="p-4 sm:p-5 border-b border-border/50 bg-muted/20">
+        <div className="flex items-center justify-between pb-1">
+          <span className="font-semibold text-sm sm:text-base tracking-tight text-foreground">Conteúdo</span>
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-md">{getTotalDuration()}</span>
         </div>
 
         {!isPreviewMode ? (
-          <>
-            <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+          <div className="mt-3">
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary transition-all duration-300"
+                className="h-full bg-primary transition-all duration-500 ease-out"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2 font-medium">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-3.5 w-3.5 text-success" />
                 {completedCount}/{requiredLessons.length} concluídas
               </span>
               {isSequential && (
-                <span className="flex items-center gap-1">
-                  <Unlock className="h-3 w-3" />
-                  {unlockedCount}/{requiredLessons.length} desbloqueadas
+                <span className="flex items-center gap-1.5">
+                  <Unlock className="h-3.5 w-3.5" />
+                  {unlockedCount}/{requiredLessons.length} desl.
                 </span>
               )}
             </div>
-          </>
+          </div>
         ) : (
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-xs text-muted-foreground mt-2 font-medium">
             {lessons.length} aulas • Prévia da 1ª aula
           </p>
         )}
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto">
+      </div>
+      <div className="p-0 flex-1">
+        <div className="max-h-[300px] lg:max-h-[calc(100vh-350px)] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
           <div className="p-2 space-y-1">
             {modules.length > 0 ? (
               <>
@@ -185,7 +183,7 @@ export default function LessonSidebar({
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
