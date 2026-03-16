@@ -358,7 +358,7 @@ export default function Purchases() {
             <DialogHeader>
               <DialogTitle>Solicitar Reembolso</DialogTitle>
               <DialogDescription>
-                Descreva o motivo da sua solicitação de reembolso
+                O reembolso será processado automaticamente. O valor será devolvido conforme a forma de pagamento original.
               </DialogDescription>
             </DialogHeader>
 
