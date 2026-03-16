@@ -172,30 +172,41 @@ export default function PointsPage() {
   const top3 = leaderboard.slice(0, 3);
   const restLeaderboard = leaderboard.slice(3);
 
+  const LEVEL_MESH: Record<string, { hero: string; lightGlow: string; darkGlow: string }> = {
+    'Iniciante': {
+      hero: `radial-gradient(ellipse at 20% 50%, hsl(220 15% 38% / 0.9) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, hsl(210 12% 42% / 0.7) 0%, transparent 40%), radial-gradient(ellipse at 60% 80%, hsl(215 14% 32% / 0.8) 0%, transparent 45%), radial-gradient(ellipse at 40% 10%, hsl(200 10% 40% / 0.5) 0%, transparent 50%), linear-gradient(135deg, hsl(220 15% 24%) 0%, hsl(210 12% 30%) 100%)`,
+      lightGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(220 15% 85%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(210 12% 88%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(215 10% 90%) 0%, transparent 65%)`,
+      darkGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(220 15% 14%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(210 12% 16%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(215 10% 12%) 0%, transparent 65%)`,
+    },
+    'Aprendiz': {
+      hero: `radial-gradient(ellipse at 20% 50%, hsl(172 55% 28% / 0.9) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, hsl(200 50% 30% / 0.7) 0%, transparent 40%), radial-gradient(ellipse at 60% 80%, hsl(160 45% 25% / 0.8) 0%, transparent 45%), radial-gradient(ellipse at 40% 10%, hsl(190 40% 35% / 0.5) 0%, transparent 50%), linear-gradient(135deg, hsl(172 55% 20%) 0%, hsl(180 40% 24%) 100%)`,
+      lightGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 50% 85%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 45% 88%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(160 45% 90%) 0%, transparent 65%)`,
+      darkGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 40% 12%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 35% 14%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(160 30% 10%) 0%, transparent 65%)`,
+    },
+    'Avançado': {
+      hero: `radial-gradient(ellipse at 20% 50%, hsl(38 55% 35% / 0.9) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, hsl(45 50% 38% / 0.7) 0%, transparent 40%), radial-gradient(ellipse at 60% 80%, hsl(30 45% 30% / 0.8) 0%, transparent 45%), radial-gradient(ellipse at 40% 10%, hsl(42 40% 40% / 0.5) 0%, transparent 50%), linear-gradient(135deg, hsl(35 50% 22%) 0%, hsl(40 45% 28%) 100%)`,
+      lightGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(38 50% 88%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(45 45% 90%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(30 40% 88%) 0%, transparent 65%)`,
+      darkGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(38 40% 14%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(45 35% 12%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(30 30% 10%) 0%, transparent 65%)`,
+    },
+    'Especialista': {
+      hero: `radial-gradient(ellipse at 20% 50%, hsl(270 30% 32% / 0.9) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, hsl(260 25% 38% / 0.7) 0%, transparent 40%), radial-gradient(ellipse at 60% 80%, hsl(280 28% 28% / 0.8) 0%, transparent 45%), radial-gradient(ellipse at 40% 10%, hsl(265 22% 40% / 0.5) 0%, transparent 50%), linear-gradient(135deg, hsl(270 30% 20%) 0%, hsl(260 25% 26%) 100%)`,
+      lightGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(270 30% 88%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(260 25% 90%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(280 28% 88%) 0%, transparent 65%)`,
+      darkGlow: `radial-gradient(ellipse 60% 50% at 15% 20%, hsl(270 30% 14%) 0%, transparent 70%), radial-gradient(ellipse 50% 40% at 80% 10%, hsl(260 25% 12%) 0%, transparent 60%), radial-gradient(ellipse 45% 50% at 50% 80%, hsl(280 20% 10%) 0%, transparent 65%)`,
+    },
+  };
+
+  const levelMesh = LEVEL_MESH[level.name] || LEVEL_MESH['Aprendiz'];
+
   return (
     <div className="relative space-y-8">
       {/* Mesh gradient background — light & dark aware */}
       <div
         className="pointer-events-none fixed inset-0 -z-10 opacity-70 dark:opacity-20"
-        style={{
-          background: `
-            radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 50% 85%) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 45% 88%) 0%, transparent 60%),
-            radial-gradient(ellipse 45% 50% at 50% 80%, hsl(38 50% 90%) 0%, transparent 65%),
-            radial-gradient(ellipse 40% 35% at 90% 70%, hsl(260 30% 90%) 0%, transparent 60%)
-          `,
-        }}
+        style={{ background: levelMesh.lightGlow }}
       />
       <div
         className="pointer-events-none fixed inset-0 -z-10 opacity-0 dark:opacity-30"
-        style={{
-          background: `
-            radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 40% 12%) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 35% 14%) 0%, transparent 60%),
-            radial-gradient(ellipse 45% 50% at 50% 80%, hsl(38 30% 10%) 0%, transparent 65%),
-            radial-gradient(ellipse 40% 35% at 90% 70%, hsl(260 20% 14%) 0%, transparent 60%)
-          `,
-        }}
+        style={{ background: levelMesh.darkGlow }}
       />
       {/* Hero score section */}
       <motion.div
@@ -203,15 +214,7 @@ export default function PointsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.05 }}
         className="relative overflow-hidden rounded-2xl p-6 sm:p-8"
-        style={{
-          background: `
-            radial-gradient(ellipse at 20% 50%, hsl(172 55% 28% / 0.9) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, hsl(200 50% 30% / 0.7) 0%, transparent 40%),
-            radial-gradient(ellipse at 60% 80%, hsl(160 45% 25% / 0.8) 0%, transparent 45%),
-            radial-gradient(ellipse at 40% 10%, hsl(190 40% 35% / 0.5) 0%, transparent 50%),
-            linear-gradient(135deg, hsl(172 55% 20%) 0%, hsl(180 40% 24%) 100%)
-          `,
-        }}>
+        style={{ background: levelMesh.hero }}>
         <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
         <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
         <div className="absolute top-4 right-[30%] h-2 w-2 rounded-full bg-white/20 animate-pulse" />
