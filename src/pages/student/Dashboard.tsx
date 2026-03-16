@@ -43,9 +43,9 @@ export default function StudentDashboard() {
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StudyStats>({
-    totalWatchedSeconds: 0,
     totalLessonsCompleted: 0,
-    totalCoursesCompleted: 0
+    totalCoursesCompleted: 0,
+    totalPoints: 0
   });
 
   useEffect(() => {
