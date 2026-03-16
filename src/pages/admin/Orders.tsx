@@ -72,21 +72,23 @@ function PercentBadge({ current, previous }: { current: number; previous: number
   );
 }
 
-function getMonthLabel(month: string) {
-  const [y, m] = month.split('-').map(Number);
-  const d = new Date(y, m - 1, 1);
-  return format(d, 'MMMM yyyy', { locale: ptBR });
-}
+type QuickPeriod = '1d' | '1w' | '1m' | 'all';
 
-function getCurrentMonth() {
+const quickOptions: { value: QuickPeriod; label: string }[] = [
+  { value: '1d', label: '1D' },
+  { value: '1w', label: '1S' },
+  { value: '1m', label: '1M' },
+  { value: 'all', label: 'Tudo' },
+];
+
+function getDateRangeFromPeriod(period: QuickPeriod): DashboardDateRange | null {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonth(month: string, delta: number) {
-  const [y, m] = month.split('-').map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  switch (period) {
+    case '1d': return { from: startOfDay(now).toISOString(), to: endOfDay(now).toISOString() };
+    case '1w': return { from: startOfDay(subDays(now, 7)).toISOString(), to: endOfDay(now).toISOString() };
+    case '1m': return { from: startOfDay(subMonths(now, 1)).toISOString(), to: endOfDay(now).toISOString() };
+    case 'all': return null;
+  }
 }
 
 const statusLabelsExport: Record<string, string> = {
