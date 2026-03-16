@@ -253,19 +253,9 @@ export default function StudentDashboard() {
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
           <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
         </div>
-
-        {/* Inline level badge — clickable */}
-        {!loading && (
-          <div 
-            onClick={() => navigate('/points')}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            <StudentLevelBadge points={stats.totalPoints} compact />
-          </div>
-        )}
       </motion.div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}
@@ -283,6 +273,47 @@ export default function StudentDashboard() {
           value={stats.totalCoursesCompleted}
           icon={Trophy}
           loading={loading} />
+
+        {/* Gamification Card */}
+        {!loading && (() => {
+          const level = getStudentLevel(stats.totalPoints);
+          const nextLevel = getNextLevel(stats.totalPoints);
+          const progress = getProgressToNext(stats.totalPoints);
+          const LevelIcon = level.icon;
+          return (
+            <Link to="/points" className="block">
+              <Card className="h-full relative overflow-hidden hover:shadow-md transition-all cursor-pointer border-primary/20 bg-gradient-to-br from-primary/5 via-background to-amber-500/5">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Star className="h-4 w-4 text-primary fill-primary" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">Meus Pontos</p>
+                        <p className="text-lg font-bold tracking-tight">{formatPoints(stats.totalPoints)}</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground flex items-center gap-1">
+                        <LevelIcon className="h-3 w-3" />
+                        {level.name}
+                      </span>
+                      {nextLevel && (
+                        <span className="text-muted-foreground">{nextLevel.minPoints - stats.totalPoints} pts p/ {nextLevel.name}</span>
+                      )}
+                    </div>
+                    <Progress value={progress} className="h-1.5" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })()}
         
         {!loading && <ContinueWatchingCard />}
       </div>
