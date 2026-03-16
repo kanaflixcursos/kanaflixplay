@@ -77,7 +77,7 @@ export default function CourseView() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="relative space-y-4 md:space-y-6">
       {/* Pre-sale banner */}
       {isPreSale && (
         <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/30 rounded-xl">
