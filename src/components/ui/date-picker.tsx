@@ -1,7 +1,7 @@
 import * as React from "react";
-import { format, parse, isValid, setMonth, setYear } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
