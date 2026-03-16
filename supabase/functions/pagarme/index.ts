@@ -553,7 +553,8 @@ async function handleCreateOrder(
   const orderData: any = {
     id: pagarmeOrder.id,
     user_id: userId,
-    course_id: courseId,
+    course_id: comboId ? null : courseId,
+    combo_id: comboId || null,
     amount: finalPrice,
     discount_amount: (discountAmount + pixDiscount) > 0 ? (discountAmount + pixDiscount) : null,
     coupon_id: validatedCouponId,
