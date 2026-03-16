@@ -121,24 +121,24 @@ export default function Purchases() {
     setSubmittingRefund(true);
 
     try {
-      // Create refund request
-      const { error: refundError } = await supabase
-        .from('refund_requests')
-        .insert({
-          order_id: refundingOrder.id,
-          user_id: user.id,
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: {
+          action: 'request_refund',
+          orderId: refundingOrder.id,
           reason: refundReason.trim(),
-        });
+        },
+      });
 
-      if (refundError) throw refundError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      toast.success('Solicitação de reembolso enviada!');
+      toast.success('Reembolso processado com sucesso! O valor será devolvido conforme a forma de pagamento original.');
       setRefundingOrder(null);
       setRefundReason('');
       fetchOrders();
-    } catch (error) {
-      console.error('Error creating refund request:', error);
-      toast.error('Erro ao solicitar reembolso');
+    } catch (error: any) {
+      console.error('Error processing refund:', error);
+      toast.error(error?.message || 'Erro ao processar reembolso');
     }
 
     setSubmittingRefund(false);
