@@ -39,6 +39,14 @@ const tools = [
     url: '/admin/marketing/coupons',
   },
   {
+    title: 'Combos',
+    description: 'Crie pacotes de cursos com preços especiais',
+    icon: Package,
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    url: '/admin/marketing/combos',
+  },
+  {
     title: 'WhatsApp',
     description: 'Envie mensagens via WhatsApp para seus contatos',
     icon: MessageSquare,
