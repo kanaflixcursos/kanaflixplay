@@ -146,7 +146,10 @@ export function DesignProvider({ children }: { children: ReactNode }) {
 
     await supabase
       .from('site_settings')
-      .upsert({ key: 'design', value: merged as unknown as Record<string, unknown> }, { onConflict: 'key' });
+      .upsert(
+        { key: 'design', value: merged as unknown as Record<string, unknown> } as any,
+        { onConflict: 'key' }
+      );
   }, [settings]);
 
   return (
