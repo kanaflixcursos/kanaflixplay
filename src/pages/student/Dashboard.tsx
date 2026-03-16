@@ -263,7 +263,7 @@ export default function StudentDashboard() {
           const LevelIcon = level.icon;
           return (
             <Link to="/points" className="group">
-              <div className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 via-amber-50/80 to-yellow-50 dark:from-amber-950/40 dark:via-amber-900/30 dark:to-yellow-950/30 px-4 py-2.5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 border-amber-200 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 via-amber-50/80 to-yellow-50 dark:from-amber-950/40 dark:via-amber-900/30 dark:to-yellow-950/30 px-4 py-2.5 shadow-sm hover:shadow-md transition-all border-0 rounded-xl">
                 <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 dark:from-amber-500 dark:to-yellow-600 flex items-center justify-center shadow-sm">
                   <Star className="h-4.5 w-4.5 text-white fill-white" />
                 </div>
