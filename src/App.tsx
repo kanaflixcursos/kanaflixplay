@@ -62,8 +62,8 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               
-              <Route path="/checkout/:courseId" element={<Checkout />} />
               <Route path="/checkout/combo/:comboId" element={<ComboCheckout />} />
+              <Route path="/checkout/:courseId" element={<Checkout />} />
               
               {/* Student Routes */}
               <Route path="/" element={<Index />} />
