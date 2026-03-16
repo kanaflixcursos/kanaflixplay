@@ -33,10 +33,10 @@ interface StudyStats {
 // Helper to format seconds into readable time
 const formatStudyTime = (seconds: number): string => {
   if (seconds < 60) return `${seconds}s`;
-  
+
   const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  
+  const minutes = Math.floor(seconds % 3600 / 60);
+
   if (hours > 0) {
     return `${hours}h ${minutes}min`;
   }
@@ -50,20 +50,20 @@ export default function StudentDashboard() {
   const [stats, setStats] = useState<StudyStats>({
     totalWatchedSeconds: 0,
     totalLessonsCompleted: 0,
-    totalCoursesCompleted: 0,
+    totalCoursesCompleted: 0
   });
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       if (!user) return;
 
-      const { data: enrollments, error } = await supabase
-        .from('course_enrollments')
-        .select(`
+      const { data: enrollments, error } = await supabase.
+      from('course_enrollments').
+      select(`
           id,
           course:courses(id, title, description, thumbnail_url)
-        `)
-        .eq('user_id', user.id);
+        `).
+      eq('user_id', user.id);
 
       if (error) {
         console.error('Error fetching enrollments:', error);
@@ -72,49 +72,49 @@ export default function StudentDashboard() {
       }
 
       // Fetch all user progress at once for efficiency
-      const { data: allProgress } = await supabase
-        .from('lesson_progress')
-        .select('lesson_id, completed, completed_at, watched_seconds')
-        .eq('user_id', user.id);
+      const { data: allProgress } = await supabase.
+      from('lesson_progress').
+      select('lesson_id, completed, completed_at, watched_seconds').
+      eq('user_id', user.id);
 
       // Calculate total study time
       const totalWatchedSeconds = allProgress?.reduce((sum, p) => sum + (p.watched_seconds || 0), 0) || 0;
-      const totalLessonsCompleted = allProgress?.filter(p => p.completed).length || 0;
+      const totalLessonsCompleted = allProgress?.filter((p) => p.completed).length || 0;
 
       const coursesWithProgress = await Promise.all(
         (enrollments || []).map(async (enrollment: any) => {
-          const { count: totalLessons } = await supabase
-            .from('lessons')
-            .select('*', { count: 'exact', head: true })
-            .eq('course_id', enrollment.course.id);
+          const { count: totalLessons } = await supabase.
+          from('lessons').
+          select('*', { count: 'exact', head: true }).
+          eq('course_id', enrollment.course.id);
 
-          const { data: lessonIds } = await supabase
-            .from('lessons')
-            .select('id')
-            .eq('course_id', enrollment.course.id);
+          const { data: lessonIds } = await supabase.
+          from('lessons').
+          select('id').
+          eq('course_id', enrollment.course.id);
 
-          const lessonIdSet = new Set(lessonIds?.map(l => l.id) || []);
-          const courseProgress = allProgress?.filter(p => lessonIdSet.has(p.lesson_id)) || [];
-          const completedLessons = courseProgress.filter(p => p.completed).length;
+          const lessonIdSet = new Set(lessonIds?.map((l) => l.id) || []);
+          const courseProgress = allProgress?.filter((p) => lessonIdSet.has(p.lesson_id)) || [];
+          const completedLessons = courseProgress.filter((p) => p.completed).length;
 
           return {
             id: enrollment.id,
             course: enrollment.course,
             totalLessons: totalLessons || 0,
-            completedLessons,
+            completedLessons
           };
         })
       );
 
       // Count completed courses (100% progress)
       const totalCoursesCompleted = coursesWithProgress.filter(
-        c => c.totalLessons > 0 && c.completedLessons >= c.totalLessons
+        (c) => c.totalLessons > 0 && c.completedLessons >= c.totalLessons
       ).length;
 
       setStats({
         totalWatchedSeconds,
         totalLessonsCompleted,
-        totalCoursesCompleted,
+        totalCoursesCompleted
       });
 
       setEnrolledCourses(coursesWithProgress);
@@ -142,10 +142,10 @@ export default function StudentDashboard() {
             marginLeft: 'calc(-50vw + 50%)',
             marginRight: 'calc(-50vw + 50%)',
             paddingLeft: 'calc(50vw - 50%)',
-            paddingRight: 'calc(50vw - 50%)',
-          }}
+            paddingRight: 'calc(50vw - 50%)'
+          }}>
+
           
-        >
           {/* Decorative elements */}
           <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
@@ -155,15 +155,15 @@ export default function StudentDashboard() {
 
 
           {/* Content + Illustration side by side */}
-          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
+          <div className="relative z-10 flex-col items-center justify-between w-full p-6 sm:p-10 gap-6 px-0 flex lg:flex-row">
             {/* Text content */}
             <div className="max-w-lg flex-1">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.15, duration: 0.4 }}
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
-              >
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90">
+                
                 <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse" />
                 Bem-vindo à plataforma
               </motion.div>
@@ -179,13 +179,13 @@ export default function StudentDashboard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
-                className="flex flex-wrap items-center gap-4 mt-7"
-              >
+                className="flex flex-wrap items-center gap-4 mt-7">
+                
                 <Link to="/catalog">
                   <Button
                     size="lg"
-                    className="bg-white text-[#0A3630] hover:bg-white/90 font-semibold shadow-lg shadow-black/20 gap-2 rounded-xl"
-                  >
+                    className="bg-white text-[#0A3630] hover:bg-white/90 font-semibold shadow-lg shadow-black/20 gap-2 rounded-xl">
+                    
                     <BookOpen className="h-4 w-4" />
                     Explorar Cursos
                   </Button>
@@ -197,18 +197,18 @@ export default function StudentDashboard() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/15"
-              >
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/15">
+                
                 {[
-                  { icon: BookOpen, label: 'Cursos exclusivos' },
-                  { icon: Clock, label: 'No seu ritmo' },
-                  { icon: Trophy, label: 'Certificados' },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
+                { icon: BookOpen, label: 'Cursos exclusivos' },
+                { icon: Clock, label: 'No seu ritmo' },
+                { icon: Trophy, label: 'Certificados' }].
+                map((item, i) =>
+                <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
                     <item.icon className="h-3.5 w-3.5 text-white/50" />
                     <span>{item.label}</span>
                   </div>
-                ))}
+                )}
               </motion.div>
             </div>
 
@@ -217,13 +217,13 @@ export default function StudentDashboard() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="hidden md:block flex-shrink-0"
-            >
+              className="hidden md:block flex-shrink-0">
+              
               <img
                 src={welcomeIllustration}
                 alt="Pessoa estudando em um ambiente acolhedor"
-                className="w-64 lg:w-80 xl:w-96 drop-shadow-2xl"
-              />
+                className="w-64 lg:w-80 xl:w-96 drop-shadow-2xl" />
+              
             </motion.div>
           </div>
         </motion.div>
@@ -232,12 +232,12 @@ export default function StudentDashboard() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.25 }}
-        >
+          transition={{ duration: 0.4, delay: 0.25 }}>
+          
           <AvailableCoursesSection />
         </motion.div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -245,8 +245,8 @@ export default function StudentDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-      >
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}>
+        
         <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
         <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
       </motion.div>
@@ -256,67 +256,67 @@ export default function StudentDashboard() {
           title="Cursos Matriculados"
           value={totalCourses}
           icon={BookOpen}
-          loading={loading}
-        />
+          loading={loading} />
+        
         <StatCard
           title="Tempo de Estudo"
           value={formatStudyTime(stats.totalWatchedSeconds)}
           icon={Clock}
-          loading={loading}
-        />
+          loading={loading} />
+        
         <StatCard
           title="Aulas Concluídas"
           value={stats.totalLessonsCompleted}
           icon={CheckCircle}
-          loading={loading}
-        />
+          loading={loading} />
+        
         <StatCard
           title="Cursos Finalizados"
           value={stats.totalCoursesCompleted}
           icon={Trophy}
-          loading={loading}
-        />
+          loading={loading} />
+        
         {!loading && <ContinueWatchingCard />}
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}
-      >
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.1 }}>
+        
         <h2 className="text-lg font-medium tracking-tight mb-4">Meus Cursos</h2>
         
-        {loading ? (
-          <p className="text-muted-foreground">Carregando...</p>
-        ) : (
-          <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {loading ?
+        <p className="text-muted-foreground">Carregando...</p> :
+
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {enrolledCourses.map((enrollment, idx) => {
-              const progress = enrollment.totalLessons > 0 
-                ? Math.round((enrollment.completedLessons / enrollment.totalLessons) * 100) 
-                : 0;
-              
-              return (
-                <motion.div
-                  key={enrollment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
-                >
+            const progress = enrollment.totalLessons > 0 ?
+            Math.round(enrollment.completedLessons / enrollment.totalLessons * 100) :
+            0;
+
+            return (
+              <motion.div
+                key={enrollment.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}>
+                
                 <Link to={`/courses/${enrollment.course.id}`}>
                   <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                    {enrollment.course.thumbnail_url ? (
-                      <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
-                        <img 
-                          src={enrollment.course.thumbnail_url} 
-                          alt={enrollment.course.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
+                    {enrollment.course.thumbnail_url ?
+                    <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
+                        <img
+                        src={enrollment.course.thumbnail_url}
+                        alt={enrollment.course.title}
+                        className="w-full h-full object-cover" />
+                      
+                      </div> :
+
+                    <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
                         <BookOpen className="h-12 w-12 text-muted-foreground" />
                       </div>
-                    )}
+                    }
                     <CardHeader>
                       <h3 className="card-title line-clamp-2">{enrollment.course.title}</h3>
                     </CardHeader>
@@ -328,20 +328,20 @@ export default function StudentDashboard() {
                     </CardContent>
                   </Card>
                 </Link>
-                </motion.div>
-              );
-            })}
+                </motion.div>);
+
+          })}
           </div>
-        )}
+        }
       </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.15 }}
-      >
+        transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.15 }}>
+        
         <AvailableCoursesSection />
       </motion.div>
-    </div>
-  );
+    </div>);
+
 }
