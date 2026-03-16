@@ -268,8 +268,9 @@ export default function StudentDashboard() {
                   <Star className="h-4.5 w-4.5 text-white fill-white" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <div className="gap-2 flex items-center justify-start">
+                  <div className="gap-3 flex items-center justify-start">
                     <span className="text-sm font-bold tracking-tight text-amber-900 dark:text-amber-200">{formatPoints(stats.totalPoints)} pts</span>
+                    <span className="h-1 w-1 rounded-full bg-amber-400/60" />
                     <span className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       <LevelIcon className="h-3 w-3" />
                       {level.name}
