@@ -160,6 +160,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/admin/courses/:courseId"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <CourseDetail />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/courses/new"
                 element={
                   <ProtectedRoute requiredRole="admin">

@@ -440,7 +440,7 @@ export default function AdminCourses() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <CourseActions course={course} />
                   </TableCell>
                 </TableRow>
