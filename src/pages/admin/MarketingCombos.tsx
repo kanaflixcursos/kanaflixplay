@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCombos, useInvalidateCombos } from '@/hooks/queries/useCombos';
 import { deleteCombo } from '@/services/comboService';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { 
   Plus, ArrowLeft, Pencil, Trash2, Copy, BookOpen, ExternalLink,
   Package
