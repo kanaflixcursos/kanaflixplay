@@ -44,6 +44,7 @@ export const courseFormSchema = z.object({
   installments: z.string().default('1'),
   category_id: z.string().optional().default(''),
   launch_date: z.string().optional().default(''),
+  points_reward: z.string().optional().default('0'),
 });
 
 export type CourseFormData = z.infer<typeof courseFormSchema>;
@@ -62,6 +63,7 @@ export const initialCourseFormData: CourseFormData = {
   installments: '1',
   category_id: '',
   launch_date: '',
+  points_reward: '0',
 };
 
 export function validateCourseStep(step: number, data: CourseFormData): string | null {

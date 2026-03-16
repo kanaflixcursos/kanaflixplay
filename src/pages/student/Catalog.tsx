@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ShoppingCart, Clock, CheckCircle, Search, X } from 'lucide-react';
+import { BookOpen, ShoppingCart, Clock, CheckCircle, Search, X, Star } from 'lucide-react';
 import { useCatalogCourses, useCategories } from '@/hooks/queries/useCourses';
 import type { CatalogCourse } from '@/services/courseService';
 
@@ -233,6 +233,13 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
                 <p className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">
                   {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
                 </p>
+              )}
+
+              {course.points_reward > 0 && (
+                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                  <Star className="h-3 w-3 fill-current" />
+                  <span className="text-xs font-semibold">+{course.points_reward} pts</span>
+                </div>
               )}
 
               <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-border mt-auto">

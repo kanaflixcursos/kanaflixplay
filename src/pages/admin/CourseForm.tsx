@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ArrowLeft, ArrowRight, Check, Loader2,
   Image as ImageIcon, Video, DollarSign, ClipboardCheck,
-  Sparkles, CreditCard, QrCode, Barcode, Info, Plus,
+  Sparkles, CreditCard, QrCode, Barcode, Info, Plus, Star,
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import { CurrencyInput } from '@/components/ui/currency-input';
@@ -164,6 +164,7 @@ export default function CourseForm() {
       installments: String(data.max_installments || 12),
       category_id: data.category_id || '',
       launch_date: data.launch_date ? data.launch_date.split('T')[0] : '',
+      points_reward: String((data as any).points_reward || 0),
     });
 
     setLoadingCourse(false);
@@ -208,6 +209,7 @@ export default function CourseForm() {
         category_id: formData.category_id || null,
         max_installments: parseInt(formData.installments) || 12,
         launch_date: formData.launch_date ? new Date(formData.launch_date + 'T00:00:00').toISOString() : null,
+        points_reward: parseInt(formData.points_reward || '0') || 0,
       };
 
       let savedCourseId = courseId;
@@ -582,6 +584,27 @@ export default function CourseForm() {
                   </div>
                 </div>
               )}
+
+              {/* Points Reward */}
+              <div className="space-y-3 pt-6 border-t">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-primary" />
+                  <Label className="text-base font-semibold">Pontos de Recompensa</Label>
+                </div>
+                <div className="max-w-xs space-y-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.points_reward}
+                    onChange={(e) => updateField('points_reward', e.target.value)}
+                    placeholder="0"
+                    className="h-12 text-lg"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Quantidade de pontos que o aluno ganha ao se matricular neste curso
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
