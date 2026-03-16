@@ -452,7 +452,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
-    ? selectedInstallment?.totalAmount || couponDiscountedPrice
+    ? Math.round((selectedInstallment?.totalValue || couponDiscountedPrice / 100) * 100)
     : discountedPrice;
 
   if (paymentResult) {
