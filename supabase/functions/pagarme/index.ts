@@ -1399,11 +1399,18 @@ async function handleGetOrdersAnalytics(supabase: any, month?: string) {
     let prevStart: Date;
     let prevEnd: Date;
 
-    if (month) {
+    if (month === 'all') {
+      // All-time: no date filter
+      periodStart = new Date(2000, 0, 1);
+      periodEnd = new Date();
+      // No meaningful "previous" for all-time — use empty range
+      prevStart = new Date(2000, 0, 1);
+      prevEnd = new Date(2000, 0, 1);
+    } else if (month) {
       const [y, m] = month.split('-').map(Number);
       periodStart = new Date(y, m - 1, 1);
       periodEnd = new Date(y, m, 0, 23, 59, 59, 999); // last day of month
-      // Previous = same month last year? No - previous month
+      // Previous = previous month
       prevStart = new Date(y, m - 2, 1);
       prevEnd = new Date(y, m - 1, 0, 23, 59, 59, 999);
     } else {
