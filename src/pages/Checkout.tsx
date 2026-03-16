@@ -18,7 +18,7 @@ import {
   Loader2,
   ArrowLeft,
   ChevronRight,
-  CalendarClock
+  CalendarClock,
   Star
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
