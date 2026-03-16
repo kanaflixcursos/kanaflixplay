@@ -296,7 +296,7 @@ async function handleCreateOrder(
   }
 
   // Server-side coupon validation
-  let finalPrice = course.price;
+  let finalPrice = itemPrice;
   let discountAmount = 0;
   let validatedCouponId: string | null = null;
 
