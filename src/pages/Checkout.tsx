@@ -287,7 +287,7 @@ export default function Checkout() {
                 </Badge>
               )}
               {course.launch_date && new Date(course.launch_date) > new Date() && (
-                <Badge className="absolute top-4 left-4 bg-chart-4 text-white">
+                <Badge className="absolute top-4 left-4 bg-warning text-warning-foreground">
                   <CalendarClock className="h-3 w-3 mr-1" />
                   Pré-venda
                 </Badge>
