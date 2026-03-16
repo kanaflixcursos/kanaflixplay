@@ -395,6 +395,7 @@ export default function Login() {
                   onChange={setBirthDate}
                   placeholder="Selecionar data"
                   maxDate={new Date()}
+                  showMonthYearPicker
                 />
               </div>
 

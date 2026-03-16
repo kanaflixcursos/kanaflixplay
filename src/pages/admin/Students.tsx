@@ -708,6 +708,7 @@ export default function AdminStudents() {
                 value={editForm.birth_date}
                 onChange={(value) => setEditForm(prev => ({ ...prev, birth_date: value }))}
                 maxDate={new Date()}
+                showMonthYearPicker
               />
             </div>
           </div>
