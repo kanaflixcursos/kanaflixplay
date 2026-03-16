@@ -394,14 +394,14 @@ export default function StudentProfile() {
 
                 <div className="space-y-2">
                   <Label htmlFor="birthDate" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     Data de Nascimento
                   </Label>
-                  <Input
+                  <DatePicker
                     id="birthDate"
-                    type="date"
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
+                    onChange={setBirthDate}
+                    maxDate={new Date()}
                   />
                 </div>
               </div>

@@ -379,11 +379,11 @@ export default function CourseForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="launch_date">Data de Lançamento (opcional)</Label>
-                  <Input
+                  <DatePicker
                     id="launch_date"
-                    type="date"
                     value={formData.launch_date}
-                    onChange={(e) => updateField('launch_date', e.target.value)}
+                    onChange={(val) => updateField('launch_date', val)}
+                    placeholder="Selecionar data"
                   />
                   <p className="text-xs text-muted-foreground">Se definida, o curso ficará em pré-venda até esta data</p>
                 </div>

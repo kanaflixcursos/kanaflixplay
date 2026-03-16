@@ -398,10 +398,10 @@ export default function CouponForm() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">Data de validade</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={form.expires_at}
-                onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
+                onChange={(val) => setForm(f => ({ ...f, expires_at: val }))}
+                placeholder="Sem validade"
               />
             </div>
           </div>
