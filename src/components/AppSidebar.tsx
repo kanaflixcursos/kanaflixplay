@@ -46,6 +46,7 @@ const adminMenuItems = [
   { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
   { title: 'Banner Destaque', url: '/admin/featured-banner', icon: Star },
   { title: 'Marketing', url: '/admin/marketing', icon: Megaphone },
+  { title: 'Design', url: '/admin/design', icon: Paintbrush },
 ];
 
 interface AppSidebarProps {
