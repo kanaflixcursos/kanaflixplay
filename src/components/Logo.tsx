@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
-import { useDesign } from '@/contexts/DesignContext';
 import logoKanaflixLight from '@/assets/logo-kanaflix.png';
 import logoKanaflixDark from '@/assets/logo-kanaflix-white.png';
 
@@ -10,17 +9,9 @@ interface LogoProps {
 
 export default function Logo({ className = 'h-8 w-auto' }: LogoProps) {
   const { theme } = useTheme();
-  const { settings } = useDesign();
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
-  const isDarkMode = theme === 'dark';
-
-  // Determine which logo to show: custom or default
-  const customLogo = isDarkMode ? settings.logoDarkUrl : settings.logoLightUrl;
-  const defaultLogo = isDarkMode ? logoKanaflixDark : logoKanaflixLight;
-  const currentLogo = customLogo || defaultLogo;
-
-  // Preload both default images on mount
+  // Preload both images on mount
   useEffect(() => {
     const lightImg = new Image();
     const darkImg = new Image();
@@ -28,19 +19,29 @@ export default function Logo({ className = 'h-8 w-auto' }: LogoProps) {
     let loadedCount = 0;
     const onLoad = () => {
       loadedCount++;
-      if (loadedCount === 2) setImagesLoaded(true);
+      if (loadedCount === 2) {
+        setImagesLoaded(true);
+      }
     };
 
     lightImg.onload = onLoad;
     darkImg.onload = onLoad;
+    
+    // Handle already cached images
     lightImg.onerror = onLoad;
     darkImg.onerror = onLoad;
     
     lightImg.src = logoKanaflixLight;
     darkImg.src = logoKanaflixDark;
 
-    if (lightImg.complete && darkImg.complete) setImagesLoaded(true);
+    // Set loaded if images are already cached
+    if (lightImg.complete && darkImg.complete) {
+      setImagesLoaded(true);
+    }
   }, []);
+
+  const isDarkMode = theme === 'dark';
+  const currentLogo = isDarkMode ? logoKanaflixDark : logoKanaflixLight;
 
   return (
     <img 

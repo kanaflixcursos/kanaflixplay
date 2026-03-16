@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { DesignProvider } from "@/contexts/DesignContext";
 
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -39,7 +38,6 @@ import AdminFormDetail from "@/pages/admin/FormDetail";
 import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
 import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
-import AdminDesign from "@/pages/admin/Design";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -48,7 +46,6 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="kanaflix-theme">
-    <DesignProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -307,16 +304,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/admin/design"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <AdminLayout>
-                      <AdminDesign />
-                    </AdminLayout>
-                  </ProtectedRoute>
-                }
-              />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
@@ -325,7 +312,6 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-    </DesignProvider>
   </ThemeProvider>
 );
 
