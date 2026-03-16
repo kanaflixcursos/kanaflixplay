@@ -106,8 +106,11 @@ export async function trackEvent(
   }
 }
 
-/** Track raw page visits for top-of-funnel visitor analytics */
+/** Track raw page visits for top-of-funnel visitor analytics (once per browser session) */
 export async function trackSiteVisit(pagePath?: string) {
+  const SESSION_VISIT_KEY = 'kfx_session_visit_tracked';
+  if (sessionStorage.getItem(SESSION_VISIT_KEY) === '1') return;
+
   try {
     const visitorId = getVisitorId();
     const current = getCurrentUtmFromUrl();
@@ -115,7 +118,7 @@ export async function trackSiteVisit(pagePath?: string) {
     const storedFirst = getStoredUtm('first');
     const activeUtm = current.utm_source ? current : (storedLast.utm_source ? storedLast : storedFirst);
 
-    await supabase.from('site_visits').insert([
+    const { error } = await supabase.from('site_visits').insert([
       {
         visitor_id: visitorId,
         page_path: pagePath || window.location.pathname + window.location.search,
@@ -127,6 +130,10 @@ export async function trackSiteVisit(pagePath?: string) {
         utm_term: activeUtm.utm_term || null,
       },
     ]);
+
+    if (!error) {
+      sessionStorage.setItem(SESSION_VISIT_KEY, '1');
+    }
   } catch (error) {
     console.error('trackSiteVisit error:', error);
   }
