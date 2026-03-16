@@ -241,7 +241,7 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const a = analytics;
-  const isCurrentMonth = selectedMonth === getCurrentMonth();
+  const isCurrentMonth = selectedMonth === getCurrentMonth() || selectedMonth === 'all';
 
   return (
     <div className="space-y-4 md:space-y-6">
