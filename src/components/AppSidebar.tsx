@@ -167,7 +167,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
         ) : role === 'admin' ? (
           <SidebarGroup>
             <SidebarGroupContent>
-            <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
