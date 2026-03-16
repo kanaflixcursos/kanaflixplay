@@ -66,14 +66,20 @@ export default function DashboardLatestPurchases() {
   const fetchPurchases = async () => {
     const { data: orders } = await supabase
       .from('orders')
-      .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url, failure_reason')
+      .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, pix_qr_code, boleto_url, failure_reason')
       .order('created_at', { ascending: false })
       .limit(5);
 
     if (orders && orders.length > 0) {
-      const courseIds = [...new Set(orders.map(o => o.course_id).filter(Boolean))];
+      const courseIds = [...new Set(orders.map(o => o.course_id).filter(Boolean))] as string[];
+      const comboIds = [...new Set(orders.map(o => o.combo_id).filter(Boolean))] as string[];
+
       const { data: courses } = courseIds.length > 0
         ? await supabase.from('courses').select('id, title').in('id', courseIds)
+        : { data: [] };
+
+      const { data: combos } = comboIds.length > 0
+        ? await supabase.from('combos').select('id, title').in('id', comboIds)
         : { data: [] };
 
       const userIds = [...new Set(orders.map(o => o.user_id))];
@@ -84,6 +90,9 @@ export default function DashboardLatestPurchases() {
 
       const coursesMap = new Map<string, string>();
       courses?.forEach(c => coursesMap.set(c.id, c.title));
+
+      const combosMap = new Map<string, string>();
+      combos?.forEach(c => combosMap.set(c.id, c.title));
       
       const profilesMap = new Map<string, { name: string | null; email: string | null }>();
       profiles?.forEach(p => profilesMap.set(p.user_id, { name: p.full_name, email: p.email }));
@@ -91,7 +100,11 @@ export default function DashboardLatestPurchases() {
       setPurchases(
         orders.map(o => ({
           ...o,
-          course_title: o.course_id ? (coursesMap.get(o.course_id) || null) : null,
+          course_title: o.course_id
+            ? (coursesMap.get(o.course_id) || null)
+            : o.combo_id
+              ? (combosMap.get(o.combo_id) || null)
+              : null,
           user_name: profilesMap.get(o.user_id)?.name || null,
           user_email: profilesMap.get(o.user_id)?.email || null,
         }))
