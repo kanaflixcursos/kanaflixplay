@@ -238,11 +238,11 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   // ─── Installment options using pricingCalculator ─────────────────
 
   const installmentOptions = useMemo(() => {
-    return calculateInstallments(couponDiscountedPrice);
+    return calculateInstallments(couponDiscountedPrice / 100);
   }, [couponDiscountedPrice]);
 
   const selectedInstallment = useMemo(() => {
-    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+    return installmentOptions.find(opt => opt.installments === installments) || installmentOptions[0];
   }, [installmentOptions, installments]);
 
   // Reset installments when switching payment methods
