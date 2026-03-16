@@ -5,6 +5,7 @@ import { MessageCircle, LogIn, Star, Sparkles, Check, Trophy, Medal, GraduationC
 import { getStudentLevel, getNextLevel, getProgressToNext, getAllLevels } from '@/components/StudentLevelBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
@@ -436,7 +437,8 @@ export default function PointsPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: 0.22 }}
-          className="lg:col-span-2 rounded-xl border bg-card p-5">
+          className="lg:col-span-2">
+          <Card className="p-5">
           <h2 className="text-sm font-medium mb-4">Histórico de Pontos</h2>
           {history.length === 0 ? (
             <div className="text-center py-10">
@@ -476,6 +478,7 @@ export default function PointsPage() {
               </AnimatePresence>
             </div>
           )}
+          </Card>
         </motion.div>
 
         {/* Coming soon */}
