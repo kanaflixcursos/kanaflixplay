@@ -361,8 +361,8 @@ export default function Checkout() {
                     <span>{lessonCount} aulas</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-primary/10">
-                      <Play className="h-3.5 w-3.5 text-primary" />
+                    <div className="icon-box-sm">
+                      <Play />
                     </div>
                     <span>Acesso imediato</span>
                   </div>
