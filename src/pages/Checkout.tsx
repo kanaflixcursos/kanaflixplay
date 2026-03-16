@@ -30,6 +30,7 @@ interface Course {
   thumbnail_url: string | null;
   is_published: boolean;
   launch_date: string | null;
+  points_reward: number;
 }
 
 interface CourseModule {
