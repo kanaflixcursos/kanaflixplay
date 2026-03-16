@@ -18,8 +18,8 @@ const tools = [
     title: 'Formulários',
     description: 'Crie formulários de captura para usar externamente',
     icon: FileText,
-    color: 'text-chart-3',
-    bg: 'bg-chart-3/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
     url: '/admin/marketing/forms',
   },
   {
