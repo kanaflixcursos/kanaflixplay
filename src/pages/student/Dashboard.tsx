@@ -272,7 +272,7 @@ export default function StudentDashboard() {
         <StatCard
           title="Minha Pontuação"
           value={formatPoints(stats.totalPoints)}
-          icon={Trophy}
+          icon={Star}
           loading={loading} />
         
         {!loading && <ContinueWatchingCard />}
