@@ -29,7 +29,7 @@ export default function ComboForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
-  const [price, setPrice] = useState(0);
+  const [priceStr, setPriceStr] = useState('');
   const [maxInstallments, setMaxInstallments] = useState(12);
   const [isActive, setIsActive] = useState(true);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
