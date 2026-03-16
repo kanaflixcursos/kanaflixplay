@@ -392,10 +392,11 @@ async function handleCreateOrder(
 
   // If price is 0 after discount, auto-enroll without payment
   if (finalPrice <= 0) {
-    const orderData = {
+    const orderData: any = {
       id: `free_${Date.now()}`,
       user_id: userId,
-      course_id: courseId,
+      course_id: comboId ? null : courseId,
+      combo_id: comboId || null,
       amount: 0,
       discount_amount: discountAmount + pixDiscount,
       coupon_id: validatedCouponId,
@@ -418,7 +419,11 @@ async function handleCreateOrder(
       });
     }
 
-    await enrollUser(supabase, userId, courseId);
+    // Enroll in all courses (combo or single)
+    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, userId, cid);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
