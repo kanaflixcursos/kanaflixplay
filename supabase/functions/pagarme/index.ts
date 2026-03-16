@@ -598,7 +598,11 @@ async function handleCreateOrder(
     .single();
 
   if (orderData.status === 'paid') {
-    await enrollUser(supabase, userId, courseId);
+    // Enroll in all courses (combo or single)
+    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, userId, cid);
+    }
     
     if (profile?.email) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -607,8 +611,8 @@ async function handleCreateOrder(
         to: profile.email,
         data: {
           userName: profile.full_name || '',
-          courseName: course.title,
-          courseUrl: `https://cursos.kanaflix.com.br/courses/${courseId}`,
+          courseName: itemTitle,
+          courseUrl: comboId ? `https://cursos.kanaflix.com.br/courses` : `https://cursos.kanaflix.com.br/courses/${courseId}`,
           amount: order.amount,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
