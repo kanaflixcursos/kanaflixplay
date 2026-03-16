@@ -94,6 +94,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/points"
+                element={
+                  <ProtectedRoute>
+                    <StudentLayout>
+                      <PointsPage />
+                    </StudentLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/profile"
                 element={
                   <ProtectedRoute>
