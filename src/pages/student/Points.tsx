@@ -431,86 +431,51 @@ export default function PointsPage() {
         </div>
       </motion.div>
 
-      {/* History + Coming Soon side by side */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* History */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.22 }}
-          className="lg:col-span-2">
-          <h2 className="text-sm font-medium mb-4">Histórico de Pontos</h2>
-          {history.length === 0 ? (
-            <div className="text-center py-10">
-              <Sparkles className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Nenhum ponto registrado ainda. Comece comentando nas aulas!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <AnimatePresence>
-                {history.map((entry, idx) => {
-                  const config = HISTORY_CONFIG[entry.type] || HISTORY_CONFIG.daily_login;
-                  const EntryIcon = config.icon;
-                  return (
-                    <motion.div
-                      key={entry.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25, delay: 0.24 + idx * 0.02 }}
-                      className="flex items-center justify-between py-3 border-b border-border/40 last:border-0 group">
-                      <div className="flex items-center gap-3">
-                        <div className={cn('h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110', config.bg)}>
-                          <EntryIcon className={cn('h-4 w-4', config.color)} />
-                        </div>
-                        <div>
-                          <p className="text-sm">{entry.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: ptBR })}
-                          </p>
-                        </div>
+      {/* History */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.22 }}>
+        <h2 className="text-sm font-medium mb-4">Histórico de Pontos</h2>
+        {history.length === 0 ? (
+          <div className="text-center py-10">
+            <Sparkles className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Nenhum ponto registrado ainda. Comece comentando nas aulas!
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <AnimatePresence>
+              {history.map((entry, idx) => {
+                const config = HISTORY_CONFIG[entry.type] || HISTORY_CONFIG.daily_login;
+                const EntryIcon = config.icon;
+                return (
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: 0.24 + idx * 0.02 }}
+                    className="flex items-center justify-between py-3 border-b border-border/40 last:border-0 group">
+                    <div className="flex items-center gap-3">
+                      <div className={cn('h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-transform group-hover:scale-110', config.bg)}>
+                        <EntryIcon className={cn('h-4 w-4', config.color)} />
                       </div>
-                      <span className={cn('text-sm font-bold', config.color)}>+{entry.points}</span>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Coming soon */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.25 }}
-          className="rounded-xl bg-gradient-to-br from-amber-50/80 to-yellow-50/80 dark:from-amber-950/30 dark:to-yellow-950/30 p-5 flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-            </div>
-            <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">Em breve!</h2>
+                      <div>
+                        <p className="text-sm">{entry.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: ptBR })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={cn('text-sm font-bold', config.color)}>+{entry.points}</span>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
-          <p className="text-sm text-amber-700 dark:text-amber-400 leading-relaxed mb-4">
-            Sua pontuação poderá ser usada para ganhar descontos exclusivos e desbloquear conteúdos extras. Continue acumulando pontos!
-          </p>
-          <div className="mt-auto space-y-2.5 pt-3 border-t border-amber-200/60 dark:border-amber-800/40">
-            <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-              <Check className="h-3.5 w-3.5 shrink-0" />
-              <span>Descontos em novos cursos</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-              <Check className="h-3.5 w-3.5 shrink-0" />
-              <span>Conteúdos extras exclusivos</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-              <Check className="h-3.5 w-3.5 shrink-0" />
-              <span>Recompensas especiais</span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+        )}
+      </motion.div>
     </div>
   );
 }
