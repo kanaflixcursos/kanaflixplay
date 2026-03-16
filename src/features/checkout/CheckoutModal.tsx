@@ -372,16 +372,18 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                   </div>
                 </div>
                 {(() => {
-                  const installmentOptions = calculateInstallments(course.price);
+                  const installmentOptions = calculateInstallments(course.price / 100);
                   return installmentOptions.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground">Parcelas *</Label>
                       <RadioGroup value={installments.toString()} onValueChange={(v) => setInstallments(parseInt(v))} className="grid grid-cols-2 gap-2">
                         {installmentOptions.map((opt) => (
-                          <div key={opt.number} className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${installments === opt.number ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`} onClick={() => setInstallments(opt.number)}>
-                            <RadioGroupItem value={opt.number.toString()} id={`inst-${opt.number}`} />
-                            <Label htmlFor={`inst-${opt.number}`} className="text-xs cursor-pointer flex-1">
-                              {opt.label}
+                          <div key={opt.installments} className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${installments === opt.installments ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`} onClick={() => setInstallments(opt.installments)}>
+                            <RadioGroupItem value={opt.installments.toString()} id={`inst-${opt.installments}`} />
+                            <Label htmlFor={`inst-${opt.installments}`} className="text-xs cursor-pointer flex-1">
+                              {opt.installments === 1
+                                ? `1x de ${formatCurrency(opt.installmentValue)} sem juros`
+                                : `${opt.installments}x de ${formatCurrency(opt.installmentValue)} (Total ${formatCurrency(opt.totalValue)})`}
                             </Label>
                           </div>
                         ))}
