@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { ArrowLeft, Loader2, BookOpen, Package } from 'lucide-react';
 import { toast } from 'sonner';
-import { ImageUpload } from '@/components/ImageUpload';
+import ImageUpload from '@/components/ImageUpload';
 
 export default function ComboForm() {
   const navigate = useNavigate();
