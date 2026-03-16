@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, FileText, Mail, MessageSquare, Ticket } from 'lucide-react';
+import { Users, FileText, Mail, MessageSquare, Ticket, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FunnelRoadmap from '@/components/admin/FunnelRoadmap';
 import CustomerJourneyTimeline from '@/components/admin/CustomerJourneyTimeline';
@@ -37,6 +37,14 @@ const tools = [
     color: 'text-primary',
     bg: 'bg-primary/10',
     url: '/admin/marketing/coupons',
+  },
+  {
+    title: 'Combos',
+    description: 'Crie pacotes de cursos com preços especiais',
+    icon: Package,
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    url: '/admin/marketing/combos',
   },
   {
     title: 'WhatsApp',

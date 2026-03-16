@@ -35,6 +35,7 @@ interface Course {
 interface CheckoutFormProps {
   course: Course;
   onSuccess?: () => void;
+  comboId?: string;
 }
 
 type PaymentMethod = 'credit_card' | 'pix' | 'boleto';
@@ -63,7 +64,7 @@ interface PaymentConfig {
   }>;
 }
 
-export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
+export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -294,6 +295,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         body: {
           action: 'create_order',
           courseId: course.id,
+          comboId: comboId || undefined,
           paymentMethod,
           couponId: appliedCoupon?.id || undefined,
           customer: {

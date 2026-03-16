@@ -39,6 +39,9 @@ import AdminFormDetail from "@/pages/admin/FormDetail";
 import AdminCampaignEditor from "@/pages/admin/CampaignEditor";
 import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
+import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
+import AdminComboForm from "@/pages/admin/ComboForm";
+import ComboCheckout from "@/pages/ComboCheckout";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -59,6 +62,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               
+              <Route path="/checkout/combo/:comboId" element={<ComboCheckout />} />
               <Route path="/checkout/:courseId" element={<Checkout />} />
               
               {/* Student Routes */}
@@ -311,6 +315,36 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminCouponForm />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/combos"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminMarketingCombos />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/combos/new"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminComboForm />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/marketing/combos/:comboId/edit"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminComboForm />
                     </AdminLayout>
                   </ProtectedRoute>
                 }

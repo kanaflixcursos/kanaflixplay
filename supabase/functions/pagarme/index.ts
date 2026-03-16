@@ -171,7 +171,7 @@ async function handleCreateOrder(
   apiKey: string, 
   supabase: any
 ) {
-  const { courseId, paymentMethod, customer, card, installments = 1, couponId } = payload;
+  const { courseId, comboId, paymentMethod, customer, card, installments = 1, couponId } = payload;
 
   // Validate payment method
   const validPaymentMethods = ['credit_card', 'pix', 'boleto'];
@@ -228,28 +228,75 @@ async function handleCreateOrder(
     }
   }
 
-  const { data: course, error: courseError } = await supabase
-    .from('courses')
-    .select('id, title, price')
-    .eq('id', courseId)
-    .single();
+  // Handle combo or single course
+  let itemTitle: string;
+  let itemPrice: number;
+  let itemId: string;
+  let comboCourseIds: string[] = [];
 
-  if (courseError || !course) {
-    return new Response(JSON.stringify({ error: 'Course not found' }), { 
-      status: 404, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
-  }
+  if (comboId) {
+    const { data: combo, error: comboError } = await supabase
+      .from('combos')
+      .select('id, title, price, max_installments')
+      .eq('id', comboId)
+      .eq('is_active', true)
+      .single();
 
-  if (!course.price || course.price <= 0) {
-    return new Response(JSON.stringify({ error: 'Course has no price set' }), { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
+    if (comboError || !combo) {
+      return new Response(JSON.stringify({ error: 'Combo not found' }), { 
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!combo.price || combo.price <= 0) {
+      return new Response(JSON.stringify({ error: 'Combo has no price set' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Validate installments against combo max
+    if (parsedInstallments > (combo.max_installments || 12)) {
+      return new Response(JSON.stringify({ error: `Max installments for this combo is ${combo.max_installments}` }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Get combo courses
+    const { data: cc } = await supabase
+      .from('combo_courses')
+      .select('course_id')
+      .eq('combo_id', comboId);
+    comboCourseIds = (cc || []).map((c: any) => c.course_id);
+
+    itemTitle = combo.title;
+    itemPrice = combo.price;
+    itemId = combo.id;
+  } else {
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('id, title, price')
+      .eq('id', courseId)
+      .single();
+
+    if (courseError || !course) {
+      return new Response(JSON.stringify({ error: 'Course not found' }), { 
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!course.price || course.price <= 0) {
+      return new Response(JSON.stringify({ error: 'Course has no price set' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    itemTitle = course.title;
+    itemPrice = course.price;
+    itemId = course.id;
   }
 
   // Server-side coupon validation
-  let finalPrice = course.price;
+  let finalPrice = itemPrice;
   let discountAmount = 0;
   let validatedCouponId: string | null = null;
 
@@ -304,12 +351,12 @@ async function handleCreateOrder(
     }
 
     if (coupon.discount_type === 'percentage') {
-      discountAmount = Math.round(course.price * (coupon.discount_value / 100));
+      discountAmount = Math.round(itemPrice * (coupon.discount_value / 100));
     } else {
       discountAmount = coupon.discount_value;
     }
 
-    finalPrice = Math.max(0, course.price - discountAmount);
+    finalPrice = Math.max(0, itemPrice - discountAmount);
     validatedCouponId = coupon.id;
 
     // Increment used_count
@@ -345,10 +392,11 @@ async function handleCreateOrder(
 
   // If price is 0 after discount, auto-enroll without payment
   if (finalPrice <= 0) {
-    const orderData = {
+    const orderData: any = {
       id: `free_${Date.now()}`,
       user_id: userId,
-      course_id: courseId,
+      course_id: comboId ? null : courseId,
+      combo_id: comboId || null,
       amount: 0,
       discount_amount: discountAmount + pixDiscount,
       coupon_id: validatedCouponId,
@@ -371,7 +419,11 @@ async function handleCreateOrder(
       });
     }
 
-    await enrollUser(supabase, userId, courseId);
+    // Enroll in all courses (combo or single)
+    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, userId, cid);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -386,9 +438,9 @@ async function handleCreateOrder(
   const orderPayload: any = {
     items: [{
       amount: finalPrice,
-      description: course.title,
+      description: itemTitle,
       quantity: 1,
-      code: course.id
+      code: itemId
     }],
     customer: {
       name: customer.name,
@@ -501,7 +553,8 @@ async function handleCreateOrder(
   const orderData: any = {
     id: pagarmeOrder.id,
     user_id: userId,
-    course_id: courseId,
+    course_id: comboId ? null : courseId,
+    combo_id: comboId || null,
     amount: finalPrice,
     discount_amount: (discountAmount + pixDiscount) > 0 ? (discountAmount + pixDiscount) : null,
     coupon_id: validatedCouponId,
@@ -545,7 +598,11 @@ async function handleCreateOrder(
     .single();
 
   if (orderData.status === 'paid') {
-    await enrollUser(supabase, userId, courseId);
+    // Enroll in all courses (combo or single)
+    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, userId, cid);
+    }
     
     if (profile?.email) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -554,8 +611,8 @@ async function handleCreateOrder(
         to: profile.email,
         data: {
           userName: profile.full_name || '',
-          courseName: course.title,
-          courseUrl: `https://cursos.kanaflix.com.br/courses/${courseId}`,
+          courseName: itemTitle,
+          courseUrl: comboId ? `https://cursos.kanaflix.com.br/courses` : `https://cursos.kanaflix.com.br/courses/${courseId}`,
           amount: order.amount,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
@@ -570,8 +627,8 @@ async function handleCreateOrder(
       to: profile.email,
       data: {
         userName: profile.full_name || '',
-        courseName: course.title,
-        amount: course.price,
+        courseName: itemTitle,
+        amount: itemPrice,
         paymentMethod: paymentMethod as 'pix' | 'boleto',
         pixQrCode: orderData.pix_qr_code,
         pixQrCodeUrl: orderData.pix_qr_code_url,
@@ -689,7 +746,7 @@ async function handleChargePaid(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -713,9 +770,27 @@ async function handleChargePaid(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as paid`);
 
-  if (order.course_id) {
-    await enrollUser(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] User ${order.user_id} enrolled in course ${order.course_id}`);
+  // Determine courses to enroll
+  let enrollCourseIds: string[] = [];
+  let itemTitle = 'Curso';
+
+  if (order.combo_id) {
+    const { data: cc } = await supabase
+      .from('combo_courses')
+      .select('course_id')
+      .eq('combo_id', order.combo_id);
+    enrollCourseIds = (cc || []).map((c: any) => c.course_id);
+    itemTitle = order.combos?.title || 'Combo';
+  } else if (order.course_id) {
+    enrollCourseIds = [order.course_id];
+    itemTitle = order.courses?.title || 'Curso';
+  }
+
+  if (enrollCourseIds.length > 0) {
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, order.user_id, cid);
+    }
+    console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
     
     const profile = await getUserProfile(supabase, order.user_id);
     
@@ -732,8 +807,10 @@ async function handleChargePaid(supabase: any, data: any) {
         to: profile.email,
         data: {
           userName: profile.full_name || '',
-          courseName: order.courses?.title || 'Curso',
-          courseUrl: `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
+          courseName: itemTitle,
+          courseUrl: order.combo_id 
+            ? `https://cursos.kanaflix.com.br/courses` 
+            : `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
@@ -746,11 +823,12 @@ async function handleChargePaid(supabase: any, data: any) {
       user_id: order.user_id,
       type: 'payment_success',
       title: 'Pagamento confirmado! 🎉',
-      message: `Seu pagamento para o curso "${order.courses?.title || 'curso'}" foi confirmado. Você já pode acessar o conteúdo!`,
-      link: `/courses/${order.course_id}`,
+      message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
+      link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
       metadata: {
         order_id: order.id,
         course_id: order.course_id,
+        combo_id: order.combo_id,
         amount: order.amount
       }
     });
@@ -809,7 +887,7 @@ async function handleChargeRefunded(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -823,19 +901,23 @@ async function handleChargeRefunded(supabase: any, data: any) {
     .update({ status: 'refunded' })
     .eq('id', order.id);
 
-  // Restore coupon usage on refund
   if (order.coupon_id) {
     await restoreCouponUsage(supabase, order.coupon_id);
-    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (refunded)`);
   }
 
   console.log(`[Webhook] Order ${order.id} marked as refunded`);
 
-  if (order.course_id) {
+  // Revoke enrollments (combo or single)
+  if (order.combo_id) {
+    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+    for (const c of (cc || [])) {
+      await revokeEnrollment(supabase, order.user_id, c.course_id);
+    }
+  } else if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} from course ${order.course_id}`);
   }
 
+  const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'Curso');
   const profile = await getUserProfile(supabase, order.user_id);
   
   if (profile?.email) {
@@ -845,7 +927,7 @@ async function handleChargeRefunded(supabase: any, data: any) {
       to: profile.email,
       data: {
         userName: profile.full_name || '',
-        courseName: order.courses?.title || 'Curso',
+        courseName: itemTitle,
         amount: order.amount,
         orderId: order.id,
       }
@@ -856,11 +938,12 @@ async function handleChargeRefunded(supabase: any, data: any) {
     user_id: order.user_id,
     type: 'payment_refunded',
     title: 'Reembolso processado',
-    message: `O reembolso para "${order.courses?.title || 'curso'}" foi processado. O acesso ao curso foi revogado.`,
+    message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
     link: null,
     metadata: {
       order_id: order.id,
       course_id: order.course_id,
+      combo_id: order.combo_id,
       amount: order.amount
     }
   });
@@ -938,7 +1021,7 @@ async function handleChargeChargedback(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -952,28 +1035,34 @@ async function handleChargeChargedback(supabase: any, data: any) {
     .update({ status: 'chargedback' })
     .eq('id', order.id);
 
-  // Restore coupon usage on chargeback
   if (order.coupon_id) {
     await restoreCouponUsage(supabase, order.coupon_id);
-    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (chargedback)`);
   }
 
   console.log(`[Webhook] Order ${order.id} marked as chargedback`);
 
-  if (order.course_id) {
+  // Revoke enrollments (combo or single)
+  if (order.combo_id) {
+    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+    for (const c of (cc || [])) {
+      await revokeEnrollment(supabase, order.user_id, c.course_id);
+    }
+  } else if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} due to chargeback`);
   }
+
+  const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'curso');
 
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_chargedback',
     title: 'Contestação de pagamento',
-    message: `O pagamento para "${order.courses?.title || 'curso'}" foi contestado. O acesso ao curso foi suspenso.`,
+    message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
     link: null,
     metadata: {
       order_id: order.id,
-      course_id: order.course_id
+      course_id: order.course_id,
+      combo_id: order.combo_id,
     }
   });
 }

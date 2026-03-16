@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      combo_courses: {
+        Row: {
+          combo_id: string
+          course_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          combo_id: string
+          course_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          combo_id?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "combo_courses_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "combos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combo_courses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      combos: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_installments: number
+          price: number
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_installments?: number
+          price?: number
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_installments?: number
+          price?: number
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_categories: {
         Row: {
           created_at: string
@@ -761,6 +833,7 @@ export type Database = {
           boleto_barcode: string | null
           boleto_due_date: string | null
           boleto_url: string | null
+          combo_id: string | null
           coupon_id: string | null
           course_id: string | null
           created_at: string
@@ -783,6 +856,7 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          combo_id?: string | null
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
@@ -805,6 +879,7 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          combo_id?: string | null
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
@@ -823,6 +898,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "combos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_coupon_id_fkey"
             columns: ["coupon_id"]
