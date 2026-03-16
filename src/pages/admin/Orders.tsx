@@ -245,41 +245,71 @@ export default function AdminOrders() {
     setDateTo(undefined);
   };
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const a = analytics;
-  const isCurrentMonth = selectedMonth === getCurrentMonth() || selectedMonth === 'all';
+  const handleQuickPeriod = (period: QuickPeriod) => {
+    setActivePeriod(period);
+    setAnalyticsDateRange(getDateRangeFromPeriod(period));
+    setCalendarRange(undefined);
+  };
+
+  const handleCalendarSelect = (range: DateRange | undefined) => {
+    setCalendarRange(range);
+    if (range?.from && range?.to) {
+      setActivePeriod('custom');
+      setAnalyticsDateRange({
+        from: startOfDay(range.from).toISOString(),
+        to: endOfDay(range.to).toISOString(),
+      });
+      setPopoverOpen(false);
+    }
+  };
+
+  const customLabel = calendarRange?.from && calendarRange?.to
+    ? `${format(calendarRange.from, 'dd/MM', { locale: ptBR })} - ${format(calendarRange.to, 'dd/MM', { locale: ptBR })}`
+    : 'Período';
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header with month selector */}
+      {/* Header with period selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-muted/50 rounded-xl p-1">
-          {selectedMonth !== 'all' && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}>
-              <ChevronLeft className="h-4 w-4" />
+        <div className="flex flex-wrap items-center gap-1">
+          {quickOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={activePeriod === option.value ? 'default' : 'outline'}
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => handleQuickPeriod(option.value)}
+            >
+              {option.label}
             </Button>
-          )}
-          <span className="text-sm font-medium min-w-[130px] text-center capitalize">
-            {selectedMonth === 'all' ? 'Todo o período' : getMonthLabel(selectedMonth)}
-          </span>
-          {selectedMonth !== 'all' && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isCurrentMonth} onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-          {selectedMonth === 'all' ? (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth(getCurrentMonth())}>
-              Ver por mês
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth('all')}>
-              Tudo
-            </Button>
-          )}
+          ))}
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={activePeriod === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2.5 text-xs gap-1"
+              >
+                <CalendarIcon className="h-3 w-3" />
+                {customLabel}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={calendarRange}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+                className={cn("p-3 pointer-events-auto")}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
