@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { 
   ArrowLeft, ArrowRight, Check, Loader2,
   Image as ImageIcon, Video, DollarSign, ClipboardCheck,
-  Sparkles, CreditCard, QrCode, Barcode, Info, Plus,
+  Sparkles, CreditCard, QrCode, Barcode, Info, Plus, Star,
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
 import { CurrencyInput } from '@/components/ui/currency-input';
