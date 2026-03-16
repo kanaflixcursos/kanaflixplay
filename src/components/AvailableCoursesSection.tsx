@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -16,6 +16,7 @@ interface AvailableCourse {
   price: number | null;
   category_name: string | null;
   total_duration: number;
+  points_reward: number;
 }
 
 function formatPrice(cents: number | null): string {
