@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('user_id', userId);
 
     // Award daily login points (+5)
-    await supabase.rpc('award_daily_login_points', { p_user_id: userId });
+    await (supabase.rpc as any)('award_daily_login_points', { p_user_id: userId });
   };
 
   useEffect(() => {
