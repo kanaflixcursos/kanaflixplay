@@ -1,7 +1,7 @@
 import * as React from "react";
-import { format, parse, isValid, setMonth, setYear } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -69,9 +69,12 @@ export function DatePicker({
     selected || new Date()
   );
 
+  // Sync displayMonth when value changes (string comparison to avoid loops)
+  const valueStr = typeof value === 'string' ? value : value instanceof Date ? value.toISOString() : '';
   React.useEffect(() => {
-    if (selected) setDisplayMonth(selected);
-  }, [selected]);
+    const parsed = parseDate(value);
+    if (parsed) setDisplayMonth(parsed);
+  }, [valueStr]);
 
   const handleSelect = (date: Date | undefined) => {
     if (date && onChange) {
@@ -92,11 +95,15 @@ export function DatePicker({
   const years = Array.from({ length: maxYear - minYear + 1 }, (_, i) => maxYear - i);
 
   const handleMonthChange = (monthStr: string) => {
-    setDisplayMonth(setMonth(displayMonth, parseInt(monthStr)));
+    const newDate = new Date(displayMonth);
+    newDate.setMonth(parseInt(monthStr));
+    setDisplayMonth(newDate);
   };
 
   const handleYearChange = (yearStr: string) => {
-    setDisplayMonth(setYear(displayMonth, parseInt(yearStr)));
+    const newDate = new Date(displayMonth);
+    newDate.setFullYear(parseInt(yearStr));
+    setDisplayMonth(newDate);
   };
 
   return (
