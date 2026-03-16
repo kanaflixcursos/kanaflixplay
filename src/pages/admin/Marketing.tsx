@@ -34,8 +34,8 @@ const tools = [
     title: 'Cupons de Desconto',
     description: 'Crie cupons promocionais para seus cursos',
     icon: Ticket,
-    color: 'text-chart-4',
-    bg: 'bg-chart-4/10',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
     url: '/admin/marketing/coupons',
   },
   {
