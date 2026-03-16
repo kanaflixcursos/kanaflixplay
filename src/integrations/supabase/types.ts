@@ -115,6 +115,7 @@ export type Database = {
           launch_date: string | null
           max_installments: number
           pandavideo_folder_id: string | null
+          points_reward: number
           price: number | null
           thumbnail_url: string | null
           title: string
@@ -132,6 +133,7 @@ export type Database = {
           launch_date?: string | null
           max_installments?: number
           pandavideo_folder_id?: string | null
+          points_reward?: number
           price?: number | null
           thumbnail_url?: string | null
           title: string
@@ -149,6 +151,7 @@ export type Database = {
           launch_date?: string | null
           max_installments?: number
           pandavideo_folder_id?: string | null
+          points_reward?: number
           price?: number | null
           thumbnail_url?: string | null
           title?: string
