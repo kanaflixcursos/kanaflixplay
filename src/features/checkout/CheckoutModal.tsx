@@ -17,7 +17,7 @@ import {
   formatPriceBRL, formatDocument, formatCardNumber, cleanCardNumber,
   formatPhone, formatCep, isValidDocument,
 } from "@/utils/paymentFormatter";
-import { calculateInstallments } from "@/utils/pricingCalculator";
+import { calculateInstallments, formatCurrency, type InstallmentOption } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
