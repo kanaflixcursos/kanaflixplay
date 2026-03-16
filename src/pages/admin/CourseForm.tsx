@@ -209,6 +209,7 @@ export default function CourseForm() {
         category_id: formData.category_id || null,
         max_installments: parseInt(formData.installments) || 12,
         launch_date: formData.launch_date ? new Date(formData.launch_date + 'T00:00:00').toISOString() : null,
+        points_reward: parseInt(formData.points_reward || '0') || 0,
       };
 
       let savedCourseId = courseId;
