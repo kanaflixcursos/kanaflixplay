@@ -351,7 +351,7 @@ async function handleCreateOrder(
     }
 
     if (coupon.discount_type === 'percentage') {
-      discountAmount = Math.round(course.price * (coupon.discount_value / 100));
+      discountAmount = Math.round(itemPrice * (coupon.discount_value / 100));
     } else {
       discountAmount = coupon.discount_value;
     }
