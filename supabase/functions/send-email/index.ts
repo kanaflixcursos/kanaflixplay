@@ -366,6 +366,7 @@ Deno.serve(async (req) => {
           amount: number;
           paymentMethod: string;
           orderId: string;
+          installments?: number;
         });
         subject = "Pagamento Confirmado - Kanaflix Play";
         break;

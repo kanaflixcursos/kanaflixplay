@@ -733,6 +733,7 @@ async function handleChargePaid(supabase: any, data: any) {
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
+          installments: order.installments || 1,
         }
       });
     }
