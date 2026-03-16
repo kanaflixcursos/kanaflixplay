@@ -11,7 +11,8 @@ import Logo from '@/components/Logo';
 import { translateError } from '@/lib/translate-error';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { motion } from 'framer-motion';
 import PhoneInput from '@/components/PhoneInput';
 

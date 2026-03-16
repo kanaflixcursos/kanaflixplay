@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar, User } from 'lucide-react';
+import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar as CalendarIcon, User } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { motion } from 'framer-motion';
 
 interface Profile {

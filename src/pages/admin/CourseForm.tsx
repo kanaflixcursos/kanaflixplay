@@ -18,6 +18,7 @@ import {
   Sparkles, CreditCard, QrCode, Barcode, Info, Plus, Star,
 } from 'lucide-react';
 import ImageUpload from '@/components/ImageUpload';
+import { DatePicker } from '@/components/ui/date-picker';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { CardBrandIcon } from '@/components/CardBrandIcon';
 import CourseLessonsOrganizer, { CourseLessonsOrganizerRef } from '@/components/admin/CourseLessonsOrganizer';
