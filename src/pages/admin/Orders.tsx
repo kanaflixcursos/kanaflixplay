@@ -186,10 +186,13 @@ export default function AdminOrders() {
   const [totalCount, setTotalCount] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod | 'custom'>('1m');
+  const [analyticsDateRange, setAnalyticsDateRange] = useState<DashboardDateRange | null>(getDateRangeFromPeriod('1m'));
+  const [calendarRange, setCalendarRange] = useState<DateRange | undefined>();
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   useEffect(() => { loadSales(); }, [page]);
-  useEffect(() => { fetchAnalytics(); }, [selectedMonth]);
+  useEffect(() => { fetchAnalytics(); }, [analyticsDateRange]);
 
   const loadSales = async () => {
     setLoading(true);
