@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
@@ -16,6 +16,7 @@ interface AvailableCourse {
   price: number | null;
   category_name: string | null;
   total_duration: number;
+  points_reward: number;
 }
 
 function formatPrice(cents: number | null): string {
@@ -66,7 +67,7 @@ export default function AvailableCoursesSection() {
 
       let query = supabase
         .from('courses')
-        .select('id, title, description, thumbnail_url, price, category_id, course_categories(name)')
+        .select('id, title, description, thumbnail_url, price, category_id, points_reward, course_categories(name)')
         .eq('is_published', true);
 
       if (enrolledIds.length > 0) {
@@ -92,6 +93,7 @@ export default function AvailableCoursesSection() {
             price: course.price,
             category_name: course.course_categories?.name || null,
             total_duration,
+            points_reward: course.points_reward || 0,
           };
         })
       );
@@ -189,17 +191,18 @@ export default function AvailableCoursesSection() {
 
                 {/* Content */}
                 <div className="p-3 flex flex-col flex-1 gap-1.5">
-                  {/* Category + Duration */}
+                  {/* Duration + Points */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {course.category_name && (
-                      <Badge variant="secondary" className="text-xs font-medium">
-                        {course.category_name}
-                      </Badge>
-                    )}
                     {course.total_duration > 0 && (
                       <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
+                      </span>
+                    )}
+                    {course.points_reward > 0 && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                        <Star className="h-3 w-3 fill-current" />
+                        +{course.points_reward} pts
                       </span>
                     )}
                   </div>
