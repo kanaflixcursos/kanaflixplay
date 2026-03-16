@@ -110,7 +110,7 @@ export default function CourseView() {
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Player */}
           {selectedLesson?.video_url ? (
-            <div className="w-full rounded-lg overflow-hidden bg-foreground shadow-lg">
+            <div className="w-full rounded-lg overflow-hidden shadow-lg">
               <PlayerWithProgress
                 key={selectedLesson.id}
                 videoUrl={selectedLesson.video_url}
