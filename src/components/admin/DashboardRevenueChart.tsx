@@ -8,10 +8,9 @@ import {
 } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { TrendingUp, Loader2 } from 'lucide-react';
-import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
+import type { DashboardDateRange } from '@/pages/admin/Dashboard';
 
 interface DailyData {
   date: string;
@@ -31,50 +30,40 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 interface Props {
-  period?: Period;
+  dateRange?: DashboardDateRange | null;
 }
 
-export default function DashboardRevenueChart({ period = '1w' }: Props) {
+export default function DashboardRevenueChart({ dateRange }: Props) {
   const [data, setData] = useState<DailyData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchRevenueData();
-  }, [period]);
-
-  const getDaysForPeriod = () => {
-    switch (period) {
-      case '1d': return 1;
-      case '3d': return 3;
-      case '1w': return 7;
-      case '1m': return 30;
-      case '6m': return 180;
-      case '1y': return 365;
-      case 'all': return 365;
-    }
-  };
+  }, [dateRange]);
 
   const fetchRevenueData = async () => {
     setLoading(true);
-    const days = getDaysForPeriod();
-    const chartData: DailyData[] = [];
 
-    const startDate = startOfDay(subDays(new Date(), days - 1)).toISOString();
-    const endDate = endOfDay(new Date()).toISOString();
+    // Determine date boundaries
+    const now = new Date();
+    const rangeFrom = dateRange ? new Date(dateRange.from) : subDays(now, 364);
+    const rangeTo = dateRange ? new Date(dateRange.to) : endOfDay(now);
+    const days = Math.max(1, differenceInDays(rangeTo, rangeFrom) + 1);
 
     let query = supabase
       .from('orders')
       .select('amount, paid_at')
       .eq('status', 'paid');
 
-    if (period !== 'all') {
-      query = query.gte('paid_at', startDate).lte('paid_at', endDate);
+    if (dateRange) {
+      query = query.gte('paid_at', dateRange.from).lte('paid_at', dateRange.to);
     }
 
     const { data: orders } = await query;
 
+    const chartData: DailyData[] = [];
     for (let i = days - 1; i >= 0; i--) {
-      const date = subDays(new Date(), i);
+      const date = subDays(rangeTo, i);
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
 
