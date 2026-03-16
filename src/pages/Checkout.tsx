@@ -373,6 +373,14 @@ export default function Checkout() {
                     </div>
                     <span>Validade de 1 ano</span>
                   </div>
+                  {course.points_reward > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="icon-box-sm bg-amber-500/10 text-amber-500">
+                        <Star className="h-3.5 w-3.5 fill-current" />
+                      </div>
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">+{course.points_reward} pontos</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pre-sale notice */}
