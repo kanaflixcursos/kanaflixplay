@@ -59,10 +59,8 @@ export default function StudentLevelBadge({ points, compact = false }: StudentLe
 
   if (compact) {
     return (
-      <div className={cn('flex items-center gap-3 rounded-xl border px-4 py-2.5', level.bgColor, level.borderColor)}>
-        <div className={cn('flex items-center justify-center h-8 w-8 rounded-lg', level.bgColor)}>
-          <Icon className={cn('h-4 w-4', level.color)} />
-        </div>
+      <div className="flex items-center gap-2.5">
+        <Icon className={cn('h-4 w-4', level.color)} />
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn('text-xs font-semibold', level.color)}>{level.name}</span>
@@ -77,28 +75,12 @@ export default function StudentLevelBadge({ points, compact = false }: StudentLe
   }
 
   return (
-    <div className={cn('rounded-xl border p-4 space-y-3', level.bgColor, level.borderColor)}>
-      <div className="flex items-center gap-3">
-        <div className={cn('flex items-center justify-center h-10 w-10 rounded-lg', level.bgColor)}>
-          <Icon className={cn('h-5 w-5', level.color)} />
-        </div>
-        <div>
-          <p className={cn('text-sm font-semibold', level.color)}>{level.name}</p>
-          <p className="text-xs text-muted-foreground">{points} pontos</p>
-        </div>
+    <div className="flex items-center gap-3">
+      <Icon className={cn('h-5 w-5', level.color)} />
+      <div>
+        <p className={cn('text-sm font-semibold', level.color)}>{level.name}</p>
+        <p className="text-xs text-muted-foreground">{points} pontos</p>
       </div>
-      {nextLevel && (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Próximo: {nextLevel.name}</span>
-            <span>{nextLevel.minPoints - points} pts restantes</span>
-          </div>
-          <Progress value={progress} className="h-1.5" />
-        </div>
-      )}
-      {!nextLevel && (
-        <p className="text-xs text-muted-foreground">Nível máximo alcançado! 🎉</p>
-      )}
     </div>
   );
 }
