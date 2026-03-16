@@ -285,8 +285,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <div className="icon-box">
+                    <DollarSign />
                   </div>
                   <span className="stat-card-label">Receita Total</span>
                 </div>
@@ -312,8 +312,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <div className="icon-box">
+                    <ShoppingCart />
                   </div>
                   <span className="stat-card-label">Total de Pedidos</span>
                 </div>
@@ -350,8 +350,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <div className="icon-box">
+                    <BarChart3 />
                   </div>
                   <span className="stat-card-label">Ticket Médio</span>
                 </div>
@@ -391,8 +391,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <div className="icon-box">
+                    <Target />
                   </div>
                   <span className="stat-card-label">Origem de Vendas</span>
                 </div>
@@ -433,8 +433,8 @@ export default function AdminOrders() {
       <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
           <CardTitle className="flex items-center gap-3 text-left">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+            <div className="icon-box">
+              <ShoppingCart />
             </div>
             <span className="stat-card-label">Últimas Vendas</span>
           </CardTitle>

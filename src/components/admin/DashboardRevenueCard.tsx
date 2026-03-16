@@ -105,8 +105,8 @@ export default function DashboardRevenueCard() {
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10">
-                <DollarSign className="h-5 w-5 text-primary" />
+              <div className="icon-box-lg">
+                <DollarSign />
               </div>
               <span className="stat-card-label">Receita Total</span>
             </div>

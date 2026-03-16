@@ -245,8 +245,8 @@ export default function AdminFeaturedBanner() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-3 text-base">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <Eye className="h-5 w-5 text-primary" />
+            <div className="icon-box">
+              <Eye />
             </div>
             Pré-visualização do Slideshow
           </CardTitle>
@@ -370,8 +370,8 @@ export default function AdminFeaturedBanner() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base">
-                <div className="p-2 rounded-xl bg-primary/10">
-                  <Star className="h-5 w-5 text-primary" />
+                <div className="icon-box">
+                  <Star />
                 </div>
                 Configuração — Banner {activeIndex + 1}
               </CardTitle>

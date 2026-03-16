@@ -22,8 +22,8 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
       <Card className="overflow-hidden h-full">
         <CardContent className="p-3 sm:p-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-xl shrink-0 bg-primary/10">
-              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="icon-box">
+              <Icon />
             </div>
             <span className="stat-card-label leading-tight">{title}</span>
           </div>

@@ -186,8 +186,8 @@ export default function MarketingCoupons() {
       >
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Ticket className="h-4 w-4 text-primary" />
+            <div className="icon-box">
+              <Ticket />
             </div>
             <div>
               <p className="text-2xl font-bold">{coupons.length}</p>
@@ -208,8 +208,8 @@ export default function MarketingCoupons() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Hash className="h-4 w-4 text-primary" />
+            <div className="icon-box">
+              <Hash />
             </div>
             <div>
               <p className="text-2xl font-bold">{totalUses}</p>
@@ -260,10 +260,10 @@ export default function MarketingCoupons() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-primary/10">
+                      <div className="icon-box-sm">
                         {coupon.discount_type === 'percentage'
-                          ? <Percent className="h-4 w-4 text-primary" />
-                          : <DollarSign className="h-4 w-4 text-primary" />
+                          ? <Percent />
+                          : <DollarSign />
                         }
                       </div>
                       <div className="min-w-0">
