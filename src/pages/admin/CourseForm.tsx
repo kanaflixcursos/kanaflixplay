@@ -486,24 +486,16 @@ export default function CourseForm() {
                         <SelectContent>
                           {(() => {
                             const basePrice = parseFloat(formData.price) || 0;
-                            const options = paymentConfig?.payment_methods
-                              .find(m => m.id === 'credit_card')
-                              ?.installments?.options;
-                            const items = options || [1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ number: n, label: n === 1 ? 'À vista' : `${n}x`, interest_rate: n <= 6 ? 0 : 4.07 }));
-                            return items.map((option: any) => {
-                              let total = basePrice;
-                              if (option.number > 6 && basePrice > 0) {
-                                total = basePrice * (1 + (option.interest_rate || 4.07) / 100);
-                              }
-                              const installmentValue = option.number > 0 ? total / option.number : total;
+                            const installmentOptions = calculateInstallments(basePrice);
+                            return installmentOptions.map((opt) => {
                               const priceLabel = basePrice > 0
-                                ? option.number === 1
-                                  ? ` — R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                  : ` — ${option.number}x de R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${option.number <= 6 ? ' sem juros' : ''} (total R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`
+                                ? opt.installments === 1
+                                  ? ` — R$ ${basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} à vista`
+                                  : ` — ${opt.installments}x de R$ ${opt.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (total R$ ${opt.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`
                                 : '';
                               return (
-                                <SelectItem key={option.number} value={option.number.toString()}>
-                                  {option.number === 1 ? 'À vista' : `Até ${option.number}x`}{priceLabel}
+                                <SelectItem key={opt.installments} value={opt.installments.toString()}>
+                                  {opt.installments === 1 ? 'À vista' : `Até ${opt.installments}x`}{priceLabel}
                                 </SelectItem>
                               );
                             });
