@@ -67,13 +67,17 @@ export default function StudentDashboard() {
       }
 
       // Fetch all user progress at once for efficiency
-      const { data: allProgress } = await supabase.
-      from('lesson_progress').
-      select('lesson_id, completed, completed_at, watched_seconds').
-      eq('user_id', user.id);
+      const [{ data: allProgress }, { data: profileData }] = await Promise.all([
+        supabase.from('lesson_progress')
+          .select('lesson_id, completed, completed_at, watched_seconds')
+          .eq('user_id', user.id),
+        supabase.from('profiles')
+          .select('points')
+          .eq('user_id', user.id)
+          .single()
+      ]);
 
-      // Calculate total study time
-      const totalWatchedSeconds = allProgress?.reduce((sum, p) => sum + (p.watched_seconds || 0), 0) || 0;
+      const totalPoints = profileData?.points || 0;
       const totalLessonsCompleted = allProgress?.filter((p) => p.completed).length || 0;
 
       const coursesWithProgress = await Promise.all(
