@@ -165,9 +165,9 @@ export default function AdminComments() {
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-3">
-             <div className="p-2 rounded-xl bg-primary/10">
-               <MessageSquare className="h-5 w-5 text-primary" />
-            </div>
+             <div className="icon-box">
+               <MessageSquare />
+             </div>
             Lista de Comentários
           </CardTitle>
         </CardHeader>
