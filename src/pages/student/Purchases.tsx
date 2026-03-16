@@ -121,24 +121,24 @@ export default function Purchases() {
     setSubmittingRefund(true);
 
     try {
-      // Create refund request
-      const { error: refundError } = await supabase
-        .from('refund_requests')
-        .insert({
-          order_id: refundingOrder.id,
-          user_id: user.id,
+      const { data, error } = await supabase.functions.invoke('pagarme', {
+        body: {
+          action: 'request_refund',
+          orderId: refundingOrder.id,
           reason: refundReason.trim(),
-        });
+        },
+      });
 
-      if (refundError) throw refundError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      toast.success('Solicitação de reembolso enviada!');
+      toast.success('Reembolso processado com sucesso! O valor será devolvido conforme a forma de pagamento original.');
       setRefundingOrder(null);
       setRefundReason('');
       fetchOrders();
-    } catch (error) {
-      console.error('Error creating refund request:', error);
-      toast.error('Erro ao solicitar reembolso');
+    } catch (error: any) {
+      console.error('Error processing refund:', error);
+      toast.error(error?.message || 'Erro ao processar reembolso');
     }
 
     setSubmittingRefund(false);
@@ -335,6 +335,13 @@ export default function Purchases() {
                               Solicitar Reembolso
                             </Button>
                           )}
+
+                          {order.status === 'refunded' && (
+                            <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Reembolsado
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -351,7 +358,7 @@ export default function Purchases() {
             <DialogHeader>
               <DialogTitle>Solicitar Reembolso</DialogTitle>
               <DialogDescription>
-                Descreva o motivo da sua solicitação de reembolso
+                O reembolso será processado automaticamente. O valor será devolvido conforme a forma de pagamento original.
               </DialogDescription>
             </DialogHeader>
 
@@ -371,8 +378,8 @@ export default function Purchases() {
                     onChange={(e) => setRefundReason(e.target.value)}
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Sua solicitação será analisada pela nossa equipe e você será notificado sobre a decisão.
+                  <p className="text-xs text-destructive font-medium">
+                    ⚠️ Ao confirmar, o reembolso será processado imediatamente e seu acesso ao curso será revogado.
                   </p>
                 </div>
               </div>
@@ -387,7 +394,7 @@ export default function Purchases() {
                 disabled={!refundReason.trim() || submittingRefund}
               >
                 {submittingRefund && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Enviar Solicitação
+                {submittingRefund ? 'Processando...' : 'Confirmar Reembolso'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -145,6 +145,10 @@ Deno.serve(async (req) => {
         }
         return handleCancelOrder(payload, PAGARME_API_KEY, adminSupabase);
       }
+      case 'request_refund': {
+        // Authenticated user can request refund for their own order — auto-processed
+        return handleRequestRefund(payload, userId, PAGARME_API_KEY, adminSupabase);
+      }
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -1405,6 +1409,160 @@ async function handleCancelOrder(
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
+}
+
+async function handleRequestRefund(
+  payload: any,
+  userId: string,
+  apiKey: string,
+  supabase: any
+) {
+  const { orderId, reason } = payload;
+
+  if (!orderId || !reason?.trim()) {
+    return new Response(JSON.stringify({ error: 'Order ID and reason are required' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Fetch order and verify ownership
+  const { data: order, error: orderError } = await supabase
+    .from('orders')
+    .select('*, courses(title)')
+    .eq('id', orderId)
+    .single();
+
+  if (orderError || !order) {
+    return new Response(JSON.stringify({ error: 'Order not found' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (order.user_id !== userId) {
+    return new Response(JSON.stringify({ error: 'You can only request refunds for your own orders' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (order.status !== 'paid') {
+    return new Response(JSON.stringify({ error: 'Only paid orders can be refunded' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Check if refund already requested
+  const { data: existingRefund } = await supabase
+    .from('refund_requests')
+    .select('id, status')
+    .eq('order_id', orderId)
+    .maybeSingle();
+
+  if (existingRefund) {
+    return new Response(JSON.stringify({ error: 'A refund request already exists for this order' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (!order.pagarme_charge_id) {
+    return new Response(JSON.stringify({ error: 'No payment charge found for this order' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Process refund via Pagar.me
+  const authString = btoa(`${apiKey}:`);
+
+  try {
+    const refundResponse = await fetch(`${PAGARME_API_URL}/charges/${order.pagarme_charge_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Basic ${authString}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const refundData = await refundResponse.json();
+
+    if (!refundResponse.ok) {
+      console.error('[AutoRefund] Pagar.me refund error:', refundData);
+      return new Response(JSON.stringify({ 
+        error: 'Falha ao processar reembolso no gateway de pagamento',
+        details: refundData
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Update order status
+    await supabase
+      .from('orders')
+      .update({ status: 'refunded' })
+      .eq('id', orderId);
+
+    // Create refund request record (already approved)
+    await supabase
+      .from('refund_requests')
+      .insert({
+        order_id: orderId,
+        user_id: userId,
+        reason: reason.trim(),
+        status: 'approved',
+        reviewed_at: new Date().toISOString(),
+      });
+
+    // Restore coupon usage
+    if (order.coupon_id) {
+      await restoreCouponUsage(supabase, order.coupon_id);
+    }
+
+    // Revoke enrollment
+    if (order.course_id) {
+      await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('user_id', userId)
+        .eq('course_id', order.course_id);
+    }
+
+    // Notify user
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        type: 'payment_refunded',
+        title: 'Reembolso processado',
+        message: `Seu reembolso para "${order.courses?.title || 'curso'}" foi processado automaticamente. O valor será devolvido conforme a forma de pagamento original.`,
+        link: '/purchases',
+        metadata: {
+          order_id: orderId,
+          course_id: order.course_id,
+          amount: order.amount
+        }
+      });
+
+    console.log(`[AutoRefund] Order ${orderId} refunded automatically for user ${userId}`);
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Reembolso processado com sucesso'
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[AutoRefund] Error:', error);
+    return new Response(JSON.stringify({ error: 'Erro ao processar reembolso' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 }
 
 async function handleGetOrdersAnalytics(supabase: any, month?: string) {
