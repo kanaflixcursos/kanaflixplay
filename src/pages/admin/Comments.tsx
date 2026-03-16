@@ -149,8 +149,8 @@ export default function AdminComments() {
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 rounded-xl bg-chart-2/10">
-                <MessageSquare className="h-5 w-5 text-chart-2" />
+               <div className="p-2.5 rounded-xl bg-primary/10">
+                 <MessageSquare className="h-5 w-5 text-primary" />
               </div>
               <span className="text-sm font-medium text-muted-foreground">Últimas 24h</span>
             </div>
