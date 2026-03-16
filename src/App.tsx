@@ -18,6 +18,7 @@ import StudentProfile from "@/pages/student/Profile";
 import CourseView from "@/pages/student/CourseView";
 import NotificationsPage from "@/pages/student/Notifications";
 import PurchasesPage from "@/pages/student/Purchases";
+import PointsPage from "@/pages/student/Points";
 import StudentCoursesPage from "@/pages/student/Courses";
 import CatalogPage from "@/pages/student/Catalog";
 
