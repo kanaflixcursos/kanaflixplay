@@ -17,10 +17,10 @@ interface StatCardProps {
 
 const colorPalette = [
   { icon: 'text-primary', bg: 'bg-primary/10' },
-  { icon: 'text-chart-3', bg: 'bg-chart-3/10' },
-  { icon: 'text-chart-2', bg: 'bg-chart-2/10' },
-  { icon: 'text-chart-4', bg: 'bg-chart-4/10' },
-  { icon: 'text-chart-5', bg: 'bg-chart-5/10' },
+  { icon: 'text-primary/80', bg: 'bg-primary/8' },
+  { icon: 'text-primary/70', bg: 'bg-primary/6' },
+  { icon: 'text-primary/90', bg: 'bg-primary/12' },
+  { icon: 'text-primary/75', bg: 'bg-primary/7' },
 ];
 
 function hashString(str: string): number {
