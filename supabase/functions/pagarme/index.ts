@@ -145,6 +145,10 @@ Deno.serve(async (req) => {
         }
         return handleCancelOrder(payload, PAGARME_API_KEY, adminSupabase);
       }
+      case 'request_refund': {
+        // Authenticated user can request refund for their own order — auto-processed
+        return handleRequestRefund(payload, userId, PAGARME_API_KEY, adminSupabase);
+      }
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
