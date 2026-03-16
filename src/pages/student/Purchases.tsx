@@ -35,11 +35,16 @@ interface Order {
   created_at: string;
   paid_at: string | null;
   course_id: string | null;
+  combo_id: string | null;
   pix_qr_code: string | null;
   pix_expires_at: string | null;
   boleto_url: string | null;
   boleto_due_date: string | null;
   course?: {
+    title: string;
+    thumbnail_url: string | null;
+  } | null;
+  combo?: {
     title: string;
     thumbnail_url: string | null;
   } | null;
