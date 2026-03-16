@@ -25,9 +25,9 @@ interface EnrolledCourse {
 }
 
 interface StudyStats {
-  totalWatchedSeconds: number;
   totalLessonsCompleted: number;
   totalCoursesCompleted: number;
+  totalPoints: number;
 }
 
 // Helper to format seconds into readable time
