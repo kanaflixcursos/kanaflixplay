@@ -88,7 +88,7 @@
     --popover: 220 14% 10%;
     --popover-foreground: 210 17% 93%;
 
-    --primary: 172 69% 18%;
+    --primary: 172 55% 45%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 16%;
@@ -98,14 +98,14 @@
     --muted-foreground: 220 9% 55%;
 
     --accent: 220 14% 16%;
-    --accent-foreground: 172 69% 30%;
+    --accent-foreground: 172 55% 50%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 14% 18%;
     --input: 220 14% 18%;
-    --ring: 172 69% 18%;
+    --ring: 172 55% 45%;
 
     --success: 152 60% 45%;
     --success-foreground: 0 0% 100%;
@@ -115,14 +115,14 @@
 
     --sidebar-background: 220 14% 7%;
     --sidebar-foreground: 210 17% 93%;
-    --sidebar-primary: 172 69% 18%;
+    --sidebar-primary: 172 55% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 172 50% 16%;
-    --sidebar-accent-foreground: 172 69% 35%;
+    --sidebar-accent: 172 40% 16%;
+    --sidebar-accent-foreground: 172 55% 50%;
     --sidebar-border: 220 14% 18%;
-    --sidebar-ring: 172 69% 18%;
+    --sidebar-ring: 172 55% 45%;
 
-    --chart-1: 172 69% 18%;
+    --chart-1: 172 55% 45%;
     --chart-2: 152 69% 50%;
     --chart-3: 262 83% 65%;
     --chart-4: 38 92% 60%;
@@ -146,6 +146,14 @@
     font-family: 'Google Sans', ui-sans-serif, system-ui, sans-serif;
     font-weight: 500;
   }
+}
+
+/* Icon color global rule — all Lucide icons inside icon containers inherit primary */
+.icon-box {
+  @apply p-2 rounded-xl bg-primary/10;
+}
+.icon-box > svg {
+  @apply text-primary;
 }
 
 /* Layout */
