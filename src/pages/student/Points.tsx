@@ -172,7 +172,30 @@ export default function PointsPage() {
   const restLeaderboard = leaderboard.slice(3);
 
   return (
-    <div className="space-y-8">
+    <div className="relative space-y-8">
+      {/* Mesh gradient background — light & dark aware */}
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 opacity-40 dark:opacity-20"
+        style={{
+          background: `
+            radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 50% 85%) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 45% 88%) 0%, transparent 60%),
+            radial-gradient(ellipse 45% 50% at 50% 80%, hsl(38 50% 90%) 0%, transparent 65%),
+            radial-gradient(ellipse 40% 35% at 90% 70%, hsl(260 30% 90%) 0%, transparent 60%)
+          `,
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 opacity-0 dark:opacity-30"
+        style={{
+          background: `
+            radial-gradient(ellipse 60% 50% at 15% 20%, hsl(172 40% 12%) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 80% 10%, hsl(200 35% 14%) 0%, transparent 60%),
+            radial-gradient(ellipse 45% 50% at 50% 80%, hsl(38 30% 10%) 0%, transparent 65%),
+            radial-gradient(ellipse 40% 35% at 90% 70%, hsl(260 20% 14%) 0%, transparent 60%)
+          `,
+        }}
+      />
       {/* Hero score section */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
