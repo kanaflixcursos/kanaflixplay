@@ -245,6 +245,9 @@ export default function AdminOrders() {
     setDateTo(undefined);
   };
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const a = analytics;
+
   const handleQuickPeriod = (period: QuickPeriod) => {
     setActivePeriod(period);
     setAnalyticsDateRange(getDateRangeFromPeriod(period));
