@@ -18,7 +18,7 @@ import {
   CalendarIcon, X, BarChart3, Target, Minus, ChevronLeft, ChevronRight,
   Download, FileSpreadsheet, FileText,
 } from 'lucide-react';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, subDays, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SalesTable, { Sale, fetchSalesData, formatCurrency } from '@/components/admin/SalesTable';
