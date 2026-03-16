@@ -31,7 +31,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 interface Props {
-  period: Period;
+  period?: Period;
 }
 
 export default function DashboardRevenueChart({ period }: Props) {
