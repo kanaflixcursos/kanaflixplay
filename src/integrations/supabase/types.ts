@@ -822,6 +822,7 @@ export type Database = {
           id: string
           last_seen_at: string | null
           phone: string | null
+          points: number
           updated_at: string
           user_id: string
           utm_campaign: string | null
@@ -837,6 +838,7 @@ export type Database = {
           id?: string
           last_seen_at?: string | null
           phone?: string | null
+          points?: number
           updated_at?: string
           user_id: string
           utm_campaign?: string | null
@@ -852,6 +854,7 @@ export type Database = {
           id?: string
           last_seen_at?: string | null
           phone?: string | null
+          points?: number
           updated_at?: string
           user_id?: string
           utm_campaign?: string | null
