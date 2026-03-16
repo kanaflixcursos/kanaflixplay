@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Progress } from '@/components/ui/progress';
-import { MessageCircle, LogIn, Star, TrendingUp, Sparkles, Zap } from 'lucide-react';
+import { MessageCircle, LogIn, Star, Sparkles, Check } from 'lucide-react';
 import { getStudentLevel, getNextLevel, getProgressToNext, getAllLevels } from '@/components/StudentLevelBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
+import winnersIllustration from '@/assets/winners-illustration.svg';
 
 interface PointsHistoryEntry {
   id: string;
@@ -23,7 +23,6 @@ const TIPS = [
   { icon: LogIn, label: 'Login diário', points: '+5 pts', description: 'Acesse a plataforma todos os dias para acumular pontos.', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100/60 dark:bg-amber-900/30' },
 ];
 
-// Animated counter component
 function AnimatedCounter({ value }: { value: number }) {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -112,28 +111,24 @@ export default function PointsPage() {
     );
   }
 
+  const currentLevelIdx = allLevels.findIndex(l => l.name === level.name);
+
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}>
-        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight flex items-center gap-2">
-          Meus Pontos
-          <Sparkles className="h-5 w-5 text-amber-500" />
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">Acompanhe sua evolução e ganhe mais pontos!</p>
-      </motion.div>
-
-      {/* Hero score section */}
+      {/* Hero score section with mesh gradient background */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.05 }}
         className="relative overflow-hidden rounded-2xl p-6 sm:p-8"
         style={{
-          background: 'linear-gradient(135deg, hsl(172 55% 22%) 0%, hsl(172 45% 32%) 50%, hsl(180 40% 28%) 100%)',
+          background: `
+            radial-gradient(ellipse at 20% 50%, hsl(172 55% 28% / 0.9) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, hsl(200 50% 30% / 0.7) 0%, transparent 40%),
+            radial-gradient(ellipse at 60% 80%, hsl(160 45% 25% / 0.8) 0%, transparent 45%),
+            radial-gradient(ellipse at 40% 10%, hsl(190 40% 35% / 0.5) 0%, transparent 50%),
+            linear-gradient(135deg, hsl(172 55% 20%) 0%, hsl(180 40% 24%) 100%)
+          `,
         }}>
         {/* Decorative orbs */}
         <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
@@ -142,94 +137,133 @@ export default function PointsPage() {
         <div className="absolute bottom-6 right-[15%] h-1.5 w-1.5 rounded-full bg-white/15 animate-pulse" style={{ animationDelay: '1s' }} />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-6">
-          {/* Icon badge */}
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.15, type: 'spring', stiffness: 200 }}
-            className={cn('level-badge-icon h-16 w-16 sm:h-20 sm:w-20', level.badgeClass)}>
-            <LevelIcon className="h-8 w-8 sm:h-10 sm:w-10 relative z-10" />
-          </motion.div>
+          {/* Left: score info */}
+          <div className="flex items-center gap-5 flex-1">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.15, type: 'spring', stiffness: 200 }}
+              className={cn('level-badge-icon h-16 w-16 sm:h-20 sm:w-20', level.badgeClass)}>
+              <LevelIcon className="h-8 w-8 sm:h-10 sm:w-10 relative z-10" />
+            </motion.div>
 
-          <div className="flex-1">
-            <motion.p
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="text-4xl sm:text-5xl font-bold tracking-tight text-white points-glow-text">
-              <AnimatedCounter value={points} />
-            </motion.p>
-            <p className="text-sm text-white/60 mt-1">pontos acumulados</p>
+            <div className="flex-1">
+              <motion.p
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                className="text-4xl sm:text-5xl font-bold tracking-tight text-white points-glow-text">
+                <AnimatedCounter value={points} />
+              </motion.p>
+              <p className="text-sm text-white/60 mt-1">pontos acumulados</p>
 
-            <div className="mt-4 max-w-sm">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="font-medium text-white/90">{level.name}</span>
-                {nextLevel && <span className="text-white/50 text-xs">{nextLevel.name} — {nextLevel.minPoints} pts</span>}
+              <div className="mt-4 max-w-sm">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="font-medium text-white/90">{level.name}</span>
+                  {nextLevel && <span className="text-white/50 text-xs">{nextLevel.name} — {nextLevel.minPoints} pts</span>}
+                </div>
+                <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+                    className="h-full rounded-full bg-gradient-to-r from-white/70 to-white/90"
+                  />
+                </div>
+                {nextLevel ? (
+                  <p className="text-xs text-white/50 mt-1.5">
+                    Faltam <span className="font-medium text-white/70">{nextLevel.minPoints - points}</span> pontos para o próximo nível
+                  </p>
+                ) : (
+                  <p className="text-xs text-white/50 mt-1.5">Parabéns! Nível máximo! 🎉</p>
+                )}
               </div>
-              <div className="h-2 w-full rounded-full bg-white/15 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                  className="h-full rounded-full bg-gradient-to-r from-white/70 to-white/90"
-                />
-              </div>
-              {nextLevel ? (
-                <p className="text-xs text-white/50 mt-1.5">
-                  Faltam <span className="font-medium text-white/70">{nextLevel.minPoints - points}</span> pontos para o próximo nível
-                </p>
-              ) : (
-                <p className="text-xs text-white/50 mt-1.5">Parabéns! Você alcançou o nível máximo! 🎉</p>
-              )}
             </div>
           </div>
+
+          {/* Right: illustration */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            className="hidden md:block flex-shrink-0">
+            <img
+              src={winnersIllustration}
+              alt="Ilustração de conquistas"
+              className="w-44 lg:w-52 xl:w-60 drop-shadow-lg opacity-90"
+            />
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* Levels roadmap */}
+      {/* Levels timeline */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.12 }}>
-        <h2 className="text-sm font-medium flex items-center gap-2 mb-5">
-          <TrendingUp className="h-4 w-4" />
-          Níveis
+        <h2 className="text-sm font-medium flex items-center gap-2 mb-6">
+          <Sparkles className="h-4 w-4 text-amber-500" />
+          Jornada de Níveis
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+        {/* Timeline horizontal */}
+        <div className="relative flex items-start justify-between gap-0">
+          {/* Connecting line */}
+          <div className="absolute top-6 left-[calc(12.5%)] right-[calc(12.5%)] h-0.5 bg-border/60" />
+          {/* Active progress line */}
+          <div
+            className="absolute top-6 left-[calc(12.5%)] h-0.5 bg-primary transition-all duration-700"
+            style={{
+              width: `${Math.min(currentLevelIdx / (allLevels.length - 1), 1) * 75}%`,
+            }}
+          />
+
           {allLevels.map((lvl, idx) => {
             const LvlIcon = lvl.icon;
-            const isActive = lvl.name === level.name;
-            const isPast = points >= lvl.minPoints && !isActive;
-            const isLocked = points < lvl.minPoints;
+            const isActive = idx === currentLevelIdx;
+            const isPast = idx < currentLevelIdx;
+            const isLocked = idx > currentLevelIdx;
+
             return (
               <motion.div
                 key={lvl.name}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.15 + idx * 0.06 }}
+                transition={{ duration: 0.3, delay: 0.18 + idx * 0.08 }}
                 className={cn(
-                  'relative flex flex-col items-center gap-2.5 rounded-xl p-4 text-center transition-all',
-                  isActive && cn('ring-2 ring-offset-2 ring-offset-background', lvl.borderColor.replace('border-', 'ring-'), lvl.bgColor),
-                  isPast && 'opacity-70',
+                  'relative flex flex-col items-center gap-2 flex-1 z-10 transition-all duration-300',
                   isLocked && 'opacity-30',
+                  isPast && 'opacity-50',
                 )}>
-                <div className={cn('level-badge-icon h-12 w-12', lvl.badgeClass)}>
-                  <LvlIcon className="h-6 w-6 relative z-10" />
+                {/* Node */}
+                <div className={cn(
+                  'relative',
+                  isActive && 'scale-110',
+                )}>
+                  <div className={cn(
+                    'level-badge-icon h-12 w-12',
+                    lvl.badgeClass,
+                    isActive && 'ring-[3px] ring-primary/30 ring-offset-2 ring-offset-background',
+                  )}>
+                    <LvlIcon className="h-5 w-5 relative z-10" />
+                  </div>
+                  {isPast && (
+                    <div className="absolute -bottom-1 -right-1 h-4.5 w-4.5 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className={cn('text-sm font-medium', isActive ? lvl.color : 'text-foreground')}>{lvl.name}</p>
-                  <p className="text-xs text-muted-foreground">{lvl.minPoints} pts</p>
+
+                {/* Label */}
+                <div className="text-center mt-1">
+                  <p className={cn(
+                    'text-xs font-medium',
+                    isActive ? lvl.color : 'text-muted-foreground',
+                  )}>
+                    {lvl.name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{lvl.minPoints} pts</p>
                 </div>
-                {isActive && (
-                  <motion.div
-                    layoutId="active-indicator"
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, delay: 0.4 }}>
-                    <Zap className="h-3 w-3 text-primary-foreground" />
-                  </motion.div>
-                )}
               </motion.div>
             );
           })}
