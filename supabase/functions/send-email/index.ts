@@ -174,7 +174,18 @@ const templates = {
     amount: number;
     paymentMethod: string;
     orderId: string;
-  }) => emailTemplate(`
+    installments?: number;
+  }) => {
+    const amountFormatted = `R$ ${(data.amount / 100).toFixed(2).replace('.', ',')}`;
+    const installments = data.installments || 1;
+    const installmentValue = installments > 1
+      ? `R$ ${(data.amount / 100 / installments).toFixed(2).replace('.', ',')}`
+      : null;
+    const valorDisplay = installments > 1
+      ? `${installments}x de ${installmentValue} (Total: ${amountFormatted})`
+      : amountFormatted;
+
+    return emailTemplate(`
     <div style="text-align: center; margin-bottom: 24px;">
       <span style="display: inline-block; background-color: ${brand.success}; color: ${brand.white}; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; font-family: ${fontFamily};">
         ✓ Pagamento Confirmado
@@ -194,8 +205,12 @@ const templates = {
           <td style="padding: 10px 0; text-align: right; font-weight: 500; color: ${brand.text};">${data.courseName}</td>
         </tr>
         <tr>
+          <td style="padding: 10px 0; color: ${brand.textMuted}; border-top: 1px solid ${brand.border};">Pagamento</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 500; color: ${brand.text}; border-top: 1px solid ${brand.border};">${data.paymentMethod}</td>
+        </tr>
+        <tr>
           <td style="padding: 10px 0; color: ${brand.textMuted}; border-top: 1px solid ${brand.border};">Valor</td>
-          <td style="padding: 10px 0; text-align: right; font-weight: 500; color: ${brand.text}; border-top: 1px solid ${brand.border};">R$ ${(data.amount / 100).toFixed(2).replace('.', ',')}</td>
+          <td style="padding: 10px 0; text-align: right; font-weight: 500; color: ${brand.text}; border-top: 1px solid ${brand.border};">${valorDisplay}</td>
         </tr>
         <tr>
           <td style="padding: 10px 0; color: ${brand.textMuted}; border-top: 1px solid ${brand.border};">Pedido</td>
@@ -205,7 +220,8 @@ const templates = {
     </div>
     
     ${button("Acessar curso agora", data.courseUrl)}
-  `, `Pagamento confirmado - ${data.courseName}`),
+  `, `Pagamento confirmado - ${data.courseName}`);
+  },
 
   paymentPending: (data: {
     userName: string;
