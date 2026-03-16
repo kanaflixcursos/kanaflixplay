@@ -335,6 +335,13 @@ export default function Purchases() {
                               Solicitar Reembolso
                             </Button>
                           )}
+
+                          {order.status === 'refunded' && (
+                            <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 gap-1">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Reembolsado
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
