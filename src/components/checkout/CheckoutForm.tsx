@@ -556,23 +556,23 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-foreground">
-                    {selectedInstallment.number}x de {formatPrice(selectedInstallment.installmentAmount)}
+                    {selectedInstallment.installments}x de {formatCurrency(selectedInstallment.installmentValue)}
                   </span>
                 </div>
-              {selectedInstallment.number <= 6 ? (
+              {selectedInstallment.installments === 1 ? (
                   <div className="flex items-center gap-2 text-sm text-success">
                     <Sparkles className="h-4 w-4" />
                     <span>Sem juros</span>
                   </div>
-                ) : selectedInstallment.totalAmount > discountedPrice ? (
+                ) : (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
                     <span>
-                      Total: {formatPrice(selectedInstallment.totalAmount)} 
+                      Total: {formatCurrency(selectedInstallment.totalValue)} 
                       <span className="text-xs ml-1">(com juros)</span>
                     </span>
                   </div>
-                ) : null}
+                )}
               </>
             ) : (
               <div className="flex items-baseline gap-2">
