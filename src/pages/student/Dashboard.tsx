@@ -30,17 +30,12 @@ interface StudyStats {
   totalPoints: number;
 }
 
-// Helper to format seconds into readable time
-const formatStudyTime = (seconds: number): string => {
-  if (seconds < 60) return `${seconds}s`;
-
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor(seconds % 3600 / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}min`;
+// Helper to format points
+const formatPoints = (points: number): string => {
+  if (points >= 1000) {
+    return `${(points / 1000).toFixed(1).replace(/\.0$/, '')}k`;
   }
-  return `${minutes}min`;
+  return `${points}`;
 };
 
 export default function StudentDashboard() {
