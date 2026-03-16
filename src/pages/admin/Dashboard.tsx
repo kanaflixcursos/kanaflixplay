@@ -7,37 +7,38 @@ import DashboardPaymentMethodsChart from '@/components/admin/DashboardPaymentMet
 import DashboardSalesTable from '@/components/admin/DashboardSalesTable';
 import DashboardLatestSignupsCard from '@/components/admin/DashboardLatestSignupsCard';
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { subDays, subMonths, startOfDay, endOfDay, format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
 
 export interface DashboardDateRange {
   from: string; // ISO
   to: string;   // ISO
 }
 
-type QuickPeriod = '1d' | '1w' | '1m' | 'all';
-
-const quickOptions: { value: QuickPeriod; label: string }[] = [
-  { value: '1d', label: '1D' },
-  { value: '1w', label: '1S' },
-  { value: '1m', label: '1M' },
-  { value: 'all', label: 'Tudo' },
-];
-
-function getDateRangeFromPeriod(period: QuickPeriod): DashboardDateRange | null {
+function getCurrentMonth() {
   const now = new Date();
-  switch (period) {
-    case '1d': return { from: startOfDay(now).toISOString(), to: endOfDay(now).toISOString() };
-    case '1w': return { from: startOfDay(subDays(now, 7)).toISOString(), to: endOfDay(now).toISOString() };
-    case '1m': return { from: startOfDay(subMonths(now, 1)).toISOString(), to: endOfDay(now).toISOString() };
-    case 'all': return null;
-  }
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function shiftMonth(month: string, delta: number) {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthLabel(month: string) {
+  const [y, m] = month.split('-').map(Number);
+  const d = new Date(y, m - 1, 1);
+  return format(d, 'MMMM yyyy', { locale: ptBR });
+}
+
+function getDateRangeFromMonth(month: string): DashboardDateRange {
+  const [y, m] = month.split('-').map(Number);
+  const start = startOfMonth(new Date(y, m - 1, 1));
+  const end = endOfMonth(new Date(y, m - 1, 1));
+  return { from: start.toISOString(), to: endOfDay(end).toISOString() };
 }
 
 const fadeUp = {
@@ -47,34 +48,12 @@ const fadeUp = {
 };
 
 export default function AdminDashboard() {
-  const [activePeriod, setActivePeriod] = useState<QuickPeriod | 'custom'>('1m');
-  const [dateRange, setDateRange] = useState<DashboardDateRange | null>(
-    getDateRangeFromPeriod('1m')
-  );
-  const [calendarRange, setCalendarRange] = useState<DateRange | undefined>();
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
-  const handleQuickPeriod = (period: QuickPeriod) => {
-    setActivePeriod(period);
-    setDateRange(getDateRangeFromPeriod(period));
-    setCalendarRange(undefined);
-  };
-
-  const handleCalendarSelect = (range: DateRange | undefined) => {
-    setCalendarRange(range);
-    if (range?.from && range?.to) {
-      setActivePeriod('custom');
-      setDateRange({
-        from: startOfDay(range.from).toISOString(),
-        to: endOfDay(range.to).toISOString(),
-      });
-      setPopoverOpen(false);
-    }
-  };
-
-  const customLabel = calendarRange?.from && calendarRange?.to
-    ? `${format(calendarRange.from, 'dd/MM', { locale: ptBR })} - ${format(calendarRange.to, 'dd/MM', { locale: ptBR })}`
-    : 'Período';
+  const isCurrentMonth = selectedMonth === getCurrentMonth();
+  const dateRange: DashboardDateRange | null = selectedMonth === 'all'
+    ? null
+    : getDateRangeFromMonth(selectedMonth);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -85,41 +64,29 @@ export default function AdminDashboard() {
             Visão geral da plataforma Kanaflix Play
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-1">
-          {quickOptions.map((option) => (
-            <Button
-              key={option.value}
-              variant={activePeriod === option.value ? 'default' : 'outline'}
-              size="sm"
-              className="h-7 px-2.5 text-xs"
-              onClick={() => handleQuickPeriod(option.value)}
-            >
-              {option.label}
+        <div className="flex items-center gap-1.5 bg-muted/50 rounded-xl p-1">
+          {selectedMonth !== 'all' && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          ))}
-          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant={activePeriod === 'custom' ? 'default' : 'outline'}
-                size="sm"
-                className="h-7 px-2.5 text-xs gap-1"
-              >
-                <CalendarIcon className="h-3 w-3" />
-                {customLabel}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                selected={calendarRange}
-                onSelect={handleCalendarSelect}
-                numberOfMonths={2}
-                disabled={(date) => date > new Date()}
-                className={cn("p-3 pointer-events-auto")}
-                locale={ptBR}
-              />
-            </PopoverContent>
-          </Popover>
+          )}
+          <span className="text-sm font-medium min-w-[130px] text-center capitalize">
+            {selectedMonth === 'all' ? 'Todo o período' : getMonthLabel(selectedMonth)}
+          </span>
+          {selectedMonth !== 'all' && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isCurrentMonth} onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+          {selectedMonth === 'all' ? (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth(getCurrentMonth())}>
+              Ver por mês
+            </Button>
+          ) : (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth('all')}>
+              Tudo
+            </Button>
+          )}
         </div>
       </motion.div>
 
