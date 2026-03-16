@@ -57,6 +57,8 @@ interface AppSidebarProps {
 export default function AppSidebar({ variant }: AppSidebarProps) {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { setOpenMobile, isMobile } = useSidebar();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null; email: string | null }>({
     full_name: null,
     avatar_url: null,
@@ -66,6 +68,13 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
 
   const isAdmin = variant === 'admin';
   const menuItems = isAdmin ? adminMenuItems : studentMenuItems;
+
+  // Auto-close sidebar on route change (mobile)
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [location.pathname, isMobile, setOpenMobile]);
 
   useEffect(() => {
     if (!user) return;
