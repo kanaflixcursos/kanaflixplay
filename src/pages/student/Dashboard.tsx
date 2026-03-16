@@ -136,7 +136,7 @@ export default function StudentDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8"
+          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 w-[100vw] max-w-none left-1/2 -translate-x-1/2 relative"
           style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
         >
           {/* Decorative elements */}
