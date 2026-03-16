@@ -77,7 +77,7 @@ export default function CourseView() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="relative space-y-4 md:space-y-6">
       {/* Pre-sale banner */}
       {isPreSale && (
         <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/30 rounded-xl">
@@ -110,18 +110,20 @@ export default function CourseView() {
         <div className="lg:col-span-2 space-y-4 md:space-y-6">
           {/* Player */}
           {selectedLesson?.video_url ? (
-            <div className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-6 md:py-8 overflow-hidden">
-              {/* Cinema gradient background */}
-              <div className="absolute inset-0 -z-10">
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-transparent" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] opacity-30"
+            <div className="relative -mx-4 md:-mx-6 lg:-mx-8 py-6 md:py-10 px-4 md:px-6 lg:px-8">
+              {/* Cinema gradient background — full bleed, no overflow clip */}
+              <div className="absolute inset-0 -inset-x-[50vw] left-1/2 -translate-x-1/2 w-screen pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-transparent" />
+                <div
+                  className="absolute inset-0 opacity-50"
                   style={{
-                    background: 'radial-gradient(ellipse at 30% 40%, hsl(var(--primary) / 0.4) 0%, transparent 50%), radial-gradient(ellipse at 70% 60%, hsl(220 60% 50% / 0.3) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, hsl(280 40% 50% / 0.2) 0%, transparent 60%)',
+                    background:
+                      'radial-gradient(ellipse 60% 70% at 25% 40%, hsl(var(--primary) / 0.55) 0%, transparent 70%), radial-gradient(ellipse 50% 60% at 75% 50%, hsl(220 60% 50% / 0.45) 0%, transparent 70%), radial-gradient(ellipse 70% 50% at 50% 60%, hsl(280 40% 50% / 0.35) 0%, transparent 70%), radial-gradient(ellipse 40% 50% at 60% 25%, hsl(340 50% 50% / 0.25) 0%, transparent 60%)',
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
               </div>
-              <div className="w-full rounded-lg overflow-hidden shadow-2xl relative">
+              <div className="relative w-full rounded-lg overflow-hidden shadow-2xl">
                 <PlayerWithProgress
                   key={selectedLesson.id}
                   videoUrl={selectedLesson.video_url}
