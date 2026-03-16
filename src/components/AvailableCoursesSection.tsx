@@ -93,6 +93,7 @@ export default function AvailableCoursesSection() {
             price: course.price,
             category_name: course.course_categories?.name || null,
             total_duration,
+            points_reward: course.points_reward || 0,
           };
         })
       );
