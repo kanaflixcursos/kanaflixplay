@@ -164,7 +164,7 @@ export default function StudentDashboard() {
                 transition={{ delay: 0.15, duration: 0.4 }}
                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
               >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse" />
                 Bem-vindo à plataforma
               </motion.div>
 
