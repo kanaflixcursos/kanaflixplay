@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Trophy, Star } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
