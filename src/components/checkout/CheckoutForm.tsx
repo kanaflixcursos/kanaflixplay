@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { calculateInstallments } from "@/utils/pricingCalculator";
+import { calculateInstallments, formatCurrency, type InstallmentOption } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
@@ -60,7 +60,7 @@ interface PaymentResult {
   };
 }
 
-interface InstallmentOption {
+interface LocalInstallmentOption {
   number: number;
   label: string;
 }
@@ -238,11 +238,11 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   // ─── Installment options using pricingCalculator ─────────────────
 
   const installmentOptions = useMemo(() => {
-    return calculateInstallments(couponDiscountedPrice);
+    return calculateInstallments(couponDiscountedPrice / 100);
   }, [couponDiscountedPrice]);
 
   const selectedInstallment = useMemo(() => {
-    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+    return installmentOptions.find(opt => opt.installments === installments) || installmentOptions[0];
   }, [installmentOptions, installments]);
 
   // Reset installments when switching payment methods
@@ -452,7 +452,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // Calculate amounts
   const finalAmount = paymentMethod === 'credit_card' 
-    ? selectedInstallment?.totalAmount || couponDiscountedPrice
+    ? Math.round((selectedInstallment?.totalValue || couponDiscountedPrice / 100) * 100)
     : discountedPrice;
 
   if (paymentResult) {
@@ -556,23 +556,23 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-foreground">
-                    {selectedInstallment.number}x de {formatPrice(selectedInstallment.installmentAmount)}
+                    {selectedInstallment.installments}x de {formatCurrency(selectedInstallment.installmentValue)}
                   </span>
                 </div>
-              {selectedInstallment.number <= 6 ? (
+              {selectedInstallment.installments === 1 ? (
                   <div className="flex items-center gap-2 text-sm text-success">
                     <Sparkles className="h-4 w-4" />
                     <span>Sem juros</span>
                   </div>
-                ) : selectedInstallment.totalAmount > discountedPrice ? (
+                ) : (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
                     <span>
-                      Total: {formatPrice(selectedInstallment.totalAmount)} 
+                      Total: {formatCurrency(selectedInstallment.totalValue)} 
                       <span className="text-xs ml-1">(com juros)</span>
                     </span>
                   </div>
-                ) : null}
+                )}
               </>
             ) : (
               <div className="flex items-baseline gap-2">
@@ -912,8 +912,10 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {installmentOptions.map((opt) => (
-                        <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.label}
+                        <SelectItem key={opt.installments} value={opt.installments.toString()}>
+                          {opt.installments === 1
+                            ? `1x de ${formatCurrency(opt.installmentValue)} sem juros`
+                            : `${opt.installments}x de ${formatCurrency(opt.installmentValue)} (Total ${formatCurrency(opt.totalValue)})`}
                         </SelectItem>
                       ))}
                     </SelectContent>

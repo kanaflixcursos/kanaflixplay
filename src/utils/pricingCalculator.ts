@@ -1,84 +1,56 @@
-/**
- * Pricing Calculator — Hotmart-style installment interest pass-through.
- *
- * MDR rates from Pagar.me contract:
- *   1x (à vista)  → 3.25%
- *   2-6x           → 3.79%
- *   7-12x          → 4.07%
- *
- * Formula: totalWithInterest = basePrice / (1 - MDR)
- * This ensures the merchant receives the base price after the gateway deducts its fee.
- * For 1x the buyer pays the base price (merchant absorbs the 3.25%).
- */
+export interface InstallmentOption {
+  installments: number;
+  installmentValue: number;
+  totalValue: number;
+}
 
-const MDR_RATES: Record<string, number> = {
-  '1': 0, // 1x: no interest passed to buyer
-  '2-6': 0.0379,
-  '7-12': 0.0407,
+// Multiplicadores exatos extraídos da planilha do Pagar.me
+// (Ex: Em 12x, R$ 1000 vira R$ 1168,28. Multiplicador = 1.16828)
+const INSTALLMENT_MULTIPLIERS: Record<number, number> = {
+  1: 1.00000,
+  2: 1.04496,
+  3: 1.05729,
+  4: 1.06963,
+  5: 1.08196,
+  6: 1.09429,
+  7: 1.10662,
+  8: 1.11895,
+  9: 1.13129,
+  10: 1.14362,
+  11: 1.15595,
+  12: 1.16828
 };
 
-function getMdrRate(installments: number): number {
-  if (installments <= 1) return MDR_RATES['1'];
-  if (installments <= 6) return MDR_RATES['2-6'];
-  return MDR_RATES['7-12'];
-}
-
-export interface InstallmentDetail {
-  /** Number of installments */
-  number: number;
-  /** Per-installment amount in cents */
-  installmentAmount: number;
-  /** Total amount with interest in cents */
-  totalAmount: number;
-  /** Whether interest is applied */
-  hasInterest: boolean;
-  /** Display label, e.g. "3x de R$ 35,00 (Total R$ 105,00)" */
-  label: string;
-}
-
-function formatBRL(cents: number): string {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
-}
-
 /**
- * Calculate all 12 installment options for a given base price (in cents).
- * @param basePrice price in cents after any coupon/discount but BEFORE installment interest
- * @param maxInstallments cap (default 12)
- * @param minPerInstallment minimum per-installment amount in cents (default 500 = R$5)
+ * Calcula as opções de parcelamento repassando os juros fixos do gateway.
+ * @param basePrice Valor do curso à vista
  */
-export function calculateInstallments(
-  basePrice: number,
-  maxInstallments = 12,
-  minPerInstallment = 500,
-): InstallmentDetail[] {
-  const results: InstallmentDetail[] = [];
+export function calculateInstallments(basePrice: number): InstallmentOption[] {
+  const options: InstallmentOption[] = [];
 
-  for (let n = 1; n <= maxInstallments; n++) {
-    const rate = getMdrRate(n);
-    const hasInterest = rate > 0;
-    const totalAmount = hasInterest ? Math.round(basePrice / (1 - rate)) : basePrice;
-    const installmentAmount = Math.ceil(totalAmount / n);
-
-    if (installmentAmount < minPerInstallment && n > 1) continue;
-
-    const label =
-      n === 1
-        ? `1x de ${formatBRL(totalAmount)} sem juros`
-        : hasInterest
-          ? `${n}x de ${formatBRL(installmentAmount)} (Total ${formatBRL(totalAmount)})`
-          : `${n}x de ${formatBRL(installmentAmount)} sem juros`;
-
-    results.push({ number: n, installmentAmount, totalAmount, hasInterest, label });
+  for (let n = 1; n <= 12; n++) {
+    const multiplier = INSTALLMENT_MULTIPLIERS[n] || 1;
+    const totalValue = basePrice * multiplier;
+    const installmentValue = totalValue / n;
+    
+    options.push({
+      installments: n,
+      // Arredondamento padrão financeiro (2 casas decimais)
+      installmentValue: Number(installmentValue.toFixed(2)),
+      totalValue: Number(totalValue.toFixed(2))
+    });
   }
+  return options;
+}
 
-  return results;
+export function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 /**
- * Server-side validation: given a number of installments and base price,
- * return the expected total amount the buyer should be charged.
+ * Returns the multiplier for a given number of installments.
+ * Used for server-side validation.
  */
-export function calculateTotalWithInterest(basePrice: number, installments: number): number {
-  const rate = getMdrRate(installments);
-  return rate > 0 ? Math.round(basePrice / (1 - rate)) : basePrice;
+export function getInstallmentMultiplier(installments: number): number {
+  return INSTALLMENT_MULTIPLIERS[installments] || 1;
 }

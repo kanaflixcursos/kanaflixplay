@@ -22,7 +22,7 @@ import {
   formatPriceBRL, formatDocument, formatCardNumber, cleanCardNumber,
   formatPhone, formatCep, isValidDocument,
 } from "@/utils/paymentFormatter";
-import { calculateInstallments, type InstallmentDetail } from "@/utils/pricingCalculator";
+import { calculateInstallments, formatCurrency, type InstallmentOption } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
@@ -43,7 +43,7 @@ interface PaymentResult {
   boleto?: { url: string; barcode: string; dueDate: string };
 }
 
-interface InstallmentOption {
+interface LocalInstallmentOption {
   number: number;
   label: string;
 }
@@ -199,12 +199,12 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // ─── Installment options using pricingCalculator ─────────────────
 
-  const installmentOptions: InstallmentDetail[] = useMemo(() => {
-    return calculateInstallments(displayPriceAfterCoupon);
+  const installmentOptions = useMemo(() => {
+    return calculateInstallments(displayPriceAfterCoupon / 100);
   }, [displayPriceAfterCoupon]);
 
   const selectedInstallment = useMemo(() => {
-    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+    return installmentOptions.find(opt => opt.installments === installments) || installmentOptions[0];
   }, [installmentOptions, installments]);
 
   useEffect(() => {
@@ -446,10 +446,10 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               <>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold text-foreground">
-                    {selectedInstallment.number}x de {formatPriceBRL(selectedInstallment.installmentAmount)}
+                    {selectedInstallment.installments}x de {formatCurrency(selectedInstallment.installmentValue)}
                   </span>
                 </div>
-                {!selectedInstallment.hasInterest ? (
+                {selectedInstallment.installments === 1 ? (
                   <div className="flex items-center gap-2 text-sm text-success">
                     <Sparkles className="h-4 w-4" />
                     <span>Sem juros</span>
@@ -457,7 +457,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Total: {formatPriceBRL(selectedInstallment.totalAmount)} <span className="text-xs ml-1">(com juros)</span></span>
+                    <span>Total: {formatCurrency(selectedInstallment.totalValue)} <span className="text-xs ml-1">(com juros)</span></span>
                   </div>
                 )}
               </>
@@ -676,8 +676,10 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {installmentOptions.map((opt) => (
-                        <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.label}
+                        <SelectItem key={opt.installments} value={opt.installments.toString()}>
+                          {opt.installments === 1
+                            ? `1x de ${formatCurrency(opt.installmentValue)} sem juros`
+                            : `${opt.installments}x de ${formatCurrency(opt.installmentValue)} (Total ${formatCurrency(opt.totalValue)})`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -715,7 +717,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                Pagar {formatPriceBRL(paymentMethod === 'credit_card' ? (selectedInstallment?.totalAmount || displayFinalPrice) : displayFinalPrice)}
+                Pagar {formatPriceBRL(paymentMethod === 'credit_card' ? Math.round((selectedInstallment?.totalValue || displayFinalPrice / 100) * 100) : displayFinalPrice)}
               </>
             )}
           </Button>
