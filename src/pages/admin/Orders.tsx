@@ -25,7 +25,8 @@ import SalesTable, { Sale, fetchSalesData, formatCurrency } from '@/components/a
 import DashboardRevenueChart from '@/components/admin/DashboardRevenueChart';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-
+import { DateRange } from 'react-day-picker';
+import { DashboardDateRange } from '@/pages/admin/Dashboard';
 const PAGE_SIZE = 20;
 
 interface AnalyticsData {
