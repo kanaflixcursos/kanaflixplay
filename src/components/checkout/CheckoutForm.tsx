@@ -900,9 +900,9 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
               </div>
               
               {/* Installments */}
-              {availableInstallments.length >= 1 && (
+              {installmentOptions.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Parcelas</Label>
+                  <Label className="text-xs text-muted-foreground">Parcelas *</Label>
                   <Select
                     value={installments.toString()}
                     onValueChange={(v) => setInstallments(parseInt(v))}
@@ -911,10 +911,9 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
                       <SelectValue placeholder="Selecione as parcelas" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableInstallments.map((opt) => (
+                      {installmentOptions.map((opt) => (
                         <SelectItem key={opt.number} value={opt.number.toString()}>
-                          {opt.number}x de {formatPrice(opt.installmentAmount)}
-                          {opt.number <= 6 ? ' sem juros' : ` (Total: ${formatPrice(opt.totalAmount)})`}
+                          {opt.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
