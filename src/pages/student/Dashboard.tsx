@@ -126,13 +126,86 @@ export default function StudentDashboard() {
 
   // Show available courses for users with no enrollments
   if (!loading && enrolledCourses.length === 0) {
+    const firstName = (user?.user_metadata?.full_name || 'Usuário').split(' ')[0];
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
-          <p className="text-muted-foreground text-sm mt-1">Explore nossos cursos disponíveis e comece a aprender!</p>
-        </div>
-        <AvailableCoursesSection />
+      <div className="space-y-8">
+        {/* Hero welcome */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-6 sm:p-10 text-primary-foreground"
+        >
+          {/* Decorative circles */}
+          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute top-4 right-8 h-20 w-20 rounded-full border border-white/20" />
+          <div className="absolute bottom-6 right-24 h-8 w-8 rounded-full bg-white/15" />
+
+          <div className="relative z-10 max-w-lg">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+              className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              Bem-vindo à plataforma
+            </motion.div>
+
+            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-tight">
+              Olá, {firstName}! 👋
+            </h1>
+            <p className="text-sm sm:text-base mt-2 text-white/80 max-w-md leading-relaxed">
+              Sua jornada de aprendizado começa aqui. Explore nossos cursos e descubra conteúdos incríveis preparados para você.
+            </p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="flex flex-wrap gap-4 mt-6"
+            >
+              <Link to="/catalog">
+                <Button
+                  size="lg"
+                  className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-black/10 gap-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Explorar Cursos
+                </Button>
+              </Link>
+            </motion.div>
+          </div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="relative z-10 flex items-center gap-6 mt-8 pt-6 border-t border-white/20"
+          >
+            {[
+              { icon: BookOpen, label: 'Cursos exclusivos' },
+              { icon: Clock, label: 'Aprenda no seu ritmo' },
+              { icon: Trophy, label: 'Certificados disponíveis' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/70">
+                <item.icon className="h-4 w-4 text-white/50" />
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Available courses */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
+        >
+          <AvailableCoursesSection />
+        </motion.div>
       </div>
     );
   }
