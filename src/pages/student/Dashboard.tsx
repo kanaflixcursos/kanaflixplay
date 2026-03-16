@@ -136,7 +136,7 @@ export default function StudentDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8"
+          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center -mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 w-[100vw]"
           style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
         >
           {/* Decorative elements */}
@@ -157,7 +157,7 @@ export default function StudentDashboard() {
                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                Bem-vindo à plataforma
+                Apresentamos o Kanaflix Play
               </motion.div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight text-white">
@@ -204,18 +204,19 @@ export default function StudentDashboard() {
               </motion.div>
             </div>
 
-            {/* Illustration */}
+            {/* Photo */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
-              className="hidden md:block flex-shrink-0"
+              className="hidden lg:block absolute right-0 top-0 bottom-0 w-[40%]"
             >
               <img
                 src={welcomeIllustration}
-                alt="Pessoa estudando em um ambiente acolhedor"
-                className="w-64 lg:w-80 xl:w-96 drop-shadow-2xl"
+                alt="Pessoa estudando online"
+                className="w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#125C52] via-[#125C52]/60 to-transparent" />
             </motion.div>
           </div>
         </motion.div>
