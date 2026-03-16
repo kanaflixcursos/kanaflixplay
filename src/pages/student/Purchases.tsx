@@ -244,12 +244,12 @@ export default function Purchases() {
                 <Card key={order.id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <div className="flex flex-col md:flex-row">
-                      {/* Course thumbnail */}
-                      {order.course?.thumbnail_url && (
+                      {/* Course/Combo thumbnail */}
+                      {(order.combo?.thumbnail_url || order.course?.thumbnail_url) && (
                         <div className="md:w-48 h-32 md:h-auto shrink-0">
                           <img 
-                            src={order.course.thumbnail_url} 
-                            alt={order.course.title}
+                            src={(order.combo?.thumbnail_url || order.course?.thumbnail_url)!} 
+                            alt={order.combo?.title || order.course?.title || ''}
                             className="w-full h-full object-cover"
                           />
                         </div>
