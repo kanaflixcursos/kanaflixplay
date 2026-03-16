@@ -124,7 +124,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
       <SidebarLogo showAdminBadge={isAdmin} />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? 'Gerenciamento' : 'Menu'}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -167,7 +166,6 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
           </SidebarGroup>
         ) : role === 'admin' ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Administração</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
