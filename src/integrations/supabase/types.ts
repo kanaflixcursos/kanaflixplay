@@ -164,6 +164,30 @@ export type Database = {
           },
         ]
       }
+      daily_login_points: {
+        Row: {
+          created_at: string
+          id: string
+          login_date: string
+          points_awarded: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          login_date?: string
+          points_awarded?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          login_date?: string
+          points_awarded?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       discount_coupons: {
         Row: {
           code: string
@@ -1231,6 +1255,7 @@ export type Database = {
       }
     }
     Functions: {
+      award_daily_login_points: { Args: { p_user_id: string }; Returns: number }
       get_course_mate_profile: {
         Args: { target_user_id: string }
         Returns: {
