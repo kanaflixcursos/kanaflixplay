@@ -356,7 +356,7 @@ async function handleCreateOrder(
       discountAmount = coupon.discount_value;
     }
 
-    finalPrice = Math.max(0, course.price - discountAmount);
+    finalPrice = Math.max(0, itemPrice - discountAmount);
     validatedCouponId = coupon.id;
 
     // Increment used_count
