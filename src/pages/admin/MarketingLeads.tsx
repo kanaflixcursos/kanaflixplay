@@ -233,9 +233,9 @@ export default function MarketingLeads() {
       </div>
 
       <div className="grid gap-3 grid-cols-3">
-        <StatCard icon={Users} title="Total de Leads" value={totalLeads} loading={loading} iconColor="text-primary" iconBgColor="bg-primary/10" />
-        <StatCard icon={UserPlus} title="Cadastros" value={signedUpLeads} loading={loading} iconColor="text-chart-4" iconBgColor="bg-chart-4/10" />
-        <StatCard icon={UserCheck} title="Convertidos" value={convertedLeads} loading={loading} iconColor="text-chart-2" iconBgColor="bg-chart-2/10" />
+        <StatCard icon={Users} title="Total de Leads" value={totalLeads} loading={loading} />
+        <StatCard icon={UserPlus} title="Cadastros" value={signedUpLeads} loading={loading} />
+        <StatCard icon={UserCheck} title="Convertidos" value={convertedLeads} loading={loading} />
       </div>
 
       <Card>
