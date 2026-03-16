@@ -171,7 +171,7 @@ async function handleCreateOrder(
   apiKey: string, 
   supabase: any
 ) {
-  const { courseId, paymentMethod, customer, card, installments = 1, couponId } = payload;
+  const { courseId, comboId, paymentMethod, customer, card, installments = 1, couponId } = payload;
 
   // Validate payment method
   const validPaymentMethods = ['credit_card', 'pix', 'boleto'];
