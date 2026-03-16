@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar, User } from 'lucide-react';
+import { Camera, Loader2, BookOpen, Trophy, Mail, Phone, Calendar as CalendarIcon, User } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { motion } from 'framer-motion';
 
 interface Profile {
@@ -394,14 +395,14 @@ export default function StudentProfile() {
 
                 <div className="space-y-2">
                   <Label htmlFor="birthDate" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
+                    <CalendarIcon className="h-4 w-4" />
                     Data de Nascimento
                   </Label>
-                  <Input
+                  <DatePicker
                     id="birthDate"
-                    type="date"
                     value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
+                    onChange={setBirthDate}
+                    maxDate={new Date()}
                   />
                 </div>
               </div>

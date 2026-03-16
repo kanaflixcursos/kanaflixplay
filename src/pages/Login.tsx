@@ -11,7 +11,8 @@ import Logo from '@/components/Logo';
 import { translateError } from '@/lib/translate-error';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone, Calendar } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Loader2, Phone } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { motion } from 'framer-motion';
 import PhoneInput from '@/components/PhoneInput';
 
@@ -388,17 +389,13 @@ export default function Login() {
                 <Label htmlFor="signupBirthDate" className="text-sm font-medium">
                   Data de Nascimento <span className="text-destructive">*</span>
                 </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="signupBirthDate"
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="pl-10 h-11"
-                    required
-                  />
-                </div>
+                <DatePicker
+                  id="signupBirthDate"
+                  value={birthDate}
+                  onChange={setBirthDate}
+                  placeholder="Selecionar data"
+                  maxDate={new Date()}
+                />
               </div>
 
               <div className="space-y-2">

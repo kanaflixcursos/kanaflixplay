@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -702,7 +703,12 @@ export default function AdminStudents() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="birth_date">Data de Nascimento</Label>
-              <Input id="birth_date" type="date" value={editForm.birth_date} onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))} />
+              <DatePicker
+                id="birth_date"
+                value={editForm.birth_date}
+                onChange={(value) => setEditForm(prev => ({ ...prev, birth_date: value }))}
+                maxDate={new Date()}
+              />
             </div>
           </div>
           <DialogFooter>
