@@ -70,7 +70,7 @@ export default function ComboForm() {
       toast.error('Selecione pelo menos 2 cursos');
       return;
     }
-    if (price <= 0) {
+    if (priceInCents <= 0) {
       toast.error('Defina um preço para o combo');
       return;
     }
@@ -81,7 +81,7 @@ export default function ComboForm() {
         title,
         description: description || null,
         thumbnail_url: thumbnailUrl || null,
-        price,
+        price: priceInCents,
         max_installments: maxInstallments,
         is_active: isActive,
         course_ids: selectedCourseIds,
