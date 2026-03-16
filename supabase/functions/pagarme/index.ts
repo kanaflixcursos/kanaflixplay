@@ -887,7 +887,7 @@ async function handleChargeRefunded(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -901,19 +901,23 @@ async function handleChargeRefunded(supabase: any, data: any) {
     .update({ status: 'refunded' })
     .eq('id', order.id);
 
-  // Restore coupon usage on refund
   if (order.coupon_id) {
     await restoreCouponUsage(supabase, order.coupon_id);
-    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (refunded)`);
   }
 
   console.log(`[Webhook] Order ${order.id} marked as refunded`);
 
-  if (order.course_id) {
+  // Revoke enrollments (combo or single)
+  if (order.combo_id) {
+    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+    for (const c of (cc || [])) {
+      await revokeEnrollment(supabase, order.user_id, c.course_id);
+    }
+  } else if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} from course ${order.course_id}`);
   }
 
+  const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'Curso');
   const profile = await getUserProfile(supabase, order.user_id);
   
   if (profile?.email) {
@@ -923,7 +927,7 @@ async function handleChargeRefunded(supabase: any, data: any) {
       to: profile.email,
       data: {
         userName: profile.full_name || '',
-        courseName: order.courses?.title || 'Curso',
+        courseName: itemTitle,
         amount: order.amount,
         orderId: order.id,
       }
@@ -934,11 +938,12 @@ async function handleChargeRefunded(supabase: any, data: any) {
     user_id: order.user_id,
     type: 'payment_refunded',
     title: 'Reembolso processado',
-    message: `O reembolso para "${order.courses?.title || 'curso'}" foi processado. O acesso ao curso foi revogado.`,
+    message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
     link: null,
     metadata: {
       order_id: order.id,
       course_id: order.course_id,
+      combo_id: order.combo_id,
       amount: order.amount
     }
   });
