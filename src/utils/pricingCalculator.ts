@@ -4,21 +4,21 @@ export interface InstallmentOption {
   totalValue: number;
 }
 
-// Multiplicadores exatos extraídos da planilha do Pagar.me
-// (Ex: Em 12x, R$ 1000 vira R$ 1168,28. Multiplicador = 1.16828)
+// Multiplicadores exatos calculados com a fórmula: 1 / (1 - C.E.T)
+// Garantem que, após o gateway descontar a taxa, o valor líquido seja cravado no preço base.
 const INSTALLMENT_MULTIPLIERS: Record<number, number> = {
-  1: 1.00000,
-  2: 1.04496,
-  3: 1.05729,
-  4: 1.06963,
-  5: 1.08196,
-  6: 1.09429,
-  7: 1.10662,
-  8: 1.11895,
-  9: 1.13129,
-  10: 1.14362,
-  11: 1.15595,
-  12: 1.16828
+  1: 1.00000, // À vista (O produtor absorve a taxa de 1x para manter o preço de vitrine)
+  2: 1.04493, // C.E.T 4.30%
+  3: 1.05496, // C.E.T 5.21%
+  4: 1.06519, // C.E.T 6.12%
+  5: 1.07562, // C.E.T 7.03%
+  6: 1.08625, // C.E.T 7.94%
+  7: 1.10595, // C.E.T 9.58%
+  8: 1.11707, // C.E.T 10.48%
+  9: 1.12854, // C.E.T 11.39%
+  10: 1.14012, // C.E.T 12.29%
+  11: 1.15194, // C.E.T 13.19%
+  12: 1.16401  // C.E.T 14.09%
 };
 
 /**
