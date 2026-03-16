@@ -1,42 +1,27 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DollarSign, TrendingUp } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 import { subDays, subMonths, subYears, startOfDay } from 'date-fns';
 import { motion } from 'framer-motion';
 
 type Period = '1d' | '3d' | '1w' | '1m' | '6m' | '1y' | 'all';
 
-const periodOptions: { value: Period; label: string }[] = [
-  { value: '1d', label: '1D' },
-  { value: '3d', label: '3D' },
-  { value: '1w', label: '1S' },
-  { value: '1m', label: '1M' },
-  { value: '6m', label: '6M' },
-  { value: '1y', label: '1A' },
-  { value: 'all', label: 'Tudo' },
-];
-
 function StatCardSkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-4 w-24" />
-      </div>
-      <div className="flex gap-1">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton key={i} className="h-7 w-8" />
-        ))}
-      </div>
+    <div className="space-y-2">
+      <Skeleton className="h-8 w-32" />
+      <Skeleton className="h-4 w-24" />
     </div>
   );
 }
 
-export default function DashboardRevenueCard() {
-  const [period, setPeriod] = useState<Period>('1m');
+interface Props {
+  period: Period;
+}
+
+export default function DashboardRevenueCard({ period }: Props) {
   const [grossRevenue, setGrossRevenue] = useState(0);
   const [netRevenue, setNetRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -59,13 +44,13 @@ export default function DashboardRevenueCard() {
   };
 
   const calcNet = (amount: number, pm: string | null) => {
-    const gateway = 35; // R$0.35 gateway
-    const antifraude = 35; // R$0.35 antifraude
+    const gateway = 35;
+    const antifraude = 35;
     const fixed = gateway + antifraude;
     switch (pm) {
       case 'pix': return amount - Math.round(amount * 0.79 / 100) - fixed;
       case 'boleto': return amount - 279 - fixed;
-      case 'credit_card': return amount - Math.round(amount * 3.25 / 100) - fixed; // 1x rate as average
+      case 'credit_card': return amount - Math.round(amount * 3.25 / 100) - fixed;
       default: return amount - fixed;
     }
   };
@@ -115,31 +100,15 @@ export default function DashboardRevenueCard() {
           {loading ? (
             <StatCardSkeleton />
           ) : (
-            <>
-              <div className="space-y-1 mb-4">
-                <p className="stat-card-value">
-                  {formatCurrency(grossRevenue)}
-                </p>
-                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                  <span>Líquido:</span>
-                  <span className="font-medium text-success">{formatCurrency(netRevenue)}</span>
-                </div>
+            <div className="space-y-1">
+              <p className="stat-card-value">
+                {formatCurrency(grossRevenue)}
+              </p>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <span>Líquido:</span>
+                <span className="font-medium text-success">{formatCurrency(netRevenue)}</span>
               </div>
-
-              <div className="flex flex-wrap gap-1">
-                {periodOptions.map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={period === option.value ? 'default' : 'outline'}
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setPeriod(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </>
+            </div>
           )}
         </CardContent>
       </Card>
