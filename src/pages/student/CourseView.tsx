@@ -95,7 +95,7 @@ export default function CourseView() {
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="w-fit">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
