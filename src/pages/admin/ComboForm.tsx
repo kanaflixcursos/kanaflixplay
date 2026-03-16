@@ -145,11 +145,10 @@ export default function ComboForm() {
           <div>
             <Label>Imagem do Combo</Label>
             <ImageUpload
-              currentImage={thumbnailUrl}
-              onImageChange={setThumbnailUrl}
+              value={thumbnailUrl}
+              onChange={setThumbnailUrl}
               bucket="course-covers"
               folder="combos"
-              aspectRatio="landscape"
             />
           </div>
         </CardContent>
