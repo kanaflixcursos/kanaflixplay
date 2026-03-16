@@ -265,7 +265,7 @@ export default function StudentDashboard() {
         )}
       </motion.div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
         <StatCard
           title="Cursos Matriculados"
           value={totalCourses}
@@ -284,24 +284,8 @@ export default function StudentDashboard() {
           icon={Trophy}
           loading={loading} />
         
-        <StatCard
-          title="Minha Pontuação"
-          value={formatPoints(stats.totalPoints)}
-          icon={Star}
-          loading={loading} />
-        
         {!loading && <ContinueWatchingCard />}
       </div>
-
-      {/* Level Badge Card */}
-      {!loading && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1], delay: 0.05 }}>
-          <StudentLevelBadge points={stats.totalPoints} />
-        </motion.div>
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}
