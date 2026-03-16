@@ -145,7 +145,7 @@ export default function StudentDashboard() {
             paddingLeft: 'calc(50vw - 50%)',
             paddingRight: 'calc(50vw - 50%)',
           }}
-          style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
+          
         >
           {/* Decorative elements */}
           <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
