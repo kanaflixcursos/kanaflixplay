@@ -699,7 +699,7 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                Pagar {formatPriceBRL(displayFinalPrice)}
+                Pagar {formatPriceBRL(paymentMethod === 'credit_card' ? (selectedInstallment?.totalAmount || displayFinalPrice) : displayFinalPrice)}
               </>
             )}
           </Button>
