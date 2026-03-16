@@ -148,6 +148,14 @@
   }
 }
 
+/* Icon color global rule — all Lucide icons inside icon containers inherit primary */
+.icon-box {
+  @apply p-2 rounded-xl bg-primary/10;
+}
+.icon-box > svg {
+  @apply text-primary;
+}
+
 /* Layout */
 .content-container {
   @apply max-w-[1200px] mx-auto w-full px-4 md:px-6;
