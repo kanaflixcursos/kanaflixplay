@@ -34,12 +34,14 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { calculateInstallments, formatCurrency } from "@/utils/pricingCalculator";
 
 interface Course {
   id: string;
   title: string;
   price: number;
   thumbnail_url?: string | null;
+  max_installments?: number;
 }
 
 interface CheckoutModalProps {
@@ -668,25 +670,22 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                       onValueChange={(v) => setInstallments(parseInt(v))}
                       className="grid grid-cols-2 gap-2"
                     >
-                      {[1, 2, 3, 6, 10, 12].filter(n => course.price / n >= 500).map((n) => {
-                        const total = n <= 6 ? course.price : Math.round(course.price * (1 + 4.07 / 100));
-                        const perInstallment = Math.ceil(total / n);
-                        return (
+                      {calculateInstallments(course.price / 100, course.max_installments ?? 12).map((opt) => (
                         <div 
-                          key={n} 
+                          key={opt.installments} 
                           className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            installments === n ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                            installments === opt.installments ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
                           }`}
-                          onClick={() => setInstallments(n)}
+                          onClick={() => setInstallments(opt.installments)}
                         >
-                          <RadioGroupItem value={n.toString()} id={`inst-${n}`} />
-                          <Label htmlFor={`inst-${n}`} className="text-xs cursor-pointer flex-1">
-                            {n}x de {formatPrice(perInstallment)}
-                            {n <= 6 ? ' sem juros' : ''}
+                          <RadioGroupItem value={opt.installments.toString()} id={`inst-${opt.installments}`} />
+                          <Label htmlFor={`inst-${opt.installments}`} className="text-xs cursor-pointer flex-1">
+                            {opt.installments === 1
+                              ? `1x de ${formatCurrency(opt.installmentValue)} sem juros`
+                              : `${opt.installments}x de ${formatCurrency(opt.installmentValue)} (Total ${formatCurrency(opt.totalValue)})`}
                           </Label>
                         </div>
-                        );
-                      })}
+                      ))}
                     </RadioGroup>
                   </div>
                 )}
