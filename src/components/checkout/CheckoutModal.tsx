@@ -417,7 +417,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
                     key={method}
                     type="button"
                     onClick={() => setPaymentMethod(method)}
-                    className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                    className={`relative flex flex-col items-center gap-1.5 ${badge ? 'pt-5' : 'pt-3'} pb-3 px-3 rounded-xl border-2 transition-all ${
                       paymentMethod === method
                         ? 'border-primary bg-primary/5 shadow-sm'
                         : 'border-border hover:border-primary/30 hover:bg-muted/50'

@@ -248,7 +248,7 @@ export function CheckoutModal({ open, onOpenChange, course, onSuccess }: Checkou
               <div className="grid grid-cols-3 gap-2">
                 {paymentMethods.map(({ method, icon: Icon, label, badge, description }) => (
                   <button key={method} type="button" onClick={() => setPaymentMethod(method)}
-                    className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                    className={`relative flex flex-col items-center gap-1.5 ${badge ? 'pt-5' : 'pt-3'} pb-3 px-3 rounded-xl border-2 transition-all ${
                       paymentMethod === method ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/30 hover:bg-muted/50'
                     }`}>
                     {badge && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{badge}</span>}
