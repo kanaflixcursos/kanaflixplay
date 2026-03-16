@@ -552,9 +552,10 @@ async function handleCreateOrder(
           userName: profile.full_name || '',
           courseName: course.title,
           courseUrl: `https://cursos.kanaflix.com.br/courses/${courseId}`,
-          amount: course.price,
+          amount: order.amount,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
+          installments: order.installments || 1,
         }
       });
     }
@@ -732,6 +733,7 @@ async function handleChargePaid(supabase: any, data: any) {
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
+          installments: order.installments || 1,
         }
       });
     }
