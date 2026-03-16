@@ -167,7 +167,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
           </SidebarGroup>
         ) : role === 'admin' ? (
           <SidebarGroup>
-            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
