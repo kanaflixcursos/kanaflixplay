@@ -421,7 +421,7 @@ export default function AdminOrders() {
       {/* Row 2: Revenue Chart + Sales Origin */}
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DashboardRevenueChart />
+          <DashboardRevenueChart dateRange={analyticsDateRange} />
         </div>
 
         {/* Origem de Vendas */}
