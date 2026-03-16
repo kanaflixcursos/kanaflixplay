@@ -1264,6 +1264,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          points: number
+          user_id: string
+        }[]
+      }
       get_public_lesson_count: {
         Args: { course_id_param: string }
         Returns: number
