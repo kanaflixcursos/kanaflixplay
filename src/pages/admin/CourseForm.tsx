@@ -164,6 +164,7 @@ export default function CourseForm() {
       installments: String(data.max_installments || 12),
       category_id: data.category_id || '',
       launch_date: data.launch_date ? data.launch_date.split('T')[0] : '',
+      points_reward: String((data as any).points_reward || 0),
     });
 
     setLoadingCourse(false);
