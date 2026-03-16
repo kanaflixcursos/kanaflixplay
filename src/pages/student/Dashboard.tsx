@@ -10,6 +10,7 @@ import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
 import { motion } from 'framer-motion';
+import welcomeIllustration from '@/assets/welcome-illustration.png';
 
 interface EnrolledCourse {
   id: string;
@@ -130,73 +131,93 @@ export default function StudentDashboard() {
     const firstName = (user?.user_metadata?.full_name || 'Usuário').split(' ')[0];
     return (
       <div className="space-y-8">
-        {/* Hero welcome */}
+        {/* Hero welcome — full-width banner, not a card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-6 sm:p-10 text-primary-foreground"
+          className="relative overflow-hidden rounded-2xl min-h-[340px] sm:min-h-[380px] flex items-center"
+          style={{ background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)' }}
         >
-          {/* Decorative circles */}
-          <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute top-4 right-8 h-20 w-20 rounded-full border border-white/20" />
-          <div className="absolute bottom-6 right-24 h-8 w-8 rounded-full bg-white/15" />
+          {/* Decorative elements */}
+          <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute top-8 right-[40%] h-24 w-24 rounded-full border border-white/10" />
+          <div className="absolute bottom-12 left-[30%] h-3 w-3 rounded-full bg-white/20" />
+          <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
 
-          <div className="relative z-10 max-w-lg">
+          {/* Content + Illustration side by side */}
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
+            {/* Text content */}
+            <div className="max-w-lg flex-1">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                Bem-vindo à plataforma
+              </motion.div>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight text-white">
+                Olá, {firstName}! 👋
+              </h1>
+              <p className="text-sm sm:text-base mt-3 text-white/70 max-w-md leading-relaxed">
+                Sua jornada de aprendizado começa aqui. Explore nossos cursos e descubra conteúdos incríveis preparados para você.
+              </p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="flex flex-wrap items-center gap-4 mt-7"
+              >
+                <Link to="/catalog">
+                  <Button
+                    size="lg"
+                    className="bg-white text-[#0A3630] hover:bg-white/90 font-semibold shadow-lg shadow-black/20 gap-2 rounded-xl"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Explorar Cursos
+                  </Button>
+                </Link>
+              </motion.div>
+
+              {/* Benefits row */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-8 pt-6 border-t border-white/15"
+              >
+                {[
+                  { icon: BookOpen, label: 'Cursos exclusivos' },
+                  { icon: Clock, label: 'No seu ritmo' },
+                  { icon: Trophy, label: 'Certificados' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
+                    <item.icon className="h-3.5 w-3.5 text-emerald-300/60" />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Illustration */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.15, duration: 0.4 }}
-              className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium mb-4"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+              className="hidden md:block flex-shrink-0"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              Bem-vindo à plataforma
-            </motion.div>
-
-            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight leading-tight">
-              Olá, {firstName}! 👋
-            </h1>
-            <p className="text-sm sm:text-base mt-2 text-white/80 max-w-md leading-relaxed">
-              Sua jornada de aprendizado começa aqui. Explore nossos cursos e descubra conteúdos incríveis preparados para você.
-            </p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              className="flex flex-wrap gap-4 mt-6"
-            >
-              <Link to="/catalog">
-                <Button
-                  size="lg"
-                  className="bg-white text-primary hover:bg-white/90 font-semibold shadow-lg shadow-black/10 gap-2"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Explorar Cursos
-                </Button>
-              </Link>
+              <img
+                src={welcomeIllustration}
+                alt="Pessoa estudando em um ambiente acolhedor"
+                className="w-64 lg:w-80 xl:w-96 drop-shadow-2xl"
+              />
             </motion.div>
           </div>
-
-          {/* Stats row */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="relative z-10 flex items-center gap-6 mt-8 pt-6 border-t border-white/20"
-          >
-            {[
-              { icon: BookOpen, label: 'Cursos exclusivos' },
-              { icon: Clock, label: 'Aprenda no seu ritmo' },
-              { icon: Trophy, label: 'Certificados disponíveis' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/70">
-                <item.icon className="h-4 w-4 text-white/50" />
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
 
         {/* Available courses */}
