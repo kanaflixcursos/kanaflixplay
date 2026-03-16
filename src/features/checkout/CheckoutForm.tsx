@@ -442,28 +442,45 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
         {/* Price Header */}
         <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 border-b">
           <div className="space-y-2">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-foreground">{formatPriceBRL(displayFinalPrice)}</span>
-              {displayFinalPrice < displayBasePrice && (
-                <span className="text-lg text-muted-foreground line-through">{formatPriceBRL(displayBasePrice)}</span>
-              )}
-            </div>
-            {paymentMethod === 'pix' && displayPixDiscount > 0 && (
-              <div className="flex items-center gap-2 text-sm text-success">
-                <Zap className="h-4 w-4" />
-                <span><strong>3% de desconto</strong> no PIX</span>
-              </div>
+            {paymentMethod === 'credit_card' && selectedInstallment ? (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-foreground">
+                    {selectedInstallment.number}x de {formatPriceBRL(selectedInstallment.installmentAmount)}
+                  </span>
+                </div>
+                {!selectedInstallment.hasInterest ? (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Sem juros</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Total: {formatPriceBRL(selectedInstallment.totalAmount)} <span className="text-xs ml-1">(com juros)</span></span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-foreground">{formatPriceBRL(displayFinalPrice)}</span>
+                  {displayFinalPrice < displayBasePrice && (
+                    <span className="text-lg text-muted-foreground line-through">{formatPriceBRL(displayBasePrice)}</span>
+                  )}
+                </div>
+                {paymentMethod === 'pix' && displayPixDiscount > 0 && (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <Zap className="h-4 w-4" />
+                    <span><strong>3% de desconto</strong> no PIX</span>
+                  </div>
+                )}
+              </>
             )}
             {appliedCoupon && (
               <div className="flex items-center gap-2 text-sm text-success">
                 <Tag className="h-4 w-4" />
                 <span>Cupom <strong>{appliedCoupon.code}</strong> aplicado — {appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}% off` : `${formatPriceBRL(appliedCoupon.discount_value)} off`}</span>
-              </div>
-            )}
-            {paymentMethod === 'credit_card' && installments > 1 && (
-              <div className="text-sm text-muted-foreground">
-                {installments}x de {formatPriceBRL(Math.ceil(displayFinalPrice / installments))}
-                {installments <= 6 ? ' sem juros' : ''}
               </div>
             )}
           </div>
