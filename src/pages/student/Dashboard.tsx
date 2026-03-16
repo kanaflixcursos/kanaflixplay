@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, CheckCircle, Trophy, Star, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Trophy, Star } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
@@ -71,14 +71,14 @@ export default function StudentDashboard() {
 
       // Fetch all user progress at once for efficiency
       const [{ data: allProgress }, { data: profileData }] = await Promise.all([
-        supabase.from('lesson_progress')
-          .select('lesson_id, completed, completed_at, watched_seconds')
-          .eq('user_id', user.id),
-        supabase.from('profiles')
-          .select('points')
-          .eq('user_id', user.id)
-          .single()
-      ]);
+      supabase.from('lesson_progress').
+      select('lesson_id, completed, completed_at, watched_seconds').
+      eq('user_id', user.id),
+      supabase.from('profiles').
+      select('points').
+      eq('user_id', user.id).
+      single()]
+      );
 
       const totalPoints = profileData?.points || 0;
       const totalLessonsCompleted = allProgress?.filter((p) => p.completed).length || 0;
@@ -268,7 +268,7 @@ export default function StudentDashboard() {
                   <Star className="h-4.5 w-4.5 text-white fill-white" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="gap-2 flex items-center justify-start">
                     <span className="text-sm font-bold tracking-tight text-amber-900 dark:text-amber-200">{formatPoints(stats.totalPoints)} pts</span>
                     <span className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       <LevelIcon className="h-3 w-3" />
@@ -277,15 +277,15 @@ export default function StudentDashboard() {
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <Progress value={progress} className="h-1 w-20" />
-                    {nextLevel && (
-                      <span className="text-[10px] text-amber-500 dark:text-amber-500 whitespace-nowrap">{nextLevel.minPoints - stats.totalPoints} p/ {nextLevel.name}</span>
-                    )}
+                    {nextLevel &&
+                    <span className="text-[10px] text-amber-500 dark:text-amber-500 whitespace-nowrap">{nextLevel.minPoints - stats.totalPoints} p/ {nextLevel.name}</span>
+                    }
                   </div>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+                
               </div>
-            </Link>
-          );
+            </Link>);
+
         })()}
       </motion.div>
 
