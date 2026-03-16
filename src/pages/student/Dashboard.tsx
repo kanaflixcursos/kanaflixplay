@@ -254,6 +254,39 @@ export default function StudentDashboard() {
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Olá, {user?.user_metadata?.full_name || 'Usuário'}!</h1>
           <p className="text-muted-foreground text-sm mt-1">Vamos continuar aprendendo? Boas aulas!</p>
         </div>
+
+        {/* Gamification badge — header position */}
+        {!loading && (() => {
+          const level = getStudentLevel(stats.totalPoints);
+          const nextLevel = getNextLevel(stats.totalPoints);
+          const progress = getProgressToNext(stats.totalPoints);
+          const LevelIcon = level.icon;
+          return (
+            <Link to="/points" className="group">
+              <div className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-r from-amber-50 via-amber-50/80 to-yellow-50 dark:from-amber-950/40 dark:via-amber-900/30 dark:to-yellow-950/30 px-4 py-2.5 shadow-sm hover:shadow-md transition-all">
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 dark:from-amber-500 dark:to-yellow-600 flex items-center justify-center shadow-sm">
+                  <Star className="h-4.5 w-4.5 text-white fill-white" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold tracking-tight text-amber-900 dark:text-amber-200">{formatPoints(stats.totalPoints)} pts</span>
+                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <LevelIcon className="h-3 w-3" />
+                      {level.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Progress value={progress} className="h-1 w-20" />
+                    {nextLevel && (
+                      <span className="text-[10px] text-amber-500 dark:text-amber-500 whitespace-nowrap">{nextLevel.minPoints - stats.totalPoints} p/ {nextLevel.name}</span>
+                    )}
+                  </div>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </Link>
+          );
+        })()}
       </motion.div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
