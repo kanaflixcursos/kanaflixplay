@@ -136,7 +136,7 @@ export default function StudentDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center py-12 sm:py-16 lg:py-20"
+          className="relative overflow-hidden min-h-[340px] sm:min-h-[380px] flex items-center py-8 sm:py-12 lg:py-14"
           style={{
             background: 'linear-gradient(135deg, #0A3630 0%, #125C52 60%, #1a7a6d 100%)',
             marginLeft: 'calc(-50vw + 50%)',
@@ -152,7 +152,10 @@ export default function StudentDashboard() {
           <div className="absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute top-8 right-[40%] h-24 w-24 rounded-full border border-white/10" />
           <div className="absolute bottom-12 left-[30%] h-3 w-3 rounded-full bg-white/20" />
-          <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
+           <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
+
+           {/* Bottom fade */}
+           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
 
           {/* Content + Illustration side by side */}
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
