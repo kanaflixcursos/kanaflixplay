@@ -142,6 +142,7 @@ export default function StudentDashboard() {
             marginLeft: 'calc(-50vw + 50%)',
             marginRight: 'calc(-50vw + 50%)',
             marginTop: '-1rem',
+            paddingTop: '1rem',
             paddingLeft: 'calc(50vw - 50%)',
             paddingRight: 'calc(50vw - 50%)',
           }}
@@ -154,8 +155,6 @@ export default function StudentDashboard() {
           <div className="absolute bottom-12 left-[30%] h-3 w-3 rounded-full bg-white/20" />
            <div className="absolute top-16 left-[45%] h-2 w-2 rounded-full bg-white/15" />
 
-           {/* Bottom fade */}
-           <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none" />
 
           {/* Content + Illustration side by side */}
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between w-full p-6 sm:p-10 gap-6">
