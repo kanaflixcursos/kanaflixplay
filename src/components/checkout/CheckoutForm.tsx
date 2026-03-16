@@ -60,7 +60,7 @@ interface PaymentResult {
   };
 }
 
-interface InstallmentOption {
+interface LocalInstallmentOption {
   number: number;
   label: string;
 }
