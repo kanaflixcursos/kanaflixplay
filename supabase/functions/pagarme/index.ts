@@ -228,24 +228,71 @@ async function handleCreateOrder(
     }
   }
 
-  const { data: course, error: courseError } = await supabase
-    .from('courses')
-    .select('id, title, price')
-    .eq('id', courseId)
-    .single();
+  // Handle combo or single course
+  let itemTitle: string;
+  let itemPrice: number;
+  let itemId: string;
+  let comboCourseIds: string[] = [];
 
-  if (courseError || !course) {
-    return new Response(JSON.stringify({ error: 'Course not found' }), { 
-      status: 404, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
-  }
+  if (comboId) {
+    const { data: combo, error: comboError } = await supabase
+      .from('combos')
+      .select('id, title, price, max_installments')
+      .eq('id', comboId)
+      .eq('is_active', true)
+      .single();
 
-  if (!course.price || course.price <= 0) {
-    return new Response(JSON.stringify({ error: 'Course has no price set' }), { 
-      status: 400, 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-    });
+    if (comboError || !combo) {
+      return new Response(JSON.stringify({ error: 'Combo not found' }), { 
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!combo.price || combo.price <= 0) {
+      return new Response(JSON.stringify({ error: 'Combo has no price set' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Validate installments against combo max
+    if (parsedInstallments > (combo.max_installments || 12)) {
+      return new Response(JSON.stringify({ error: `Max installments for this combo is ${combo.max_installments}` }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    // Get combo courses
+    const { data: cc } = await supabase
+      .from('combo_courses')
+      .select('course_id')
+      .eq('combo_id', comboId);
+    comboCourseIds = (cc || []).map((c: any) => c.course_id);
+
+    itemTitle = combo.title;
+    itemPrice = combo.price;
+    itemId = combo.id;
+  } else {
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('id, title, price')
+      .eq('id', courseId)
+      .single();
+
+    if (courseError || !course) {
+      return new Response(JSON.stringify({ error: 'Course not found' }), { 
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!course.price || course.price <= 0) {
+      return new Response(JSON.stringify({ error: 'Course has no price set' }), { 
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    itemTitle = course.title;
+    itemPrice = course.price;
+    itemId = course.id;
   }
 
   // Server-side coupon validation
