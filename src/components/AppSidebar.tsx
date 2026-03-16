@@ -124,7 +124,7 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
       <SidebarLogo showAdminBadge={isAdmin} />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{isAdmin ? 'Gerenciamento' : 'Menu'}</SidebarGroupLabel>
+          <SidebarGroupContent>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
