@@ -627,8 +627,8 @@ async function handleCreateOrder(
       to: profile.email,
       data: {
         userName: profile.full_name || '',
-        courseName: course.title,
-        amount: course.price,
+        courseName: itemTitle,
+        amount: itemPrice,
         paymentMethod: paymentMethod as 'pix' | 'boleto',
         pixQrCode: orderData.pix_qr_code,
         pixQrCodeUrl: orderData.pix_qr_code_url,
