@@ -1,0 +1,1 @@
+UPDATE public.courses SET points_reward = 150 WHERE id = '10000002';
