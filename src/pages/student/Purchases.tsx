@@ -260,7 +260,7 @@ export default function Purchases() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                           <div>
                             <h3 className="font-medium text-lg">
-                              {order.course?.title || 'Curso'}
+                              {order.combo?.title || order.course?.title || 'Curso'}
                             </h3>
                             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
                               <Calendar className="h-3.5 w-3.5" />
