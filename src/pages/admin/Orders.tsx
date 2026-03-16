@@ -350,8 +350,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  <div className="icon-box">
+                    <BarChart3 />
                   </div>
                   <span className="stat-card-label">Ticket Médio</span>
                 </div>
