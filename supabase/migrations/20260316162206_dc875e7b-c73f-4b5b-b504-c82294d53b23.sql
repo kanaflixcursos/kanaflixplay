@@ -1,0 +1,1 @@
+UPDATE profiles SET points = 0 WHERE points > 0;
