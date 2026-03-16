@@ -94,6 +94,7 @@ export default function LessonSidebar({
     );
   };
 
+  return (
     <div className="lg:sticky lg:top-6 bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden flex flex-col">
       <div className="p-4 sm:p-5 border-b border-border/50 bg-muted/20">
         <div className="flex items-center justify-between pb-1">
