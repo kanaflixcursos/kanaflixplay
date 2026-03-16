@@ -1021,7 +1021,7 @@ async function handleChargeChargedback(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -1035,28 +1035,34 @@ async function handleChargeChargedback(supabase: any, data: any) {
     .update({ status: 'chargedback' })
     .eq('id', order.id);
 
-  // Restore coupon usage on chargeback
   if (order.coupon_id) {
     await restoreCouponUsage(supabase, order.coupon_id);
-    console.log(`[Webhook] Restored coupon usage for coupon ${order.coupon_id} (chargedback)`);
   }
 
   console.log(`[Webhook] Order ${order.id} marked as chargedback`);
 
-  if (order.course_id) {
+  // Revoke enrollments (combo or single)
+  if (order.combo_id) {
+    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+    for (const c of (cc || [])) {
+      await revokeEnrollment(supabase, order.user_id, c.course_id);
+    }
+  } else if (order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] Revoked enrollment for user ${order.user_id} due to chargeback`);
   }
+
+  const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'curso');
 
   await createNotification(supabase, {
     user_id: order.user_id,
     type: 'payment_chargedback',
     title: 'Contestação de pagamento',
-    message: `O pagamento para "${order.courses?.title || 'curso'}" foi contestado. O acesso ao curso foi suspenso.`,
+    message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
     link: null,
     metadata: {
       order_id: order.id,
-      course_id: order.course_id
+      course_id: order.course_id,
+      combo_id: order.combo_id,
     }
   });
 }
