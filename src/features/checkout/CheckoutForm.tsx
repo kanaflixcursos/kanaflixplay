@@ -35,6 +35,7 @@ interface Course {
 interface CheckoutFormProps {
   course: Course;
   onSuccess?: () => void;
+  comboId?: string;
 }
 
 type PaymentMethod = 'credit_card' | 'pix' | 'boleto';
