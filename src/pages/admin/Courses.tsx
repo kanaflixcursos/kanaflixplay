@@ -408,7 +408,7 @@ export default function AdminCourses() {
             </TableHeader>
             <TableBody>
               {filteredCourses.map((course) => (
-                <TableRow key={course.id}>
+                <TableRow key={course.id} className="cursor-pointer" onClick={() => navigate(`/admin/courses/${course.id}`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {course.thumbnail_url ? (
