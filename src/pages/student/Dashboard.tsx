@@ -205,7 +205,7 @@ export default function StudentDashboard() {
                   { icon: Trophy, label: 'Certificados' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs sm:text-sm text-white/60">
-                    <item.icon className="h-3.5 w-3.5 text-emerald-300/60" />
+                    <item.icon className="h-3.5 w-3.5 text-white/50" />
                     <span>{item.label}</span>
                   </div>
                 ))}
