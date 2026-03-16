@@ -18,14 +18,15 @@ import {
   CalendarIcon, X, BarChart3, Target, Minus, ChevronLeft, ChevronRight,
   Download, FileSpreadsheet, FileText,
 } from 'lucide-react';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, subDays, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import SalesTable, { Sale, fetchSalesData, formatCurrency } from '@/components/admin/SalesTable';
 import DashboardRevenueChart from '@/components/admin/DashboardRevenueChart';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-
+import { DateRange } from 'react-day-picker';
+import { DashboardDateRange } from '@/pages/admin/Dashboard';
 const PAGE_SIZE = 20;
 
 interface AnalyticsData {
@@ -71,21 +72,23 @@ function PercentBadge({ current, previous }: { current: number; previous: number
   );
 }
 
-function getMonthLabel(month: string) {
-  const [y, m] = month.split('-').map(Number);
-  const d = new Date(y, m - 1, 1);
-  return format(d, 'MMMM yyyy', { locale: ptBR });
-}
+type QuickPeriod = '1d' | '1w' | '1m' | 'all';
 
-function getCurrentMonth() {
+const quickOptions: { value: QuickPeriod; label: string }[] = [
+  { value: '1d', label: '1D' },
+  { value: '1w', label: '1S' },
+  { value: '1m', label: '1M' },
+  { value: 'all', label: 'Tudo' },
+];
+
+function getDateRangeFromPeriod(period: QuickPeriod): DashboardDateRange | null {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function shiftMonth(month: string, delta: number) {
-  const [y, m] = month.split('-').map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  switch (period) {
+    case '1d': return { from: startOfDay(now).toISOString(), to: endOfDay(now).toISOString() };
+    case '1w': return { from: startOfDay(subDays(now, 7)).toISOString(), to: endOfDay(now).toISOString() };
+    case '1m': return { from: startOfDay(subMonths(now, 1)).toISOString(), to: endOfDay(now).toISOString() };
+    case 'all': return null;
+  }
 }
 
 const statusLabelsExport: Record<string, string> = {
@@ -183,10 +186,13 @@ export default function AdminOrders() {
   const [totalCount, setTotalCount] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod | 'custom'>('1m');
+  const [analyticsDateRange, setAnalyticsDateRange] = useState<DashboardDateRange | null>(getDateRangeFromPeriod('1m'));
+  const [calendarRange, setCalendarRange] = useState<DateRange | undefined>();
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   useEffect(() => { loadSales(); }, [page]);
-  useEffect(() => { fetchAnalytics(); }, [selectedMonth]);
+  useEffect(() => { fetchAnalytics(); }, [analyticsDateRange]);
 
   const loadSales = async () => {
     setLoading(true);
@@ -200,7 +206,7 @@ export default function AdminOrders() {
     setAnalyticsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('pagarme', {
-        body: { action: 'get_orders_analytics', month: selectedMonth },
+        body: { action: 'get_orders_analytics', month: 'all', dateRange: analyticsDateRange },
       });
       if (!error && data) setAnalytics(data);
     } catch (e) {
@@ -241,39 +247,72 @@ export default function AdminOrders() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const a = analytics;
-  const isCurrentMonth = selectedMonth === getCurrentMonth() || selectedMonth === 'all';
+
+  const handleQuickPeriod = (period: QuickPeriod) => {
+    setActivePeriod(period);
+    setAnalyticsDateRange(getDateRangeFromPeriod(period));
+    setCalendarRange(undefined);
+  };
+
+  const handleCalendarSelect = (range: DateRange | undefined) => {
+    setCalendarRange(range);
+    if (range?.from && range?.to) {
+      setActivePeriod('custom');
+      setAnalyticsDateRange({
+        from: startOfDay(range.from).toISOString(),
+        to: endOfDay(range.to).toISOString(),
+      });
+      setPopoverOpen(false);
+    }
+  };
+
+  const customLabel = calendarRange?.from && calendarRange?.to
+    ? `${format(calendarRange.from, 'dd/MM', { locale: ptBR })} - ${format(calendarRange.to, 'dd/MM', { locale: ptBR })}`
+    : 'Período';
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Header with month selector */}
+      {/* Header with period selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Vendas</h1>
           <p className="text-muted-foreground text-sm mt-1">Gerencie todas as vendas da plataforma</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-muted/50 rounded-xl p-1">
-          {selectedMonth !== 'all' && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedMonth(m => shiftMonth(m, -1))}>
-              <ChevronLeft className="h-4 w-4" />
+        <div className="flex flex-wrap items-center gap-1">
+          {quickOptions.map((option) => (
+            <Button
+              key={option.value}
+              variant={activePeriod === option.value ? 'default' : 'outline'}
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => handleQuickPeriod(option.value)}
+            >
+              {option.label}
             </Button>
-          )}
-          <span className="text-sm font-medium min-w-[130px] text-center capitalize">
-            {selectedMonth === 'all' ? 'Todo o período' : getMonthLabel(selectedMonth)}
-          </span>
-          {selectedMonth !== 'all' && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isCurrentMonth} onClick={() => setSelectedMonth(m => shiftMonth(m, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-          {selectedMonth === 'all' ? (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth(getCurrentMonth())}>
-              Ver por mês
-            </Button>
-          ) : (
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setSelectedMonth('all')}>
-              Tudo
-            </Button>
-          )}
+          ))}
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={activePeriod === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2.5 text-xs gap-1"
+              >
+                <CalendarIcon className="h-3 w-3" />
+                {customLabel}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={calendarRange}
+                onSelect={handleCalendarSelect}
+                numberOfMonths={2}
+                disabled={(date) => date > new Date()}
+                className={cn("p-3 pointer-events-auto")}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -382,7 +421,7 @@ export default function AdminOrders() {
       {/* Row 2: Revenue Chart + Sales Origin */}
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <DashboardRevenueChart />
+          <DashboardRevenueChart dateRange={analyticsDateRange} />
         </div>
 
         {/* Origem de Vendas */}
