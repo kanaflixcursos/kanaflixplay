@@ -325,11 +325,11 @@ async function handleCreateOrder(
     console.log(`[Order] PIX 3% discount applied: -${pixDiscount}, final price ${finalPrice}`);
   }
 
-  // Apply installment interest for credit card (exact multipliers from Pagar.me spreadsheet)
+  // Apply installment interest for credit card (exact multipliers: 1 / (1 - C.E.T))
   if (paymentMethod === 'credit_card' && parsedInstallments > 1) {
     const INSTALLMENT_MULTIPLIERS: Record<number, number> = {
-      1: 1.00000, 2: 1.04496, 3: 1.05729, 4: 1.06963, 5: 1.08196, 6: 1.09429,
-      7: 1.10662, 8: 1.11895, 9: 1.13129, 10: 1.14362, 11: 1.15595, 12: 1.16828
+      1: 1.00000, 2: 1.04493, 3: 1.05496, 4: 1.06519, 5: 1.07562, 6: 1.08625,
+      7: 1.10595, 8: 1.11707, 9: 1.12854, 10: 1.14012, 11: 1.15194, 12: 1.16401
     };
     const multiplier = INSTALLMENT_MULTIPLIERS[parsedInstallments] || 1;
     const basePriceReais = finalPrice / 100;
