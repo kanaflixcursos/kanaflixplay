@@ -27,8 +27,7 @@ interface LeaderboardEntry {
 }
 
 const TIPS = [
-  { icon: ShoppingCart, label: 'Adquirir um curso pago', points: '+180 pts', description: 'Invista no seu aprendizado e ganhe uma grande recompensa em pontos.', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100/60 dark:bg-purple-900/30' },
-  { icon: GraduationCap, label: 'Matricular-se em curso gratuito', points: '+50 pts', description: 'Explore cursos gratuitos e ganhe pontos ao se matricular.', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100/60 dark:bg-blue-900/30' },
+  { icon: ShoppingCart, label: 'Adquirir um curso', points: '50–180 pts', description: 'Cada curso concede uma quantidade de pontos definida — quanto maior o investimento, maior a recompensa.', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100/60 dark:bg-purple-900/30' },
   { icon: MessageCircle, label: 'Publicar um comentário', points: '+10 pts', description: 'Comente nas aulas para ajudar outros alunos e ganhar pontos.', color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-100/60 dark:bg-teal-900/30' },
   { icon: LogIn, label: 'Login diário', points: '+5 pts', description: 'Acesse a plataforma todos os dias para acumular pontos.', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100/60 dark:bg-amber-900/30' },
 ];
