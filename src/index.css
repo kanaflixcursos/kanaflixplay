@@ -134,7 +134,8 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* @apply border-border; Removed to clean up excessive borders */
+    border-color: hsl(var(--border) / 0.5);
   }
 
   body {

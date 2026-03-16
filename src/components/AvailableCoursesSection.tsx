@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -149,14 +148,13 @@ export default function AvailableCoursesSection() {
       {loading ? (
         <div className="flex gap-3 overflow-hidden">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden shrink-0 w-40 sm:w-48">
-              <Skeleton className="aspect-[4/5] w-full" />
-              <div className="p-4 space-y-3">
+            <div key={i} className="overflow-hidden shrink-0 w-40 sm:w-48">
+              <Skeleton className="aspect-[4/5] w-full rounded-xl" />
+              <div className="pt-3 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/3" />
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       ) : (
@@ -171,64 +169,62 @@ export default function AvailableCoursesSection() {
               key={course.id}
               to={`/checkout/${course.id}`}
               data-card
-              className="shrink-0 w-40 sm:w-48 snap-start"
+              className="shrink-0 w-40 sm:w-48 snap-start group"
             >
-              <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
+              <div className="flex flex-col h-full cursor-pointer">
                 {/* Thumbnail */}
-                <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted rounded-t-lg">
+                <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted rounded-xl mb-3 border border-border/50">
                   {course.thumbnail_url ? (
                     <img
                       src={course.thumbnail_url}
                       alt={course.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="h-10 w-10 text-muted-foreground" />
+                      <BookOpen className="h-10 w-10 text-muted-foreground/30" />
                     </div>
                   )}
+                  {course.category_name && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <span className="px-2 py-1 text-[10px] sm:text-xs font-semibold uppercase tracking-wider bg-black/60 text-white backdrop-blur-md rounded">
+                        {course.category_name}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                     <ShoppingCart className="h-8 w-8 text-white transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 drop-shadow-md" />
+                  </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-3 flex flex-col flex-1 gap-1.5">
-                  {/* Duration + Points */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div className="px-1 flex flex-col flex-1">
+                  <h3 className="text-sm font-semibold leading-snug line-clamp-2 mb-1.5 group-hover:text-primary transition-colors">
+                    {course.title}
+                  </h3>
+
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
                     {course.total_duration > 0 && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
                       </span>
                     )}
                     {course.points_reward > 0 && (
-                      <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                        <Star className="h-3 w-3 fill-current" />
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
+                        <Star className="h-2.5 w-2.5 fill-current" />
                         +{course.points_reward} pts
                       </span>
                     )}
                   </div>
 
-                  <h3 className="text-sm font-semibold leading-snug line-clamp-2">{course.title}</h3>
-
-                  {/* Price + Cart */}
-                  <div className="flex items-center justify-between pt-1.5 border-t border-border mt-auto">
-                    <div>
-                      <span className="text-xs uppercase tracking-wider text-muted-foreground">Preço</span>
-                      <p className="text-sm font-semibold text-primary leading-tight">
-                        {formatPrice(course.price)}
-                      </p>
-                    </div>
-                    {course.price && course.price > 0 ? (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <ShoppingCart className="h-3.5 w-3.5 text-primary" />
-                      </div>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
-                        Matricular
-                      </Badge>
-                    )}
+                  <div className="mt-auto pt-1 flex items-center">
+                    <p className="text-sm font-bold text-primary">
+                      {formatPrice(course.price)}
+                    </p>
                   </div>
                 </div>
-              </Card>
+              </div>
             </Link>
           ))}
         </div>

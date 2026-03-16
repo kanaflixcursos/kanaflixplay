@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -240,8 +239,7 @@ export default function StudentCourses() {
           )}
           </div> :
         enrolledCourses.length === 0 ?
-        <Card>
-            <CardContent className="py-10 text-center">
+        <div className="bg-muted/30 border border-dashed border-border rounded-xl py-12 text-center">
               <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">
                 Você ainda não está matriculado em nenhum curso.
@@ -250,12 +248,11 @@ export default function StudentCourses() {
               href="https://kanaflix.com.br/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline mt-2 inline-block">
+              className="text-primary hover:underline mt-2 inline-block font-medium">
 
                 Ver cursos disponíveis
               </a>
-            </CardContent>
-          </Card> :
+          </div> :
 
         <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {enrolledCourses.map((enrollment, index) => {
@@ -277,33 +274,35 @@ export default function StudentCourses() {
                   delay: index * 0.05
                 }}>
 
-                  <Link to={`/courses/${enrollment.course.id}`}>
-                    <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                      {enrollment.course.thumbnail_url ?
-                    <div className="aspect-[4/5] w-full overflow-hidden rounded-t-lg">
-                          <img
-                        src={enrollment.course.thumbnail_url}
-                        alt={enrollment.course.title}
-                        className="w-full h-full object-cover" />
-
-                        </div> :
-
-                    <div className="aspect-[4/5] w-full bg-muted rounded-t-lg flex items-center justify-center">
-                          <BookOpen className="h-12 w-12 text-muted-foreground" />
+                  <Link to={`/courses/${enrollment.course.id}`} className="group block h-full">
+                    <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl mb-3 bg-muted border border-border/50">
+                      {enrollment.course.thumbnail_url ? (
+                        <img
+                          src={enrollment.course.thumbnail_url}
+                          alt={enrollment.course.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <BookOpen className="h-12 w-12 text-muted-foreground/30" />
                         </div>
-                    }
-                      <CardHeader>
-                        <h3 className="card-title line-clamp-2">
-                          {enrollment.course.title}
-                        </h3>
-                      </CardHeader>
-                      <CardContent>
-                        <Progress value={progress} className="h-1.5" />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {enrollment.completedLessons}/{enrollment.totalLessons} aulas
-                        </p>
-                      </CardContent>
-                    </Card>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                         <div className="bg-white/90 text-black px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 shadow-sm">
+                           Ver Curso
+                         </div>
+                      </div>
+                    </div>
+                    <div className="px-1">
+                      <h3 className="font-semibold text-base leading-tight line-clamp-2 mb-2.5 group-hover:text-primary transition-colors">
+                        {enrollment.course.title}
+                      </h3>
+                      <Progress value={progress} className="h-1.5 bg-muted mb-1.5" />
+                      <p className="text-xs text-muted-foreground font-medium flex items-center justify-between">
+                        <span>{enrollment.completedLessons}/{enrollment.totalLessons} aulas</span>
+                        <span>{progress}%</span>
+                      </p>
+                    </div>
                   </Link>
                 </motion.div>);
 
