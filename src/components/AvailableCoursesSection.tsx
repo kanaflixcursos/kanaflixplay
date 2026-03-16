@@ -191,17 +191,18 @@ export default function AvailableCoursesSection() {
 
                 {/* Content */}
                 <div className="p-3 flex flex-col flex-1 gap-1.5">
-                  {/* Category + Duration */}
+                  {/* Duration + Points */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {course.category_name && (
-                      <Badge variant="secondary" className="text-xs font-medium">
-                        {course.category_name}
-                      </Badge>
-                    )}
                     {course.total_duration > 0 && (
                       <span className="text-xs text-muted-foreground flex items-center gap-0.5">
                         <Clock className="h-3 w-3" />
                         {formatDuration(course.total_duration)}
+                      </span>
+                    )}
+                    {course.points_reward > 0 && (
+                      <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                        <Star className="h-3 w-3 fill-current" />
+                        +{course.points_reward} pts
                       </span>
                     )}
                   </div>
