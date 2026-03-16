@@ -221,25 +221,26 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
             </div>
 
             <div className="p-2.5 sm:p-4 flex flex-col flex-1 gap-1.5 sm:gap-2">
-              {course.total_duration > 0 && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {formatDuration(course.total_duration)} de aula
-                </span>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {course.total_duration > 0 && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                    <Clock className="h-3 w-3" />
+                    {formatDuration(course.total_duration)} de aula
+                  </span>
+                )}
+                {course.points_reward > 0 && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                    <Star className="h-3 w-3 fill-current" />
+                    +{course.points_reward} pts
+                  </span>
+                )}
+              </div>
 
               <h3 className="text-xs sm:text-sm font-semibold leading-snug line-clamp-2">{course.title}</h3>
               {course.description && (
                 <p className="text-xs text-muted-foreground line-clamp-2 hidden sm:block">
                   {course.description.length > 80 ? course.description.slice(0, 80) + '…' : course.description}
                 </p>
-              )}
-
-              {course.points_reward > 0 && (
-                <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                  <Star className="h-3 w-3 fill-current" />
-                  <span className="text-xs font-semibold">+{course.points_reward} pts</span>
-                </div>
               )}
 
               <div className="flex items-center justify-between pt-1.5 sm:pt-2 border-t border-border mt-auto">
