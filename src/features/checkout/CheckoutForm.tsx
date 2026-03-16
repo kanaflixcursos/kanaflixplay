@@ -178,7 +178,6 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
   };
 
   // ─── Display-only price hints (server is authoritative) ─────────
-  // These are purely for UI preview. The Edge Function calculates the real amount.
 
   const displayBasePrice = course.price;
 
@@ -198,17 +197,15 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   const displayFinalPrice = displayPriceAfterCoupon - displayPixDiscount;
 
-  // ─── Installment options (display only) ─────────────────────────
+  // ─── Installment options using pricingCalculator ─────────────────
 
-  const availableInstallments = useMemo(() => {
-    const ccConfig = paymentConfig?.payment_methods.find(m => m.id === 'credit_card');
-    if (!ccConfig?.installments) {
-      return [{ number: 1, label: 'À vista' }];
-    }
-    return ccConfig.installments.options.filter(opt => {
-      return displayFinalPrice / opt.number >= ccConfig.installments!.min_amount_per_installment;
-    });
-  }, [displayFinalPrice, paymentConfig]);
+  const installmentOptions: InstallmentDetail[] = useMemo(() => {
+    return calculateInstallments(displayPriceAfterCoupon);
+  }, [displayPriceAfterCoupon]);
+
+  const selectedInstallment = useMemo(() => {
+    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+  }, [installmentOptions, installments]);
 
   useEffect(() => {
     if (paymentMethod !== 'credit_card') setInstallments(1);
