@@ -53,11 +53,13 @@ export default function ComboForm() {
     );
   };
 
+  const priceInCents = parseInt(priceStr.replace(/\D/g, '') || '0', 10);
+
   const originalPrice = (courses || [])
     .filter(c => selectedCourseIds.includes(c.id))
     .reduce((sum, c) => sum + (c.price || 0), 0);
 
-  const discount = originalPrice > 0 && price > 0 ? Math.round((1 - price / originalPrice) * 100) : 0;
+  const discount = originalPrice > 0 && priceInCents > 0 ? Math.round((1 - priceInCents / originalPrice) * 100) : 0;
 
   const handleSave = async () => {
     if (!title.trim()) {
