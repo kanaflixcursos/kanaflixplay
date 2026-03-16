@@ -5,11 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, CheckCircle, Trophy } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, Trophy, Star, ArrowRight } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import ContinueWatchingCard from '@/components/ContinueWatchingCard';
 import AvailableCoursesSection from '@/components/AvailableCoursesSection';
-import StudentLevelBadge, { getStudentLevel } from '@/components/StudentLevelBadge';
+import { getStudentLevel, getNextLevel, getProgressToNext } from '@/components/StudentLevelBadge';
 import { motion } from 'framer-motion';
 import welcomeIllustration from '@/assets/welcome-illustration.png';
 
