@@ -216,7 +216,7 @@ export default function ComboForm() {
           )}
           <div>
             <Label>Preço do Combo (R$) *</Label>
-            <CurrencyInput value={price} onChange={setPrice} />
+            <CurrencyInput value={priceStr} onChange={setPriceStr} />
           </div>
           <div>
             <Label>Parcelas Máximas</Label>
