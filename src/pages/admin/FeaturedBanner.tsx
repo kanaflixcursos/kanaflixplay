@@ -245,8 +245,8 @@ export default function AdminFeaturedBanner() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-3 text-base">
-            <div className="p-2 rounded-xl bg-chart-5/10">
-              <Eye className="h-5 w-5 text-chart-5" />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Eye className="h-5 w-5 text-primary" />
             </div>
             Pré-visualização do Slideshow
           </CardTitle>

@@ -80,8 +80,8 @@ export default function CourseView() {
     <div className="space-y-4 md:space-y-6">
       {/* Pre-sale banner */}
       {isPreSale && (
-        <div className="flex items-start gap-3 p-4 bg-chart-4/10 border border-chart-4/30 rounded-xl">
-          <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/30 rounded-xl">
+          <CalendarClock className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-sm text-foreground">
               Curso em pré-venda — Lançamento em {new Date(course.launch_date!).toLocaleDateString('pt-BR')}

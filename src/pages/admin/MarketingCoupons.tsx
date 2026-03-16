@@ -260,10 +260,10 @@ export default function MarketingCoupons() {
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`p-1.5 rounded-lg ${coupon.discount_type === 'percentage' ? 'bg-primary/10' : 'bg-chart-4/10'}`}>
+                      <div className="p-1.5 rounded-lg bg-primary/10">
                         {coupon.discount_type === 'percentage'
                           ? <Percent className="h-4 w-4 text-primary" />
-                          : <DollarSign className="h-4 w-4 text-chart-4" />
+                          : <DollarSign className="h-4 w-4 text-primary" />
                         }
                       </div>
                       <div className="min-w-0">

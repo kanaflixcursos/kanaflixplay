@@ -412,7 +412,7 @@ export default function AdminOrders() {
                           <span className="text-muted-foreground">{s.count} ({pct}%)</span>
                         </div>
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-chart-5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
