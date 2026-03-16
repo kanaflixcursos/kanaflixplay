@@ -378,8 +378,8 @@ export default function Purchases() {
                     onChange={(e) => setRefundReason(e.target.value)}
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Sua solicitação será analisada pela nossa equipe e você será notificado sobre a decisão.
+                  <p className="text-xs text-destructive font-medium">
+                    ⚠️ Ao confirmar, o reembolso será processado imediatamente e seu acesso ao curso será revogado.
                   </p>
                 </div>
               </div>
