@@ -35,11 +35,16 @@ interface Order {
   created_at: string;
   paid_at: string | null;
   course_id: string | null;
+  combo_id: string | null;
   pix_qr_code: string | null;
   pix_expires_at: string | null;
   boleto_url: string | null;
   boleto_due_date: string | null;
   course?: {
+    title: string;
+    thumbnail_url: string | null;
+  } | null;
+  combo?: {
     title: string;
     thumbnail_url: string | null;
   } | null;
@@ -80,7 +85,8 @@ export default function Purchases() {
       .from('orders')
       .select(`
         *,
-        course:courses(title, thumbnail_url)
+        course:courses(title, thumbnail_url),
+        combo:combos(title, thumbnail_url)
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
@@ -238,12 +244,12 @@ export default function Purchases() {
                 <Card key={order.id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <div className="flex flex-col md:flex-row">
-                      {/* Course thumbnail */}
-                      {order.course?.thumbnail_url && (
+                      {/* Course/Combo thumbnail */}
+                      {(order.combo?.thumbnail_url || order.course?.thumbnail_url) && (
                         <div className="md:w-48 h-32 md:h-auto shrink-0">
                           <img 
-                            src={order.course.thumbnail_url} 
-                            alt={order.course.title}
+                            src={(order.combo?.thumbnail_url || order.course?.thumbnail_url)!} 
+                            alt={order.combo?.title || order.course?.title || ''}
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -254,7 +260,7 @@ export default function Purchases() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                           <div>
                             <h3 className="font-medium text-lg">
-                              {order.course?.title || 'Curso'}
+                              {order.combo?.title || order.course?.title || 'Curso'}
                             </h3>
                             <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
                               <Calendar className="h-3.5 w-3.5" />

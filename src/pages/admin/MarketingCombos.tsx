@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCombos, useInvalidateCombos } from '@/hooks/queries/useCombos';
 import { deleteCombo } from '@/services/comboService';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import { 
   Plus, ArrowLeft, Pencil, Trash2, Copy, BookOpen, ExternalLink,
   Package
@@ -32,6 +34,7 @@ export default function MarketingCombos() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -45,6 +48,23 @@ export default function MarketingCombos() {
     } finally {
       setDeleting(false);
       setDeleteId(null);
+    }
+  };
+
+  const handleToggleActive = async (comboId: string, currentActive: boolean) => {
+    setTogglingId(comboId);
+    try {
+      const { error } = await supabase
+        .from('combos')
+        .update({ is_active: !currentActive })
+        .eq('id', comboId);
+      if (error) throw error;
+      invalidate();
+      toast.success(!currentActive ? 'Combo ativado' : 'Combo desativado');
+    } catch {
+      toast.error('Erro ao alterar status');
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -101,9 +121,11 @@ export default function MarketingCombos() {
                     </div>
                     <p className="text-lg font-bold text-primary">{formatPrice(combo.price)}</p>
                   </div>
-                  {combo.thumbnail_url && (
-                    <img src={combo.thumbnail_url} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
-                  )}
+                  <Switch
+                    checked={combo.is_active}
+                    disabled={togglingId === combo.id}
+                    onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
+                  />
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
