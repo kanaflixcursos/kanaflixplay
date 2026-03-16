@@ -208,8 +208,8 @@ export default function MarketingCoupons() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-chart-2/10">
-              <Hash className="h-4 w-4 text-chart-2" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Hash className="h-4 w-4 text-primary" />
             </div>
             <div>
               <p className="text-2xl font-bold">{totalUses}</p>
