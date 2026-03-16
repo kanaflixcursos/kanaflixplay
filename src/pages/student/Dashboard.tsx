@@ -142,6 +142,7 @@ export default function StudentDashboard() {
             marginLeft: 'calc(-50vw + 50%)',
             marginRight: 'calc(-50vw + 50%)',
             marginTop: '-1rem',
+            paddingTop: '1rem',
             paddingLeft: 'calc(50vw - 50%)',
             paddingRight: 'calc(50vw - 50%)',
           }}
