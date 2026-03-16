@@ -31,8 +31,8 @@ export default function DashboardSalesTable() {
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between gap-2 p-4 sm:p-6 pb-3 sm:pb-4">
         <CardTitle className="flex items-center gap-3 text-left">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+          <div className="icon-box">
+            <ShoppingCart />
           </div>
           <span className="stat-card-label">Últimas Vendas</span>
         </CardTitle>
