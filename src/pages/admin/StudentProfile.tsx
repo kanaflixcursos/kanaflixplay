@@ -66,6 +66,7 @@ interface Order {
   paid_at: string | null;
   created_at: string;
   course_id: string | null;
+  combo_id: string | null;
   course_title: string | null;
 }
 
