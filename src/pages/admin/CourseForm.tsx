@@ -23,6 +23,7 @@ import { CardBrandIcon } from '@/components/CardBrandIcon';
 import CourseLessonsOrganizer, { CourseLessonsOrganizerRef } from '@/components/admin/CourseLessonsOrganizer';
 import { useCategories } from '@/hooks/queries/useCourses';
 import { type CourseFormData, initialCourseFormData, validateCourseStep } from '@/lib/validations/course';
+import { calculateInstallments } from '@/utils/pricingCalculator';
 
 interface PaymentMethodConfig {
   id: string;
@@ -486,24 +487,16 @@ export default function CourseForm() {
                         <SelectContent>
                           {(() => {
                             const basePrice = parseFloat(formData.price) || 0;
-                            const options = paymentConfig?.payment_methods
-                              .find(m => m.id === 'credit_card')
-                              ?.installments?.options;
-                            const items = options || [1,2,3,4,5,6,7,8,9,10,11,12].map(n => ({ number: n, label: n === 1 ? 'À vista' : `${n}x`, interest_rate: n <= 6 ? 0 : 4.07 }));
-                            return items.map((option: any) => {
-                              let total = basePrice;
-                              if (option.number > 6 && basePrice > 0) {
-                                total = basePrice * (1 + (option.interest_rate || 4.07) / 100);
-                              }
-                              const installmentValue = option.number > 0 ? total / option.number : total;
+                            const installmentOptions = calculateInstallments(basePrice);
+                            return installmentOptions.map((opt) => {
                               const priceLabel = basePrice > 0
-                                ? option.number === 1
-                                  ? ` — R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                                  : ` — ${option.number}x de R$ ${installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}${option.number <= 6 ? ' sem juros' : ''} (total R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`
+                                ? opt.installments === 1
+                                  ? ` — R$ ${basePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} à vista`
+                                  : ` — ${opt.installments}x de R$ ${opt.installmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (total R$ ${opt.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`
                                 : '';
                               return (
-                                <SelectItem key={option.number} value={option.number.toString()}>
-                                  {option.number === 1 ? 'À vista' : `Até ${option.number}x`}{priceLabel}
+                                <SelectItem key={opt.installments} value={opt.installments.toString()}>
+                                  {opt.installments === 1 ? 'À vista' : `Até ${opt.installments}x`}{priceLabel}
                                 </SelectItem>
                               );
                             });
@@ -562,23 +555,21 @@ export default function CourseForm() {
                   <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
                     <div className="flex items-center gap-2">
                       <Info className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm font-medium text-foreground">Taxas do Gateway (Pagar.me)</p>
+                      <p className="text-sm font-medium text-foreground">Como funciona a precificação</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-muted-foreground">
                       <div className="space-y-1.5">
                         <p className="font-medium text-foreground text-xs">Cartão de Crédito</p>
-                        <p>• À vista (1x): 3,25%</p>
-                        <p>• 2x a 6x: 3,79%</p>
-                        <p>• 7x a 12x: 4,07%</p>
-                        <p>• Juros repassados ao cliente: 1,99% a.m. (7x–12x)</p>
+                        <p>• À vista (1x): preço de vitrine (taxa absorvida)</p>
+                        <p>• 2x a 12x: juros do gateway repassados ao cliente</p>
+                        <p>• C.E.T. varia de 4,30% (2x) a 14,09% (12x)</p>
+                        <p>• O valor líquido recebido é sempre o preço base</p>
                       </div>
                       <div className="space-y-1.5">
-                        <p className="font-medium text-foreground text-xs">PIX e Boleto</p>
-                        <p>• PIX: R$ 0,79 por transação</p>
-                        <p>• Boleto: R$ 2,79 por boleto</p>
-                        <p className="pt-1 font-medium text-foreground text-xs">Fixas por transação</p>
-                        <p>• Gateway: R$ 0,35</p>
-                        <p>• Antifraude: R$ 0,35</p>
+                        <p className="font-medium text-foreground text-xs">PIX</p>
+                        <p>• 3% de desconto sobre o preço base</p>
+                        <p className="pt-1 font-medium text-foreground text-xs">Boleto</p>
+                        <p>• Mesmo valor do preço base (à vista)</p>
                       </div>
                     </div>
                   </div>
