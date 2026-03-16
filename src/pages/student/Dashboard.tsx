@@ -157,7 +157,7 @@ export default function StudentDashboard() {
                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3.5 py-1.5 text-xs font-medium mb-5 text-white/90"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                Bem-vindo à plataforma
+                Apresentamos o Kanaflix Play
               </motion.div>
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight text-white">
