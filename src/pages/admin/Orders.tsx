@@ -183,7 +183,7 @@ export default function AdminOrders() {
   const [totalCount, setTotalCount] = useState(0);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth);
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   useEffect(() => { loadSales(); }, [page]);
   useEffect(() => { fetchAnalytics(); }, [selectedMonth]);
