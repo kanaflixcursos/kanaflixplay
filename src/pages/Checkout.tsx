@@ -287,7 +287,7 @@ export default function Checkout() {
                 </Badge>
               )}
               {course.launch_date && new Date(course.launch_date) > new Date() && (
-                <Badge className="absolute top-4 left-4 bg-chart-4 text-white">
+                <Badge className="absolute top-4 left-4 bg-warning text-warning-foreground">
                   <CalendarClock className="h-3 w-3 mr-1" />
                   Pré-venda
                 </Badge>
@@ -361,14 +361,14 @@ export default function Checkout() {
                     <span>{lessonCount} aulas</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-chart-2/10">
-                      <Play className="h-3.5 w-3.5 text-chart-2" />
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Play className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <span>Acesso imediato</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-chart-4/10">
-                      <Clock className="h-3.5 w-3.5 text-chart-4" />
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <Clock className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <span>Validade de 1 ano</span>
                   </div>
@@ -376,8 +376,8 @@ export default function Checkout() {
 
                 {/* Pre-sale notice */}
                 {course.launch_date && new Date(course.launch_date) > new Date() && (
-                  <div className="flex items-start gap-3 p-4 bg-chart-4/5 border border-chart-4/20 rounded-xl">
-                    <CalendarClock className="h-5 w-5 text-chart-4 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 bg-warning/5 border border-warning/20 rounded-xl">
+                    <CalendarClock className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-sm text-foreground">Pré-venda — Lançamento em {new Date(course.launch_date).toLocaleDateString('pt-BR')}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">

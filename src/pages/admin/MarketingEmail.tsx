@@ -30,8 +30,8 @@ type Campaign = {
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   draft: { label: 'Rascunho', color: 'bg-muted text-muted-foreground' },
-  sending: { label: 'Enviando...', color: 'bg-chart-4/10 text-chart-4' },
-  sent: { label: 'Enviada', color: 'bg-chart-2/10 text-chart-2' },
+  sending: { label: 'Enviando...', color: 'bg-warning/10 text-warning' },
+  sent: { label: 'Enviada', color: 'bg-success/10 text-success' },
   failed: { label: 'Falhou', color: 'bg-destructive/10 text-destructive' },
 };
 
@@ -165,7 +165,7 @@ export default function MarketingEmail() {
                         <TableCell className="text-sm">
                           {c.sent_count > 0 ? (
                             <span className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3 text-chart-2" />
+                              <CheckCircle className="h-3 w-3 text-success" />
                               {c.sent_count}
                               {c.failed_count > 0 && (
                                 <span className="text-destructive flex items-center gap-0.5 ml-1">

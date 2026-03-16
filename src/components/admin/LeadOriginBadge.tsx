@@ -2,11 +2,11 @@ import { Badge } from '@/components/ui/badge';
 import { Globe, FileText, UserPlus, Megaphone, Instagram, Facebook, Mail, MousePointer } from 'lucide-react';
 
 const channelConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; label: string; className: string }> = {
-  google: { icon: Globe, label: 'Google Ads', className: 'bg-chart-1/15 text-chart-1 border-chart-1/30' },
-  instagram: { icon: Instagram, label: 'Instagram', className: 'bg-chart-5/15 text-chart-5 border-chart-5/30' },
-  facebook: { icon: Facebook, label: 'Facebook Ads', className: 'bg-chart-2/15 text-chart-2 border-chart-2/30' },
-  email: { icon: Mail, label: 'E-mail', className: 'bg-chart-3/15 text-chart-3 border-chart-3/30' },
-  newsletter: { icon: Mail, label: 'Newsletter', className: 'bg-chart-3/15 text-chart-3 border-chart-3/30' },
+  google: { icon: Globe, label: 'Google Ads', className: 'bg-primary/15 text-primary border-primary/30' },
+  instagram: { icon: Instagram, label: 'Instagram', className: 'bg-primary/15 text-primary border-primary/30' },
+  facebook: { icon: Facebook, label: 'Facebook Ads', className: 'bg-primary/15 text-primary border-primary/30' },
+  email: { icon: Mail, label: 'E-mail', className: 'bg-primary/15 text-primary border-primary/30' },
+  newsletter: { icon: Mail, label: 'Newsletter', className: 'bg-primary/15 text-primary border-primary/30' },
   direto: { icon: MousePointer, label: 'Direto', className: 'bg-muted text-muted-foreground border-muted-foreground/20' },
 };
 

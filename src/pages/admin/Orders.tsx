@@ -312,8 +312,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-chart-3/10">
-                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-chart-3" />
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <span className="stat-card-label">Total de Pedidos</span>
                 </div>
@@ -350,8 +350,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-chart-4/10">
-                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-chart-4" />
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <span className="stat-card-label">Ticket Médio</span>
                 </div>
@@ -391,8 +391,8 @@ export default function AdminOrders() {
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-chart-5/10">
-                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-chart-5" />
+                  <div className="p-2 rounded-xl bg-primary/10">
+                    <Target className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   <span className="stat-card-label">Origem de Vendas</span>
                 </div>
@@ -412,7 +412,7 @@ export default function AdminOrders() {
                           <span className="text-muted-foreground">{s.count} ({pct}%)</span>
                         </div>
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-chart-5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
