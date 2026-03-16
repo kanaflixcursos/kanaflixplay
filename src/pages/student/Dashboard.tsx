@@ -111,9 +111,9 @@ export default function StudentDashboard() {
       ).length;
 
       setStats({
-        totalWatchedSeconds,
         totalLessonsCompleted,
-        totalCoursesCompleted
+        totalCoursesCompleted,
+        totalPoints
       });
 
       setEnrolledCourses(coursesWithProgress);
