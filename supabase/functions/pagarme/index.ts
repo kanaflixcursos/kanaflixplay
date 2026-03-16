@@ -438,9 +438,9 @@ async function handleCreateOrder(
   const orderPayload: any = {
     items: [{
       amount: finalPrice,
-      description: course.title,
+      description: itemTitle,
       quantity: 1,
-      code: course.id
+      code: itemId
     }],
     customer: {
       name: customer.name,
