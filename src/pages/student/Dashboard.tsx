@@ -40,6 +40,7 @@ const formatPoints = (points: number): string => {
 };
 
 export default function StudentDashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourse[]>([]);
   const [loading, setLoading] = useState(true);
