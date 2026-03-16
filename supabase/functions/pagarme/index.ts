@@ -746,7 +746,7 @@ async function handleChargePaid(supabase: any, data: any) {
   
   const { data: order, error } = await supabase
     .from('orders')
-    .select('*, courses(title)')
+    .select('*, courses(title), combos(title)')
     .eq('pagarme_charge_id', chargeId)
     .single();
 
@@ -770,9 +770,27 @@ async function handleChargePaid(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as paid`);
 
-  if (order.course_id) {
-    await enrollUser(supabase, order.user_id, order.course_id);
-    console.log(`[Webhook] User ${order.user_id} enrolled in course ${order.course_id}`);
+  // Determine courses to enroll
+  let enrollCourseIds: string[] = [];
+  let itemTitle = 'Curso';
+
+  if (order.combo_id) {
+    const { data: cc } = await supabase
+      .from('combo_courses')
+      .select('course_id')
+      .eq('combo_id', order.combo_id);
+    enrollCourseIds = (cc || []).map((c: any) => c.course_id);
+    itemTitle = order.combos?.title || 'Combo';
+  } else if (order.course_id) {
+    enrollCourseIds = [order.course_id];
+    itemTitle = order.courses?.title || 'Curso';
+  }
+
+  if (enrollCourseIds.length > 0) {
+    for (const cid of enrollCourseIds) {
+      await enrollUser(supabase, order.user_id, cid);
+    }
+    console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
     
     const profile = await getUserProfile(supabase, order.user_id);
     
@@ -789,8 +807,10 @@ async function handleChargePaid(supabase: any, data: any) {
         to: profile.email,
         data: {
           userName: profile.full_name || '',
-          courseName: order.courses?.title || 'Curso',
-          courseUrl: `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
+          courseName: itemTitle,
+          courseUrl: order.combo_id 
+            ? `https://cursos.kanaflix.com.br/courses` 
+            : `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
@@ -803,11 +823,12 @@ async function handleChargePaid(supabase: any, data: any) {
       user_id: order.user_id,
       type: 'payment_success',
       title: 'Pagamento confirmado! 🎉',
-      message: `Seu pagamento para o curso "${order.courses?.title || 'curso'}" foi confirmado. Você já pode acessar o conteúdo!`,
-      link: `/courses/${order.course_id}`,
+      message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
+      link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
       metadata: {
         order_id: order.id,
         course_id: order.course_id,
+        combo_id: order.combo_id,
         amount: order.amount
       }
     });
