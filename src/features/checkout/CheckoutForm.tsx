@@ -199,12 +199,12 @@ export function CheckoutForm({ course, onSuccess }: CheckoutFormProps) {
 
   // ─── Installment options using pricingCalculator ─────────────────
 
-  const installmentOptions: InstallmentDetail[] = useMemo(() => {
-    return calculateInstallments(displayPriceAfterCoupon);
+  const installmentOptions = useMemo(() => {
+    return calculateInstallments(displayPriceAfterCoupon / 100);
   }, [displayPriceAfterCoupon]);
 
   const selectedInstallment = useMemo(() => {
-    return installmentOptions.find(opt => opt.number === installments) || installmentOptions[0];
+    return installmentOptions.find(opt => opt.installments === installments) || installmentOptions[0];
   }, [installmentOptions, installments]);
 
   useEffect(() => {
