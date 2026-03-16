@@ -51,6 +51,23 @@ export default function MarketingCombos() {
     }
   };
 
+  const handleToggleActive = async (comboId: string, currentActive: boolean) => {
+    setTogglingId(comboId);
+    try {
+      const { error } = await supabase
+        .from('combos')
+        .update({ is_active: !currentActive })
+        .eq('id', comboId);
+      if (error) throw error;
+      invalidate();
+      toast.success(!currentActive ? 'Combo ativado' : 'Combo desativado');
+    } catch {
+      toast.error('Erro ao alterar status');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const checkoutLink = linkCombo ? `https://cursos.kanaflix.com.br/checkout/combo/${linkCombo.id}` : '';
 
   return (
