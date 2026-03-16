@@ -34,7 +34,7 @@ interface Props {
   period?: Period;
 }
 
-export default function DashboardRevenueChart({ period }: Props) {
+export default function DashboardRevenueChart({ period = '1w' }: Props) {
   const [data, setData] = useState<DailyData[]>([]);
   const [loading, setLoading] = useState(true);
 
