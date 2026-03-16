@@ -121,9 +121,11 @@ export default function MarketingCombos() {
                     </div>
                     <p className="text-lg font-bold text-primary">{formatPrice(combo.price)}</p>
                   </div>
-                  {combo.thumbnail_url && (
-                    <img src={combo.thumbnail_url} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
-                  )}
+                  <Switch
+                    checked={combo.is_active}
+                    disabled={togglingId === combo.id}
+                    onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
+                  />
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
