@@ -66,6 +66,7 @@ interface Order {
   paid_at: string | null;
   created_at: string;
   course_id: string | null;
+  combo_id: string | null;
   course_title: string | null;
 }
 
@@ -171,23 +172,36 @@ export default function StudentProfile() {
     // Fetch orders
     const { data: ordersData } = await supabase
       .from('orders')
-      .select('id, amount, status, payment_method, paid_at, created_at, course_id')
+      .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (ordersData && ordersData.length > 0) {
-      const courseIds = [...new Set(ordersData.map(o => o.course_id).filter(Boolean))];
+      const courseIds = [...new Set(ordersData.map(o => o.course_id).filter(Boolean))] as string[];
+      const comboIds = [...new Set(ordersData.map(o => o.combo_id).filter(Boolean))] as string[];
+
       const { data: courses } = courseIds.length > 0
         ? await supabase.from('courses').select('id, title').in('id', courseIds)
+        : { data: [] };
+
+      const { data: combos } = comboIds.length > 0
+        ? await supabase.from('combos').select('id, title').in('id', comboIds)
         : { data: [] };
 
       const coursesMap = new Map<string, string>();
       courses?.forEach(c => coursesMap.set(c.id, c.title));
 
+      const combosMap = new Map<string, string>();
+      combos?.forEach(c => combosMap.set(c.id, c.title));
+
       setOrders(
         ordersData.map(o => ({
           ...o,
-          course_title: o.course_id ? (coursesMap.get(o.course_id) || null) : null,
+          course_title: o.course_id
+            ? (coursesMap.get(o.course_id) || null)
+            : o.combo_id
+              ? (combosMap.get(o.combo_id) || null)
+              : null,
         }))
       );
     }
