@@ -243,7 +243,7 @@ function CourseGrid({ courses }: { courses: CatalogCourse[] }) {
                   </p>
                 </div>
                 {course.is_enrolled ? (
-                  <Badge variant="secondary" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
+                  <Badge variant="secondary" className="text-xs font-semibold text-primary uppercase">
                     Acessar
                   </Badge>
                 ) : course.price && course.price > 0 ? (
