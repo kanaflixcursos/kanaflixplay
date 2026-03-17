@@ -140,14 +140,16 @@ export default function ComboForm() {
       </div>
 
       {/* Basic Info: Image left, Title+Description right */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-muted-foreground" />
-            Informações Básicas
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-3">
+            <div className="icon-box">
+              <ImageIcon />
+            </div>
+            <span className="stat-card-label">Informações Básicas</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0">
           <div className="flex gap-6">
             <div className="w-36 shrink-0">
               <Label className="mb-1.5 block">Capa</Label>
@@ -173,15 +175,19 @@ export default function ComboForm() {
       </Card>
 
       {/* Course Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-muted-foreground" />
-            Cursos do Combo
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-3">
+            <div className="icon-box">
+              <Package />
+            </div>
+            <div>
+              <span className="stat-card-label">Cursos do Combo</span>
+              <p className="text-xs text-muted-foreground mt-0.5">{selectedCourseIds.length} selecionado{selectedCourseIds.length !== 1 ? 's' : ''}</p>
+            </div>
           </CardTitle>
-          <CardDescription>{selectedCourseIds.length} selecionado{selectedCourseIds.length !== 1 ? 's' : ''}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0">
           {coursesLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12" />)}
@@ -218,16 +224,18 @@ export default function ComboForm() {
       {/* Pricing + Limits side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Pricing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-              Precificação
+        <Card className="overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <DollarSign />
+              </div>
+              <span className="stat-card-label">Precificação</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
             {originalPrice > 0 && (
-              <div className="p-3 bg-muted/50 rounded-lg text-sm">
+              <div className="p-3 bg-muted/30 rounded-lg border text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Soma dos cursos:</span>
                   <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
@@ -261,14 +269,16 @@ export default function ComboForm() {
         </Card>
 
         {/* Limits */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Timer className="h-5 w-5 text-muted-foreground" />
-              Limites de Uso
+        <Card className="overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <Timer />
+              </div>
+              <span className="stat-card-label">Limites de Uso</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
             <div>
               <Label>Quantidade máxima de usos</Label>
               <Select value={maxUses || 'unlimited'} onValueChange={v => setMaxUses(v === 'unlimited' ? '' : v)}>
