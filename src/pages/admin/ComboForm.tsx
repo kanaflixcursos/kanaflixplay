@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { DatePicker } from '@/components/ui/date-picker';
-import { ArrowLeft, Loader2, BookOpen, Package } from 'lucide-react';
+import { ArrowLeft, Loader2, BookOpen, Package, DollarSign, Timer, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
 
@@ -126,7 +126,7 @@ export default function ComboForm() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-medium tracking-tight font-heading">
               {isEdit ? 'Editar Combo' : 'Novo Combo'}
             </h1>
           </div>
@@ -141,10 +141,15 @@ export default function ComboForm() {
 
       {/* Basic Info: Image left, Title+Description right */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Informações Básicas</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            Informações Básicas
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="flex gap-6">
-            <div className="w-[140px] shrink-0">
+            <div className="w-36 shrink-0">
               <Label className="mb-1.5 block">Capa</Label>
               <ImageUpload
                 value={thumbnailUrl}
@@ -170,10 +175,11 @@ export default function ComboForm() {
       {/* Course Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Cursos do Combo ({selectedCourseIds.length} selecionados)
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-muted-foreground" />
+            Cursos do Combo
           </CardTitle>
+          <CardDescription>{selectedCourseIds.length} selecionado{selectedCourseIds.length !== 1 ? 's' : ''}</CardDescription>
         </CardHeader>
         <CardContent>
           {coursesLoading ? (
@@ -213,7 +219,12 @@ export default function ComboForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Pricing */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Precificação</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              Precificação
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             {originalPrice > 0 && (
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
@@ -251,7 +262,12 @@ export default function ComboForm() {
 
         {/* Limits */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Limites de Uso</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5 text-muted-foreground" />
+              Limites de Uso
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label>Quantidade máxima de usos</Label>
