@@ -71,7 +71,8 @@ export default function CustomerJourneyTimeline({
   showFilters = false,
   limit = 50,
   title = 'Jornada do Cliente',
-  defaultVisible = 15,
+  defaultVisible = 10,
+  pageSize = 30,
 }: CustomerJourneyTimelineProps) {
   const [events, setEvents] = useState<JourneyEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,7 @@ export default function CustomerJourneyTimeline({
   const [utmFilter, setUtmFilter] = useState('all');
   const [utmSources, setUtmSources] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     fetchEvents();
