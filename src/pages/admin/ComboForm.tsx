@@ -219,7 +219,12 @@ export default function ComboForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Pricing */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Precificação</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              Precificação
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             {originalPrice > 0 && (
               <div className="p-3 bg-muted/50 rounded-lg text-sm">
