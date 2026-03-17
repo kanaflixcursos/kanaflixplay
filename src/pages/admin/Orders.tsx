@@ -320,7 +320,7 @@ export default function AdminOrders() {
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
         {/* Receita Total */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0 }}>
-          <Card className="h-full overflow-hidden stat-card-mesh">
+          <Card className="h-full overflow-hidden accent-card">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -336,11 +336,11 @@ export default function AdminOrders() {
               ) : a ? (
                 <>
                   <p className="stat-card-value">{formatCurrency(a.revenue.gross)}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Líquido: <span className="font-medium text-success">{formatCurrency(a.revenue.net)}</span>
+                  <p className="text-xs text-primary-foreground/70 mt-0.5">
+                    Líquido: <span className="font-medium text-primary-foreground">{formatCurrency(a.revenue.net)}</span>
                   </p>
                 </>
-              ) : <p className="text-muted-foreground text-sm">—</p>}
+              ) : <p className="text-primary-foreground/60 text-sm">—</p>}
             </CardContent>
           </Card>
         </motion.div>
