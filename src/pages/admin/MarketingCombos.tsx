@@ -187,12 +187,11 @@ export default function MarketingCombos() {
                   />
                 </TableHead>
                 <TableHead>Combo</TableHead>
-                <TableHead className="hidden md:table-cell">Cursos</TableHead>
                 <TableHead className="text-right">Preço</TableHead>
-                <TableHead className="hidden sm:table-cell">Usos</TableHead>
-                <TableHead className="hidden lg:table-cell">Validade</TableHead>
+                <TableHead className="hidden md:table-cell">Usos</TableHead>
+                <TableHead className="hidden md:table-cell">Validade</TableHead>
                 <TableHead className="w-16 text-center">Status</TableHead>
-                <TableHead className="w-28 text-right">Ações</TableHead>
+                <TableHead className="hidden md:table-cell w-28 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -215,25 +214,23 @@ export default function MarketingCombos() {
                             <Package className="h-4 w-4 text-muted-foreground" />
                           </div>
                         )}
-                        <span className="font-medium text-sm truncate max-w-[200px]">{combo.title}</span>
+                        <div className="min-w-0">
+                          <span className="font-medium text-sm truncate block max-w-[200px]">{combo.title}</span>
+                          <span className="text-xs text-muted-foreground md:hidden">
+                            {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
-                        {combo.courses.length > 0
-                          ? combo.courses.map(c => c.title).join(', ')
-                          : '—'}
-                      </span>
                     </TableCell>
                     <TableCell className="text-right font-semibold text-sm whitespace-nowrap">
                       {formatPrice(combo.price)}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                       {combo.max_uses != null
                         ? `${combo.used_count}/${combo.max_uses}`
                         : '∞'}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground whitespace-nowrap">
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground whitespace-nowrap">
                       {combo.expires_at ? (
                         <span className={isExpired ? 'text-destructive' : ''}>
                           {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
@@ -248,7 +245,7 @@ export default function MarketingCombos() {
                         onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
                       />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="hidden md:table-cell text-right">
                       <div className="flex items-center justify-end gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
                           <Pencil className="h-3.5 w-3.5" />
