@@ -320,7 +320,7 @@ export default function AdminOrders() {
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
         {/* Receita Total */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0 }}>
-          <Card className="h-full">
+          <Card className="h-full overflow-hidden stat-card-mesh">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -347,7 +347,7 @@ export default function AdminOrders() {
 
         {/* Total de Pedidos */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.05 }}>
-          <Card className="h-full">
+          <Card className="h-full overflow-hidden stat-card-mesh">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -385,7 +385,7 @@ export default function AdminOrders() {
 
         {/* Ticket Médio */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-          <Card className="h-full">
+          <Card className="h-full overflow-hidden stat-card-mesh">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
