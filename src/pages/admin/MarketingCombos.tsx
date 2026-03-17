@@ -8,9 +8,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { 
-  Plus, ArrowLeft, Pencil, Trash2, Copy, BookOpen, ExternalLink,
-  Package
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import {
+  Plus, ArrowLeft, Pencil, Trash2, Copy, ExternalLink, Package,
 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -35,12 +38,34 @@ export default function MarketingCombos() {
   const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  const allSelected = combos && combos.length > 0 && selectedIds.size === combos.length;
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set((combos || []).map(c => c.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
       await deleteCombo(deleteId);
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(deleteId); return n; });
       invalidate();
       toast.success('Combo excluído');
     } catch {
@@ -48,6 +73,35 @@ export default function MarketingCombos() {
     } finally {
       setDeleting(false);
       setDeleteId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => deleteCombo(id)));
+      invalidate();
+      setSelectedIds(new Set());
+      toast.success(`${selectedIds.size} combo(s) excluído(s)`);
+    } catch {
+      toast.error('Erro ao excluir combos');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleBulkToggle = async (activate: boolean) => {
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map(id =>
+          supabase.from('combos').update({ is_active: activate }).eq('id', id)
+        )
+      );
+      invalidate();
+      setSelectedIds(new Set());
+      toast.success(activate ? 'Combos ativados' : 'Combos desativados');
+    } catch {
+      toast.error('Erro ao alterar status');
     }
   };
 
@@ -88,10 +142,25 @@ export default function MarketingCombos() {
         </Button>
       </div>
 
+      {/* Bulk actions bar */}
+      {someSelected && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/60 border text-sm">
+          <span className="font-medium">{selectedIds.size} selecionado(s)</span>
+          <div className="flex-1" />
+          <Button variant="outline" size="sm" onClick={() => handleBulkToggle(true)}>Ativar</Button>
+          <Button variant="outline" size="sm" onClick={() => handleBulkToggle(false)}>Desativar</Button>
+          <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={bulkDeleting}>
+            <Trash2 className="h-3.5 w-3.5 mr-1" />
+            Excluir
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Limpar</Button>
+        </div>
+      )}
+
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}><CardContent className="p-5"><Skeleton className="h-24" /></CardContent></Card>
+            <Skeleton key={i} className="h-14 w-full" />
           ))}
         </div>
       ) : !combos?.length ? (
@@ -107,64 +176,96 @@ export default function MarketingCombos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {combos.map(combo => (
-            <Card key={combo.id}>
-              <CardContent className="p-4 flex items-center gap-4">
-                {combo.thumbnail_url ? (
-                  <img src={combo.thumbnail_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
-                ) : (
-                  <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
-                    <Package className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground truncate text-sm">{combo.title}</h3>
-                    <Badge variant={combo.is_active ? 'default' : 'secondary'} className="shrink-0 text-[10px] px-1.5 py-0">
-                      {combo.is_active ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="font-bold text-primary text-sm">{formatPrice(combo.price)}</span>
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-3 w-3" />
-                      {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
-                    </span>
-                    {combo.courses.length > 0 && (
-                      <span className="hidden sm:inline truncate max-w-[200px]">
-                        {combo.courses.map(c => c.title).join(', ')}
-                      </span>
-                    )}
-                    {combo.max_uses != null && (
-                      <span>Usos: {combo.used_count}/{combo.max_uses}</span>
-                    )}
-                    {combo.expires_at && (
-                      <span>Validade: {new Date(combo.expires_at).toLocaleDateString('pt-BR')}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Switch
-                    checked={combo.is_active}
-                    disabled={togglingId === combo.id}
-                    onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
                   />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </TableHead>
+                <TableHead>Combo</TableHead>
+                <TableHead className="hidden md:table-cell">Cursos</TableHead>
+                <TableHead className="text-right">Preço</TableHead>
+                <TableHead className="hidden sm:table-cell">Usos</TableHead>
+                <TableHead className="hidden lg:table-cell">Validade</TableHead>
+                <TableHead className="w-16 text-center">Status</TableHead>
+                <TableHead className="w-28 text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {combos.map(combo => {
+                const isExpired = combo.expires_at && new Date(combo.expires_at) < new Date();
+                return (
+                  <TableRow key={combo.id} className={selectedIds.has(combo.id) ? 'bg-muted/40' : ''}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(combo.id)}
+                        onCheckedChange={() => toggleSelect(combo.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        {combo.thumbnail_url ? (
+                          <img src={combo.thumbnail_url} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
+                        ) : (
+                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <span className="font-medium text-sm truncate max-w-[200px]">{combo.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <span className="text-xs text-muted-foreground truncate max-w-[200px] block">
+                        {combo.courses.length > 0
+                          ? combo.courses.map(c => c.title).join(', ')
+                          : '—'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-sm whitespace-nowrap">
+                      {formatPrice(combo.price)}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                      {combo.max_uses != null
+                        ? `${combo.used_count}/${combo.max_uses}`
+                        : '∞'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground whitespace-nowrap">
+                      {combo.expires_at ? (
+                        <span className={isExpired ? 'text-destructive' : ''}>
+                          {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
+                          {isExpired && ' (expirado)'}
+                        </span>
+                      ) : '—'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={combo.is_active}
+                        disabled={togglingId === combo.id}
+                        onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
 
