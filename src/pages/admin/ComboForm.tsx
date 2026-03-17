@@ -126,7 +126,7 @@ export default function ComboForm() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-2xl font-medium tracking-tight font-heading">
               {isEdit ? 'Editar Combo' : 'Novo Combo'}
             </h1>
           </div>
