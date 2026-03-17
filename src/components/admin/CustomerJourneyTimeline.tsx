@@ -307,14 +307,39 @@ export default function CustomerJourneyTimeline({
               </div>
             </ScrollArea>
             {hasMore && (
-              <div className="pt-3 flex justify-center">
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowAll(prev => !prev)}>
-                  {showAll ? (
-                    <><ChevronUp className="h-3.5 w-3.5 mr-1" /> Mostrar menos</>
-                  ) : (
-                    <><ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver todos ({events.length})</>
-                  )}
-                </Button>
+              <div className="pt-3 flex items-center justify-center gap-2">
+                {showAll ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      disabled={page === 0}
+                      onClick={() => setPage(p => p - 1)}
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Anterior
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {page + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage(p => p + 1)}
+                    >
+                      Próxima <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-xs ml-2" onClick={() => { setShowAll(false); setPage(0); }}>
+                      <ChevronUp className="h-3.5 w-3.5 mr-1" /> Mostrar menos
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowAll(true)}>
+                    <ChevronDown className="h-3.5 w-3.5 mr-1" /> Ver todos ({events.length})
+                  </Button>
+                )}
               </div>
             )}
           </>
