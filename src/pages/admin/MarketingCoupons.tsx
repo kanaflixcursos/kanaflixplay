@@ -167,14 +167,10 @@ export default function MarketingCoupons() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex-1">
+        <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Cupons de Desconto</h1>
           <p className="text-muted-foreground text-sm mt-1">Crie e gerencie cupons promocionais</p>
         </div>
-        <Button onClick={() => navigate('/admin/marketing/coupons/new')} className="gap-2">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Novo Cupom</span>
-        </Button>
       </div>
 
       {/* Stats */}
