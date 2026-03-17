@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  ArrowLeft, Users, BookOpen, Clock, Search, AlertTriangle,
+  ArrowLeft, Users, BookOpen, Clock, Search, AlertTriangle, Download,
 } from 'lucide-react';
 import { Edit } from 'react-iconly';
-import { formatDistanceToNow, differenceInDays, addYears } from 'date-fns';
+import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import StatCard from '@/components/StatCard';
@@ -35,6 +35,7 @@ interface EnrolledStudent {
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
+  total_paid: number;
 }
 
 function getRemainingInfo(expiresAt: string | null) {
@@ -49,6 +50,18 @@ function getRemainingInfo(expiresAt: string | null) {
 
   const months = Math.floor(daysLeft / 30);
   return { label: `${months} ${months === 1 ? 'mês' : 'meses'} restantes`, variant: 'default' as const, daysLeft };
+}
+
+function getRemainingText(expiresAt: string | null) {
+  if (!expiresAt) return 'Vitalício';
+  const daysLeft = differenceInDays(new Date(expiresAt), new Date());
+  if (daysLeft < 0) return 'Expirado';
+  if (daysLeft <= 90) return `${daysLeft} dias`;
+  return `${Math.floor(daysLeft / 30)} meses`;
+}
+
+function formatCurrency(cents: number) {
+  return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export default function CourseDetail() {
@@ -88,14 +101,28 @@ export default function CourseDetail() {
 
     if (enrollments && enrollments.length > 0) {
       const userIds = enrollments.map(e => e.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, email, avatar_url')
-        .in('user_id', userIds);
+
+      const [{ data: profiles }, { data: orders }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('user_id, full_name, email, avatar_url')
+          .in('user_id', userIds),
+        supabase
+          .from('orders')
+          .select('user_id, amount, status, course_id')
+          .eq('course_id', courseId!)
+          .eq('status', 'paid')
+          .in('user_id', userIds),
+      ]);
 
       const profileMap = new Map(
         (profiles || []).map(p => [p.user_id, p])
       );
+
+      const orderTotals = new Map<string, number>();
+      (orders || []).forEach(o => {
+        orderTotals.set(o.user_id, (orderTotals.get(o.user_id) || 0) + (o.amount || 0));
+      });
 
       const enriched: EnrolledStudent[] = enrollments.map(e => {
         const profile = profileMap.get(e.user_id);
@@ -107,6 +134,7 @@ export default function CourseDetail() {
           full_name: profile?.full_name || null,
           email: profile?.email || null,
           avatar_url: profile?.avatar_url || null,
+          total_paid: orderTotals.get(e.user_id) || 0,
         };
       });
 
@@ -151,7 +179,22 @@ export default function CourseDetail() {
 
   const formatPrice = (price: number | null) => {
     if (!price || price <= 0) return 'Gratuito';
-    return `R$ ${(price / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    return formatCurrency(price);
+  };
+
+  const handleExportCSV = () => {
+    if (!filteredStudents.length || !course) return;
+    const header = 'Nome,Email,Matriculado em,Tempo Restante,Valor Pago\n';
+    const rows = filteredStudents.map(s =>
+      `"${s.full_name || ''}","${s.email || ''}","${format(new Date(s.enrolled_at), 'dd/MM/yyyy')}","${getRemainingText(s.expires_at)}","${formatCurrency(s.total_paid)}"`
+    ).join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `alunos-${course.title.toLowerCase().replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -238,14 +281,25 @@ export default function CourseDetail() {
                 </div>
                 Alunos Matriculados
               </CardTitle>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar aluno..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex items-center gap-2">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar aluno..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  disabled={filteredStudents.length === 0}
+                  className="shrink-0"
+                >
+                  <Download className="h-4 w-4 mr-1" /> CSV
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -263,6 +317,7 @@ export default function CourseDetail() {
                     <TableHead>E-mail</TableHead>
                     <TableHead>Matriculado em</TableHead>
                     <TableHead>Tempo Restante</TableHead>
+                    <TableHead className="text-right">Valor Pago</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -310,6 +365,9 @@ export default function CourseDetail() {
                             <Clock className="h-3 w-3 mr-1" />
                             {remaining.label}
                           </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm font-medium">
+                          {student.total_paid > 0 ? formatCurrency(student.total_paid) : '—'}
                         </TableCell>
                       </TableRow>
                     );
