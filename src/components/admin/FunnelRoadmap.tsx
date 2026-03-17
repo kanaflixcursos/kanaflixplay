@@ -14,7 +14,7 @@ interface FunnelData {
 const stages = [
   { key: 'visitors' as const, label: 'Visitantes', icon: Globe },
   { key: 'leads' as const, label: 'Leads', icon: UserPlus },
-  { key: 'qualified' as const, label: 'Qualificados', icon: UserCheck },
+  { key: 'subscribed' as const, label: 'Cadastrados', icon: UserCheck },
   { key: 'opportunities' as const, label: 'Oportunidades', icon: Target },
   { key: 'sales' as const, label: 'Vendas', icon: ShoppingCart },
 ];
