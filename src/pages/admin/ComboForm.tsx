@@ -141,10 +141,15 @@ export default function ComboForm() {
 
       {/* Basic Info: Image left, Title+Description right */}
       <Card>
-        <CardHeader><CardTitle className="text-base">Informações Básicas</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            Informações Básicas
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="flex gap-6">
-            <div className="w-[140px] shrink-0">
+            <div className="w-36 shrink-0">
               <Label className="mb-1.5 block">Capa</Label>
               <ImageUpload
                 value={thumbnailUrl}
