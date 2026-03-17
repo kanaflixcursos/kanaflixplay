@@ -2009,8 +2009,9 @@ async function handleGetWallet(apiKey: string) {
     operations = opsData.data || opsData || [];
   }
 
-  // 5. Recipient info
+  // 5. Recipient info with bank account
   const recipient = recipients[0];
+  const bankAccount = recipient.default_bank_account || null;
 
   return new Response(JSON.stringify({
     recipient: {
@@ -2019,6 +2020,17 @@ async function handleGetWallet(apiKey: string) {
       status: recipient.status,
       type: recipient.type,
     },
+    bank_account: bankAccount ? {
+      bank: bankAccount.bank,
+      bank_name: bankAccount.bank_name || null,
+      branch_number: bankAccount.branch_number,
+      branch_check_digit: bankAccount.branch_check_digit || null,
+      account_number: bankAccount.account_number,
+      account_check_digit: bankAccount.account_check_digit || null,
+      type: bankAccount.type,
+      holder_name: bankAccount.holder_name,
+      holder_document: bankAccount.holder_document,
+    } : null,
     balance: {
       available_amount: balance.available_amount || 0,
       waiting_funds_amount: balance.waiting_funds_amount || 0,
