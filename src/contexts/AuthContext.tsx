@@ -101,6 +101,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const visitorId = getVisitorId();
             setTimeout(() => linkVisitorToUser(visitorId, session.user.id), 0);
 
+            // Track signup event for new users (created within last 60 seconds)
+            const createdAt = new Date(session.user.created_at).getTime();
+            const now = Date.now();
+            if (now - createdAt < 60_000) {
+              setTimeout(() => trackEvent('signup', {}, undefined, session.user.id), 0);
+            }
+
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
               localStorage.removeItem('kanaflix_redirect_after_confirm');
