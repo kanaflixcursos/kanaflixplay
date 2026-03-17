@@ -385,7 +385,7 @@ export default function AdminOrders() {
 
         {/* Ticket Médio */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.1 }}>
-          <Card className="h-full">
+          <Card className="h-full overflow-hidden stat-card-mesh">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
