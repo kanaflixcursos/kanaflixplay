@@ -61,6 +61,7 @@ interface CustomerJourneyTimelineProps {
   limit?: number;
   title?: string;
   defaultVisible?: number;
+  pageSize?: number;
 }
 
 export default function CustomerJourneyTimeline({
