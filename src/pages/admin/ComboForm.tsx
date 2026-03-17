@@ -151,13 +151,16 @@ export default function ComboForm() {
             <Label>Descrição</Label>
             <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o combo..." rows={3} />
           </div>
-          <div>
+          <div className="max-w-[200px]">
             <Label>Imagem do Combo</Label>
             <ImageUpload
               value={thumbnailUrl}
               onChange={setThumbnailUrl}
               bucket="course-covers"
               folder="combos"
+              aspectRatio="16/9"
+              maxWidth={640}
+              maxHeight={360}
             />
           </div>
         </CardContent>
