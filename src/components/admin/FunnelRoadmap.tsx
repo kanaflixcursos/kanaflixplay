@@ -44,12 +44,12 @@ export default function FunnelRoadmap() {
 
     const [
       { count: totalLeads },
-      { count: qualifiedCount },
+      { count: subscribedCount },
       { count: opportunityCount },
       { count: paidOrdersCount },
     ] = await Promise.all([
       leadsQuery,
-      qualifiedQuery,
+      subscribedQuery,
       opportunityQuery,
       salesQuery,
     ]);
