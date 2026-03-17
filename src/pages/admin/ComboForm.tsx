@@ -262,7 +262,12 @@ export default function ComboForm() {
 
         {/* Limits */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Limites de Uso</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Timer className="h-5 w-5 text-muted-foreground" />
+              Limites de Uso
+            </CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <Label>Quantidade máxima de usos</Label>
