@@ -106,11 +106,7 @@ export default function CustomerJourneyTimeline({
 
     if (userId) query = query.eq('user_id', userId);
     else if (visitorId) query = query.eq('visitor_id', visitorId);
-    else {
-      // No identifier — skip user_events query entirely, only show email opens
-      setEvents([]);
-      if (!leadEmail) { setLoading(false); return; }
-    }
+    // When no identifier is provided, fetch all events (global view)
     if (eventFilter !== 'all' && eventFilter !== 'email_opened') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
