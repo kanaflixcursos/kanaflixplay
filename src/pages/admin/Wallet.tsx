@@ -62,6 +62,51 @@ const maskDocument = (doc: string) => {
   return doc;
 };
 
+const bankNames: Record<string, string> = {
+  '001': 'Banco do Brasil',
+  '033': 'Santander',
+  '104': 'Caixa Econômica',
+  '237': 'Bradesco',
+  '260': 'Nubank',
+  '290': 'PagBank',
+  '341': 'Itaú',
+  '422': 'Safra',
+  '077': 'Inter',
+  '212': 'Original',
+  '336': 'C6 Bank',
+  '380': 'PicPay',
+  '756': 'Sicoob',
+  '748': 'Sicredi',
+  '085': 'AILOS',
+  '403': 'Cora',
+  '197': 'Stone',
+  '332': 'Acesso',
+  '323': 'Mercado Pago',
+  '655': 'Neon',
+  '274': 'Money Plus',
+  '102': 'XP Investimentos',
+  '069': 'Crefisa',
+  '121': 'Agibank',
+  '070': 'BRB',
+  '136': 'Unicred',
+  '741': 'Ribeirão Preto',
+  '389': 'Mercantil do Brasil',
+  '218': 'BS2',
+  '746': 'Modal',
+  '208': 'BTG Pactual',
+  '637': 'Sofisa',
+  '643': 'Pine',
+  '739': 'Cetelem',
+  '254': 'Paraná Banco',
+  '084': 'Uniprime',
+  '125': 'Brasil Plural',
+};
+
+const getBankDisplayName = (code: string, apiName: string | null): string => {
+  const name = bankNames[code] || apiName;
+  return name ? `${code} - ${name}` : code;
+};
+
 const accountTypeLabels: Record<string, string> = {
   checking: 'Conta Corrente',
   savings: 'Conta Poupança',

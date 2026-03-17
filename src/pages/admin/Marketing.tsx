@@ -71,7 +71,7 @@ export default function MarketingHub() {
 
       <FunnelRoadmap />
 
-      <CustomerJourneyTimeline showFilters limit={50} defaultVisible={15} title="Jornada dos Visitantes" />
+      <CustomerJourneyTimeline showFilters limit={50} defaultVisible={10} title="Jornada dos Visitantes" />
 
       {/* Tools grid */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
