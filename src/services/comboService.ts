@@ -8,6 +8,9 @@ export interface Combo {
   price: number;
   max_installments: number;
   is_active: boolean;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
   created_at: string;
   updated_at: string;
   courses: ComboCourse[];
