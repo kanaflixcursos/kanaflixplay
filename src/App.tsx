@@ -30,6 +30,7 @@ import CourseDetail from "@/pages/admin/CourseDetail";
 import AdminStudents from "@/pages/admin/Students";
 import AdminStudentProfile from "@/pages/admin/StudentProfile";
 import AdminOrders from "@/pages/admin/Orders";
+import AdminWallet from "@/pages/admin/Wallet";
 import AdminComments from "@/pages/admin/Comments";
 import AdminFeaturedBanner from "@/pages/admin/FeaturedBanner";
 import AdminMarketing from "@/pages/admin/Marketing";
@@ -216,6 +217,16 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminOrders />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/wallet"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminWallet />
                     </AdminLayout>
                   </ProtectedRoute>
                 }

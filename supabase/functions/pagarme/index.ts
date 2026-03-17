@@ -149,6 +149,14 @@ Deno.serve(async (req) => {
         // Authenticated user can request refund for their own order — auto-processed
         return handleRequestRefund(payload, userId, PAGARME_API_KEY, adminSupabase);
       }
+      case 'get_wallet': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+        return handleGetWallet(PAGARME_API_KEY);
+      }
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
@@ -1944,6 +1952,80 @@ async function handleGetOrderDetails(payload: any, apiKey: string, supabase: any
       avatar_url: profile.avatar_url,
     } : null,
     gateway: chargeDetails,
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+async function handleGetWallet(apiKey: string) {
+  const authString = btoa(`${apiKey}:`);
+  const headers = { 'Authorization': `Basic ${authString}` };
+
+  // 1. List recipients to get the default recipient ID
+  const recipientsRes = await fetch(`${PAGARME_API_URL}/recipients?page=1&size=1`, { headers });
+  if (!recipientsRes.ok) {
+    const errBody = await recipientsRes.text();
+    console.error('[Wallet] Failed to list recipients:', errBody);
+    throw new Error('Falha ao buscar recebedores');
+  }
+  const recipientsData = await recipientsRes.json();
+  const recipients = recipientsData.data || recipientsData;
+
+  if (!recipients || recipients.length === 0) {
+    throw new Error('Nenhum recebedor encontrado');
+  }
+
+  const recipientId = recipients[0].id;
+
+  // 2. Get balance
+  const balanceRes = await fetch(`${PAGARME_API_URL}/recipients/${recipientId}/balance`, { headers });
+  if (!balanceRes.ok) {
+    const errBody = await balanceRes.text();
+    console.error('[Wallet] Failed to get balance:', errBody);
+    throw new Error('Falha ao buscar saldo');
+  }
+  const balance = await balanceRes.json();
+
+  // 3. Get recent payables (waiting_funds)
+  const payablesRes = await fetch(
+    `${PAGARME_API_URL}/payables?recipient_id=${recipientId}&status=waiting_funds&sort=-payment_date&page=1&size=30`,
+    { headers }
+  );
+  let payables: any[] = [];
+  if (payablesRes.ok) {
+    const payablesData = await payablesRes.json();
+    payables = payablesData.data || payablesData || [];
+  }
+
+  // 4. Get transfers
+  const transfersRes = await fetch(
+    `${PAGARME_API_URL}/recipients/${recipientId}/balance/operations?page=1&size=20`,
+    { headers }
+  );
+  let operations: any[] = [];
+  if (transfersRes.ok) {
+    const opsData = await transfersRes.json();
+    operations = opsData.data || opsData || [];
+  }
+
+  // 5. Recipient info
+  const recipient = recipients[0];
+
+  return new Response(JSON.stringify({
+    recipient: {
+      id: recipient.id,
+      name: recipient.name,
+      status: recipient.status,
+      type: recipient.type,
+    },
+    balance: {
+      available_amount: balance.available_amount || 0,
+      waiting_funds_amount: balance.waiting_funds_amount || 0,
+      transferred_amount: balance.transferred_amount || 0,
+    },
+    payables,
+    operations,
   }), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
