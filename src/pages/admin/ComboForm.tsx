@@ -139,26 +139,30 @@ export default function ComboForm() {
         </div>
       </div>
 
-      {/* Basic Info */}
+      {/* Basic Info: Image left, Title+Description right */}
       <Card>
         <CardHeader><CardTitle className="text-base">Informações Básicas</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Título *</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Pacote Completo" />
-          </div>
-          <div>
-            <Label>Descrição</Label>
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o combo..." rows={3} />
-          </div>
-          <div className="max-w-[160px]">
-            <Label>Imagem do Combo</Label>
-            <ImageUpload
-              value={thumbnailUrl}
-              onChange={setThumbnailUrl}
-              bucket="course-covers"
-              folder="combos"
-            />
+        <CardContent>
+          <div className="flex gap-6">
+            <div className="w-[140px] shrink-0">
+              <Label className="mb-1.5 block">Capa</Label>
+              <ImageUpload
+                value={thumbnailUrl}
+                onChange={setThumbnailUrl}
+                bucket="course-covers"
+                folder="combos"
+              />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <Label>Título *</Label>
+                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Pacote Completo" />
+              </div>
+              <div>
+                <Label>Descrição</Label>
+                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descreva o combo..." rows={3} />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -205,71 +209,77 @@ export default function ComboForm() {
         </CardContent>
       </Card>
 
-      {/* Pricing */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Precificação</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          {originalPrice > 0 && (
-            <div className="p-3 bg-muted/50 rounded-lg text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Soma dos cursos:</span>
-                <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
-              </div>
-              {priceInCents > 0 && discount > 0 && (
-                <div className="flex justify-between mt-1">
-                  <span className="text-muted-foreground">Desconto do combo:</span>
-                  <span className="font-semibold text-success">{discount}% off</span>
+      {/* Pricing + Limits side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Pricing */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Precificação</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            {originalPrice > 0 && (
+              <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Soma dos cursos:</span>
+                  <span className="font-medium line-through text-muted-foreground">{formatPrice(originalPrice)}</span>
                 </div>
-              )}
+                {priceInCents > 0 && discount > 0 && (
+                  <div className="flex justify-between mt-1">
+                    <span className="text-muted-foreground">Desconto do combo:</span>
+                    <span className="font-semibold text-success">{discount}% off</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div>
+              <Label>Preço do Combo (R$) *</Label>
+              <CurrencyInput value={priceStr} onChange={setPriceStr} />
             </div>
-          )}
-          <div>
-            <Label>Preço do Combo (R$) *</Label>
-            <CurrencyInput value={priceStr} onChange={setPriceStr} />
-          </div>
-          <div>
-            <Label>Parcelas Máximas</Label>
-            <Select value={String(maxInstallments)} onValueChange={v => setMaxInstallments(Number(v))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
-                  <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+            <div>
+              <Label>Parcelas Máximas</Label>
+              <Select value={String(maxInstallments)} onValueChange={v => setMaxInstallments(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map(n => (
+                    <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Limits */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Limites de Uso</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>Quantidade máxima de usos</Label>
-            <Input
-              type="number"
-              min="0"
-              value={maxUses}
-              onChange={e => setMaxUses(e.target.value)}
-              placeholder="Ilimitado"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Deixe vazio para ilimitado</p>
-          </div>
-          <div>
-            <Label>Validade</Label>
-            <DatePicker
-              value={expiresAt}
-              onChange={v => setExpiresAt(v)}
-              placeholder="Sem validade"
-              minDate={new Date()}
-            />
-            <p className="text-xs text-muted-foreground mt-1">Deixe vazio para não expirar</p>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Limits */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Limites de Uso</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Quantidade máxima de usos</Label>
+              <Select value={maxUses || 'unlimited'} onValueChange={v => setMaxUses(v === 'unlimited' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unlimited">Ilimitado</SelectItem>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                    <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Validade</Label>
+              <DatePicker
+                value={expiresAt}
+                onChange={v => setExpiresAt(v)}
+                placeholder="Sem validade"
+                minDate={new Date()}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Deixe vazio para não expirar</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Save */}
       <div className="flex justify-end gap-3">
