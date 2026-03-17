@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   Wallet as WalletIcon,
   Clock,
@@ -119,45 +118,45 @@ export default function AdminWallet() {
       </div>
 
       {/* Balance Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <WalletIcon className="h-5 w-5 text-success" />
+              <div className="icon-box">
+                <WalletIcon />
               </div>
-              <span className="text-sm text-muted-foreground">Saldo Disponível</span>
+              <span className="stat-card-label leading-tight">Saldo Disponível</span>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(data.balance.available_amount)}</p>
+            <div className="stat-card-value">{formatCurrency(data.balance.available_amount)}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Clock className="h-5 w-5 text-warning" />
+              <div className="icon-box">
+                <Clock />
               </div>
-              <span className="text-sm text-muted-foreground">A Receber</span>
+              <span className="stat-card-label leading-tight">A Receber</span>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(data.balance.waiting_funds_amount)}</p>
+            <div className="stat-card-value">{formatCurrency(data.balance.waiting_funds_amount)}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-3 sm:p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <ArrowUpRight className="h-5 w-5 text-primary" />
+              <div className="icon-box">
+                <ArrowUpRight />
               </div>
-              <span className="text-sm text-muted-foreground">Total Transferido</span>
+              <span className="stat-card-label leading-tight">Total Transferido</span>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(data.balance.transferred_amount)}</p>
+            <div className="stat-card-value">{formatCurrency(data.balance.transferred_amount)}</div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         {/* Upcoming Payables */}
         <Card>
           <CardHeader>
@@ -173,12 +172,12 @@ export default function AdminWallet() {
                 <p className="text-sm text-muted-foreground">Nenhum recebível pendente</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {sortedPayableDates.map(([date, info]) => (
                   <div key={date} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                     <div className="flex items-center gap-3">
-                      <div className="p-1.5 rounded bg-muted">
-                        <Banknote className="h-4 w-4 text-muted-foreground" />
+                      <div className="icon-box-sm">
+                        <Banknote />
                       </div>
                       <div>
                         <p className="text-sm font-medium">
@@ -212,7 +211,7 @@ export default function AdminWallet() {
                 <p className="text-sm text-muted-foreground">Nenhuma movimentação recente</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {data.operations.slice(0, 15).map((op: any, i: number) => {
                   const isPositive = (op.amount || 0) >= 0;
                   return (
