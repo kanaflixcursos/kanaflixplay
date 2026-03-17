@@ -192,20 +192,14 @@ export default function MarketingCombos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Combos</h1>
-            <p className="text-muted-foreground text-sm">Pacotes de cursos com preço especial</p>
-          </div>
-        </div>
-        <Button onClick={() => navigate('/admin/marketing/combos/new')} className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          Novo Combo
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Combos</h1>
+          <p className="text-muted-foreground text-sm">Pacotes de cursos com preço especial</p>
+        </div>
       </div>
 
       <DataList<Combo>
