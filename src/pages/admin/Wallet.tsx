@@ -185,7 +185,7 @@ export default function AdminWallet() {
         <BalanceSkeleton />
       ) : data ? (
         <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.05 }} className="grid gap-3 sm:grid-cols-3">
-          <Card>
+          <Card className="overflow-hidden stat-card-mesh">
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="icon-box">
