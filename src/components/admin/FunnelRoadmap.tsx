@@ -6,7 +6,7 @@ import { Globe, UserPlus, UserCheck, Target, ShoppingCart, ChevronRight } from '
 interface FunnelData {
   visitors: number;
   leads: number;
-  qualified: number;
+  subscribed: number;
   opportunities: number;
   sales: number;
 }
@@ -14,7 +14,7 @@ interface FunnelData {
 const stages = [
   { key: 'visitors' as const, label: 'Visitantes', icon: Globe },
   { key: 'leads' as const, label: 'Leads', icon: UserPlus },
-  { key: 'qualified' as const, label: 'Qualificados', icon: UserCheck },
+  { key: 'subscribed' as const, label: 'Cadastrados', icon: UserCheck },
   { key: 'opportunities' as const, label: 'Oportunidades', icon: Target },
   { key: 'sales' as const, label: 'Vendas', icon: ShoppingCart },
 ];
@@ -25,7 +25,7 @@ function calcRate(current: number, previous: number): string | null {
 }
 
 export default function FunnelRoadmap() {
-  const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, qualified: 0, opportunities: 0, sales: 0 });
+  const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, subscribed: 0, opportunities: 0, sales: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,18 +38,18 @@ export default function FunnelRoadmap() {
     const { data: visitorRows } = await supabase.from('site_visits').select('visitor_id');
 
     const leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
-    const qualifiedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified');
+    const subscribedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'subscribed');
     const opportunityQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity');
     const salesQuery = supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid');
 
     const [
       { count: totalLeads },
-      { count: qualifiedCount },
+      { count: subscribedCount },
       { count: opportunityCount },
       { count: paidOrdersCount },
     ] = await Promise.all([
       leadsQuery,
-      qualifiedQuery,
+      subscribedQuery,
       opportunityQuery,
       salesQuery,
     ]);
@@ -59,14 +59,14 @@ export default function FunnelRoadmap() {
     setData({
       visitors: uniqueVisitors,
       leads: totalLeads || 0,
-      qualified: qualifiedCount || 0,
+      subscribed: subscribedCount || 0,
       opportunities: opportunityCount || 0,
       sales: paidOrdersCount || 0,
     });
     setLoading(false);
   };
 
-  const values = [data.visitors, data.leads, data.qualified, data.opportunities, data.sales];
+  const values = [data.visitors, data.leads, data.subscribed, data.opportunities, data.sales];
 
   return (
     <div>

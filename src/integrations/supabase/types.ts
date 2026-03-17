@@ -550,6 +550,7 @@ export type Database = {
           status: string
           tags: string[]
           updated_at: string
+          user_id: string | null
           utm_campaign: string | null
           utm_campaign_last: string | null
           utm_content: string | null
@@ -572,6 +573,7 @@ export type Database = {
           status?: string
           tags?: string[]
           updated_at?: string
+          user_id?: string | null
           utm_campaign?: string | null
           utm_campaign_last?: string | null
           utm_content?: string | null
@@ -594,6 +596,7 @@ export type Database = {
           status?: string
           tags?: string[]
           updated_at?: string
+          user_id?: string | null
           utm_campaign?: string | null
           utm_campaign_last?: string | null
           utm_content?: string | null
