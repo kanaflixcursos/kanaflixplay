@@ -103,15 +103,56 @@ export default function CustomerJourneyTimeline({
 
   const fetchEvents = async () => {
     setLoading(true);
+
+    // Resolve identifiers from leadEmail if needed
+    let resolvedUserId = userId;
+    let resolvedVisitorId = visitorId;
+
+    if (!resolvedUserId && !resolvedVisitorId && leadEmail) {
+      // Try to find user_id from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('email', leadEmail.toLowerCase())
+        .limit(1)
+        .maybeSingle();
+      if (profile?.user_id) resolvedUserId = profile.user_id;
+
+      // Try to find visitor_id from leads
+      const { data: leadRow } = await supabase
+        .from('leads')
+        .select('visitor_id')
+        .eq('email', leadEmail.toLowerCase())
+        .not('visitor_id', 'is', null)
+        .limit(1)
+        .maybeSingle();
+      if (leadRow?.visitor_id) resolvedVisitorId = leadRow.visitor_id;
+    }
+
+    // If we still have no identifier, show empty for individual views
+    const isIndividualView = !!(userId || visitorId || leadEmail);
+    if (isIndividualView && !resolvedUserId && !resolvedVisitorId) {
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
+
     let query = supabase
       .from('user_events')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (userId) query = query.eq('user_id', userId);
-    else if (visitorId) query = query.eq('visitor_id', visitorId);
+    if (resolvedUserId && resolvedVisitorId) {
+      // Match events by either user_id or visitor_id
+      query = query.or(`user_id.eq.${resolvedUserId},visitor_id.eq.${resolvedVisitorId}`);
+    } else if (resolvedUserId) {
+      query = query.eq('user_id', resolvedUserId);
+    } else if (resolvedVisitorId) {
+      query = query.eq('visitor_id', resolvedVisitorId);
+    }
     // When no identifier is provided, fetch all events (global view)
+
     if (eventFilter !== 'all' && eventFilter !== 'email_opened') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
