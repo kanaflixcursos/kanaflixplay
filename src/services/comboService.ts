@@ -91,6 +91,8 @@ export async function saveCombo(
     max_installments: number;
     is_active: boolean;
     course_ids: string[];
+    max_uses: number | null;
+    expires_at: string | null;
   }
 ): Promise<string> {
   const { course_ids, ...comboData } = data;
