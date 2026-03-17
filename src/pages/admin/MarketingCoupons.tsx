@@ -197,8 +197,8 @@ export default function MarketingCoupons() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-success/10">
-              <Check className="h-4 w-4 text-success" />
+            <div className="icon-box">
+              <Check />
             </div>
             <div>
               <p className="text-2xl font-bold">{activeCoupons}</p>
