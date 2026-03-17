@@ -384,9 +384,7 @@ export default function AdminWallet() {
                   <div>
                     <p className="text-muted-foreground text-xs mb-0.5">Banco</p>
                     <p className="font-medium">
-                      {data.bank_account.bank_name
-                        ? `${data.bank_account.bank} - ${data.bank_account.bank_name}`
-                        : data.bank_account.bank}
+                      {getBankDisplayName(data.bank_account.bank, data.bank_account.bank_name)}
                     </p>
                   </div>
                   <div>
