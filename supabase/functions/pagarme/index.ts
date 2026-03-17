@@ -149,6 +149,14 @@ Deno.serve(async (req) => {
         // Authenticated user can request refund for their own order — auto-processed
         return handleRequestRefund(payload, userId, PAGARME_API_KEY, adminSupabase);
       }
+      case 'get_wallet': {
+        if (!(await checkAdmin())) {
+          return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { 
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          });
+        }
+        return handleGetWallet(PAGARME_API_KEY);
+      }
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), { 
           status: 400, 
