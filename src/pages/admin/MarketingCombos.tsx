@@ -107,67 +107,58 @@ export default function MarketingCombos() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
           {combos.map(combo => (
-            <Card key={combo.id} className="overflow-hidden">
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-foreground truncate">{combo.title}</h3>
-                      <Badge variant={combo.is_active ? 'default' : 'secondary'} className="shrink-0">
-                        {combo.is_active ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </div>
-                    <p className="text-lg font-bold text-primary">{formatPrice(combo.price)}</p>
+            <Card key={combo.id}>
+              <CardContent className="p-4 flex items-center gap-4">
+                {combo.thumbnail_url ? (
+                  <img src={combo.thumbnail_url} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+                ) : (
+                  <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
+                    <Package className="h-5 w-5 text-muted-foreground" />
                   </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground truncate text-sm">{combo.title}</h3>
+                    <Badge variant={combo.is_active ? 'default' : 'secondary'} className="shrink-0 text-[10px] px-1.5 py-0">
+                      {combo.is_active ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                    <span className="font-bold text-primary text-sm">{formatPrice(combo.price)}</span>
+                    <span className="flex items-center gap-1">
+                      <BookOpen className="h-3 w-3" />
+                      {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
+                    </span>
+                    {combo.courses.length > 0 && (
+                      <span className="hidden sm:inline truncate max-w-[200px]">
+                        {combo.courses.map(c => c.title).join(', ')}
+                      </span>
+                    )}
+                    {combo.max_uses != null && (
+                      <span>Usos: {combo.used_count}/{combo.max_uses}</span>
+                    )}
+                    {combo.expires_at && (
+                      <span>Validade: {new Date(combo.expires_at).toLocaleDateString('pt-BR')}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Switch
                     checked={combo.is_active}
                     disabled={togglingId === combo.id}
                     onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
                   />
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <BookOpen className="h-3.5 w-3.5" />
-                  {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
-                  {combo.courses.length > 0 && (
-                    <span className="truncate">
-                      — {combo.courses.map(c => c.title).join(', ')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Original price sum */}
-                {combo.courses.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    Preço separado:{' '}
-                    <span className="line-through">
-                      {formatPrice(combo.courses.reduce((sum, c) => sum + (c.price || 0), 0))}
-                    </span>
-                  </div>
-                )}
-
-                {/* Usage & expiry */}
-                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
-                  {combo.max_uses != null && (
-                    <span>Usos: {combo.used_count}/{combo.max_uses}</span>
-                  )}
-                  {combo.expires_at && (
-                    <span>
-                      Validade: {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
-                    <Pencil className="h-3.5 w-3.5" /> Editar
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
+                    <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-1" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
-                    <ExternalLink className="h-3.5 w-3.5" /> Link
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
