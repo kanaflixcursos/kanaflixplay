@@ -222,6 +222,16 @@ const App = () => (
                 }
               />
               <Route
+                path="/admin/wallet"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminWallet />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/comments"
                 element={
                   <ProtectedRoute requiredRole="admin">
