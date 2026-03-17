@@ -6,7 +6,7 @@ import { Globe, UserPlus, UserCheck, Target, ShoppingCart, ChevronRight } from '
 interface FunnelData {
   visitors: number;
   leads: number;
-  qualified: number;
+  subscribed: number;
   opportunities: number;
   sales: number;
 }
