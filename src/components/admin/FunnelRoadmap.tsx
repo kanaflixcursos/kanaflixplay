@@ -25,7 +25,7 @@ function calcRate(current: number, previous: number): string | null {
 }
 
 export default function FunnelRoadmap() {
-  const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, qualified: 0, opportunities: 0, sales: 0 });
+  const [data, setData] = useState<FunnelData>({ visitors: 0, leads: 0, subscribed: 0, opportunities: 0, sales: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
