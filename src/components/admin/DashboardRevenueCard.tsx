@@ -72,7 +72,7 @@ export default function DashboardRevenueCard({ dateRange }: Props) {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="h-full"
     >
-      <Card className="overflow-hidden relative h-full stat-card-mesh">
+      <Card className="overflow-hidden relative h-full accent-card">
         <CardContent className="p-4 sm:p-6 text-left">
           <div className="flex items-start justify-between gap-2 mb-4">
             <div className="flex items-center gap-3">
