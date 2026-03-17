@@ -54,35 +54,44 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          expires_at: string | null
           id: string
           is_active: boolean
           max_installments: number
+          max_uses: number | null
           price: number
           thumbnail_url: string | null
           title: string
           updated_at: string
+          used_count: number
         }
         Insert: {
           created_at?: string
           description?: string | null
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           max_installments?: number
+          max_uses?: number | null
           price?: number
           thumbnail_url?: string | null
           title: string
           updated_at?: string
+          used_count?: number
         }
         Update: {
           created_at?: string
           description?: string | null
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           max_installments?: number
+          max_uses?: number | null
           price?: number
           thumbnail_url?: string | null
           title?: string
           updated_at?: string
+          used_count?: number
         }
         Relationships: []
       }

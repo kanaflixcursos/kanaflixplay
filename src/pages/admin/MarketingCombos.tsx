@@ -148,6 +148,18 @@ export default function MarketingCombos() {
                   </div>
                 )}
 
+                {/* Usage & expiry */}
+                <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                  {combo.max_uses != null && (
+                    <span>Usos: {combo.used_count}/{combo.max_uses}</span>
+                  )}
+                  {combo.expires_at && (
+                    <span>
+                      Validade: {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex gap-2 pt-1">
                   <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
                     <Pencil className="h-3.5 w-3.5" /> Editar
