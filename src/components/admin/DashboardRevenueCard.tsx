@@ -92,7 +92,7 @@ export default function DashboardRevenueCard({ dateRange }: Props) {
               </p>
               <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <span>Líquido:</span>
-                <span className="font-medium text-success">{formatCurrency(netRevenue)}</span>
+                <span className="font-medium text-primary-foreground">{formatCurrency(netRevenue)}</span>
               </div>
             </div>
           )}
