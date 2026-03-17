@@ -4,6 +4,3 @@ export const leadStatusMap: Record<string, { label: string; variant: 'default' |
   opportunity: { label: 'Oportunidade', variant: 'secondary' },
   converted: { label: 'Venda', variant: 'default' },
 };
-
-/** Ordered funnel stages for display */
-export const funnelStages = ['new', 'subscribed', 'opportunity', 'converted'] as const;
