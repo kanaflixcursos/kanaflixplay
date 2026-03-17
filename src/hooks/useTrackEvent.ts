@@ -16,6 +16,7 @@ export function getVisitorId(): string {
 
 export type TrackEventType =
   | 'lead_captured'
+  | 'signup'
   | 'checkout_started'
   | 'checkout_completed'
   | 'checkout_abandoned'

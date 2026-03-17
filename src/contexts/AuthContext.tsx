@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getStoredUtm } from '@/lib/utm';
-import { getVisitorId, linkVisitorToUser } from '@/hooks/useTrackEvent';
+import { getVisitorId, linkVisitorToUser, trackEvent } from '@/hooks/useTrackEvent';
 
 type UserRole = 'admin' | 'student' | null;
 
@@ -100,6 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (event === 'SIGNED_IN') {
             const visitorId = getVisitorId();
             setTimeout(() => linkVisitorToUser(visitorId, session.user.id), 0);
+
+            // Track signup event for new users (created within last 60 seconds)
+            const createdAt = new Date(session.user.created_at).getTime();
+            const now = Date.now();
+            if (now - createdAt < 60_000) {
+              setTimeout(() => trackEvent('signup', {}, undefined, session.user.id), 0);
+            }
 
             const redirectAfterConfirm = localStorage.getItem('kanaflix_redirect_after_confirm');
             if (redirectAfterConfirm) {
