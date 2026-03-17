@@ -197,7 +197,7 @@ export default function AdminWallet() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="overflow-hidden stat-card-mesh">
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="icon-box">
