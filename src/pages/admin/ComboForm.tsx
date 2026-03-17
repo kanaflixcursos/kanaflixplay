@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { DatePicker } from '@/components/ui/date-picker';
-import { ArrowLeft, Loader2, BookOpen, Package } from 'lucide-react';
+import { ArrowLeft, Loader2, BookOpen, Package, DollarSign, Timer, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
 
