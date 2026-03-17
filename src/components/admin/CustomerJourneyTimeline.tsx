@@ -106,18 +106,13 @@ export default function CustomerJourneyTimeline({
 
     if (userId) query = query.eq('user_id', userId);
     else if (visitorId) query = query.eq('visitor_id', visitorId);
-    else {
-      // No identifier — skip user_events query entirely, only show email opens
-      setEvents([]);
-      if (!leadEmail) { setLoading(false); return; }
-    }
+    // When no identifier is provided, fetch all events (global view)
     if (eventFilter !== 'all' && eventFilter !== 'email_opened') query = query.eq('event_type', eventFilter);
     if (utmFilter !== 'all') query = query.eq('utm_source', utmFilter);
     query = query.neq('event_type', 'login').neq('event_type', 'page_view');
 
-    // Skip user_events query if filtering only email_opened or no visitor/user id
-    const hasIdentifier = !!(userId || visitorId);
-    const skipUserEvents = eventFilter === 'email_opened' || !hasIdentifier;
+    // Skip user_events query only if filtering exclusively by email_opened
+    const skipUserEvents = eventFilter === 'email_opened';
     const { data } = skipUserEvents ? { data: [] } : await query;
     const rawEvents = (data as JourneyEvent[]) || [];
 
