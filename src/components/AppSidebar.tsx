@@ -31,6 +31,7 @@ import {
   Star,
   Megaphone,
   Trophy,
+  Wallet,
 } from 'lucide-react';
 
 const studentMenuItems = [
