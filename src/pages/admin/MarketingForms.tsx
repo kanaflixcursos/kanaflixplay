@@ -140,20 +140,20 @@ export default function MarketingForms() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Formulários</h1>
-            <p className="text-muted-foreground text-sm mt-1">Crie formulários de captura de leads</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Formulários</h1>
+          <p className="text-muted-foreground text-sm mt-1">Crie formulários de captura de leads</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-1" /> Novo Formulário</Button>
-          </DialogTrigger>
+      </div>
+
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+        <DialogTrigger asChild>
+          <Button><Plus className="h-4 w-4 mr-1" /> Novo Formulário</Button>
+        </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Formulário</DialogTitle>

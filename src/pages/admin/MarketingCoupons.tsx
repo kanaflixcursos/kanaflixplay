@@ -215,13 +215,19 @@ export default function MarketingCoupons() {
         </Card>
       </motion.div>
 
-      {/* Search */}
-      <Input
-        placeholder="Buscar cupom..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      {/* Search + New */}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Buscar cupom..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Button onClick={() => navigate('/admin/marketing/coupons/new')} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Novo Cupom</span>
+        </Button>
+      </div>
 
       {/* Coupons List */}
       {loading ? (

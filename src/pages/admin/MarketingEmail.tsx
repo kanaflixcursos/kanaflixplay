@@ -91,19 +91,14 @@ export default function MarketingEmail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Campanhas de Email</h1>
-            <p className="text-muted-foreground text-sm mt-1">Envie emails em massa para leads e alunos</p>
-          </div>
-        </div>
-        <Button onClick={() => navigate('/admin/marketing/email/new')}>
-          <Plus className="h-4 w-4 mr-1" /> Nova Campanha
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/marketing')}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Campanhas de Email</h1>
+          <p className="text-muted-foreground text-sm mt-1">Envie emails em massa para leads e alunos</p>
+        </div>
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
@@ -115,7 +110,12 @@ export default function MarketingEmail() {
 
       <Card>
         <CardHeader className="dashboard-card-header">
-          <CardTitle className="card-title-compact">Campanhas</CardTitle>
+          <div className="flex items-center justify-between w-full">
+            <CardTitle className="card-title-compact">Campanhas</CardTitle>
+            <Button size="sm" onClick={() => navigate('/admin/marketing/email/new')}>
+              <Plus className="h-4 w-4 mr-1" /> Nova Campanha
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="dashboard-card-content">
           {loading ? (
