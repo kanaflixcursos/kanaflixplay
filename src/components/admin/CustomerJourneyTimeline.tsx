@@ -194,7 +194,10 @@ export default function CustomerJourneyTimeline({
   const formatTime = (dateStr: string) =>
     format(new Date(dateStr), "dd/MM/yy 'às' HH:mm", { locale: ptBR });
 
-  const visibleEvents = showAll ? events : events.slice(0, defaultVisible);
+  const totalPages = Math.ceil(events.length / pageSize);
+  const visibleEvents = showAll
+    ? events.slice(page * pageSize, (page + 1) * pageSize)
+    : events.slice(0, defaultVisible);
   const hasMore = events.length > defaultVisible;
 
   return (
