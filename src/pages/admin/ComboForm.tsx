@@ -175,10 +175,11 @@ export default function ComboForm() {
       {/* Course Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Cursos do Combo ({selectedCourseIds.length} selecionados)
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-muted-foreground" />
+            Cursos do Combo
           </CardTitle>
+          <CardDescription>{selectedCourseIds.length} selecionado{selectedCourseIds.length !== 1 ? 's' : ''}</CardDescription>
         </CardHeader>
         <CardContent>
           {coursesLoading ? (
