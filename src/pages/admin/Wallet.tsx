@@ -11,6 +11,7 @@ import {
   TrendingUp,
   CalendarDays,
   Banknote,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -158,14 +159,16 @@ export default function AdminWallet() {
 
       <div className="grid gap-3 lg:grid-cols-2">
         {/* Upcoming Payables */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarDays className="h-5 w-5" />
-              Recebíveis Futuros
+        <Card className="overflow-hidden h-full">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <CalendarDays />
+              </div>
+              <span className="stat-card-label">Recebíveis Futuros</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6 pt-0">
             {sortedPayableDates.length === 0 ? (
               <div className="text-center py-8">
                 <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -174,7 +177,7 @@ export default function AdminWallet() {
             ) : (
               <div className="space-y-2">
                 {sortedPayableDates.map(([date, info]) => (
-                  <div key={date} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                  <div key={date} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                     <div className="flex items-center gap-3">
                       <div className="icon-box-sm">
                         <Banknote />
@@ -197,14 +200,16 @@ export default function AdminWallet() {
         </Card>
 
         {/* Recent Operations */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Movimentações Recentes
+        <Card className="overflow-hidden h-full">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <TrendingUp />
+              </div>
+              <span className="stat-card-label">Movimentações Recentes</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6 pt-0">
             {data.operations.length === 0 ? (
               <div className="text-center py-8">
                 <ArrowUpRight className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -215,7 +220,7 @@ export default function AdminWallet() {
                 {data.operations.slice(0, 15).map((op: any, i: number) => {
                   const isPositive = (op.amount || 0) >= 0;
                   return (
-                    <div key={op.id || i} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                    <div key={op.id || i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                       <div>
                         <p className="text-sm font-medium">
                           {op.movement_object?.type || op.type || 'Operação'}
@@ -243,11 +248,16 @@ export default function AdminWallet() {
       </div>
 
       {/* Recipient Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Informações do Recebedor</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-3">
+            <div className="icon-box">
+              <Info />
+            </div>
+            <span className="stat-card-label">Informações do Recebedor</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6 pt-0">
           <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
             <div>
               <span className="text-muted-foreground">ID:</span>{' '}
