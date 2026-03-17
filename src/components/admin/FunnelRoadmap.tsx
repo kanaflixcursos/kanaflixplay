@@ -59,14 +59,14 @@ export default function FunnelRoadmap() {
     setData({
       visitors: uniqueVisitors,
       leads: totalLeads || 0,
-      qualified: qualifiedCount || 0,
+      subscribed: subscribedCount || 0,
       opportunities: opportunityCount || 0,
       sales: paidOrdersCount || 0,
     });
     setLoading(false);
   };
 
-  const values = [data.visitors, data.leads, data.qualified, data.opportunities, data.sales];
+  const values = [data.visitors, data.leads, data.subscribed, data.opportunities, data.sales];
 
   return (
     <div>
