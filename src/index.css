@@ -190,6 +190,35 @@
   @apply text-xs text-muted-foreground mt-1;
 }
 
+/* Stat card mesh gradient — subtle glow top-right */
+.stat-card-mesh {
+  position: relative;
+}
+.stat-card-mesh::before {
+  content: '';
+  position: absolute;
+  top: -1.5rem;
+  right: -1.5rem;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.08);
+  filter: blur(24px);
+  pointer-events: none;
+}
+.stat-card-mesh::after {
+  content: '';
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  background: hsl(var(--primary) / 0.06);
+  filter: blur(16px);
+  pointer-events: none;
+}
+
 /* Dashboard cards */
 .dashboard-card-header {
   @apply flex p-4 sm:p-6 pb-3 sm:pb-4;
