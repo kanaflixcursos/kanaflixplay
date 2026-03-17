@@ -38,7 +38,7 @@ export default function FunnelRoadmap() {
     const { data: visitorRows } = await supabase.from('site_visits').select('visitor_id');
 
     const leadsQuery = supabase.from('leads').select('*', { count: 'exact', head: true });
-    const qualifiedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'qualified');
+    const subscribedQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'subscribed');
     const opportunityQuery = supabase.from('leads').select('*', { count: 'exact', head: true }).eq('status', 'opportunity');
     const salesQuery = supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'paid');
 
