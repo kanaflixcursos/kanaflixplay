@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCombos, useInvalidateCombos } from '@/hooks/queries/useCombos';
-import { deleteCombo } from '@/services/comboService';
+import { deleteCombo, type Combo } from '@/services/comboService';
 import { supabase } from '@/integrations/supabase/client';
+import { DataList, type DataListColumn, type BulkAction } from '@/components/admin/DataList';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
 import {
   Plus, ArrowLeft, Pencil, Trash2, Copy, ExternalLink, Package,
 } from 'lucide-react';
@@ -38,34 +32,12 @@ export default function MarketingCombos() {
   const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-
-  const allSelected = combos && combos.length > 0 && selectedIds.size === combos.length;
-  const someSelected = selectedIds.size > 0;
-
-  const toggleSelectAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set((combos || []).map(c => c.id)));
-    }
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
     try {
       await deleteCombo(deleteId);
-      setSelectedIds(prev => { const n = new Set(prev); n.delete(deleteId); return n; });
       invalidate();
       toast.success('Combo excluído');
     } catch {
@@ -73,35 +45,6 @@ export default function MarketingCombos() {
     } finally {
       setDeleting(false);
       setDeleteId(null);
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    setBulkDeleting(true);
-    try {
-      await Promise.all(Array.from(selectedIds).map(id => deleteCombo(id)));
-      invalidate();
-      setSelectedIds(new Set());
-      toast.success(`${selectedIds.size} combo(s) excluído(s)`);
-    } catch {
-      toast.error('Erro ao excluir combos');
-    } finally {
-      setBulkDeleting(false);
-    }
-  };
-
-  const handleBulkToggle = async (activate: boolean) => {
-    try {
-      await Promise.all(
-        Array.from(selectedIds).map(id =>
-          supabase.from('combos').update({ is_active: activate }).eq('id', id)
-        )
-      );
-      invalidate();
-      setSelectedIds(new Set());
-      toast.success(activate ? 'Combos ativados' : 'Combos desativados');
-    } catch {
-      toast.error('Erro ao alterar status');
     }
   };
 
@@ -121,6 +64,129 @@ export default function MarketingCombos() {
       setTogglingId(null);
     }
   };
+
+  const columns: DataListColumn<Combo>[] = [
+    {
+      key: 'title',
+      header: 'Combo',
+      render: (combo) => (
+        <div className="flex items-center gap-2.5">
+          {combo.thumbnail_url ? (
+            <img src={combo.thumbnail_url} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
+          ) : (
+            <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <span className="font-medium text-sm truncate block max-w-52">{combo.title}</span>
+            <span className="text-xs text-muted-foreground md:hidden">
+              {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'price',
+      header: 'Preço',
+      align: 'right',
+      render: (combo) => (
+        <span className="font-semibold text-sm whitespace-nowrap">{formatPrice(combo.price)}</span>
+      ),
+    },
+    {
+      key: 'uses',
+      header: 'Usos',
+      hideMobile: true,
+      render: (combo) => (
+        <span className="text-sm text-muted-foreground">
+          {combo.max_uses != null ? `${combo.used_count}/${combo.max_uses}` : '∞'}
+        </span>
+      ),
+    },
+    {
+      key: 'expires',
+      header: 'Validade',
+      hideMobile: true,
+      render: (combo) => {
+        if (!combo.expires_at) return <span className="text-sm text-muted-foreground">—</span>;
+        const isExpired = new Date(combo.expires_at) < new Date();
+        return (
+          <span className={`text-sm whitespace-nowrap ${isExpired ? 'text-destructive' : 'text-muted-foreground'}`}>
+            {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
+            {isExpired && ' (expirado)'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      align: 'center',
+      width: 'w-16',
+      render: (combo) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            checked={combo.is_active}
+            disabled={togglingId === combo.id}
+            onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: 'Ações',
+      align: 'right',
+      width: 'w-28',
+      hideMobile: true,
+      render: (combo) => (
+        <div className="flex items-center justify-end gap-0.5" onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Ativar',
+      variant: 'outline',
+      onClick: async (ids) => {
+        await Promise.all(Array.from(ids).map(id => supabase.from('combos').update({ is_active: true }).eq('id', id)));
+        invalidate();
+        toast.success('Combos ativados');
+      },
+    },
+    {
+      label: 'Desativar',
+      variant: 'outline',
+      onClick: async (ids) => {
+        await Promise.all(Array.from(ids).map(id => supabase.from('combos').update({ is_active: false }).eq('id', id)));
+        invalidate();
+        toast.success('Combos desativados');
+      },
+    },
+    {
+      label: 'Excluir',
+      variant: 'destructive',
+      icon: <Trash2 className="h-3.5 w-3.5 mr-1" />,
+      onClick: async (ids) => {
+        await Promise.all(Array.from(ids).map(id => deleteCombo(id)));
+        invalidate();
+        toast.success(`${ids.size} combo(s) excluído(s)`);
+      },
+    },
+  ];
 
   const checkoutLink = linkCombo ? `https://cursos.kanaflix.com.br/checkout/combo/${linkCombo.id}` : '';
 
@@ -142,129 +208,25 @@ export default function MarketingCombos() {
         </Button>
       </div>
 
-      {/* Bulk actions bar */}
-      {someSelected && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/60 border text-sm">
-          <span className="font-medium">{selectedIds.size} selecionado(s)</span>
-          <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={() => handleBulkToggle(true)}>Ativar</Button>
-          <Button variant="outline" size="sm" onClick={() => handleBulkToggle(false)}>Desativar</Button>
-          <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={bulkDeleting}>
-            <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Excluir
+      <DataList<Combo>
+        title="Combos"
+        columns={columns}
+        data={combos || []}
+        loading={isLoading}
+        selectable
+        bulkActions={bulkActions}
+        searchPlaceholder="Buscar combo..."
+        searchFilter={(combo, q) => combo.title.toLowerCase().includes(q.toLowerCase())}
+        onRowClick={(combo) => navigate(`/admin/marketing/combos/${combo.id}/edit`)}
+        emptyIcon={<Package className="h-12 w-12" />}
+        emptyMessage="Nenhum combo criado"
+        headerActions={
+          <Button size="sm" onClick={() => navigate('/admin/marketing/combos/new')} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Novo Combo
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>Limpar</Button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : !combos?.length ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <h3 className="font-medium text-lg">Nenhum combo criado</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Crie pacotes de cursos com preços promocionais.</p>
-            <Button onClick={() => navigate('/admin/marketing/combos/new')}>
-              <Plus className="h-4 w-4 mr-1.5" />
-              Criar Combo
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </TableHead>
-                <TableHead>Combo</TableHead>
-                <TableHead className="text-right">Preço</TableHead>
-                <TableHead className="hidden md:table-cell">Usos</TableHead>
-                <TableHead className="hidden md:table-cell">Validade</TableHead>
-                <TableHead className="w-16 text-center">Status</TableHead>
-                <TableHead className="hidden md:table-cell w-28 text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {combos.map(combo => {
-                const isExpired = combo.expires_at && new Date(combo.expires_at) < new Date();
-                return (
-                  <TableRow key={combo.id} className={selectedIds.has(combo.id) ? 'bg-muted/40' : ''}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selectedIds.has(combo.id)}
-                        onCheckedChange={() => toggleSelect(combo.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2.5">
-                        {combo.thumbnail_url ? (
-                          <img src={combo.thumbnail_url} alt="" className="h-8 w-8 rounded object-cover shrink-0" />
-                        ) : (
-                          <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <button type="button" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)} className="font-medium text-sm truncate block max-w-[200px] hover:underline text-left">{combo.title}</button>
-                          <span className="text-xs text-muted-foreground md:hidden">
-                            {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold text-sm whitespace-nowrap">
-                      {formatPrice(combo.price)}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                      {combo.max_uses != null
-                        ? `${combo.used_count}/${combo.max_uses}`
-                        : '∞'}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground whitespace-nowrap">
-                      {combo.expires_at ? (
-                        <span className={isExpired ? 'text-destructive' : ''}>
-                          {new Date(combo.expires_at).toLocaleDateString('pt-BR')}
-                          {isExpired && ' (expirado)'}
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={combo.is_active}
-                        disabled={togglingId === combo.id}
-                        onCheckedChange={() => handleToggleActive(combo.id, combo.is_active)}
-                      />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-right">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+        }
+      />
 
       {/* Delete dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
