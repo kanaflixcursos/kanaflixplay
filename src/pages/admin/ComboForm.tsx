@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CurrencyInput } from '@/components/ui/currency-input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { ArrowLeft, Loader2, BookOpen, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUpload from '@/components/ImageUpload';
@@ -33,6 +34,8 @@ export default function ComboForm() {
   const [maxInstallments, setMaxInstallments] = useState(12);
   const [isActive, setIsActive] = useState(true);
   const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const [maxUses, setMaxUses] = useState('');
+  const [expiresAt, setExpiresAt] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -40,10 +43,13 @@ export default function ComboForm() {
       setTitle(combo.title);
       setDescription(combo.description || '');
       setThumbnailUrl(combo.thumbnail_url || '');
-      setPriceStr(combo.price ? String(combo.price) : '');
+      // combo.price is in cents — CurrencyInput expects reais as decimal string
+      setPriceStr(combo.price ? (combo.price / 100).toFixed(2) : '');
       setMaxInstallments(combo.max_installments);
       setIsActive(combo.is_active);
       setSelectedCourseIds(combo.courses.map(c => c.course_id));
+      setMaxUses(combo.max_uses != null ? String(combo.max_uses) : '');
+      setExpiresAt(combo.expires_at ? combo.expires_at.split('T')[0] : '');
     }
   }, [combo]);
 
@@ -53,7 +59,8 @@ export default function ComboForm() {
     );
   };
 
-  const priceInCents = parseInt(priceStr.replace(/\D/g, '') || '0', 10);
+  // CurrencyInput onChange gives reais as "1234.56", multiply by 100 for cents
+  const priceInCents = Math.round(parseFloat(priceStr || '0') * 100);
 
   const originalPrice = (courses || [])
     .filter(c => selectedCourseIds.includes(c.id))
@@ -85,6 +92,8 @@ export default function ComboForm() {
         max_installments: maxInstallments,
         is_active: isActive,
         course_ids: selectedCourseIds,
+        max_uses: maxUses ? parseInt(maxUses, 10) : null,
+        expires_at: expiresAt ? new Date(expiresAt + 'T23:59:59').toISOString() : null,
       });
       invalidate();
       toast.success(isEdit ? 'Combo atualizado!' : 'Combo criado!');
@@ -179,10 +188,10 @@ export default function ComboForm() {
                     onCheckedChange={() => toggleCourse(course.id)}
                   />
                   {course.thumbnail_url ? (
-                    <img src={course.thumbnail_url} alt="" className="h-8 w-8 rounded object-cover" />
+                    <img src={course.thumbnail_url} alt="" className="h-6 w-6 rounded object-cover" />
                   ) : (
-                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <div className="h-6 w-6 rounded bg-muted flex items-center justify-center">
+                      <BookOpen className="h-3 w-3 text-muted-foreground" />
                     </div>
                   )}
                   <span className="text-sm font-medium flex-1 truncate">{course.title}</span>
@@ -230,6 +239,34 @@ export default function ComboForm() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Limits */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Limites de Uso</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label>Quantidade máxima de usos</Label>
+            <Input
+              type="number"
+              min="0"
+              value={maxUses}
+              onChange={e => setMaxUses(e.target.value)}
+              placeholder="Ilimitado"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Deixe vazio para ilimitado</p>
+          </div>
+          <div>
+            <Label>Validade</Label>
+            <DatePicker
+              value={expiresAt}
+              onChange={v => setExpiresAt(v)}
+              placeholder="Sem validade"
+              minDate={new Date()}
+            />
+            <p className="text-xs text-muted-foreground mt-1">Deixe vazio para não expirar</p>
           </div>
         </CardContent>
       </Card>
