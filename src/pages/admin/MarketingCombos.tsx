@@ -215,7 +215,7 @@ export default function MarketingCombos() {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <span className="font-medium text-sm truncate block max-w-[200px]">{combo.title}</span>
+                          <button type="button" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)} className="font-medium text-sm truncate block max-w-[200px] hover:underline text-left">{combo.title}</button>
                           <span className="text-xs text-muted-foreground md:hidden">
                             {combo.courses.length} curso{combo.courses.length !== 1 ? 's' : ''}
                           </span>
