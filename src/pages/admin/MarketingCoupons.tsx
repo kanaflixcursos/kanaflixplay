@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -19,28 +19,14 @@ import {
   ArrowLeft,
   Plus,
   Ticket,
-  Percent,
-  DollarSign,
   Copy,
   Check,
   Trash2,
   Pencil,
-  Loader2,
-  Calendar,
   Hash,
-  BookOpen,
-  CreditCard,
-  QrCode,
-  Barcode,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-
-const PAYMENT_METHOD_LABELS: Record<string, { label: string; icon: typeof CreditCard }> = {
-  credit_card: { label: 'Cartão', icon: CreditCard },
-  pix: { label: 'PIX', icon: QrCode },
-  boleto: { label: 'Boleto', icon: Barcode },
-};
+import StatCard from '@/components/StatCard';
 
 interface Coupon {
   id: string;
@@ -65,7 +51,6 @@ export default function MarketingCoupons() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingCoupon, setDeletingCoupon] = useState<Coupon | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchCoupons();
@@ -84,7 +69,6 @@ export default function MarketingCoupons() {
       return;
     }
 
-    // Collect all course IDs from course_ids arrays and legacy course_id
     const allCourseIds = [...new Set(
       (data || []).flatMap(c => {
         const ids: string[] = (c as any).course_ids || [];
@@ -102,8 +86,8 @@ export default function MarketingCoupons() {
     }
 
     setCoupons((data || []).map(c => {
-      const ids: string[] = (c as any).course_ids?.length > 0 
-        ? (c as any).course_ids 
+      const ids: string[] = (c as any).course_ids?.length > 0
+        ? (c as any).course_ids
         : (c.course_id ? [c.course_id] : []);
       const paymentMethods: string[] = (c as any).payment_methods || [];
       return {
@@ -152,11 +136,6 @@ export default function MarketingCoupons() {
   const formatPrice = (cents: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 
-  const filteredCoupons = coupons.filter(c =>
-    c.code.toLowerCase().includes(search.toLowerCase()) ||
-    c.course_titles.some(t => t.toLowerCase().includes(search.toLowerCase()))
-  );
-
   const activeCoupons = coupons.filter(c => c.is_active).length;
   const totalUses = coupons.reduce((sum, c) => sum + c.used_count, 0);
 
@@ -174,104 +153,57 @@ export default function MarketingCoupons() {
       </div>
 
       {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: 'easeOut', delay: 0.05 }}
-        className="grid gap-3 grid-cols-3"
-      >
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="icon-box">
-              <Ticket />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{coupons.length}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="icon-box">
-              <Check />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{activeCoupons}</p>
-              <p className="text-xs text-muted-foreground">Ativos</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="icon-box">
-              <Hash />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{totalUses}</p>
-              <p className="text-xs text-muted-foreground">Usos</p>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Search + New */}
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Buscar cupom..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-        <Button onClick={() => navigate('/admin/marketing/coupons/new')} className="gap-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Novo Cupom</span>
-        </Button>
+      <div className="grid gap-3 grid-cols-3">
+        <StatCard icon={Ticket} title="Total" value={coupons.length} loading={loading} />
+        <StatCard icon={Check} title="Ativos" value={activeCoupons} loading={loading} />
+        <StatCard icon={Hash} title="Usos" value={totalUses} loading={loading} />
       </div>
 
-      {/* Coupons List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredCoupons.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Ticket className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">
-              {search ? 'Nenhum cupom encontrado' : 'Nenhum cupom criado ainda'}
-            </p>
-            {!search && (
-              <Button onClick={() => navigate('/admin/marketing/coupons/new')} variant="outline" className="mt-4 gap-2">
-                <Plus className="h-4 w-4" />
-                Criar Primeiro Cupom
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredCoupons.map((coupon, i) => (
-            <motion.div
-              key={coupon.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: i * 0.03 }}
-            >
-              <Card className={`transition-opacity ${!coupon.is_active ? 'opacity-60' : ''}`}>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="icon-box-sm">
-                        {coupon.discount_type === 'percentage'
-                          ? <Percent />
-                          : <DollarSign />
-                        }
-                      </div>
-                      <div className="min-w-0">
+      {/* Coupons Table */}
+      <Card>
+        <CardHeader className="dashboard-card-header">
+          <div className="flex items-center justify-between w-full">
+            <CardTitle className="card-title-compact">Cupons</CardTitle>
+            <Button size="sm" onClick={() => navigate('/admin/marketing/coupons/new')}>
+              <Plus className="h-4 w-4 mr-1" /> Novo Cupom
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="dashboard-card-content">
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+            </div>
+          ) : coupons.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Ticket className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p>Nenhum cupom criado</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Desconto</TableHead>
+                    <TableHead className="hidden md:table-cell">Cursos</TableHead>
+                    <TableHead>Usos</TableHead>
+                    <TableHead className="hidden md:table-cell">Validade</TableHead>
+                    <TableHead>Ativo</TableHead>
+                    <TableHead className="w-20">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {coupons.map((coupon) => (
+                    <TableRow
+                      key={coupon.id}
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}/edit`)}
+                    >
+                      <TableCell>
                         <button
-                          onClick={() => copyCode(coupon.code)}
                           className="flex items-center gap-1.5 font-mono font-bold text-sm hover:text-primary transition-colors"
+                          onClick={(e) => { e.stopPropagation(); copyCode(coupon.code); }}
                         >
                           {coupon.code}
                           {copied === coupon.code
@@ -279,94 +211,68 @@ export default function MarketingCoupons() {
                             : <Copy className="h-3 w-3 text-muted-foreground" />
                           }
                         </button>
-                        <p className="text-xs text-muted-foreground">
-                          {coupon.discount_type === 'percentage'
-                            ? `${coupon.discount_value}% de desconto`
-                            : `${formatPrice(coupon.discount_value)} de desconto`
-                          }
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={coupon.is_active}
-                      onCheckedChange={() => handleToggle(coupon)}
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {coupon.course_titles.length > 0 ? (
-                      coupon.course_titles.map((title, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          <BookOpen className="h-2.5 w-2.5 mr-1" />
-                          {title}
-                        </Badge>
-                      ))
-                    ) : (
-                      <Badge variant="outline" className="text-xs">Todos os cursos</Badge>
-                    )}
-                    {coupon.payment_methods.length > 0 ? (
-                      coupon.payment_methods.map(pm => {
-                        const info = PAYMENT_METHOD_LABELS[pm];
-                        if (!info) return null;
-                        const Icon = info.icon;
-                        return (
-                          <Badge key={pm} variant="outline" className="text-xs">
-                            <Icon className="h-2.5 w-2.5 mr-1" />
-                            {info.label}
-                          </Badge>
-                        );
-                      })
-                    ) : (
-                      <Badge variant="outline" className="text-xs">Todas formas pgto</Badge>
-                    )}
-                    {coupon.max_uses != null && (
-                      <Badge variant="outline" className="text-xs">
-                        {coupon.used_count}/{coupon.max_uses} usos
-                      </Badge>
-                    )}
-                    {coupon.max_uses == null && (
-                      <Badge variant="outline" className="text-xs">
-                        {coupon.used_count} usos
-                      </Badge>
-                    )}
-                    {coupon.expires_at && (
-                      <Badge
-                        variant={new Date(coupon.expires_at) < new Date() ? 'destructive' : 'outline'}
-                        className="text-xs"
-                      >
-                        <Calendar className="h-2.5 w-2.5 mr-1" />
-                        {new Date(coupon.expires_at).toLocaleDateString('pt-BR')}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 text-xs h-8"
-                      onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}/edit`)}
-                    >
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-8 text-destructive hover:text-destructive"
-                      onClick={() => { setDeletingCoupon(coupon); setDeleteDialogOpen(true); }}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {coupon.discount_type === 'percentage'
+                          ? `${coupon.discount_value}%`
+                          : formatPrice(coupon.discount_value)
+                        }
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {coupon.course_titles.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {coupon.course_titles.slice(0, 2).map((title, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {title}
+                              </Badge>
+                            ))}
+                            {coupon.course_titles.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{coupon.course_titles.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Todos</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {coupon.max_uses != null
+                          ? `${coupon.used_count}/${coupon.max_uses}`
+                          : coupon.used_count
+                        }
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                        {coupon.expires_at ? (
+                          <span className={new Date(coupon.expires_at) < new Date() ? 'text-destructive' : ''}>
+                            {new Date(coupon.expires_at).toLocaleDateString('pt-BR')}
+                          </span>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          checked={coupon.is_active}
+                          onCheckedChange={() => handleToggle(coupon)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}/edit`)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setDeletingCoupon(coupon); setDeleteDialogOpen(true); }}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
