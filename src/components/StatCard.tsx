@@ -19,8 +19,10 @@ export default function StatCard({ title, value, description, icon: Icon, loadin
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="h-full"
     >
-      <Card className="overflow-hidden h-full">
-        <CardContent className="p-3 sm:p-5">
+      <Card className="overflow-hidden h-full relative">
+        <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none" />
+        <div className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-primary/8 blur-xl pointer-events-none" />
+        <CardContent className="p-3 sm:p-5 relative">
           <div className="flex items-center gap-3 mb-3">
             <div className="icon-box">
               <Icon />
