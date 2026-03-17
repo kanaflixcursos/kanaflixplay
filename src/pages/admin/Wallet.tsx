@@ -2,21 +2,23 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Wallet as WalletIcon,
   Clock,
   ArrowUpRight,
-  Loader2,
   RefreshCw,
   TrendingUp,
   CalendarDays,
   Banknote,
   Info,
+  Landmark,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 interface WalletData {
   recipient: {
@@ -25,6 +27,17 @@ interface WalletData {
     status: string;
     type: string;
   };
+  bank_account: {
+    bank: string;
+    bank_name: string | null;
+    branch_number: string;
+    branch_check_digit: string | null;
+    account_number: string;
+    account_check_digit: string | null;
+    type: string;
+    holder_name: string;
+    holder_document: string;
+  } | null;
   balance: {
     available_amount: number;
     waiting_funds_amount: number;
@@ -42,12 +55,80 @@ const formatDate = (dateStr: string | null) => {
   return format(new Date(dateStr), 'dd/MM/yyyy', { locale: ptBR });
 };
 
+const maskDocument = (doc: string) => {
+  if (!doc) return '-';
+  if (doc.length === 11) return `***.***.${doc.slice(6, 9)}-**`;
+  if (doc.length === 14) return `**.***.${doc.slice(5, 8)}/${doc.slice(8, 12)}-**`;
+  return doc;
+};
+
+const accountTypeLabels: Record<string, string> = {
+  checking: 'Conta Corrente',
+  savings: 'Conta Poupança',
+};
+
+const fadeUp = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.35, ease: 'easeOut' as const },
+};
+
+function BalanceSkeleton() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <Card key={i}>
+          <CardContent className="p-3 sm:p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <Skeleton className="h-9 w-9 rounded-xl" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="h-9 w-32" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-7 w-7 rounded-lg" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InfoSkeleton() {
+  return (
+    <div className="flex flex-wrap gap-x-8 gap-y-3">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-5 w-32" />
+      ))}
+    </div>
+  );
+}
+
 export default function AdminWallet() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<WalletData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchWallet = async () => {
-    setLoading(true);
+  const fetchWallet = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+
     try {
       const { data: result, error } = await supabase.functions.invoke('pagarme', {
         body: { action: 'get_wallet' },
@@ -60,104 +141,90 @@ export default function AdminWallet() {
     } catch (err: any) {
       toast.error(err.message || 'Erro ao carregar carteira');
     }
+
     setLoading(false);
+    setRefreshing(false);
   };
 
   useEffect(() => {
     fetchWallet();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Carteira</h1>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <WalletIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Não foi possível carregar os dados da carteira.</p>
-            <Button variant="outline" className="mt-4" onClick={fetchWallet}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Tentar novamente
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // Aggregate payables by date
-  const payablesByDate = data.payables.reduce<Record<string, { total: number; count: number }>>((acc, p) => {
+  const payablesByDate = data?.payables.reduce<Record<string, { total: number; count: number }>>((acc, p) => {
     const date = p.payment_date ? format(new Date(p.payment_date), 'yyyy-MM-dd') : 'sem-data';
     if (!acc[date]) acc[date] = { total: 0, count: 0 };
     acc[date].total += p.amount || 0;
     acc[date].count += 1;
     return acc;
-  }, {});
+  }, {}) || {};
 
   const sortedPayableDates = Object.entries(payablesByDate).sort(([a], [b]) => a.localeCompare(b));
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <motion.div {...fadeUp} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Carteira</h1>
           <p className="text-muted-foreground">Saldo e recebíveis da Pagar.me</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchWallet} disabled={loading}>
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchWallet(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
-      </div>
+      </motion.div>
 
       {/* Balance Cards */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-3 sm:p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="icon-box">
-                <WalletIcon />
+      {loading ? (
+        <BalanceSkeleton />
+      ) : data ? (
+        <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.05 }} className="grid gap-3 sm:grid-cols-3">
+          <Card>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="icon-box">
+                  <WalletIcon />
+                </div>
+                <span className="stat-card-label leading-tight">Saldo Disponível</span>
               </div>
-              <span className="stat-card-label leading-tight">Saldo Disponível</span>
-            </div>
-            <div className="stat-card-value">{formatCurrency(data.balance.available_amount)}</div>
-          </CardContent>
-        </Card>
+              <div className="stat-card-value">{formatCurrency(data.balance.available_amount)}</div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-3 sm:p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="icon-box">
-                <Clock />
+          <Card>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="icon-box">
+                  <Clock />
+                </div>
+                <span className="stat-card-label leading-tight">A Receber</span>
               </div>
-              <span className="stat-card-label leading-tight">A Receber</span>
-            </div>
-            <div className="stat-card-value">{formatCurrency(data.balance.waiting_funds_amount)}</div>
-          </CardContent>
-        </Card>
+              <div className="stat-card-value">{formatCurrency(data.balance.waiting_funds_amount)}</div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-3 sm:p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="icon-box">
-                <ArrowUpRight />
+          <Card>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="icon-box">
+                  <ArrowUpRight />
+                </div>
+                <span className="stat-card-label leading-tight">Total Transferido</span>
               </div>
-              <span className="stat-card-label leading-tight">Total Transferido</span>
-            </div>
-            <div className="stat-card-value">{formatCurrency(data.balance.transferred_amount)}</div>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="stat-card-value">{formatCurrency(data.balance.transferred_amount)}</div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      {/* Payables + Operations */}
+      <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.1 }} className="grid gap-3 lg:grid-cols-2">
         {/* Upcoming Payables */}
         <Card className="overflow-hidden h-full">
           <CardHeader className="p-4 sm:p-6">
@@ -169,7 +236,9 @@ export default function AdminWallet() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
-            {sortedPayableDates.length === 0 ? (
+            {loading ? (
+              <ListSkeleton />
+            ) : sortedPayableDates.length === 0 ? (
               <div className="text-center py-8">
                 <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Nenhum recebível pendente</p>
@@ -210,7 +279,9 @@ export default function AdminWallet() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
-            {data.operations.length === 0 ? (
+            {loading ? (
+              <ListSkeleton />
+            ) : !data || data.operations.length === 0 ? (
               <div className="text-center py-8">
                 <ArrowUpRight className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">Nenhuma movimentação recente</p>
@@ -245,37 +316,106 @@ export default function AdminWallet() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
-      {/* Recipient Info */}
-      <Card className="overflow-hidden">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="flex items-center gap-3">
-            <div className="icon-box">
-              <Info />
-            </div>
-            <span className="stat-card-label">Informações do Recebedor</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-6 pt-0">
-          <div className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
-            <div>
-              <span className="text-muted-foreground">ID:</span>{' '}
-              <span className="font-mono text-xs">{data.recipient.id}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Nome:</span>{' '}
-              <span className="font-medium">{data.recipient.name || '-'}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Status:</span>{' '}
-              <Badge variant="outline" className="ml-1">
-                {data.recipient.status || '-'}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Bank Account + Recipient Info */}
+      <motion.div {...fadeUp} transition={{ ...fadeUp.transition, delay: 0.15 }} className="grid gap-3 lg:grid-cols-2">
+        {/* Bank Account */}
+        <Card className="overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <Landmark />
+              </div>
+              <span className="stat-card-label">Conta Bancária</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            {loading ? (
+              <InfoSkeleton />
+            ) : data?.bank_account ? (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Banco</p>
+                    <p className="font-medium">
+                      {data.bank_account.bank_name
+                        ? `${data.bank_account.bank} - ${data.bank_account.bank_name}`
+                        : data.bank_account.bank}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Tipo</p>
+                    <p className="font-medium">{accountTypeLabels[data.bank_account.type] || data.bank_account.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Agência</p>
+                    <p className="font-medium font-mono">
+                      {data.bank_account.branch_number}
+                      {data.bank_account.branch_check_digit ? `-${data.bank_account.branch_check_digit}` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Conta</p>
+                    <p className="font-medium font-mono">
+                      {data.bank_account.account_number}
+                      {data.bank_account.account_check_digit ? `-${data.bank_account.account_check_digit}` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Titular</p>
+                    <p className="font-medium">{data.bank_account.holder_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Documento</p>
+                    <p className="font-medium font-mono">{maskDocument(data.bank_account.holder_document)}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhuma conta bancária cadastrada</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recipient Info */}
+        <Card className="overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="flex items-center gap-3">
+              <div className="icon-box">
+                <Info />
+              </div>
+              <span className="stat-card-label">Informações do Recebedor</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0">
+            {loading ? (
+              <InfoSkeleton />
+            ) : data ? (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">ID</p>
+                    <p className="font-mono text-xs">{data.recipient.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Nome</p>
+                    <p className="font-medium">{data.recipient.name || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Status</p>
+                    <Badge variant="outline">{data.recipient.status || '-'}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs mb-0.5">Tipo</p>
+                    <p className="font-medium">{data.recipient.type || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
