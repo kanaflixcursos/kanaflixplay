@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getStoredUtm } from '@/lib/utm';
-import { getVisitorId, linkVisitorToUser } from '@/hooks/useTrackEvent';
+import { getVisitorId, linkVisitorToUser, trackEvent } from '@/hooks/useTrackEvent';
 
 type UserRole = 'admin' | 'student' | null;
 
