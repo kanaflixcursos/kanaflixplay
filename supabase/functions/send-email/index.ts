@@ -137,7 +137,7 @@ const emailTemplate = (content: string, preheader = "") => `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Kanaflix Play</title>
+  <title>${PLATFORM_NAME}</title>
   ${fontImport}
 </head>
 <body style="margin: 0; padding: 0; font-family: ${fontFamily}; background-color: ${brand.bg}; -webkit-font-smoothing: antialiased;">
@@ -148,7 +148,7 @@ const emailTemplate = (content: string, preheader = "") => `
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: ${brand.white}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
           <!-- Header with mesh gradient -->
           <tr>
-            ${meshGradientHeader}
+            ${meshGradientHeader()}
           </tr>
           <!-- Content -->
           <tr>
@@ -160,10 +160,10 @@ const emailTemplate = (content: string, preheader = "") => `
           <tr>
             <td style="padding: 24px 28px; border-top: 1px solid ${brand.border}; text-align: center; background-color: #fafafa;">
               <p style="margin: 0; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
-                © ${new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.
+                © ${new Date().getFullYear()} ${PLATFORM_NAME}. Todos os direitos reservados.
               </p>
               <p style="margin: 10px 0 0; font-size: 13px; font-family: ${fontFamily};">
-                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none; font-weight: 500;">cursos.kanaflix.com.br</a>
+                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none; font-weight: 500;">${PRODUCTION_URL.replace('https://', '')}</a>
               </p>
             </td>
           </tr>
