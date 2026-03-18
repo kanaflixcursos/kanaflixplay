@@ -201,6 +201,26 @@ export default function CourseDetail() {
     return formatCurrency(price);
   };
 
+  const handleRevokeAccess = async () => {
+    if (!revokingStudent || !courseId) return;
+    setRevoking(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('id', revokingStudent.enrollment_id);
+
+      if (error) throw error;
+      toast.success(`Acesso de ${revokingStudent.full_name || 'aluno'} revogado com sucesso!`);
+      setRevokeDialogOpen(false);
+      setRevokingStudent(null);
+      fetchData();
+    } catch {
+      toast.error('Erro ao revogar acesso');
+    }
+    setRevoking(false);
+  };
+
   const handleExportCSV = () => {
     if (!filteredStudents.length || !course) return;
     const header = 'Nome,Email,Matriculado em,Tempo Restante,Valor Pago\n';
