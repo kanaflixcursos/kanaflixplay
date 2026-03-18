@@ -12,6 +12,7 @@ interface ImageUploadProps {
   aspectRatio?: string;
   maxWidth?: number;
   maxHeight?: number;
+  label?: string;
 }
 
 export default function ImageUpload({
