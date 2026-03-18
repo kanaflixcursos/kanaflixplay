@@ -47,6 +47,7 @@ export default function Checkout() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { data: settings } = useSiteSettings();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [lessonCount, setLessonCount] = useState(0);

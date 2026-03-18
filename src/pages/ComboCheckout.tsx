@@ -34,6 +34,7 @@ export default function ComboCheckout() {
   const { comboId } = useParams<{ comboId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { data: settings } = useSiteSettings();
   
   const [combo, setCombo] = useState<ComboData | null>(null);
   const [loading, setLoading] = useState(true);
