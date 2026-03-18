@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,6 +68,7 @@ interface Course {
 }
 
 export default function AdminStudents() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
@@ -188,6 +190,12 @@ export default function AdminStudents() {
   );
 
   const handleToggleRole = async (student: Student) => {
+    // Prevent admins from changing their own role
+    if (student.user_id === user?.id) {
+      toast.error('Você não pode alterar sua própria função');
+      return;
+    }
+
     const newRole = student.role === 'admin' ? 'student' : 'admin';
     const { error } = await supabase
       .from('user_roles')
