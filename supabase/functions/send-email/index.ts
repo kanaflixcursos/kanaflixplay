@@ -496,7 +496,7 @@ Deno.serve(async (req) => {
     const resend = new Resend(RESEND_API_KEY);
 
     const emailResponse = await resend.emails.send({
-      from: "Kanaflix Play <noreply@cursos.kanaflix.com.br>",
+      from: `${siteConfig.email_sender_name} <${siteConfig.email_sender_address}>`,
       to: [to],
       subject,
       html,
