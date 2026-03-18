@@ -41,7 +41,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Download, X, ShieldCheck, ShieldOff, BookPlus } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Download, X, ShieldCheck, ShieldOff, BookPlus, BookX } from 'lucide-react';
 
 import PhoneInput from '@/components/PhoneInput';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
