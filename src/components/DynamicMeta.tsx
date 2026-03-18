@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
-import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useSiteSettings, PRIMARY_COLOR_PRESETS } from '@/hooks/useSiteSettings';
+import { useTheme } from '@/components/ThemeProvider';
 
 /**
- * Dynamically updates <head> meta tags and injects GTM based on site_settings.
- * Replaces the static GTM snippet in index.html.
+ * Dynamically updates <head> meta tags, injects GTM, and applies primary color
+ * based on site_settings.
  */
 export default function DynamicMeta() {
   const { data: settings } = useSiteSettings();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!settings) return;
 
-    // Update document title
     document.title = settings.platform_name;
 
-    // Helper to set meta tag
     const setMeta = (selector: string, content: string) => {
       const el = document.querySelector(selector) as HTMLMetaElement | null;
       if (el) el.content = content;
@@ -24,10 +24,28 @@ export default function DynamicMeta() {
     setMeta('meta[name="author"]', settings.platform_name);
     setMeta('meta[property="og:title"]', settings.platform_name);
     setMeta('meta[property="og:description"]', settings.platform_description);
-    setMeta('meta[property="og:image"]', settings.og_image_url);
-    setMeta('meta[name="twitter:site"]', settings.twitter_handle);
-    setMeta('meta[name="twitter:image"]', settings.og_image_url);
   }, [settings]);
+
+  // Apply primary color
+  useEffect(() => {
+    if (!settings?.primary_color) return;
+
+    const preset = PRIMARY_COLOR_PRESETS[settings.primary_color];
+    if (!preset) return;
+
+    const isDark = theme === 'dark';
+    const colors = isDark ? preset.dark : preset.light;
+    const root = document.documentElement;
+
+    root.style.setProperty('--primary', colors.primary);
+    root.style.setProperty('--ring', colors.ring);
+    root.style.setProperty('--sidebar-primary', colors.sidebarPrimary);
+    root.style.setProperty('--sidebar-accent', colors.sidebarAccent);
+    root.style.setProperty('--sidebar-accent-foreground', colors.sidebarAccentFg);
+    root.style.setProperty('--accent-foreground', colors.accentFg);
+    root.style.setProperty('--sidebar-ring', colors.ring);
+    root.style.setProperty('--chart-1', colors.chart1);
+  }, [settings?.primary_color, theme]);
 
   // GTM dynamic injection
   useEffect(() => {
@@ -35,13 +53,10 @@ export default function DynamicMeta() {
 
     const gtmId = settings.gtm_container_id;
 
-    // Skip if already loaded with same ID
     if ((window as any).__GTM_LOADED === gtmId) return;
 
-    // Remove old GTM scripts if any
     document.querySelectorAll('script[data-gtm]').forEach(el => el.remove());
 
-    // Inject GTM script
     const script = document.createElement('script');
     script.setAttribute('data-gtm', gtmId);
     script.textContent = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -51,7 +66,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 })(window,document,'script','dataLayer','${gtmId}');`;
     document.head.appendChild(script);
 
-    // Inject noscript iframe
     const existing = document.querySelector('noscript[data-gtm]');
     if (!existing) {
       const noscript = document.createElement('noscript');
