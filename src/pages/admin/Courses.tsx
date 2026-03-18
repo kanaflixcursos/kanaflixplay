@@ -71,6 +71,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useAdminCourses, useCategories, usePandaFolders, useInvalidateCourses } from '@/hooks/queries/useCourses';
 import { deleteCourse, syncPandavideoLessons } from '@/services/courseService';
 import type { AdminCourse } from '@/services/courseService';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export default function AdminCourses() {
   const navigate = useNavigate();
