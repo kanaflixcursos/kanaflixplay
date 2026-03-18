@@ -62,7 +62,9 @@ const brand = {
 };
 
 // Logo URL (dark version for light header)
-const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
+let PRODUCTION_URL = DEFAULT_PRODUCTION_URL;
+let PLATFORM_NAME = DEFAULT_PLATFORM_NAME;
+const getLOGO_URL = () => `${PRODUCTION_URL}/logo-kanaflix.png`;
 
 // Google Sans font import for emails
 const fontImport = `
