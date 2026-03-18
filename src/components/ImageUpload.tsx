@@ -23,6 +23,7 @@ export default function ImageUpload({
   aspectRatio = '4/5',
   maxWidth = 1080,
   maxHeight = 1350,
+  label = 'Enviar Capa',
 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
