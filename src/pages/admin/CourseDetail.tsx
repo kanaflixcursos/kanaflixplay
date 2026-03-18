@@ -352,71 +352,125 @@ export default function CourseDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Matriculado em</TableHead>
-                    <TableHead>Tempo Restante</TableHead>
-                    <TableHead className="text-right">Valor Pago</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStudents.map((student) => {
-                    const remaining = getRemainingInfo(student.expires_at);
-                    return (
-                      <TableRow
-                        key={student.enrollment_id}
-                        className="cursor-pointer"
-                        onClick={() => navigate(`/admin/students/${student.user_id}`)}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={student.avatar_url || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(student.full_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium text-sm">
-                              {student.full_name || 'Sem nome'}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {student.email || '—'}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(student.enrolled_at), {
-                            addSuffix: true,
-                            locale: ptBR,
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={remaining.variant === 'default' ? 'outline' : remaining.variant}
-                            className={
-                              remaining.variant === 'default'
-                                ? 'bg-success/10 text-success border-success/30 text-xs'
-                                : remaining.variant === 'secondary'
-                                ? 'bg-warning/10 text-warning border-warning/30 text-xs'
-                                : 'text-xs'
-                            }
-                          >
-                            <Clock className="h-3 w-3 mr-1" />
-                            {remaining.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-sm font-medium">
-                          {student.total_paid > 0 ? formatCurrency(student.total_paid) : '—'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-    </div>
-  );
+                     <TableHead>Aluno</TableHead>
+                     <TableHead>E-mail</TableHead>
+                     <TableHead>Matriculado em</TableHead>
+                     <TableHead>Tempo Restante</TableHead>
+                     <TableHead className="text-right">Valor Pago</TableHead>
+                     <TableHead className="w-12" />
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {filteredStudents.map((student) => {
+                     const remaining = getRemainingInfo(student.expires_at);
+                     return (
+                       <TableRow
+                         key={student.enrollment_id}
+                         className="cursor-pointer"
+                         onClick={() => navigate(`/admin/students/${student.user_id}`)}
+                       >
+                         <TableCell>
+                           <div className="flex items-center gap-3">
+                             <Avatar className="h-8 w-8">
+                               <AvatarImage src={student.avatar_url || undefined} />
+                               <AvatarFallback className="text-xs">
+                                 {getInitials(student.full_name)}
+                               </AvatarFallback>
+                             </Avatar>
+                             <span className="font-medium text-sm">
+                               {student.full_name || 'Sem nome'}
+                             </span>
+                           </div>
+                         </TableCell>
+                         <TableCell className="text-sm text-muted-foreground">
+                           {student.email || '—'}
+                         </TableCell>
+                         <TableCell className="text-sm text-muted-foreground">
+                           {formatDistanceToNow(new Date(student.enrolled_at), {
+                             addSuffix: true,
+                             locale: ptBR,
+                           })}
+                         </TableCell>
+                         <TableCell>
+                           <Badge
+                             variant={remaining.variant === 'default' ? 'outline' : remaining.variant}
+                             className={
+                               remaining.variant === 'default'
+                                 ? 'bg-success/10 text-success border-success/30 text-xs'
+                                 : remaining.variant === 'secondary'
+                                 ? 'bg-warning/10 text-warning border-warning/30 text-xs'
+                                 : 'text-xs'
+                             }
+                           >
+                             <Clock className="h-3 w-3 mr-1" />
+                             {remaining.label}
+                           </Badge>
+                         </TableCell>
+                         <TableCell className="text-right text-sm font-medium">
+                           {student.total_paid > 0 ? formatCurrency(student.total_paid) : '—'}
+                         </TableCell>
+                         <TableCell>
+                           <div onClick={(e) => e.stopPropagation()}>
+                             <DropdownMenu>
+                               <DropdownMenuTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-8 w-8">
+                                   <MoreHorizontal className="h-4 w-4" />
+                                 </Button>
+                               </DropdownMenuTrigger>
+                               <DropdownMenuContent align="end" className="bg-popover">
+                                 <DropdownMenuItem
+                                   onClick={() => {
+                                     setRevokingStudent(student);
+                                     setRevokeDialogOpen(true);
+                                   }}
+                                   className="text-destructive focus:text-destructive"
+                                 >
+                                   <UserX className="h-4 w-4 mr-2" />
+                                   Revogar Acesso
+                                 </DropdownMenuItem>
+                               </DropdownMenuContent>
+                             </DropdownMenu>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     );
+                   })}
+                 </TableBody>
+               </Table>
+             )}
+           </CardContent>
+         </Card>
+       </motion.div>
+
+      {/* Revoke Access Dialog */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <UserX className="h-5 w-5" />
+              Revogar Acesso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Tem certeza que deseja revogar o acesso de <strong>{revokingStudent?.full_name || 'este aluno'}</strong> ao curso <strong>{course?.title}</strong>?
+              </p>
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm">⚠️ O aluno perderá acesso imediato ao curso. O progresso das aulas será mantido.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeAccess}
+              disabled={revoking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {revoking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Revogando...</> : 'Revogar Acesso'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+     </div>
+   );
 }
