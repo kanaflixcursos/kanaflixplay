@@ -1,7 +1,22 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const ENV_RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+async function getResendApiKey(): Promise<string | null> {
+  // Try env var first, then fall back to site_settings
+  if (ENV_RESEND_API_KEY) return ENV_RESEND_API_KEY;
+  try {
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      return (data.value as Record<string, string>).resend_api_key || null;
+    }
+  } catch (e) {
+    console.error("Failed to fetch Resend API key from DB:", e);
+  }
+  return null;
+}
 const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
 const DEFAULT_PLATFORM_NAME = "Kanaflix Play";
 const DEFAULT_SENDER_NAME = "Kanaflix Play";

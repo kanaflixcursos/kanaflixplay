@@ -78,8 +78,17 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
-
+    // Try env var first, fallback to site_settings
+    let pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
+    if (!pandaApiKey) {
+      try {
+        const sbKeys = createClient(supabaseUrl, supabaseServiceKey);
+        const { data: keyData } = await sbKeys.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
+        if (keyData?.value && typeof keyData.value === "object") {
+          pandaApiKey = (keyData.value as Record<string, string>).pandavideo_api_key || "";
+        }
+      } catch (e) { console.error("Failed to fetch Pandavideo key from DB:", e); }
+    }
     if (!pandaApiKey) {
       console.error("PANDAVIDEO_API_KEY not configured");
       return new Response(
