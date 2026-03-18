@@ -442,9 +442,16 @@ export default function AdminStudents() {
         return;
       }
 
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
       const { error } = await supabase
         .from('course_enrollments')
-        .insert({ user_id: grantStudent.user_id, course_id: grantCourseId });
+        .insert({
+          user_id: grantStudent.user_id,
+          course_id: grantCourseId,
+          expires_at: expiresAt.toISOString(),
+        });
 
       if (error) throw error;
 
