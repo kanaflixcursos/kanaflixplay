@@ -22,6 +22,53 @@ import {
 } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
 
+function ReadOnlyInput({ value, tooltip }: { value: string; tooltip: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Input value={value} disabled className="bg-muted" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+function MaskedApiInput({
+  value,
+  onChange,
+  show,
+  onToggle,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        type={show ? 'text' : 'password'}
+        placeholder={placeholder}
+        className="pr-10"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 export default function Settings() {
   const navigate = useNavigate();
   const { data: settings, isLoading } = useSiteSettings();
@@ -32,13 +79,8 @@ export default function Settings() {
   const [showPandaKey, setShowPandaKey] = useState(false);
   const [showResendKey, setShowResendKey] = useState(false);
 
-  const form = useForm<SiteSettings>({
-    defaultValues: settings,
-  });
-
-  const apiForm = useForm<ApiKeys>({
-    defaultValues: apiKeys,
-  });
+  const form = useForm<SiteSettings>({ defaultValues: settings });
+  const apiForm = useForm<ApiKeys>({ defaultValues: apiKeys });
 
   useEffect(() => {
     if (settings) form.reset(settings);
@@ -52,7 +94,6 @@ export default function Settings() {
 
   const onSubmit = async (values: SiteSettings) => {
     try {
-      // Also save API keys
       const apiValues = apiForm.getValues();
       await Promise.all([
         updateSettings.mutateAsync(values),
@@ -75,6 +116,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
+      {/* Page header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
           <ArrowLeft className="h-4 w-4" />
@@ -88,109 +130,88 @@ export default function Settings() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Branding */}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+          {/* ── Identidade da Plataforma ── */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Identidade da Plataforma</CardTitle>
+            <CardHeader className="dashboard-card-header">
+              <div className="flex items-center gap-3">
+                <div className="icon-box-sm"><Globe /></div>
+                <div>
+                  <CardTitle className="text-base">Identidade da Plataforma</CardTitle>
+                  <CardDescription>Nome, descrição e URLs usados em todo o sistema</CardDescription>
+                </div>
               </div>
-              <CardDescription>Nome, descrição e URLs usados em todo o sistema</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="dashboard-card-content space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={form.control} name="platform_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome da plataforma</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input {...field} disabled className="bg-muted" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>Definido pelo sistema Lovable</TooltipContent>
-                        </Tooltip>
-                      </div>
+                      <ReadOnlyInput value={field.value} tooltip="Definido pelo sistema Lovable" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="production_url" render={({ field }) => (
                   <FormItem>
                     <FormLabel>URL de produção</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input {...field} disabled className="bg-muted" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>Definido pelo domínio do Lovable</TooltipContent>
-                        </Tooltip>
-                      </div>
+                      <ReadOnlyInput value={field.value} tooltip="Definido pelo domínio do Lovable" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
               </div>
+
               <FormField control={form.control} name="platform_description" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
                   <FormControl><Input placeholder="Plataforma de cursos online" {...field} /></FormControl>
                   <FormDescription>Meta description para SEO</FormDescription>
-                  <FormMessage />
                 </FormItem>
               )} />
+
               <Separator />
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={form.control} name="footer_text" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Texto do rodapé</FormLabel>
                     <FormControl><Input placeholder="2026 © Empresa - Todos os direitos reservados" {...field} /></FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="footer_credits" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Créditos do rodapé</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input {...field} disabled className="bg-muted" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>Sempre definido por Kanaflix Sistemas</TooltipContent>
-                        </Tooltip>
-                      </div>
+                      <ReadOnlyInput value={field.value} tooltip="Sempre definido por Kanaflix Sistemas" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Logo Upload */}
+          {/* ── Logo ── */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Image className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Logo da Plataforma</CardTitle>
+            <CardHeader className="dashboard-card-header">
+              <div className="flex items-center gap-3">
+                <div className="icon-box-sm"><Image /></div>
+                <div>
+                  <CardTitle className="text-base">Logo da Plataforma</CardTitle>
+                  <CardDescription className="flex items-center gap-1">
+                    Logo exibida na sidebar e em e-mails
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>Use imagem horizontal (ex: 400×100px). PNG ou SVG com fundo transparente.</TooltipContent>
+                    </Tooltip>
+                  </CardDescription>
+                </div>
               </div>
-              <CardDescription className="flex items-center gap-1">
-                Logo exibida na sidebar e em e-mails
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>Use uma imagem horizontal (ex: 400×100px). Formatos: PNG ou SVG com fundo transparente.</TooltipContent>
-                </Tooltip>
-              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="dashboard-card-content">
               <FormField control={form.control} name="logo_url" render={({ field }) => (
                 <FormItem>
                   <FormControl>
@@ -204,22 +225,23 @@ export default function Settings() {
                       maxHeight={200}
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )} />
             </CardContent>
           </Card>
 
-          {/* Primary Color Picker */}
+          {/* ── Cor Primária ── */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Palette className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Cor Primária</CardTitle>
+            <CardHeader className="dashboard-card-header">
+              <div className="flex items-center gap-3">
+                <div className="icon-box-sm"><Palette /></div>
+                <div>
+                  <CardTitle className="text-base">Cor Primária</CardTitle>
+                  <CardDescription>Altera a cor principal do sistema inteiro</CardDescription>
+                </div>
               </div>
-              <CardDescription>Altera a cor principal do sistema inteiro (botões, links, sidebar, etc.)</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="dashboard-card-content">
               <FormField control={form.control} name="primary_color" render={({ field }) => (
                 <FormItem>
                   <FormControl>
@@ -237,7 +259,7 @@ export default function Settings() {
                           )}
                         >
                           <div
-                            className="w-10 h-10 rounded-full border shadow-sm"
+                            className="w-10 h-10 rounded-full border border-border shadow-sm"
                             style={{ backgroundColor: preset.hex }}
                           />
                           <span className="text-xs font-medium text-muted-foreground">{preset.label}</span>
@@ -245,133 +267,102 @@ export default function Settings() {
                       ))}
                     </div>
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )} />
             </CardContent>
           </Card>
 
-          {/* Email (read-only) */}
+          {/* ── E-mail Transacional (read-only) ── */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">E-mail Transacional</CardTitle>
+            <CardHeader className="dashboard-card-header">
+              <div className="flex items-center gap-3">
+                <div className="icon-box-sm"><Mail /></div>
+                <div>
+                  <CardTitle className="text-base">E-mail Transacional</CardTitle>
+                  <CardDescription>Configurações do remetente definidas no Resend</CardDescription>
+                </div>
               </div>
-              <CardDescription>Configurações do remetente definidas no Resend</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="dashboard-card-content">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={form.control} name="email_sender_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome do remetente</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input {...field} disabled className="bg-muted" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>Configure no painel do Resend</TooltipContent>
-                        </Tooltip>
-                      </div>
+                      <ReadOnlyInput value={field.value} tooltip="Configure no painel do Resend" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="email_sender_address" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Endereço do remetente</FormLabel>
                     <FormControl>
-                      <div className="flex items-center gap-2">
-                        <Input {...field} disabled className="bg-muted" />
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-                          </TooltipTrigger>
-                          <TooltipContent>Domínio deve estar verificado no Resend</TooltipContent>
-                        </Tooltip>
-                      </div>
+                      <ReadOnlyInput value={field.value} tooltip="Domínio deve estar verificado no Resend" />
                     </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Integrations */}
+          {/* ── Integrações Externas ── */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Code className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Integrações Externas</CardTitle>
+            <CardHeader className="dashboard-card-header">
+              <div className="flex items-center gap-3">
+                <div className="icon-box-sm"><Code /></div>
+                <div>
+                  <CardTitle className="text-base">Integrações Externas</CardTitle>
+                  <CardDescription>Tags e chaves de API de serviços terceiros</CardDescription>
+                </div>
               </div>
-              <CardDescription>Tags e chaves de API de serviços terceiros</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="dashboard-card-content space-y-4">
               <FormField control={form.control} name="gtm_container_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Google Tag Manager - Container ID</FormLabel>
                   <FormControl><Input placeholder="GTM-XXXXXXX" {...field} /></FormControl>
                   <FormDescription>Deixe vazio para desativar o GTM</FormDescription>
-                  <FormMessage />
                 </FormItem>
               )} />
+
               <Separator />
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={apiForm.control} name="pandavideo_api_key" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pandavideo API Key</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showPandaKey ? 'text' : 'password'}
-                          placeholder="Insira sua API Key do Pandavideo"
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPandaKey(!showPandaKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showPandaKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
+                      <MaskedApiInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        show={showPandaKey}
+                        onToggle={() => setShowPandaKey(!showPandaKey)}
+                        placeholder="Insira sua API Key do Pandavideo"
+                      />
                     </FormControl>
                     <FormDescription>Chave para sincronizar vídeos do Pandavideo</FormDescription>
-                    <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={apiForm.control} name="resend_api_key" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Resend API Key</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          type={showResendKey ? 'text' : 'password'}
-                          placeholder="Insira sua API Key do Resend"
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowResendKey(!showResendKey)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showResendKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
+                      <MaskedApiInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        show={showResendKey}
+                        onToggle={() => setShowResendKey(!showResendKey)}
+                        placeholder="Insira sua API Key do Resend"
+                      />
                     </FormControl>
                     <FormDescription>Chave para envio de e-mails transacionais</FormDescription>
-                    <FormMessage />
                   </FormItem>
                 )} />
               </div>
             </CardContent>
           </Card>
 
+          {/* Submit */}
           <div className="flex justify-end">
             <Button type="submit" disabled={updateSettings.isPending} className="gap-2">
               <Save className="h-4 w-4" />
