@@ -33,6 +33,7 @@ export default function MarketingCombos() {
   const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const { data: settings } = useSiteSettings();
 
   const handleDelete = async () => {
     if (!deleteId) return;
