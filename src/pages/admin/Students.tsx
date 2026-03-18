@@ -427,6 +427,56 @@ export default function AdminStudents() {
     setGrantCourseDialogOpen(true);
   };
 
+  const handleOpenRevokeCourseDialog = async (student: Student) => {
+    setRevokeStudent(student);
+    setRevokeCourseId('');
+    setRevoking(false);
+
+    const { data: enrollments } = await supabase
+      .from('course_enrollments')
+      .select('course_id')
+      .eq('user_id', student.user_id);
+
+    if (enrollments && enrollments.length > 0) {
+      const courseIds = enrollments.map(e => e.course_id);
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', courseIds);
+      setRevokeEnrolledCourses(coursesData || []);
+    } else {
+      setRevokeEnrolledCourses([]);
+    }
+
+    setRevokeCourseDialogOpen(true);
+  };
+
+  const handleRevokeCourse = async () => {
+    if (!revokeStudent || !revokeCourseId) {
+      toast.error('Selecione um curso');
+      return;
+    }
+
+    setRevoking(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('user_id', revokeStudent.user_id)
+        .eq('course_id', revokeCourseId);
+
+      if (error) throw error;
+
+      const courseName = revokeEnrolledCourses.find(c => c.id === revokeCourseId)?.title || 'curso';
+      toast.success(`Acesso de ${revokeStudent.full_name} ao curso "${courseName}" revogado!`);
+      setRevokeCourseDialogOpen(false);
+      fetchData();
+    } catch {
+      toast.error('Erro ao revogar acesso ao curso');
+    }
+    setRevoking(false);
+  };
+
   const handleGrantCourse = async () => {
     if (!grantStudent || !grantCourseId) {
       toast.error('Selecione um curso');
