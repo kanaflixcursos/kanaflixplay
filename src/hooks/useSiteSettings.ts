@@ -76,10 +76,21 @@ export function useUpdateSiteSettings() {
   });
 }
 
-/** Get a single setting value synchronously from the cache, or return default */
-export function getSiteSettingCached(key: keyof SiteSettings): string {
-  // This is for non-React contexts (edge cases). Prefer useSiteSettings() in components.
-  return DEFAULT_SETTINGS[key];
+// In-memory cache for non-hook contexts (auth redirects, etc.)
+let _cachedSettings: SiteSettings | null = null;
+
+async function fetchSiteSettingsRaw(): Promise<SiteSettings> {
+  if (_cachedSettings) return _cachedSettings;
+  const settings = await fetchSiteSettings();
+  _cachedSettings = settings;
+  return settings;
+}
+
+/** Async getter for use outside React components (auth, login, etc.) */
+export async function getProductionUrl(): Promise<string> {
+  if (!import.meta.env.PROD) return window.location.origin;
+  const s = await fetchSiteSettingsRaw();
+  return s.production_url;
 }
 
 export { DEFAULT_SETTINGS };
