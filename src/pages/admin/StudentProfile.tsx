@@ -131,6 +131,9 @@ export default function StudentProfile() {
   const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [revokingEnrollment, setRevokingEnrollment] = useState<Enrollment | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === 'all') return orders;
