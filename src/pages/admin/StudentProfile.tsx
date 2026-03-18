@@ -38,7 +38,8 @@ import {
   AlertCircle,
   RotateCcw,
   Hourglass,
-  Filter
+  Filter,
+  UserX
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
