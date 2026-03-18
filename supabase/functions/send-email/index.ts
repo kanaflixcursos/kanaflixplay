@@ -123,9 +123,9 @@ function buildTrackedClickUrl(input: {
 }
 
 // Light mesh gradient header matching system background
-const meshGradientHeader = `
+const meshGradientHeader = () => `
   <td style="background: linear-gradient(135deg, rgba(230, 118, 53, 0.08) 0%, rgba(255, 255, 255, 0.9) 35%, rgba(31, 77, 71, 0.06) 70%, rgba(230, 118, 53, 0.04) 100%); padding: 48px 32px; text-align: center; border-bottom: 1px solid #f0f0f0;">
-    <img src="${LOGO_URL}" alt="Kanaflix Play" height="40" style="display: block; margin: 0 auto;">
+    <img src="${getLOGO_URL()}" alt="${PLATFORM_NAME}" height="40" style="display: block; margin: 0 auto;">
   </td>
 `;
 
