@@ -43,10 +43,12 @@ import AdminMarketingCoupons from "@/pages/admin/MarketingCoupons";
 import AdminCouponForm from "@/pages/admin/CouponForm";
 import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
 import AdminComboForm from "@/pages/admin/ComboForm";
+import AdminSettings from "@/pages/admin/Settings";
 import ComboCheckout from "@/pages/ComboCheckout";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
+import DynamicMeta from "@/components/DynamicMeta";
 
 const queryClient = new QueryClient();
 
