@@ -38,7 +38,8 @@ import {
   AlertCircle,
   RotateCcw,
   Hourglass,
-  Filter
+  Filter,
+  UserX
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -130,6 +131,9 @@ export default function StudentProfile() {
   const [cancelingOrder, setCancelingOrder] = useState<Order | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [revokingEnrollment, setRevokingEnrollment] = useState<Enrollment | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === 'all') return orders;
@@ -322,6 +326,27 @@ export default function StudentProfile() {
     setCanceling(false);
   };
 
+  const handleRevokeEnrollment = async () => {
+    if (!revokingEnrollment) return;
+    setRevoking(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('id', revokingEnrollment.id);
+
+      if (error) throw error;
+      toast.success(`Acesso ao curso "${revokingEnrollment.course_title}" revogado!`);
+      setRevokeDialogOpen(false);
+      setRevokingEnrollment(null);
+      setLoading(true);
+      await fetchStudentData();
+    } catch {
+      toast.error('Erro ao revogar acesso');
+    }
+    setRevoking(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -409,11 +434,25 @@ export default function StudentProfile() {
                 <h3 className="text-sm font-medium text-muted-foreground">Cursos Matriculados</h3>
                 <div className="space-y-2">
                   {enrollments.map((enrollment) => (
-                    <div key={enrollment.id} className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-sm font-medium">{enrollment.course_title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Matriculado em {formatDate(enrollment.enrolled_at)}
-                      </p>
+                    <div key={enrollment.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{enrollment.course_title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Matriculado em {formatDate(enrollment.enrolled_at)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setRevokingEnrollment(enrollment);
+                          setRevokeDialogOpen(true);
+                        }}
+                        title="Revogar acesso"
+                      >
+                        <UserX className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -614,6 +653,40 @@ export default function StudentProfile() {
                 </>
               ) : (
                 'Confirmar Cancelamento'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Revoke Enrollment Dialog */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <UserX className="h-5 w-5" />
+              Revogar Acesso ao Curso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Tem certeza que deseja revogar o acesso de <strong>{student?.full_name}</strong> ao curso <strong>{revokingEnrollment?.course_title}</strong>?
+              </p>
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm">⚠️ O aluno perderá acesso imediato ao curso. O progresso das aulas será mantido.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeEnrollment}
+              disabled={revoking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {revoking ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Revogando...</>
+              ) : (
+                'Revogar Acesso'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

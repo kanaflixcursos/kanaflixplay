@@ -41,7 +41,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Download, X, ShieldCheck, ShieldOff, BookPlus } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, Eye, Pencil, Trash2, Search, RotateCcw, Download, X, ShieldCheck, ShieldOff, BookPlus, BookX } from 'lucide-react';
 
 import PhoneInput from '@/components/PhoneInput';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -108,6 +108,13 @@ export default function AdminStudents() {
   const [grantStudent, setGrantStudent] = useState<Student | null>(null);
   const [grantCourseId, setGrantCourseId] = useState<string>('');
   const [granting, setGranting] = useState(false);
+
+  // Revoke course dialog
+  const [revokeCourseDialogOpen, setRevokeCourseDialogOpen] = useState(false);
+  const [revokeStudent, setRevokeStudent] = useState<Student | null>(null);
+  const [revokeCourseId, setRevokeCourseId] = useState<string>('');
+  const [revoking, setRevoking] = useState(false);
+  const [revokeEnrolledCourses, setRevokeEnrolledCourses] = useState<Course[]>([]);
 
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
@@ -420,6 +427,56 @@ export default function AdminStudents() {
     setGrantCourseDialogOpen(true);
   };
 
+  const handleOpenRevokeCourseDialog = async (student: Student) => {
+    setRevokeStudent(student);
+    setRevokeCourseId('');
+    setRevoking(false);
+
+    const { data: enrollments } = await supabase
+      .from('course_enrollments')
+      .select('course_id')
+      .eq('user_id', student.user_id);
+
+    if (enrollments && enrollments.length > 0) {
+      const courseIds = enrollments.map(e => e.course_id);
+      const { data: coursesData } = await supabase
+        .from('courses')
+        .select('id, title')
+        .in('id', courseIds);
+      setRevokeEnrolledCourses(coursesData || []);
+    } else {
+      setRevokeEnrolledCourses([]);
+    }
+
+    setRevokeCourseDialogOpen(true);
+  };
+
+  const handleRevokeCourse = async () => {
+    if (!revokeStudent || !revokeCourseId) {
+      toast.error('Selecione um curso');
+      return;
+    }
+
+    setRevoking(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('user_id', revokeStudent.user_id)
+        .eq('course_id', revokeCourseId);
+
+      if (error) throw error;
+
+      const courseName = revokeEnrolledCourses.find(c => c.id === revokeCourseId)?.title || 'curso';
+      toast.success(`Acesso de ${revokeStudent.full_name} ao curso "${courseName}" revogado!`);
+      setRevokeCourseDialogOpen(false);
+      fetchData();
+    } catch {
+      toast.error('Erro ao revogar acesso ao curso');
+    }
+    setRevoking(false);
+  };
+
   const handleGrantCourse = async () => {
     if (!grantStudent || !grantCourseId) {
       toast.error('Selecione um curso');
@@ -442,9 +499,16 @@ export default function AdminStudents() {
         return;
       }
 
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
       const { error } = await supabase
         .from('course_enrollments')
-        .insert({ user_id: grantStudent.user_id, course_id: grantCourseId });
+        .insert({
+          user_id: grantStudent.user_id,
+          course_id: grantCourseId,
+          expires_at: expiresAt.toISOString(),
+        });
 
       if (error) throw error;
 
@@ -518,6 +582,10 @@ export default function AdminStudents() {
         <DropdownMenuItem onClick={() => handleOpenGrantCourseDialog(student)}>
           <BookPlus className="h-4 w-4 mr-2" />
           Conceder Curso
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleOpenRevokeCourseDialog(student)}>
+          <BookX className="h-4 w-4 mr-2" />
+          Revogar Curso
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>
           <RotateCcw className="h-4 w-4 mr-2" />
@@ -860,6 +928,46 @@ export default function AdminStudents() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Revoke Course Dialog */}
+      <AlertDialog open={revokeCourseDialogOpen} onOpenChange={setRevokeCourseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <BookX className="h-5 w-5" />
+              Revogar Acesso ao Curso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>Selecione o curso para revogar o acesso de <strong>{revokeStudent?.full_name}</strong>.</p>
+              {revokeEnrolledCourses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Este aluno não está matriculado em nenhum curso.</p>
+              ) : (
+                <Select value={revokeCourseId} onValueChange={setRevokeCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
+                  <SelectContent>
+                    {revokeEnrolledCourses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm">⚠️ O aluno perderá acesso imediato ao curso. O progresso das aulas será mantido.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeCourse}
+              disabled={revoking || !revokeCourseId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {revoking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Revogando...</> : 'Revogar Acesso'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       
     </div>
