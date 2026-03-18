@@ -121,18 +121,36 @@ export default function CourseDetail() {
     if (enrollments && enrollments.length > 0) {
       const userIds = enrollments.map(e => e.user_id);
 
-      const [{ data: profiles }, { data: orders }] = await Promise.all([
+      // Get combo IDs that include this course
+      const { data: comboCourses } = await supabase
+        .from('combo_courses')
+        .select('combo_id')
+        .eq('course_id', courseId!);
+
+      const comboIds = (comboCourses || []).map(cc => cc.combo_id);
+
+      const [{ data: profiles }, { data: directOrders }, { data: comboOrders }] = await Promise.all([
         supabase
           .from('profiles')
           .select('user_id, full_name, email, avatar_url')
           .in('user_id', userIds),
         supabase
           .from('orders')
-          .select('user_id, amount, status, course_id')
+          .select('user_id, amount')
           .eq('course_id', courseId!)
           .eq('status', 'paid')
           .in('user_id', userIds),
+        comboIds.length > 0
+          ? supabase
+              .from('orders')
+              .select('user_id, amount')
+              .in('combo_id', comboIds)
+              .eq('status', 'paid')
+              .in('user_id', userIds)
+          : Promise.resolve({ data: [] as { user_id: string; amount: number }[] }),
       ]);
+
+      const allOrders = [...(directOrders || []), ...(comboOrders || [])];
 
       const profileMap = new Map(
         (profiles || []).map(p => [p.user_id, p])
