@@ -71,6 +71,7 @@ const App = () => (
               <Route path="/checkout/:courseId" element={<Checkout />} />
               
               {/* Student Routes */}
+              {/* Student Home */}
               <Route path="/" element={<Index />} />
               <Route
                 path="/courses/:courseId"
