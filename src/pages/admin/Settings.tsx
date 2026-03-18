@@ -251,6 +251,7 @@ export default function Settings() {
                         aspectRatio="4/1"
                         maxWidth={800}
                         maxHeight={200}
+                        label="Enviar Logo"
                       />
                     </FormControl>
                   </FormItem>
