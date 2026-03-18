@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStoredLandingUrl } from '@/lib/utm';
+import { getProductionUrl } from '@/hooks/useSiteSettings';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
