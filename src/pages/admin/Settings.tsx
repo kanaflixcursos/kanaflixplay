@@ -135,12 +135,16 @@ export default function Settings() {
           {/* ── Identidade da Plataforma ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
-              <div className="flex items-center gap-3">
-                <div className="icon-box-sm"><Globe /></div>
-                <div>
-                  <CardTitle className="text-base">Identidade da Plataforma</CardTitle>
-                  <CardDescription>Nome, descrição e URLs usados em todo o sistema</CardDescription>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-3 text-left">
+                  <div className="icon-box">
+                    <Building2 />
+                  </div>
+                  <span className="text-base">Identidade da Plataforma</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Nome, descrição e URLs usados em todo o sistema
+                </p>
               </div>
             </CardHeader>
             <CardContent className="dashboard-card-content space-y-4">
@@ -195,19 +199,21 @@ export default function Settings() {
           {/* ── Logo ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
-              <div className="flex items-center gap-3">
-                <div className="icon-box-sm"><Image /></div>
-                <div>
-                  <CardTitle className="text-base">Logo da Plataforma</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    Logo exibida na sidebar e em e-mails
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>Use imagem horizontal (ex: 400×100px). PNG ou SVG com fundo transparente.</TooltipContent>
-                    </Tooltip>
-                  </CardDescription>
+              <div className="flex flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-3 text-left">
+                  <div className="icon-box">
+                    <ImageIcon />
+                  </div>
+                  <span className="text-base">Logo da Plataforma</span>
+                </CardTitle>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span>Logo exibida na sidebar e em e-mails</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3.5 w-3.5 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>Use imagem horizontal (ex: 400×100px). PNG ou SVG com fundo transparente.</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </CardHeader>
@@ -233,12 +239,16 @@ export default function Settings() {
           {/* ── Cor Primária ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
-              <div className="flex items-center gap-3">
-                <div className="icon-box-sm"><Palette /></div>
-                <div>
-                  <CardTitle className="text-base">Cor Primária</CardTitle>
-                  <CardDescription>Altera a cor principal do sistema inteiro</CardDescription>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-3 text-left">
+                  <div className="icon-box">
+                    <Palette />
+                  </div>
+                  <span className="text-base">Cor Primária</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Altera a cor principal do sistema inteiro
+                </p>
               </div>
             </CardHeader>
             <CardContent className="dashboard-card-content">
@@ -252,14 +262,14 @@ export default function Settings() {
                           type="button"
                           onClick={() => field.onChange(key)}
                           className={cn(
-                            'flex flex-col items-center gap-1.5 p-2 rounded-lg border-2 transition-all',
+                            'flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-all',
                             selectedColor === key
                               ? 'border-foreground shadow-sm scale-105'
                               : 'border-transparent hover:border-border'
                           )}
                         >
                           <div
-                            className="w-10 h-10 rounded-full border border-border shadow-sm"
+                            className="h-10 w-10 rounded-full border border-border shadow-sm"
                             style={{ backgroundColor: preset.hex }}
                           />
                           <span className="text-xs font-medium text-muted-foreground">{preset.label}</span>
@@ -275,12 +285,16 @@ export default function Settings() {
           {/* ── E-mail Transacional (read-only) ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
-              <div className="flex items-center gap-3">
-                <div className="icon-box-sm"><Mail /></div>
-                <div>
-                  <CardTitle className="text-base">E-mail Transacional</CardTitle>
-                  <CardDescription>Configurações do remetente definidas no Resend</CardDescription>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-3 text-left">
+                  <div className="icon-box">
+                    <Mail />
+                  </div>
+                  <span className="text-base">E-mail Transacional</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Configurações do remetente definidas no Resend
+                </p>
               </div>
             </CardHeader>
             <CardContent className="dashboard-card-content">
@@ -308,12 +322,16 @@ export default function Settings() {
           {/* ── Integrações Externas ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
-              <div className="flex items-center gap-3">
-                <div className="icon-box-sm"><Code /></div>
-                <div>
-                  <CardTitle className="text-base">Integrações Externas</CardTitle>
-                  <CardDescription>Tags e chaves de API de serviços terceiros</CardDescription>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <CardTitle className="flex items-center gap-3 text-left">
+                  <div className="icon-box">
+                    <PlugZap />
+                  </div>
+                  <span className="text-base">Integrações Externas</span>
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Tags e chaves de API de serviços terceiros
+                </p>
               </div>
             </CardHeader>
             <CardContent className="dashboard-card-content space-y-4">
