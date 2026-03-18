@@ -88,7 +88,9 @@ export default function CourseDetail() {
   const [students, setStudents] = useState<EnrolledStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [revokingStudent, setRevokingStudent] = useState<EnrolledStudent | null>(null);
+  const [revoking, setRevoking] = useState(false);
   useEffect(() => {
     if (!courseId) return;
     fetchData();

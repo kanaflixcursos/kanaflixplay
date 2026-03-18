@@ -929,6 +929,46 @@ export default function AdminStudents() {
         </DialogContent>
       </Dialog>
 
+      {/* Revoke Course Dialog */}
+      <AlertDialog open={revokeCourseDialogOpen} onOpenChange={setRevokeCourseDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <BookX className="h-5 w-5" />
+              Revogar Acesso ao Curso
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>Selecione o curso para revogar o acesso de <strong>{revokeStudent?.full_name}</strong>.</p>
+              {revokeEnrolledCourses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Este aluno não está matriculado em nenhum curso.</p>
+              ) : (
+                <Select value={revokeCourseId} onValueChange={setRevokeCourseId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um curso" /></SelectTrigger>
+                  <SelectContent>
+                    {revokeEnrolledCourses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>{course.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm">⚠️ O aluno perderá acesso imediato ao curso. O progresso das aulas será mantido.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRevokeCourse}
+              disabled={revoking || !revokeCourseId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {revoking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Revogando...</> : 'Revogar Acesso'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       
     </div>
   );
