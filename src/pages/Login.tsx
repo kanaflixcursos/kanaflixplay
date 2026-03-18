@@ -94,9 +94,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://cursos.kanaflix.com.br'
-      : window.location.origin;
+    const baseUrl = await getProductionUrl();
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
       redirectTo: `${baseUrl}/reset-password`,

@@ -162,9 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Use the published URL for email confirmation redirect
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://cursos.kanaflix.com.br'
-      : window.location.origin;
+    const baseUrl = await getProductionUrl();
     
     // If there's a custom redirect, include it in the email link
     const emailRedirectUrl = redirectTo && redirectTo !== '/' 
