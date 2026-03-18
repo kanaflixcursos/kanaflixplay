@@ -2,7 +2,18 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+
+async function getProductionUrl(): Promise<string> {
+  try {
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "site_config").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      return (data.value as Record<string, string>).production_url || DEFAULT_PRODUCTION_URL;
+    }
+  } catch { /* use default */ }
+  return DEFAULT_PRODUCTION_URL;
+}
 
 // 1x1 transparent GIF
 const PIXEL = Uint8Array.from(atob("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"), (c) => c.charCodeAt(0));
