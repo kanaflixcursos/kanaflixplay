@@ -157,7 +157,7 @@ export default function CourseDetail() {
       );
 
       const orderTotals = new Map<string, number>();
-      (orders || []).forEach(o => {
+      allOrders.forEach(o => {
         orderTotals.set(o.user_id, (orderTotals.get(o.user_id) || 0) + (o.amount || 0));
       });
 
