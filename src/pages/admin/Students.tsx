@@ -68,6 +68,7 @@ interface Course {
 }
 
 export default function AdminStudents() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [students, setStudents] = useState<Student[]>([]);
