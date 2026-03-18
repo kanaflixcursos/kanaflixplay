@@ -109,6 +109,13 @@ export default function AdminStudents() {
   const [grantCourseId, setGrantCourseId] = useState<string>('');
   const [granting, setGranting] = useState(false);
 
+  // Revoke course dialog
+  const [revokeCourseDialogOpen, setRevokeCourseDialogOpen] = useState(false);
+  const [revokeStudent, setRevokeStudent] = useState<Student | null>(null);
+  const [revokeCourseId, setRevokeCourseId] = useState<string>('');
+  const [revoking, setRevoking] = useState(false);
+  const [revokeEnrolledCourses, setRevokeEnrolledCourses] = useState<Course[]>([]);
+
   const fetchData = async () => {
     const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
