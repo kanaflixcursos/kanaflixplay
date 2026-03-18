@@ -504,11 +504,12 @@ Deno.serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
-    if (!RESEND_API_KEY) {
+    const resendKey = await getResendApiKey();
+    if (!resendKey) {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
-    const resend = new Resend(RESEND_API_KEY);
+    const resend = new Resend(resendKey);
 
     const emailResponse = await resend.emails.send({
       from: `${siteConfig.email_sender_name} <${siteConfig.email_sender_address}>`,
