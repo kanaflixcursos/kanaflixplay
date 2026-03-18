@@ -194,7 +194,7 @@ const templates = {
     
     return emailTemplate(`
       <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily}; letter-spacing: -0.03em;">
-        Bem-vindo ao Kanaflix Play! 🎉
+        Bem-vindo ao ${PLATFORM_NAME}! 🎉
       </h1>
       <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily};">
         Olá${data.userName ? ` <strong style="color: ${brand.text}; font-weight: 500;">${data.userName}</strong>` : ''}! Confirme seu e-mail para começar:
@@ -203,7 +203,7 @@ const templates = {
       <p style="margin: 0; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
         Se você não criou esta conta, ignore este e-mail.
       </p>
-    `, "Confirme seu e-mail para acessar o Kanaflix Play");
+    `, `Confirme seu e-mail para acessar o ${PLATFORM_NAME}`);
   },
 
   purchaseConfirmation: (data: {
