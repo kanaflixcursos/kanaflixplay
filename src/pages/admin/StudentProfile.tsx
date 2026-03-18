@@ -326,6 +326,27 @@ export default function StudentProfile() {
     setCanceling(false);
   };
 
+  const handleRevokeEnrollment = async () => {
+    if (!revokingEnrollment) return;
+    setRevoking(true);
+    try {
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('id', revokingEnrollment.id);
+
+      if (error) throw error;
+      toast.success(`Acesso ao curso "${revokingEnrollment.course_title}" revogado!`);
+      setRevokeDialogOpen(false);
+      setRevokingEnrollment(null);
+      setLoading(true);
+      await fetchStudentData();
+    } catch {
+      toast.error('Erro ao revogar acesso');
+    }
+    setRevoking(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
