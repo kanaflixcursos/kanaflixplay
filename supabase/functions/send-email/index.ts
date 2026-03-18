@@ -367,6 +367,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Fetch dynamic site configuration
+    const siteConfig = await fetchSiteConfig();
+    PRODUCTION_URL = siteConfig.production_url;
+    PLATFORM_NAME = siteConfig.platform_name;
+
     // Verify caller is authenticated (internal service calls use anon key + auth header)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
