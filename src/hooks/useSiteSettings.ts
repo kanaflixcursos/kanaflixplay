@@ -66,7 +66,12 @@ export const PRIMARY_COLOR_PRESETS: Record<string, {
     light: { primary: '338 76% 42%', ring: '338 76% 42%', sidebarPrimary: '338 76% 42%', sidebarAccent: '338 76% 97%', sidebarAccentFg: '338 76% 42%', accentFg: '338 76% 42%', chart1: '338 76% 42%' },
     dark: { primary: '338 76% 58%', ring: '338 76% 58%', sidebarPrimary: '338 76% 58%', sidebarAccent: '338 40% 16%', sidebarAccentFg: '338 76% 63%', accentFg: '338 76% 63%', chart1: '338 76% 58%' },
   },
-};
+  lime: {
+    label: 'Verde Limão',
+    hex: '#65A30D',
+    light: { primary: '85 70% 35%', ring: '85 70% 35%', sidebarPrimary: '85 70% 35%', sidebarAccent: '85 70% 97%', sidebarAccentFg: '85 70% 35%', accentFg: '85 70% 35%', chart1: '85 70% 35%' },
+    dark: { primary: '85 70% 50%', ring: '85 70% 50%', sidebarPrimary: '85 70% 50%', sidebarAccent: '85 40% 16%', sidebarAccentFg: '85 70% 55%', accentFg: '85 70% 55%', chart1: '85 70% 50%' },
+  },
 
 const DEFAULT_SETTINGS: SiteSettings = {
   platform_name: 'Kanaflix Play',
