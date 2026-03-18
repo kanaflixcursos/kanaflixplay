@@ -399,7 +399,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'welcome':
         html = templates.welcome(data as { userName: string; confirmUrl: string });
-        subject = "Confirme seu e-mail - Kanaflix Play";
+        subject = `Confirme seu e-mail - ${PLATFORM_NAME}`;
         break;
 
       case 'purchase_confirmation':
