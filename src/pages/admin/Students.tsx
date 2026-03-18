@@ -188,6 +188,12 @@ export default function AdminStudents() {
   );
 
   const handleToggleRole = async (student: Student) => {
+    // Prevent admins from changing their own role
+    if (student.user_id === user?.id) {
+      toast.error('Você não pode alterar sua própria função');
+      return;
+    }
+
     const newRole = student.role === 'admin' ? 'student' : 'admin';
     const { error } = await supabase
       .from('user_roles')
