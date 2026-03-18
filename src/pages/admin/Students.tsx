@@ -583,6 +583,10 @@ export default function AdminStudents() {
           <BookPlus className="h-4 w-4 mr-2" />
           Conceder Curso
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleOpenRevokeCourseDialog(student)}>
+          <BookX className="h-4 w-4 mr-2" />
+          Revogar Curso
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleOpenResetDialog(student)}>
           <RotateCcw className="h-4 w-4 mr-2" />
           Resetar Progresso
