@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getStoredUtm } from '@/lib/utm';
 import { getVisitorId, linkVisitorToUser, trackEvent } from '@/hooks/useTrackEvent';
+import { getProductionUrl } from '@/hooks/useSiteSettings';
 
 type UserRole = 'admin' | 'student' | null;
 
