@@ -302,7 +302,8 @@ export default function Settings() {
                 </FormItem>
               )} />
             </CardContent>
-          </Card>
+            </Card>
+          </div>
 
           {/* ── E-mail Transacional (read-only) ── */}
           <Card>
