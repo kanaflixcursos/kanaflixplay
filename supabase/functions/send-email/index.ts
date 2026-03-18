@@ -440,7 +440,7 @@ Deno.serve(async (req) => {
           amount: number;
           orderId: string;
         });
-        subject = "Reembolso Processado - Kanaflix Play";
+        subject = `Reembolso Processado - ${PLATFORM_NAME}`;
         break;
 
       case 'campaign': {
