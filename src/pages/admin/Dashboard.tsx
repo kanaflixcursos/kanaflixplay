@@ -49,6 +49,7 @@ const fadeUp = {
 
 export default function AdminDashboard() {
   const [activePeriod, setActivePeriod] = useState<QuickPeriod | 'custom'>('1m');
+  const { data: settings } = useSiteSettings();
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(
     getDateRangeFromPeriod('1m')
   );
