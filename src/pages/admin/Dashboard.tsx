@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import DashboardRevenueCard from '@/components/admin/DashboardRevenueCard';
 import DashboardStudentsCard from '@/components/admin/DashboardStudentsCard';
 import DashboardCoursesCard from '@/components/admin/DashboardCoursesCard';
@@ -48,6 +49,7 @@ const fadeUp = {
 
 export default function AdminDashboard() {
   const [activePeriod, setActivePeriod] = useState<QuickPeriod | 'custom'>('1m');
+  const { data: settings } = useSiteSettings();
   const [dateRange, setDateRange] = useState<DashboardDateRange | null>(
     getDateRangeFromPeriod('1m')
   );
@@ -82,7 +84,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Dashboard Administrativo</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Visão geral da plataforma Kanaflix Play
+            Visão geral da plataforma {settings?.platform_name || ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1">

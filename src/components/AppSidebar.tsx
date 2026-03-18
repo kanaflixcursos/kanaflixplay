@@ -32,6 +32,7 @@ import {
   Megaphone,
   Trophy,
   Wallet,
+  Settings,
 } from 'lucide-react';
 
 const studentMenuItems = [
@@ -50,6 +51,7 @@ const adminMenuItems = [
   { title: 'Carteira', url: '/admin/wallet', icon: Wallet },
   { title: 'Banner Destaque', url: '/admin/featured-banner', icon: Star },
   { title: 'Marketing', url: '/admin/marketing', icon: Megaphone },
+  { title: 'Configurações', url: '/admin/settings', icon: Settings },
 ];
 
 interface AppSidebarProps {

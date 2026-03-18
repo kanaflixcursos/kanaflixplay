@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
@@ -32,6 +33,7 @@ export default function MarketingCombos() {
   const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const { data: settings } = useSiteSettings();
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -188,7 +190,7 @@ export default function MarketingCombos() {
     },
   ];
 
-  const checkoutLink = linkCombo ? `https://cursos.kanaflix.com.br/checkout/combo/${linkCombo.id}` : '';
+  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/checkout/combo/${linkCombo.id}` : '';
 
   return (
     <div className="space-y-6">

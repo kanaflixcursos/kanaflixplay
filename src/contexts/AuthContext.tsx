@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getStoredUtm } from '@/lib/utm';
 import { getVisitorId, linkVisitorToUser, trackEvent } from '@/hooks/useTrackEvent';
+import { getProductionUrl } from '@/hooks/useSiteSettings';
 
 type UserRole = 'admin' | 'student' | null;
 
@@ -161,9 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Use the published URL for email confirmation redirect
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://cursos.kanaflix.com.br'
-      : window.location.origin;
+    const baseUrl = await getProductionUrl();
     
     // If there's a custom redirect, include it in the email link
     const emailRedirectUrl = redirectTo && redirectTo !== '/' 

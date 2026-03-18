@@ -1,7 +1,44 @@
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+const DEFAULT_PLATFORM_NAME = "Kanaflix Play";
+const DEFAULT_SENDER_NAME = "Kanaflix Play";
+const DEFAULT_SENDER_ADDRESS = "noreply@cursos.kanaflix.com.br";
+
+interface SiteConfig {
+  production_url: string;
+  platform_name: string;
+  email_sender_name: string;
+  email_sender_address: string;
+}
+
+async function fetchSiteConfig(): Promise<SiteConfig> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(url, key);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "site_config").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      const v = data.value as Record<string, string>;
+      return {
+        production_url: v.production_url || DEFAULT_PRODUCTION_URL,
+        platform_name: v.platform_name || DEFAULT_PLATFORM_NAME,
+        email_sender_name: v.email_sender_name || DEFAULT_SENDER_NAME,
+        email_sender_address: v.email_sender_address || DEFAULT_SENDER_ADDRESS,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to fetch site config, using defaults:", e);
+  }
+  return {
+    production_url: DEFAULT_PRODUCTION_URL,
+    platform_name: DEFAULT_PLATFORM_NAME,
+    email_sender_name: DEFAULT_SENDER_NAME,
+    email_sender_address: DEFAULT_SENDER_ADDRESS,
+  };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +62,9 @@ const brand = {
 };
 
 // Logo URL (dark version for light header)
-const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
+let PRODUCTION_URL = DEFAULT_PRODUCTION_URL;
+let PLATFORM_NAME = DEFAULT_PLATFORM_NAME;
+const getLOGO_URL = () => `${PRODUCTION_URL}/logo-kanaflix.png`;
 
 // Google Sans font import for emails
 const fontImport = `
@@ -84,9 +123,9 @@ function buildTrackedClickUrl(input: {
 }
 
 // Light mesh gradient header matching system background
-const meshGradientHeader = `
+const meshGradientHeader = () => `
   <td style="background: linear-gradient(135deg, rgba(230, 118, 53, 0.08) 0%, rgba(255, 255, 255, 0.9) 35%, rgba(31, 77, 71, 0.06) 70%, rgba(230, 118, 53, 0.04) 100%); padding: 48px 32px; text-align: center; border-bottom: 1px solid #f0f0f0;">
-    <img src="${LOGO_URL}" alt="Kanaflix Play" height="40" style="display: block; margin: 0 auto;">
+    <img src="${getLOGO_URL()}" alt="${PLATFORM_NAME}" height="40" style="display: block; margin: 0 auto;">
   </td>
 `;
 
@@ -98,7 +137,7 @@ const emailTemplate = (content: string, preheader = "") => `
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Kanaflix Play</title>
+  <title>${PLATFORM_NAME}</title>
   ${fontImport}
 </head>
 <body style="margin: 0; padding: 0; font-family: ${fontFamily}; background-color: ${brand.bg}; -webkit-font-smoothing: antialiased;">
@@ -109,7 +148,7 @@ const emailTemplate = (content: string, preheader = "") => `
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 520px; background-color: ${brand.white}; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
           <!-- Header with mesh gradient -->
           <tr>
-            ${meshGradientHeader}
+            ${meshGradientHeader()}
           </tr>
           <!-- Content -->
           <tr>
@@ -121,10 +160,10 @@ const emailTemplate = (content: string, preheader = "") => `
           <tr>
             <td style="padding: 24px 28px; border-top: 1px solid ${brand.border}; text-align: center; background-color: #fafafa;">
               <p style="margin: 0; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
-                © ${new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.
+                © ${new Date().getFullYear()} ${PLATFORM_NAME}. Todos os direitos reservados.
               </p>
               <p style="margin: 10px 0 0; font-size: 13px; font-family: ${fontFamily};">
-                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none; font-weight: 500;">cursos.kanaflix.com.br</a>
+                <a href="${PRODUCTION_URL}" style="color: ${brand.primary}; text-decoration: none; font-weight: 500;">${PRODUCTION_URL.replace('https://', '')}</a>
               </p>
             </td>
           </tr>
@@ -155,7 +194,7 @@ const templates = {
     
     return emailTemplate(`
       <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily}; letter-spacing: -0.03em;">
-        Bem-vindo ao Kanaflix Play! 🎉
+        Bem-vindo ao ${PLATFORM_NAME}! 🎉
       </h1>
       <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily};">
         Olá${data.userName ? ` <strong style="color: ${brand.text}; font-weight: 500;">${data.userName}</strong>` : ''}! Confirme seu e-mail para começar:
@@ -164,7 +203,7 @@ const templates = {
       <p style="margin: 0; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
         Se você não criou esta conta, ignore este e-mail.
       </p>
-    `, "Confirme seu e-mail para acessar o Kanaflix Play");
+    `, `Confirme seu e-mail para acessar o ${PLATFORM_NAME}`);
   },
 
   purchaseConfirmation: (data: {
@@ -328,6 +367,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Fetch dynamic site configuration
+    const siteConfig = await fetchSiteConfig();
+    PRODUCTION_URL = siteConfig.production_url;
+    PLATFORM_NAME = siteConfig.platform_name;
+
     // Verify caller is authenticated (internal service calls use anon key + auth header)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -355,7 +399,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'welcome':
         html = templates.welcome(data as { userName: string; confirmUrl: string });
-        subject = "Confirme seu e-mail - Kanaflix Play";
+        subject = `Confirme seu e-mail - ${PLATFORM_NAME}`;
         break;
 
       case 'purchase_confirmation':
@@ -368,7 +412,7 @@ Deno.serve(async (req) => {
           orderId: string;
           installments?: number;
         });
-        subject = "Pagamento Confirmado - Kanaflix Play";
+        subject = `Pagamento Confirmado - ${PLATFORM_NAME}`;
         break;
 
       case 'payment_pending':
@@ -385,8 +429,8 @@ Deno.serve(async (req) => {
         };
         html = templates.paymentPending(pendingData);
         subject = pendingData.paymentMethod === 'pix' 
-          ? "PIX Gerado - Kanaflix Play" 
-          : "Boleto Gerado - Kanaflix Play";
+          ? `PIX Gerado - ${PLATFORM_NAME}` 
+          : `Boleto Gerado - ${PLATFORM_NAME}`;
         break;
 
       case 'refund_confirmation':
@@ -396,12 +440,12 @@ Deno.serve(async (req) => {
           amount: number;
           orderId: string;
         });
-        subject = "Reembolso Processado - Kanaflix Play";
+        subject = `Reembolso Processado - ${PLATFORM_NAME}`;
         break;
 
       case 'campaign': {
         const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string; campaignTag?: string };
-        subject = campaignData.subject || 'Novidades - Kanaflix Play';
+        subject = campaignData.subject || `Novidades - ${PLATFORM_NAME}`;
         const campaignSlug = campaignData.campaignTag || campaignData.campaignId || 'email';
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
@@ -452,7 +496,7 @@ Deno.serve(async (req) => {
     const resend = new Resend(RESEND_API_KEY);
 
     const emailResponse = await resend.emails.send({
-      from: "Kanaflix Play <noreply@cursos.kanaflix.com.br>",
+      from: `${siteConfig.email_sender_name} <${siteConfig.email_sender_address}>`,
       to: [to],
       subject,
       html,

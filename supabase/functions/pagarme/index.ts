@@ -1,5 +1,18 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+
+async function getSiteProductionUrl(supabaseUrl: string, serviceRoleKey: string): Promise<string> {
+  try {
+    const sb = createClient(supabaseUrl, serviceRoleKey);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "site_config").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      return (data.value as Record<string, string>).production_url || DEFAULT_PRODUCTION_URL;
+    }
+  } catch { /* use default */ }
+  return DEFAULT_PRODUCTION_URL;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -21,6 +34,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const productionUrl = await getSiteProductionUrl(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const authHeader = req.headers.get('Authorization');
     
@@ -620,7 +634,7 @@ async function handleCreateOrder(
         data: {
           userName: profile.full_name || '',
           courseName: itemTitle,
-          courseUrl: comboId ? `https://cursos.kanaflix.com.br/courses` : `https://cursos.kanaflix.com.br/courses/${courseId}`,
+          courseUrl: comboId ? `${productionUrl}/courses` : `${productionUrl}/courses/${courseId}`,
           amount: order.amount,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
@@ -817,8 +831,8 @@ async function handleChargePaid(supabase: any, data: any) {
           userName: profile.full_name || '',
           courseName: itemTitle,
           courseUrl: order.combo_id 
-            ? `https://cursos.kanaflix.com.br/courses` 
-            : `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
+            ? `${productionUrl}/courses` 
+            : `${productionUrl}/courses/${order.course_id}`,
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,

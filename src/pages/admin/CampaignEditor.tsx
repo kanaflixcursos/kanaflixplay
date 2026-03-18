@@ -13,6 +13,7 @@ import { ArrowLeft, Save, Send, Trash2, ChevronUp, ChevronDown, Type, AlignLeft,
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useSiteSettings, DEFAULT_SETTINGS } from '@/hooks/useSiteSettings';
 import { leadStatusMap } from '@/lib/lead-constants';
 
 // ── Block types & helpers ──────────────────────────────────────────────
@@ -57,8 +58,6 @@ const brand = {
   border: '#e5e5e5',
 };
 
-const PRODUCTION_URL = 'https://cursos.kanaflix.com.br';
-const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 function slugify(text: string): string {
@@ -118,22 +117,23 @@ function blocksToHtml(blocks: EmailBlock[]): string {
   return html + '\n' + BLOCKS_MARKER + JSON.stringify(blocks) + BLOCKS_MARKER_END;
 }
 
-function renderPreviewHtml(blocks: EmailBlock[], subject: string): string {
+function renderPreviewHtml(blocks: EmailBlock[], subject: string, platformName: string, productionUrl: string): string {
   const content = blocksToHtml(blocks);
+  const logoUrl = `${productionUrl}/logo-kanaflix.png`;
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>a{pointer-events:none!important;cursor:default!important;}</style></head>
 <body style="margin:0;padding:0;font-family:${fontFamily};background-color:${brand.bg};-webkit-font-smoothing:antialiased;">
 <div style="display:none;max-height:0;overflow:hidden;">${subject}</div>
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${brand.bg};padding:48px 20px;"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background-color:${brand.white};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
 <tr><td style="background:linear-gradient(135deg,rgba(230,118,53,0.08) 0%,rgba(255,255,255,0.9) 35%,rgba(31,77,71,0.06) 70%,rgba(230,118,53,0.04) 100%);padding:48px 32px;text-align:center;border-bottom:1px solid #f0f0f0;">
-<img src="${LOGO_URL}" alt="Kanaflix Play" height="40" style="display:block;margin:0 auto;">
+<img src="${logoUrl}" alt="${platformName}" height="40" style="display:block;margin:0 auto;">
 </td></tr>
 <tr><td style="padding:32px 28px;font-family:${fontFamily};">
 ${content}
 </td></tr>
 <tr><td style="padding:24px 28px;border-top:1px solid ${brand.border};text-align:center;background-color:#fafafa;">
-<p style="margin:0;font-size:13px;color:${brand.textMuted};font-family:${fontFamily};">© ${new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.</p>
-<p style="margin:10px 0 0;font-size:13px;font-family:${fontFamily};"><a href="${PRODUCTION_URL}" style="color:${brand.primary};text-decoration:none;font-weight:500;">cursos.kanaflix.com.br</a></p>
+<p style="margin:0;font-size:13px;color:${brand.textMuted};font-family:${fontFamily};">© ${new Date().getFullYear()} ${platformName}. Todos os direitos reservados.</p>
+<p style="margin:10px 0 0;font-size:13px;font-family:${fontFamily};"><a href="${productionUrl}" style="color:${brand.primary};text-decoration:none;font-weight:500;">${productionUrl.replace('https://', '')}</a></p>
 </td></tr>
 </table>
 </td></tr></table></body></html>`;
@@ -317,6 +317,9 @@ export default function CampaignEditor() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const navigate = useNavigate();
   const isNew = campaignId === 'new';
+  const { data: siteSettings } = useSiteSettings();
+  const platformName = siteSettings?.platform_name || DEFAULT_SETTINGS.platform_name;
+  const productionUrl = siteSettings?.production_url || DEFAULT_SETTINGS.production_url;
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -374,7 +377,7 @@ export default function CampaignEditor() {
 
   useEffect(() => { fetchCampaign(); fetchTags(); }, [fetchCampaign, fetchTags]);
 
-  const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject), [blocks, subject]);
+  const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject, platformName, productionUrl), [blocks, subject, platformName, productionUrl]);
   const finalHtml = useMemo(() => blocksToHtml(blocks), [blocks]);
 
   const buildPayload = () => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getStoredLandingUrl } from '@/lib/utm';
+import { getProductionUrl } from '@/hooks/useSiteSettings';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,9 +94,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     
-    const baseUrl = import.meta.env.PROD 
-      ? 'https://cursos.kanaflix.com.br'
-      : window.location.origin;
+    const baseUrl = await getProductionUrl();
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase().trim(), {
       redirectTo: `${baseUrl}/reset-password`,

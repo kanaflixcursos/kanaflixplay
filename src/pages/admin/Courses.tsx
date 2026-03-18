@@ -71,6 +71,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useAdminCourses, useCategories, usePandaFolders, useInvalidateCourses } from '@/hooks/queries/useCourses';
 import { deleteCourse, syncPandavideoLessons } from '@/services/courseService';
 import type { AdminCourse } from '@/services/courseService';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export default function AdminCourses() {
   const navigate = useNavigate();
@@ -80,6 +81,7 @@ export default function AdminCourses() {
   const { data: categories = [] } = useCategories();
   const { data: pandaFolders = [] } = usePandaFolders();
   const invalidateCourses = useInvalidateCourses();
+  const { data: settings } = useSiteSettings();
 
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -171,8 +173,8 @@ export default function AdminCourses() {
     return `${mins}min`;
   };
 
-  const getCourseLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/checkout/${course.id}`;
-  const getPreviewLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/courses/${course.id}`;
+  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/checkout/${course.id}`;
+  const getPreviewLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/courses/${course.id}`;
 
   const handleCopyLink = async (course: AdminCourse) => {
     await navigator.clipboard.writeText(getCourseLink(course));
