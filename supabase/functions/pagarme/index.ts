@@ -633,7 +633,7 @@ async function handleCreateOrder(
         data: {
           userName: profile.full_name || '',
           courseName: itemTitle,
-          courseUrl: comboId ? `https://cursos.kanaflix.com.br/courses` : `https://cursos.kanaflix.com.br/courses/${courseId}`,
+          courseUrl: comboId ? `${productionUrl}/courses` : `${productionUrl}/courses/${courseId}`,
           amount: order.amount,
           paymentMethod: 'Cartão de Crédito',
           orderId: order.id,
