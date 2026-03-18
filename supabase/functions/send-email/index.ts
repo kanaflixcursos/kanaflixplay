@@ -1,7 +1,44 @@
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+const DEFAULT_PLATFORM_NAME = "Kanaflix Play";
+const DEFAULT_SENDER_NAME = "Kanaflix Play";
+const DEFAULT_SENDER_ADDRESS = "noreply@cursos.kanaflix.com.br";
+
+interface SiteConfig {
+  production_url: string;
+  platform_name: string;
+  email_sender_name: string;
+  email_sender_address: string;
+}
+
+async function fetchSiteConfig(): Promise<SiteConfig> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const sb = createClient(url, key);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "site_config").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      const v = data.value as Record<string, string>;
+      return {
+        production_url: v.production_url || DEFAULT_PRODUCTION_URL,
+        platform_name: v.platform_name || DEFAULT_PLATFORM_NAME,
+        email_sender_name: v.email_sender_name || DEFAULT_SENDER_NAME,
+        email_sender_address: v.email_sender_address || DEFAULT_SENDER_ADDRESS,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to fetch site config, using defaults:", e);
+  }
+  return {
+    production_url: DEFAULT_PRODUCTION_URL,
+    platform_name: DEFAULT_PLATFORM_NAME,
+    email_sender_name: DEFAULT_SENDER_NAME,
+    email_sender_address: DEFAULT_SENDER_ADDRESS,
+  };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
