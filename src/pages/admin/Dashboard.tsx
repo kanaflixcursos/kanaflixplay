@@ -84,7 +84,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Dashboard Administrativo</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Visão geral da plataforma Kanaflix Play
+            Visão geral da plataforma {settings?.platform_name || ''}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1">
