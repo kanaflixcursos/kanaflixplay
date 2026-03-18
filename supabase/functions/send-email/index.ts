@@ -429,8 +429,8 @@ Deno.serve(async (req) => {
         };
         html = templates.paymentPending(pendingData);
         subject = pendingData.paymentMethod === 'pix' 
-          ? "PIX Gerado - Kanaflix Play" 
-          : "Boleto Gerado - Kanaflix Play";
+          ? `PIX Gerado - ${PLATFORM_NAME}` 
+          : `Boleto Gerado - ${PLATFORM_NAME}`;
         break;
 
       case 'refund_confirmation':
