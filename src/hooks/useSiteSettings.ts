@@ -72,6 +72,7 @@ export const PRIMARY_COLOR_PRESETS: Record<string, {
     light: { primary: '85 70% 35%', ring: '85 70% 35%', sidebarPrimary: '85 70% 35%', sidebarAccent: '85 70% 97%', sidebarAccentFg: '85 70% 35%', accentFg: '85 70% 35%', chart1: '85 70% 35%' },
     dark: { primary: '85 70% 50%', ring: '85 70% 50%', sidebarPrimary: '85 70% 50%', sidebarAccent: '85 40% 16%', sidebarAccentFg: '85 70% 55%', accentFg: '85 70% 55%', chart1: '85 70% 50%' },
   },
+};
 
 const DEFAULT_SETTINGS: SiteSettings = {
   platform_name: 'Kanaflix Play',
