@@ -58,8 +58,6 @@ const brand = {
   border: '#e5e5e5',
 };
 
-const PRODUCTION_URL = 'https://cursos.kanaflix.com.br';
-const LOGO_URL = `${PRODUCTION_URL}/logo-kanaflix.png`;
 const fontFamily = "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 function slugify(text: string): string {
