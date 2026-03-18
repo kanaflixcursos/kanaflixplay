@@ -91,7 +91,27 @@ export default function Settings() {
     if (apiKeys) apiForm.reset(apiKeys);
   }, [apiKeys, apiForm]);
 
+  const { theme } = useTheme();
   const selectedColor = form.watch('primary_color') || 'green';
+
+  // Apply primary color in real-time as user picks a preset
+  useEffect(() => {
+    const preset = PRIMARY_COLOR_PRESETS[selectedColor];
+    if (!preset) return;
+
+    const isDark = theme === 'dark';
+    const colors = isDark ? preset.dark : preset.light;
+    const root = document.documentElement;
+
+    root.style.setProperty('--primary', colors.primary);
+    root.style.setProperty('--ring', colors.ring);
+    root.style.setProperty('--sidebar-primary', colors.sidebarPrimary);
+    root.style.setProperty('--sidebar-accent', colors.sidebarAccent);
+    root.style.setProperty('--sidebar-accent-foreground', colors.sidebarAccentFg);
+    root.style.setProperty('--accent-foreground', colors.accentFg);
+    root.style.setProperty('--sidebar-ring', colors.ring);
+    root.style.setProperty('--chart-1', colors.chart1);
+  }, [selectedColor, theme]);
 
   const onSubmit = async (values: SiteSettings) => {
     try {
