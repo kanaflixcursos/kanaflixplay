@@ -317,6 +317,9 @@ export default function CampaignEditor() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const navigate = useNavigate();
   const isNew = campaignId === 'new';
+  const { data: siteSettings } = useSiteSettings();
+  const platformName = siteSettings?.platform_name || DEFAULT_SETTINGS.platform_name;
+  const productionUrl = siteSettings?.production_url || DEFAULT_SETTINGS.production_url;
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
