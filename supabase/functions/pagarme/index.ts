@@ -1,5 +1,18 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+
+async function getSiteProductionUrl(supabaseUrl: string, serviceRoleKey: string): Promise<string> {
+  try {
+    const sb = createClient(supabaseUrl, serviceRoleKey);
+    const { data } = await sb.from("site_settings").select("value").eq("key", "site_config").maybeSingle();
+    if (data?.value && typeof data.value === "object") {
+      return (data.value as Record<string, string>).production_url || DEFAULT_PRODUCTION_URL;
+    }
+  } catch { /* use default */ }
+  return DEFAULT_PRODUCTION_URL;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',

@@ -48,6 +48,8 @@ Deno.serve(async (req) => {
   const campaignId = url.searchParams.get("cid");
   const email = url.searchParams.get("e");
 
+  const PRODUCTION_URL = await getProductionUrl();
+
   // CLICK TRACKING MODE
   if (mode === "click") {
     const targetParam = url.searchParams.get("u");
