@@ -217,48 +217,49 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* ── Logo ── */}
-          <Card>
-            <CardHeader className="dashboard-card-header">
-              <div className="flex flex-col gap-1.5">
-                <CardTitle className="flex items-center gap-3 text-left">
-                  <div className="icon-box">
-                    <ImageIcon />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* ── Logo ── */}
+            <Card>
+              <CardHeader className="dashboard-card-header">
+                <div className="flex flex-col gap-1.5">
+                  <CardTitle className="flex items-center gap-3 text-left">
+                    <div className="icon-box">
+                      <ImageIcon />
+                    </div>
+                    <span className="text-base">Logo da Plataforma</span>
+                  </CardTitle>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <span>Logo exibida na sidebar e em e-mails</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>Use imagem horizontal (ex: 400×100px). PNG ou SVG com fundo transparente.</TooltipContent>
+                    </Tooltip>
                   </div>
-                  <span className="text-base">Logo da Plataforma</span>
-                </CardTitle>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span>Logo exibida na sidebar e em e-mails</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>Use imagem horizontal (ex: 400×100px). PNG ou SVG com fundo transparente.</TooltipContent>
-                  </Tooltip>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="dashboard-card-content">
-              <FormField control={form.control} name="logo_url" render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <ImageUpload
-                      value={field.value}
-                      onChange={field.onChange}
-                      bucket="banners"
-                      folder="logos"
-                      aspectRatio="4/1"
-                      maxWidth={800}
-                      maxHeight={200}
-                    />
-                  </FormControl>
-                </FormItem>
-              )} />
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="dashboard-card-content">
+                <FormField control={form.control} name="logo_url" render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <ImageUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        bucket="banners"
+                        folder="logos"
+                        aspectRatio="4/1"
+                        maxWidth={800}
+                        maxHeight={200}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )} />
+              </CardContent>
+            </Card>
 
-          {/* ── Cor Primária ── */}
-          <Card>
+            {/* ── Cor Primária ── */}
+            <Card>
             <CardHeader className="dashboard-card-header">
               <div className="flex flex-col gap-1.5">
                 <CardTitle className="flex items-center gap-3 text-left">
