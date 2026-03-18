@@ -434,11 +434,25 @@ export default function StudentProfile() {
                 <h3 className="text-sm font-medium text-muted-foreground">Cursos Matriculados</h3>
                 <div className="space-y-2">
                   {enrollments.map((enrollment) => (
-                    <div key={enrollment.id} className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-sm font-medium">{enrollment.course_title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Matriculado em {formatDate(enrollment.enrolled_at)}
-                      </p>
+                    <div key={enrollment.id} className="p-3 rounded-lg bg-muted/50 flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{enrollment.course_title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Matriculado em {formatDate(enrollment.enrolled_at)}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setRevokingEnrollment(enrollment);
+                          setRevokeDialogOpen(true);
+                        }}
+                        title="Revogar acesso"
+                      >
+                        <UserX className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </div>
