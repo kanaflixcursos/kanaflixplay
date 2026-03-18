@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import DashboardRevenueCard from '@/components/admin/DashboardRevenueCard';
 import DashboardStudentsCard from '@/components/admin/DashboardStudentsCard';
 import DashboardCoursesCard from '@/components/admin/DashboardCoursesCard';

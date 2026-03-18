@@ -310,7 +310,7 @@ export default function ComboCheckout() {
 
       <footer className="border-t py-6 mt-auto">
         <div className="content-container px-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Kanaflix Play. Todos os direitos reservados.
+          © {new Date().getFullYear()} {settings?.platform_name || 'Plataforma'}. Todos os direitos reservados.
         </div>
       </footer>
     </div>
