@@ -830,8 +830,8 @@ async function handleChargePaid(supabase: any, data: any) {
           userName: profile.full_name || '',
           courseName: itemTitle,
           courseUrl: order.combo_id 
-            ? `https://cursos.kanaflix.com.br/courses` 
-            : `https://cursos.kanaflix.com.br/courses/${order.course_id}`,
+            ? `${productionUrl}/courses` 
+            : `${productionUrl}/courses/${order.course_id}`,
           amount: order.amount,
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
