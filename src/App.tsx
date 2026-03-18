@@ -61,6 +61,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <ScrollToTop />
+            <DynamicMeta />
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
