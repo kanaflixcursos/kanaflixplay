@@ -377,7 +377,7 @@ export default function CampaignEditor() {
 
   useEffect(() => { fetchCampaign(); fetchTags(); }, [fetchCampaign, fetchTags]);
 
-  const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject), [blocks, subject]);
+  const previewHtml = useMemo(() => renderPreviewHtml(blocks, subject, platformName, productionUrl), [blocks, subject, platformName, productionUrl]);
   const finalHtml = useMemo(() => blocksToHtml(blocks), [blocks]);
 
   const buildPayload = () => {
