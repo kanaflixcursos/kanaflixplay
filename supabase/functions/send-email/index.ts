@@ -445,7 +445,7 @@ Deno.serve(async (req) => {
 
       case 'campaign': {
         const campaignData = data as { subject: string; htmlContent: string; recipientName?: string; campaignId?: string; campaignTag?: string };
-        subject = campaignData.subject || 'Novidades - Kanaflix Play';
+        subject = campaignData.subject || `Novidades - ${PLATFORM_NAME}`;
         const campaignSlug = campaignData.campaignTag || campaignData.campaignId || 'email';
         const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 
