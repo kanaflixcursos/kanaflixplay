@@ -171,8 +171,8 @@ export default function AdminCourses() {
     return `${mins}min`;
   };
 
-  const getCourseLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/checkout/${course.id}`;
-  const getPreviewLink = (course: AdminCourse) => `https://cursos.kanaflix.com.br/courses/${course.id}`;
+  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/checkout/${course.id}`;
+  const getPreviewLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/courses/${course.id}`;
 
   const handleCopyLink = async (course: AdminCourse) => {
     await navigator.clipboard.writeText(getCourseLink(course));

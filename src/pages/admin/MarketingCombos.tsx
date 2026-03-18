@@ -188,7 +188,7 @@ export default function MarketingCombos() {
     },
   ];
 
-  const checkoutLink = linkCombo ? `https://cursos.kanaflix.com.br/checkout/combo/${linkCombo.id}` : '';
+  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/checkout/combo/${linkCombo.id}` : '';
 
   return (
     <div className="space-y-6">
