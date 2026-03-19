@@ -42,8 +42,8 @@ export default function MarketingCombos() {
       await deleteCombo(deleteId);
       invalidate();
       toast.success('Combo excluído');
-    } catch {
-      toast.error('Erro ao excluir combo');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao excluir combo');
     } finally {
       setDeleting(false);
       setDeleteId(null);

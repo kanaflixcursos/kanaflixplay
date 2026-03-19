@@ -132,6 +132,20 @@ export async function saveCombo(
 }
 
 export async function deleteCombo(comboId: string): Promise<void> {
+  // Check for completed (paid) orders
+  const { count: paidCount } = await supabase
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('combo_id', comboId)
+    .eq('status', 'paid');
+
+  if (paidCount && paidCount > 0) {
+    throw new Error('Este combo possui compras concluídas e não pode ser excluído.');
+  }
+
+  // Delete non-paid orders referencing this combo
+  await supabase.from('orders').delete().eq('combo_id', comboId).neq('status', 'paid');
+
   const { error } = await supabase.from('combos').delete().eq('id', comboId);
   if (error) throw error;
 }
