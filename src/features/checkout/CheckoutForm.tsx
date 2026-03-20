@@ -109,8 +109,6 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
 
   const fetchPaymentConfig = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
       const response = await supabase.functions.invoke('pagarme', {
         body: { action: 'get_payment_config' }
       });
