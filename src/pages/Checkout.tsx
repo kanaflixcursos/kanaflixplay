@@ -209,13 +209,7 @@ export default function Checkout() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
   };
 
-  // Redirect to login if not authenticated for paid courses
-  useEffect(() => {
-    if (!authLoading && !user && course && course.price > 0) {
-      const returnUrl = `/checkout/${courseId}${window.location.search}`;
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-    }
-  }, [authLoading, user, course, courseId, navigate]);
+  // No longer redirect to login for paid courses — checkout is public
 
   if (loading || authLoading) {
     return (
