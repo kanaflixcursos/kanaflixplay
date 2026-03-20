@@ -68,8 +68,10 @@ export default function Checkout() {
       checkEnrollment();
       // Promote lead to "opportunity" when visiting checkout
       supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
-      // Track checkout started event (dedup handled inside trackEvent via sessionStorage)
-      trackEvent('checkout_started', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
+    }
+    // Track checkout started event (works for both guest and authenticated)
+    if (courseId) {
+      trackEvent('checkout_started', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user?.id);
     }
   }, [user, courseId]);
 
