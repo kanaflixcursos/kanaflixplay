@@ -34,7 +34,7 @@ interface Course {
 
 interface CheckoutFormProps {
   course: Course;
-  onSuccess?: () => void;
+  onSuccess?: (buyerEmail?: string) => void;
   comboId?: string;
 }
 
@@ -109,8 +109,6 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
 
   const fetchPaymentConfig = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
       const response = await supabase.functions.invoke('pagarme', {
         body: { action: 'get_payment_config' }
       });
@@ -285,11 +283,6 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar logado para fazer uma compra');
-        return;
-      }
 
       const response = await supabase.functions.invoke('pagarme', {
         body: {
@@ -337,7 +330,7 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
 
       if (paymentMethod === 'credit_card' && result.order.status === 'paid') {
         toast.success('Pagamento aprovado! Você já pode acessar o curso.');
-        onSuccess?.();
+        onSuccess?.(customer.email);
       } else if (paymentMethod === 'pix') {
         if (!result.pagarme?.pix?.qrCode || !result.pagarme?.pix?.qrCodeUrl) {
           throw new Error('Não foi possível gerar o QR Code PIX. Tente outro método.');

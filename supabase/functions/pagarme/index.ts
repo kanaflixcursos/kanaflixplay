@@ -80,6 +80,33 @@ Deno.serve(async (req) => {
     
     const { action, ...payload } = body;
 
+    // Guest-allowed actions (no auth required)
+    const guestActions = ['create_order', 'get_payment_config'];
+    
+    if (guestActions.includes(action)) {
+      const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      
+      // Try to get userId from auth if available
+      let userId: string | null = null;
+      if (authHeader?.startsWith('Bearer ')) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } }
+        });
+        const token = authHeader.replace('Bearer ', '');
+        const { data: claimsData } = await supabase.auth.getClaims(token);
+        if (claimsData?.claims?.sub) {
+          userId = claimsData.claims.sub as string;
+        }
+      }
+      
+      if (action === 'create_order') {
+        return handleCreateOrder(payload, userId, PAGARME_API_KEY, adminSupabase);
+      }
+      if (action === 'get_payment_config') {
+        return handleGetPaymentConfig();
+      }
+    }
+
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
@@ -115,8 +142,6 @@ Deno.serve(async (req) => {
     };
 
     switch (action) {
-      case 'create_order':
-        return handleCreateOrder(payload, userId, PAGARME_API_KEY, adminSupabase);
       case 'get_payment_config':
         return handleGetPaymentConfig();
       case 'get_order_stats': {
@@ -189,7 +214,7 @@ Deno.serve(async (req) => {
 
 async function handleCreateOrder(
   payload: any, 
-  userId: string, 
+  userId: string | null, 
   apiKey: string, 
   supabase: any
 ) {
@@ -416,7 +441,8 @@ async function handleCreateOrder(
   if (finalPrice <= 0) {
     const orderData: any = {
       id: `free_${Date.now()}`,
-      user_id: userId,
+      user_id: userId || null,
+      buyer_email: customer.email.toLowerCase().trim(),
       course_id: comboId ? null : courseId,
       combo_id: comboId || null,
       amount: 0,
@@ -441,10 +467,12 @@ async function handleCreateOrder(
       });
     }
 
-    // Enroll in all courses (combo or single)
-    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, userId, cid);
+    // Enroll in all courses (combo or single) — only if user is authenticated
+    if (userId) {
+      const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, userId, cid);
+      }
     }
 
     return new Response(JSON.stringify({ 
@@ -574,7 +602,8 @@ async function handleCreateOrder(
 
   const orderData: any = {
     id: pagarmeOrder.id,
-    user_id: userId,
+    user_id: userId || null,
+    buyer_email: customer.email.toLowerCase().trim(),
     course_id: comboId ? null : courseId,
     combo_id: comboId || null,
     amount: finalPrice,
@@ -613,26 +642,36 @@ async function handleCreateOrder(
     });
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('user_id', userId)
-    .single();
+  // Get profile for email (only if authenticated)
+  let profile: any = null;
+  if (userId) {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('user_id', userId)
+      .single();
+    profile = profileData;
+  }
+
+  const emailRecipient = profile?.email || customer.email;
+  const emailName = profile?.full_name || customer.name;
 
   if (orderData.status === 'paid') {
-    // Enroll in all courses (combo or single)
-    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, userId, cid);
+    // Enroll in all courses (combo or single) — only if user is authenticated
+    if (userId) {
+      const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, userId, cid);
+      }
     }
     
-    if (profile?.email) {
+    if (emailRecipient) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       await sendEmail(SUPABASE_URL, {
         action: 'purchase_confirmation',
-        to: profile.email,
+        to: emailRecipient,
         data: {
-          userName: profile.full_name || '',
+          userName: emailName || '',
           courseName: itemTitle,
           courseUrl: comboId ? `${productionUrl}/courses` : `${productionUrl}/courses/${courseId}`,
           amount: order.amount,
@@ -642,13 +681,13 @@ async function handleCreateOrder(
         }
       });
     }
-  } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && profile?.email) {
+  } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && emailRecipient) {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
       action: 'payment_pending',
-      to: profile.email,
+      to: emailRecipient,
       data: {
-        userName: profile.full_name || '',
+        userName: emailName || '',
         courseName: itemTitle,
         amount: itemPrice,
         paymentMethod: paymentMethod as 'pix' | 'boleto',

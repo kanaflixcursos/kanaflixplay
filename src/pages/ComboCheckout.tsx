@@ -49,7 +49,9 @@ export default function ComboCheckout() {
     if (user && combo) {
       checkEnrollments();
       supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
-      trackEvent('checkout_started', { combo_id: comboId, combo_title: combo.title }, `/checkout/combo/${comboId}`, user.id);
+    }
+    if (combo && comboId) {
+      trackEvent('checkout_started', { combo_id: comboId, combo_title: combo.title }, `/checkout/combo/${comboId}`, user?.id);
     }
   }, [user, combo]);
 
@@ -102,25 +104,25 @@ export default function ComboCheckout() {
     setAllEnrolled(enrolled.length === courseIds.length);
   };
 
-  const handlePaymentSuccess = () => {
-    setAllEnrolled(true);
-    if (user && comboId) {
-      trackEvent('checkout_completed', { combo_id: comboId, amount: combo?.price, combo_title: combo?.title }, `/checkout/combo/${comboId}`, user.id);
+  const handlePaymentSuccess = (buyerEmail?: string) => {
+    if (user) {
+      setAllEnrolled(true);
+      if (comboId) {
+        trackEvent('checkout_completed', { combo_id: comboId, amount: combo?.price, combo_title: combo?.title }, `/checkout/combo/${comboId}`, user.id);
+      }
+    } else if (buyerEmail) {
+      // Guest checkout: redirect to signup
+      const navigate_fn = navigate;
+      navigate_fn(`/login?tab=signup&email=${encodeURIComponent(buyerEmail)}&redirect=${encodeURIComponent('/courses')}`);
     }
   };
 
   const formatPrice = (cents: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 
-  // Redirect to login for paid combos
-  useEffect(() => {
-    if (!authLoading && !user && combo && combo.price > 0) {
-      const returnUrl = `/checkout/combo/${comboId}${window.location.search}`;
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-    }
-  }, [authLoading, user, combo, comboId, navigate]);
+  // No longer redirect to login for paid combos — checkout is public
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card">

@@ -68,8 +68,10 @@ export default function Checkout() {
       checkEnrollment();
       // Promote lead to "opportunity" when visiting checkout
       supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
-      // Track checkout started event (dedup handled inside trackEvent via sessionStorage)
-      trackEvent('checkout_started', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
+    }
+    // Track checkout started event (works for both guest and authenticated)
+    if (courseId) {
+      trackEvent('checkout_started', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user?.id);
     }
   }, [user, courseId]);
 
@@ -191,11 +193,15 @@ export default function Checkout() {
     }
   };
 
-  const handlePaymentSuccess = () => {
-    setIsEnrolled(true);
-    if (user && courseId) {
+  const handlePaymentSuccess = (buyerEmail?: string) => {
+    if (user) {
+      setIsEnrolled(true);
       trackEvent('checkout_completed', { course_id: courseId, amount: course?.price, course_title: course?.title }, `/checkout/${courseId}`, user.id);
       trackEvent('enrollment', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
+    } else if (buyerEmail) {
+      // Guest checkout: redirect to signup with email pre-filled
+      const redirectAfterSignup = `/courses/${courseId}`;
+      navigate(`/login?tab=signup&email=${encodeURIComponent(buyerEmail)}&redirect=${encodeURIComponent(redirectAfterSignup)}`);
     }
   };
 
@@ -203,15 +209,9 @@ export default function Checkout() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
   };
 
-  // Redirect to login if not authenticated for paid courses
-  useEffect(() => {
-    if (!authLoading && !user && course && course.price > 0) {
-      const returnUrl = `/checkout/${courseId}${window.location.search}`;
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-    }
-  }, [authLoading, user, course, courseId, navigate]);
+  // No longer redirect to login for paid courses — checkout is public
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card">

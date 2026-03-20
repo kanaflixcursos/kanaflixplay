@@ -20,15 +20,17 @@ import PhoneInput from '@/components/PhoneInput';
 export default function Login() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
+  const initialTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+  const initialEmail = searchParams.get('email') || '';
   
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>('signin');
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup' | 'reset'>(initialTab);
   const [resetSent, setResetSent] = useState(false);
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
