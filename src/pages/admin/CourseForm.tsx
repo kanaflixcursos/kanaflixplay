@@ -595,7 +595,7 @@ export default function CourseForm() {
                     />
                     {(() => {
                       const basePrice = parseFloat(formData.price) || 0;
-                      const suggested = Math.round(basePrice * 100 * 0.03);
+                      const suggested = Math.round(basePrice * 0.10);
                       if (formData.pricing_type === 'paid' && basePrice > 0 && String(suggested) !== formData.points_reward) {
                         return (
                           <Button
