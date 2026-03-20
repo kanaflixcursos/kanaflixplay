@@ -122,7 +122,7 @@ export default function ComboCheckout() {
 
   // No longer redirect to login for paid combos — checkout is public
 
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <header className="border-b bg-card">
