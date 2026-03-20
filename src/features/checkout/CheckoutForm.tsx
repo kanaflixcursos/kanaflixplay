@@ -34,7 +34,7 @@ interface Course {
 
 interface CheckoutFormProps {
   course: Course;
-  onSuccess?: () => void;
+  onSuccess?: (buyerEmail?: string) => void;
   comboId?: string;
 }
 
