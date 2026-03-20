@@ -845,6 +845,7 @@ export type Database = {
           boleto_barcode: string | null
           boleto_due_date: string | null
           boleto_url: string | null
+          buyer_email: string | null
           combo_id: string | null
           coupon_id: string | null
           course_id: string | null
@@ -868,6 +869,7 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          buyer_email?: string | null
           combo_id?: string | null
           coupon_id?: string | null
           course_id?: string | null
@@ -891,6 +893,7 @@ export type Database = {
           boleto_barcode?: string | null
           boleto_due_date?: string | null
           boleto_url?: string | null
+          buyer_email?: string | null
           combo_id?: string | null
           coupon_id?: string | null
           course_id?: string | null
