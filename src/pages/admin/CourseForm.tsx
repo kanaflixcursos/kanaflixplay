@@ -173,7 +173,14 @@ export default function CourseForm() {
   };
 
   const updateField = <K extends keyof CourseFormData>(key: K, value: CourseFormData[K]) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [key]: value };
+      if (key === 'price' && next.pricing_type === 'paid') {
+        const basePrice = parseFloat(value as string) || 0;
+        next.points_reward = basePrice > 0 ? String(Math.round(basePrice * 0.10)) : '0';
+      }
+      return next;
+    });
   };
 
   const togglePaymentMethod = (methodId: string) => {
