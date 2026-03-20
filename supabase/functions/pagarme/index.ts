@@ -602,7 +602,8 @@ async function handleCreateOrder(
 
   const orderData: any = {
     id: pagarmeOrder.id,
-    user_id: userId,
+    user_id: userId || null,
+    buyer_email: customer.email.toLowerCase().trim(),
     course_id: comboId ? null : courseId,
     combo_id: comboId || null,
     amount: finalPrice,
@@ -641,17 +642,27 @@ async function handleCreateOrder(
     });
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('user_id', userId)
-    .single();
+  // Get profile for email (only if authenticated)
+  let profile: any = null;
+  if (userId) {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('user_id', userId)
+      .single();
+    profile = profileData;
+  }
+
+  const emailRecipient = profile?.email || customer.email;
+  const emailName = profile?.full_name || customer.name;
 
   if (orderData.status === 'paid') {
-    // Enroll in all courses (combo or single)
-    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, userId, cid);
+    // Enroll in all courses (combo or single) — only if user is authenticated
+    if (userId) {
+      const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, userId, cid);
+      }
     }
     
     if (profile?.email) {
