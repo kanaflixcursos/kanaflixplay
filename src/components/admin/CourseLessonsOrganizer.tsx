@@ -99,6 +99,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
     const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
     const [currentFolderId, setCurrentFolderId] = useState(pandavideoFolderId || '');
+    const [folderName, setFolderName] = useState('');
     const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
     // ─── Memoized lesson grouping ─────────────────────────────────
@@ -223,9 +224,34 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       }
     }, [modules]);
 
+    // ─── Fetch folder name from Pandavideo ──────────────────────
+    const fetchFolderName = useCallback(async (folderId: string) => {
+      if (!folderId) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) return;
+        const response = await fetch(
+          `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=folders`,
+          { headers: { Authorization: `Bearer ${sessionData.session.access_token}` } }
+        );
+        const data = await response.json();
+        if (response.ok) {
+          const folders = data.folders || data || [];
+          const folder = folders.find((f: any) => f.id === folderId);
+          if (folder) setFolderName(folder.name);
+        }
+      } catch {
+        // Non-critical
+      }
+    }, []);
+
     useEffect(() => {
       if (isEditMode) fetchData();
     }, [isEditMode, fetchData]);
+
+    useEffect(() => {
+      if (currentFolderId) fetchFolderName(currentFolderId);
+    }, [currentFolderId, fetchFolderName]);
 
     useEffect(() => {
       if (!isEditMode && pandavideoFolderId) {
@@ -328,6 +354,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
         }
       }
       setCurrentFolderId(folder.id);
+      setFolderName(folder.name);
       onFolderChange?.(folder.id, folder.name);
       if (!isEditMode) {
         fetchVideosFromFolder(folder.id);
@@ -526,7 +553,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
                 {currentFolderId ? (
                   <div className="flex items-center gap-2">
                     <Folder className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Pasta vinculada</span>
+                    <span className="text-sm">{folderName || 'Carregando pasta...'}</span>
                   </div>
                 ) : (
                   <span className="text-sm text-muted-foreground">Nenhuma pasta selecionada</span>
