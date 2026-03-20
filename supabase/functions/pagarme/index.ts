@@ -80,6 +80,33 @@ Deno.serve(async (req) => {
     
     const { action, ...payload } = body;
 
+    // Guest-allowed actions (no auth required)
+    const guestActions = ['create_order', 'get_payment_config'];
+    
+    if (guestActions.includes(action)) {
+      const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      
+      // Try to get userId from auth if available
+      let userId: string | null = null;
+      if (authHeader?.startsWith('Bearer ')) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } }
+        });
+        const token = authHeader.replace('Bearer ', '');
+        const { data: claimsData } = await supabase.auth.getClaims(token);
+        if (claimsData?.claims?.sub) {
+          userId = claimsData.claims.sub as string;
+        }
+      }
+      
+      if (action === 'create_order') {
+        return handleCreateOrder(payload, userId, PAGARME_API_KEY, adminSupabase);
+      }
+      if (action === 'get_payment_config') {
+        return handleGetPaymentConfig();
+      }
+    }
+
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
@@ -115,8 +142,6 @@ Deno.serve(async (req) => {
     };
 
     switch (action) {
-      case 'create_order':
-        return handleCreateOrder(payload, userId, PAGARME_API_KEY, adminSupabase);
       case 'get_payment_config':
         return handleGetPaymentConfig();
       case 'get_order_stats': {
