@@ -467,10 +467,12 @@ async function handleCreateOrder(
       });
     }
 
-    // Enroll in all courses (combo or single)
-    const enrollCourseIds = comboId ? comboCourseIds : [courseId];
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, userId, cid);
+    // Enroll in all courses (combo or single) — only if user is authenticated
+    if (userId) {
+      const enrollCourseIds = comboId ? comboCourseIds : [courseId];
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, userId, cid);
+      }
     }
 
     return new Response(JSON.stringify({ 
