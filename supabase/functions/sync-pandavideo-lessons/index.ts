@@ -129,11 +129,12 @@ Deno.serve(async (req) => {
           global: { headers: { Authorization: authHeader } }
         });
         
-        const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
         
-        if (!claimsError && claimsData?.claims) {
-          const userId = claimsData.claims.sub as string;
-          const { data: roleData } = await supabaseClient
+        if (!userError && userData?.user) {
+          const userId = userData.user.id;
+          const adminSupabase = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: roleData } = await adminSupabase
             .from("user_roles")
             .select("role")
             .eq("user_id", userId)

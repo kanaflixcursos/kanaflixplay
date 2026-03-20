@@ -99,6 +99,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
     const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
     const [editingModuleTitle, setEditingModuleTitle] = useState('');
     const [currentFolderId, setCurrentFolderId] = useState(pandavideoFolderId || '');
+    const [folderName, setFolderName] = useState('');
     const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
     // ─── Memoized lesson grouping ─────────────────────────────────
