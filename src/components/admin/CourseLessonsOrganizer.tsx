@@ -224,9 +224,34 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
       }
     }, [modules]);
 
+    // ─── Fetch folder name from Pandavideo ──────────────────────
+    const fetchFolderName = useCallback(async (folderId: string) => {
+      if (!folderId) return;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) return;
+        const response = await fetch(
+          `https://fwytxapogblcesvyxrzt.supabase.co/functions/v1/pandavideo?action=folders`,
+          { headers: { Authorization: `Bearer ${sessionData.session.access_token}` } }
+        );
+        const data = await response.json();
+        if (response.ok) {
+          const folders = data.folders || data || [];
+          const folder = folders.find((f: any) => f.id === folderId);
+          if (folder) setFolderName(folder.name);
+        }
+      } catch {
+        // Non-critical
+      }
+    }, []);
+
     useEffect(() => {
       if (isEditMode) fetchData();
     }, [isEditMode, fetchData]);
+
+    useEffect(() => {
+      if (currentFolderId) fetchFolderName(currentFolderId);
+    }, [currentFolderId, fetchFolderName]);
 
     useEffect(() => {
       if (!isEditMode && pandavideoFolderId) {
