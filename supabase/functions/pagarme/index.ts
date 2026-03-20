@@ -441,7 +441,8 @@ async function handleCreateOrder(
   if (finalPrice <= 0) {
     const orderData: any = {
       id: `free_${Date.now()}`,
-      user_id: userId,
+      user_id: userId || null,
+      buyer_email: customer.email.toLowerCase().trim(),
       course_id: comboId ? null : courseId,
       combo_id: comboId || null,
       amount: 0,
