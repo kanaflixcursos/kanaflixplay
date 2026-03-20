@@ -584,16 +584,38 @@ export default function CourseForm() {
                   <Label className="text-base font-semibold">Pontos de Recompensa</Label>
                 </div>
                 <div className="max-w-xs space-y-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formData.points_reward}
-                    onChange={(e) => updateField('points_reward', e.target.value)}
-                    placeholder="0"
-                    className="h-12 text-lg"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.points_reward}
+                      onChange={(e) => updateField('points_reward', e.target.value)}
+                      placeholder="0"
+                      className="h-12 text-lg"
+                    />
+                    {(() => {
+                      const basePrice = parseFloat(formData.price) || 0;
+                      const suggested = Math.round(basePrice * 100 * 0.03);
+                      if (formData.pricing_type === 'paid' && basePrice > 0 && String(suggested) !== formData.points_reward) {
+                        return (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0 text-xs h-12 px-3"
+                            onClick={() => updateField('points_reward', String(suggested))}
+                          >
+                            Sugerir {suggested} pts
+                          </Button>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Quantidade de pontos que o aluno ganha ao se matricular neste curso
+                    {formData.pricing_type === 'paid' && parseFloat(formData.price) > 0
+                      ? `Sugestão: 3% do valor base = ${Math.round((parseFloat(formData.price) || 0) * 100 * 0.03)} pts`
+                      : 'Quantidade de pontos que o aluno ganha ao se matricular neste curso'}
                   </p>
                 </div>
               </div>
