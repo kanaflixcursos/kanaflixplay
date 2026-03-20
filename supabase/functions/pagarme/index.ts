@@ -665,13 +665,13 @@ async function handleCreateOrder(
       }
     }
     
-    if (profile?.email) {
+    if (emailRecipient) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       await sendEmail(SUPABASE_URL, {
         action: 'purchase_confirmation',
-        to: profile.email,
+        to: emailRecipient,
         data: {
-          userName: profile.full_name || '',
+          userName: emailName || '',
           courseName: itemTitle,
           courseUrl: comboId ? `${productionUrl}/courses` : `${productionUrl}/courses/${courseId}`,
           amount: order.amount,
@@ -681,13 +681,13 @@ async function handleCreateOrder(
         }
       });
     }
-  } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && profile?.email) {
+  } else if ((paymentMethod === 'pix' || paymentMethod === 'boleto') && emailRecipient) {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
       action: 'payment_pending',
-      to: profile.email,
+      to: emailRecipient,
       data: {
-        userName: profile.full_name || '',
+        userName: emailName || '',
         courseName: itemTitle,
         amount: itemPrice,
         paymentMethod: paymentMethod as 'pix' | 'boleto',
