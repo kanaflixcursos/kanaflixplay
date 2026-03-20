@@ -49,7 +49,9 @@ export default function ComboCheckout() {
     if (user && combo) {
       checkEnrollments();
       supabase.rpc('promote_lead_on_checkout', { user_email: user.email || '' });
-      trackEvent('checkout_started', { combo_id: comboId, combo_title: combo.title }, `/checkout/combo/${comboId}`, user.id);
+    }
+    if (combo && comboId) {
+      trackEvent('checkout_started', { combo_id: comboId, combo_title: combo.title }, `/checkout/combo/${comboId}`, user?.id);
     }
   }, [user, combo]);
 
