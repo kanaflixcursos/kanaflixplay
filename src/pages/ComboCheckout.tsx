@@ -120,13 +120,7 @@ export default function ComboCheckout() {
   const formatPrice = (cents: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 
-  // Redirect to login for paid combos
-  useEffect(() => {
-    if (!authLoading && !user && combo && combo.price > 0) {
-      const returnUrl = `/checkout/combo/${comboId}${window.location.search}`;
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-    }
-  }, [authLoading, user, combo, comboId, navigate]);
+  // No longer redirect to login for paid combos — checkout is public
 
   if (loading || authLoading) {
     return (
