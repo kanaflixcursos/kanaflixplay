@@ -354,6 +354,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
         }
       }
       setCurrentFolderId(folder.id);
+      setFolderName(folder.name);
       onFolderChange?.(folder.id, folder.name);
       if (!isEditMode) {
         fetchVideosFromFolder(folder.id);
