@@ -330,7 +330,7 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
 
       if (paymentMethod === 'credit_card' && result.order.status === 'paid') {
         toast.success('Pagamento aprovado! Você já pode acessar o curso.');
-        onSuccess?.();
+        onSuccess?.(customer.email);
       } else if (paymentMethod === 'pix') {
         if (!result.pagarme?.pix?.qrCode || !result.pagarme?.pix?.qrCodeUrl) {
           throw new Error('Não foi possível gerar o QR Code PIX. Tente outro método.');
