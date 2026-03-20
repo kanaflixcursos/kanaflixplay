@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
 
 async function handleCreateOrder(
   payload: any, 
-  userId: string, 
+  userId: string | null, 
   apiKey: string, 
   supabase: any
 ) {
