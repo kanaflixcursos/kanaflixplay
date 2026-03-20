@@ -283,11 +283,6 @@ export function CheckoutForm({ course, onSuccess, comboId }: CheckoutFormProps) 
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Você precisa estar logado para fazer uma compra');
-        return;
-      }
 
       const response = await supabase.functions.invoke('pagarme', {
         body: {
