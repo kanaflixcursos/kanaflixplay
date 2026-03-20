@@ -595,7 +595,7 @@ export default function CourseForm() {
                     />
                     {(() => {
                       const basePrice = parseFloat(formData.price) || 0;
-                      const suggested = Math.round(basePrice * 100 * 0.03);
+                      const suggested = Math.round(basePrice * 0.10);
                       if (formData.pricing_type === 'paid' && basePrice > 0 && String(suggested) !== formData.points_reward) {
                         return (
                           <Button
@@ -614,7 +614,7 @@ export default function CourseForm() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {formData.pricing_type === 'paid' && parseFloat(formData.price) > 0
-                      ? `Sugestão: 3% do valor base = ${Math.round((parseFloat(formData.price) || 0) * 100 * 0.03)} pts`
+                      ? `Sugestão: 10% do valor base = ${Math.round((parseFloat(formData.price) || 0) * 0.10)} pts`
                       : 'Quantidade de pontos que o aluno ganha ao se matricular neste curso'}
                   </p>
                 </div>
