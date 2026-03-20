@@ -552,7 +552,7 @@ const CourseLessonsOrganizer = forwardRef<CourseLessonsOrganizerRef, CourseLesso
                 {currentFolderId ? (
                   <div className="flex items-center gap-2">
                     <Folder className="h-4 w-4 text-primary" />
-                    <span className="text-sm">Pasta vinculada</span>
+                    <span className="text-sm">{folderName || 'Carregando pasta...'}</span>
                   </div>
                 ) : (
                   <span className="text-sm text-muted-foreground">Nenhuma pasta selecionada</span>
