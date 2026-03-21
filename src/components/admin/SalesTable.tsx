@@ -134,7 +134,7 @@ export default function SalesTable({
         .from('refund_requests')
         .insert({
           order_id: sale.id,
-          user_id: sale.user_id,
+          user_id: sale.user_id || user.id,
           reason: 'Reembolso iniciado pelo administrador',
         });
 
