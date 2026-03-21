@@ -34,7 +34,9 @@ export interface Sale {
   paid_at: string | null;
   created_at: string;
   course_id: string | null;
+  combo_id: string | null;
   user_id: string | null;
+  buyer_name: string | null;
   course_title: string | null;
   user_name: string | null;
   user_email: string | null;
