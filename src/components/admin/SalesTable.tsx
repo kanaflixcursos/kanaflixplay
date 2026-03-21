@@ -34,7 +34,9 @@ export interface Sale {
   paid_at: string | null;
   created_at: string;
   course_id: string | null;
+  combo_id: string | null;
   user_id: string | null;
+  buyer_name: string | null;
   course_title: string | null;
   user_name: string | null;
   user_email: string | null;
@@ -132,7 +134,7 @@ export default function SalesTable({
         .from('refund_requests')
         .insert({
           order_id: sale.id,
-          user_id: sale.user_id,
+          user_id: sale.user_id || user.id,
           reason: 'Reembolso iniciado pelo administrador',
         });
 
@@ -188,20 +190,36 @@ export default function SalesTable({
         {sales.map((sale) => (
           <div key={sale.id} className="border rounded-lg p-3 space-y-2.5">
             <div className="flex items-center justify-between">
-              <Link
-                to={`/admin/students/${sale.user_id}`}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0 flex-1"
-              >
-                <Avatar className="h-7 w-7 shrink-0">
-                  <AvatarImage src={sale.user_avatar || undefined} />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
-                    <User className="h-3.5 w-3.5" />
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-primary truncate text-sm">
-                  {sale.user_name || sale.user_email || 'Usuário'}
-                </span>
-              </Link>
+              {sale.user_id ? (
+                <Link
+                  to={`/admin/students/${sale.user_id}`}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0 flex-1"
+                >
+                  <Avatar className="h-7 w-7 shrink-0">
+                    <AvatarImage src={sale.user_avatar || undefined} />
+                    <AvatarFallback className="bg-muted text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-primary truncate text-sm">
+                    {sale.user_name || sale.user_email || 'Usuário'}
+                  </span>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Avatar className="h-7 w-7 shrink-0">
+                    <AvatarFallback className="bg-warning/15 text-warning">
+                      <User className="h-3.5 w-3.5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-foreground truncate text-sm">
+                      {sale.buyer_name || sale.user_email || 'Convidado'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Sem cadastro</span>
+                  </div>
+                </div>
+              )}
               <Badge variant="outline" className={`text-xs px-2 py-0.5 shrink-0 ${statusColors[sale.status] || ''}`}>
                 {statusLabels[sale.status] || sale.status}
               </Badge>
@@ -316,20 +334,36 @@ export default function SalesTable({
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  <Link
-                    to={`/admin/students/${sale.user_id}`}
-                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
-                  >
-                    <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarImage src={sale.user_avatar || undefined} />
-                      <AvatarFallback className="bg-muted text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-primary truncate text-sm">
-                      {sale.user_name || sale.user_email || 'Usuário'}
-                    </span>
-                  </Link>
+                  {sale.user_id ? (
+                    <Link
+                      to={`/admin/students/${sale.user_id}`}
+                      className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
+                    >
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarImage src={sale.user_avatar || undefined} />
+                        <AvatarFallback className="bg-muted text-muted-foreground">
+                          <User className="h-3.5 w-3.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-primary truncate text-sm">
+                        {sale.user_name || sale.user_email || 'Usuário'}
+                      </span>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-2.5 max-w-44">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarFallback className="bg-warning/15 text-warning">
+                          <User className="h-3.5 w-3.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-foreground truncate text-sm">
+                          {sale.buyer_name || sale.user_email || 'Convidado'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Sem cadastro</span>
+                      </div>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm max-w-44 truncate">
                   {sale.course_title || '—'}
@@ -762,7 +796,7 @@ export async function fetchSalesData(page: number, pageSize: number): Promise<{ 
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, buyer_email, pix_qr_code, boleto_url, failure_reason')
+    .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, buyer_email, buyer_name, pix_qr_code, boleto_url, failure_reason')
     .order('created_at', { ascending: false })
     .range(from, to);
 
