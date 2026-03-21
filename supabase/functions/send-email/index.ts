@@ -229,6 +229,8 @@ const templates = {
     paymentMethod: string;
     orderId: string;
     installments?: number;
+    isGuest?: boolean;
+    signupUrl?: string;
   }) => {
     const amountFormatted = `R$ ${(data.amount / 100).toFixed(2).replace('.', ',')}`;
     const installments = data.installments || 1;
@@ -238,6 +240,18 @@ const templates = {
     const valorDisplay = installments > 1
       ? `${installments}x de ${installmentValue} (Total: ${amountFormatted})`
       : amountFormatted;
+
+    const guestSignupSection = data.isGuest && data.signupUrl ? `
+    <div style="background-color: #FFF3CD; border: 1px solid #FFEEBA; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+      <p style="margin: 0 0 12px; font-size: 15px; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily};">
+        📋 Crie sua conta para acessar o curso
+      </p>
+      <p style="margin: 0 0 16px; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
+        Você comprou como convidado. Cadastre-se com o mesmo e-mail para liberar seu acesso automaticamente.
+      </p>
+      ${button("Criar minha conta", data.signupUrl)}
+    </div>
+    ` : '';
 
     return emailTemplate(`
     <div style="text-align: center; margin-bottom: 24px;">
@@ -249,7 +263,7 @@ const templates = {
       Compra realizada com sucesso!
     </h1>
     <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; text-align: center; font-family: ${fontFamily};">
-      Olá${data.userName ? ` <strong style="color: ${brand.text}; font-weight: 500;">${data.userName}</strong>` : ''}, seu acesso ao curso já está liberado.
+      Olá${data.userName ? ` <strong style="color: ${brand.text}; font-weight: 500;">${data.userName}</strong>` : ''}, ${data.isGuest ? 'sua compra foi confirmada!' : 'seu acesso ao curso já está liberado.'}
     </p>
     
     <div style="background-color: ${brand.bg}; border-radius: 12px; padding: 20px; margin: 24px 0;">
@@ -273,7 +287,8 @@ const templates = {
       </table>
     </div>
     
-    ${button("Acessar curso agora", data.courseUrl)}
+    ${guestSignupSection}
+    ${data.isGuest ? '' : button("Acessar curso agora", data.courseUrl)}
   `, `Pagamento confirmado - ${data.courseName}`);
   },
 
@@ -426,6 +441,8 @@ Deno.serve(async (req) => {
           paymentMethod: string;
           orderId: string;
           installments?: number;
+          isGuest?: boolean;
+          signupUrl?: string;
         });
         subject = `Pagamento Confirmado - ${PLATFORM_NAME}`;
         break;

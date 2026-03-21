@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+let productionUrl = DEFAULT_PRODUCTION_URL;
 
 async function getSiteProductionUrl(supabaseUrl: string, serviceRoleKey: string): Promise<string> {
   try {
@@ -34,7 +35,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const productionUrl = await getSiteProductionUrl(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    productionUrl = await getSiteProductionUrl(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const authHeader = req.headers.get('Authorization');
     
@@ -849,15 +850,27 @@ async function handleChargePaid(supabase: any, data: any) {
     itemTitle = order.courses?.title || 'Curso';
   }
 
+  const isGuest = !order.user_id;
+  const buyerEmail = order.buyer_email;
+
   if (enrollCourseIds.length > 0) {
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, order.user_id, cid);
+    // Only enroll if user is authenticated (not guest)
+    if (!isGuest) {
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, order.user_id, cid);
+      }
+      console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
+    } else {
+      console.log(`[Webhook] Guest order ${order.id} - enrollment will happen on signup via link_guest_orders_on_signup trigger`);
     }
-    console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
     
-    const profile = await getUserProfile(supabase, order.user_id);
-    
-    if (profile?.email) {
+    // Send email: either to authenticated user or guest buyer
+    const emailRecipient = isGuest ? buyerEmail : null;
+    const profile = !isGuest ? await getUserProfile(supabase, order.user_id) : null;
+    const finalEmail = profile?.email || emailRecipient;
+    const finalName = profile?.full_name || (data.customer?.name) || '';
+
+    if (finalEmail) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       const paymentMethodLabel = order.payment_method === 'credit_card' 
         ? 'Cartão de Crédito' 
@@ -867,9 +880,9 @@ async function handleChargePaid(supabase: any, data: any) {
       
       await sendEmail(SUPABASE_URL, {
         action: 'purchase_confirmation',
-        to: profile.email,
+        to: finalEmail,
         data: {
-          userName: profile.full_name || '',
+          userName: finalName,
           courseName: itemTitle,
           courseUrl: order.combo_id 
             ? `${productionUrl}/courses` 
@@ -878,23 +891,28 @@ async function handleChargePaid(supabase: any, data: any) {
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
           installments: order.installments || 1,
+          isGuest: isGuest,
+          signupUrl: isGuest ? `${productionUrl}/login?tab=signup` : undefined,
         }
       });
     }
     
-    await createNotification(supabase, {
-      user_id: order.user_id,
-      type: 'payment_success',
-      title: 'Pagamento confirmado! 🎉',
-      message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
-      link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
-      metadata: {
-        order_id: order.id,
-        course_id: order.course_id,
-        combo_id: order.combo_id,
-        amount: order.amount
-      }
-    });
+    // Only create notification for authenticated users
+    if (!isGuest) {
+      await createNotification(supabase, {
+        user_id: order.user_id,
+        type: 'payment_success',
+        title: 'Pagamento confirmado! 🎉',
+        message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
+        link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
+        metadata: {
+          order_id: order.id,
+          course_id: order.course_id,
+          combo_id: order.combo_id,
+          amount: order.amount
+        }
+      });
+    }
   }
 }
 
@@ -929,19 +947,21 @@ async function handleChargePaymentFailed(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as failed`);
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_failed',
-    title: 'Pagamento não aprovado',
-    message: `Seu pagamento para "${order.courses?.title || 'curso'}" não foi aprovado. Motivo: ${failureMessage}. Tente novamente com outro método de pagamento.`,
-    link: `/courses/${order.course_id}`,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      failure_code: failureCode,
-      failure_message: failureMessage
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_failed',
+      title: 'Pagamento não aprovado',
+      message: `Seu pagamento para "${order.courses?.title || 'curso'}" não foi aprovado. Motivo: ${failureMessage}. Tente novamente com outro método de pagamento.`,
+      link: `/courses/${order.course_id}`,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        failure_code: failureCode,
+        failure_message: failureMessage
+      }
+    });
+  }
 }
 
 async function handleChargeRefunded(supabase: any, data: any) {
@@ -971,25 +991,26 @@ async function handleChargeRefunded(supabase: any, data: any) {
   console.log(`[Webhook] Order ${order.id} marked as refunded`);
 
   // Revoke enrollments (combo or single)
-  if (order.combo_id) {
+  if (order.user_id && order.combo_id) {
     const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
     for (const c of (cc || [])) {
       await revokeEnrollment(supabase, order.user_id, c.course_id);
     }
-  } else if (order.course_id) {
+  } else if (order.user_id && order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
   }
 
   const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'Curso');
-  const profile = await getUserProfile(supabase, order.user_id);
+  const profile = order.user_id ? await getUserProfile(supabase, order.user_id) : null;
+  const finalEmail = profile?.email || order.buyer_email;
   
-  if (profile?.email) {
+  if (finalEmail) {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
       action: 'refund_confirmation',
-      to: profile.email,
+      to: finalEmail,
       data: {
-        userName: profile.full_name || '',
+        userName: profile?.full_name || '',
         courseName: itemTitle,
         amount: order.amount,
         orderId: order.id,
@@ -997,19 +1018,21 @@ async function handleChargeRefunded(supabase: any, data: any) {
     });
   }
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_refunded',
-    title: 'Reembolso processado',
-    message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
-    link: null,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      combo_id: order.combo_id,
-      amount: order.amount
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_refunded',
+      title: 'Reembolso processado',
+      message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
+      link: null,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        combo_id: order.combo_id,
+        amount: order.amount
+      }
+    });
+  }
 }
 
 async function handleChargePending(supabase: any, data: any) {
@@ -1065,17 +1088,19 @@ async function handleChargeCanceled(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as canceled`);
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_canceled',
-    title: 'Pagamento cancelado',
-    message: `Seu pagamento para "${order.courses?.title || 'curso'}" foi cancelado.`,
-    link: `/courses/${order.course_id}`,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_canceled',
+      title: 'Pagamento cancelado',
+      message: `Seu pagamento para "${order.courses?.title || 'curso'}" foi cancelado.`,
+      link: `/courses/${order.course_id}`,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id
+      }
+    });
+  }
 }
 
 async function handleChargeChargedback(supabase: any, data: any) {
@@ -1104,30 +1129,34 @@ async function handleChargeChargedback(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as chargedback`);
 
-  // Revoke enrollments (combo or single)
-  if (order.combo_id) {
-    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
-    for (const c of (cc || [])) {
-      await revokeEnrollment(supabase, order.user_id, c.course_id);
+  // Revoke enrollments (combo or single) — only for authenticated users
+  if (order.user_id) {
+    if (order.combo_id) {
+      const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+      for (const c of (cc || [])) {
+        await revokeEnrollment(supabase, order.user_id, c.course_id);
+      }
+    } else if (order.course_id) {
+      await revokeEnrollment(supabase, order.user_id, order.course_id);
     }
-  } else if (order.course_id) {
-    await revokeEnrollment(supabase, order.user_id, order.course_id);
   }
 
   const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'curso');
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_chargedback',
-    title: 'Contestação de pagamento',
-    message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
-    link: null,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      combo_id: order.combo_id,
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_chargedback',
+      title: 'Contestação de pagamento',
+      message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
+      link: null,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        combo_id: order.combo_id,
+      }
+    });
+  }
 }
 
 // ===========================================
