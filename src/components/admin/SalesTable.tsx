@@ -764,7 +764,7 @@ export async function fetchSalesData(page: number, pageSize: number): Promise<{ 
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, buyer_email, pix_qr_code, boleto_url, failure_reason')
+    .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, buyer_email, buyer_name, pix_qr_code, boleto_url, failure_reason')
     .order('created_at', { ascending: false })
     .range(from, to);
 
