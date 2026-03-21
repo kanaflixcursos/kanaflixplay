@@ -849,15 +849,27 @@ async function handleChargePaid(supabase: any, data: any) {
     itemTitle = order.courses?.title || 'Curso';
   }
 
+  const isGuest = !order.user_id;
+  const buyerEmail = order.buyer_email;
+
   if (enrollCourseIds.length > 0) {
-    for (const cid of enrollCourseIds) {
-      await enrollUser(supabase, order.user_id, cid);
+    // Only enroll if user is authenticated (not guest)
+    if (!isGuest) {
+      for (const cid of enrollCourseIds) {
+        await enrollUser(supabase, order.user_id, cid);
+      }
+      console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
+    } else {
+      console.log(`[Webhook] Guest order ${order.id} - enrollment will happen on signup via link_guest_orders_on_signup trigger`);
     }
-    console.log(`[Webhook] User ${order.user_id} enrolled in ${enrollCourseIds.length} course(s)`);
     
-    const profile = await getUserProfile(supabase, order.user_id);
-    
-    if (profile?.email) {
+    // Send email: either to authenticated user or guest buyer
+    const emailRecipient = isGuest ? buyerEmail : null;
+    const profile = !isGuest ? await getUserProfile(supabase, order.user_id) : null;
+    const finalEmail = profile?.email || emailRecipient;
+    const finalName = profile?.full_name || (data.customer?.name) || '';
+
+    if (finalEmail) {
       const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
       const paymentMethodLabel = order.payment_method === 'credit_card' 
         ? 'Cartão de Crédito' 
@@ -867,9 +879,9 @@ async function handleChargePaid(supabase: any, data: any) {
       
       await sendEmail(SUPABASE_URL, {
         action: 'purchase_confirmation',
-        to: profile.email,
+        to: finalEmail,
         data: {
-          userName: profile.full_name || '',
+          userName: finalName,
           courseName: itemTitle,
           courseUrl: order.combo_id 
             ? `${productionUrl}/courses` 
@@ -878,23 +890,28 @@ async function handleChargePaid(supabase: any, data: any) {
           paymentMethod: paymentMethodLabel,
           orderId: order.id,
           installments: order.installments || 1,
+          isGuest: isGuest,
+          signupUrl: isGuest ? `${productionUrl}/login?tab=signup` : undefined,
         }
       });
     }
     
-    await createNotification(supabase, {
-      user_id: order.user_id,
-      type: 'payment_success',
-      title: 'Pagamento confirmado! 🎉',
-      message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
-      link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
-      metadata: {
-        order_id: order.id,
-        course_id: order.course_id,
-        combo_id: order.combo_id,
-        amount: order.amount
-      }
-    });
+    // Only create notification for authenticated users
+    if (!isGuest) {
+      await createNotification(supabase, {
+        user_id: order.user_id,
+        type: 'payment_success',
+        title: 'Pagamento confirmado! 🎉',
+        message: `Seu pagamento para "${itemTitle}" foi confirmado. Você já pode acessar o conteúdo!`,
+        link: order.combo_id ? `/courses` : `/courses/${order.course_id}`,
+        metadata: {
+          order_id: order.id,
+          course_id: order.course_id,
+          combo_id: order.combo_id,
+          amount: order.amount
+        }
+      });
+    }
   }
 }
 
