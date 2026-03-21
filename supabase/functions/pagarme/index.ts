@@ -446,6 +446,7 @@ async function handleCreateOrder(
       id: `free_${Date.now()}`,
       user_id: userId || null,
       buyer_email: customer.email.toLowerCase().trim(),
+      buyer_name: customer.name || null,
       course_id: comboId ? null : courseId,
       combo_id: comboId || null,
       amount: 0,
