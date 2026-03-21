@@ -334,20 +334,36 @@ export default function SalesTable({
                   )}
                 </TableCell>
                 <TableCell className="text-sm">
-                  <Link
-                    to={`/admin/students/${sale.user_id}`}
-                    className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
-                  >
-                    <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarImage src={sale.user_avatar || undefined} />
-                      <AvatarFallback className="bg-muted text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-primary truncate text-sm">
-                      {sale.user_name || sale.user_email || 'Usuário'}
-                    </span>
-                  </Link>
+                  {sale.user_id ? (
+                    <Link
+                      to={`/admin/students/${sale.user_id}`}
+                      className="flex items-center gap-2.5 hover:opacity-80 transition-opacity max-w-44"
+                    >
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarImage src={sale.user_avatar || undefined} />
+                        <AvatarFallback className="bg-muted text-muted-foreground">
+                          <User className="h-3.5 w-3.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-primary truncate text-sm">
+                        {sale.user_name || sale.user_email || 'Usuário'}
+                      </span>
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-2.5 max-w-44">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarFallback className="bg-warning/15 text-warning">
+                          <User className="h-3.5 w-3.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-foreground truncate text-sm">
+                          {sale.buyer_name || sale.user_email || 'Convidado'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Sem cadastro</span>
+                      </div>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="text-sm max-w-44 truncate">
                   {sale.course_title || '—'}
