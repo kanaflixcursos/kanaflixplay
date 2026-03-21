@@ -92,10 +92,13 @@ Deno.serve(async (req) => {
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           global: { headers: { Authorization: authHeader } }
         });
-        const token = authHeader.replace('Bearer ', '');
-        const { data: claimsData } = await supabase.auth.getClaims(token);
-        if (claimsData?.claims?.sub) {
-          userId = claimsData.claims.sub as string;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) {
+            userId = user.id;
+          }
+        } catch (authErr) {
+          console.warn('[Auth] Failed to get user from token, proceeding as guest:', authErr);
         }
       }
       
