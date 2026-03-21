@@ -1087,17 +1087,19 @@ async function handleChargeCanceled(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as canceled`);
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_canceled',
-    title: 'Pagamento cancelado',
-    message: `Seu pagamento para "${order.courses?.title || 'curso'}" foi cancelado.`,
-    link: `/courses/${order.course_id}`,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_canceled',
+      title: 'Pagamento cancelado',
+      message: `Seu pagamento para "${order.courses?.title || 'curso'}" foi cancelado.`,
+      link: `/courses/${order.course_id}`,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id
+      }
+    });
+  }
 }
 
 async function handleChargeChargedback(supabase: any, data: any) {
