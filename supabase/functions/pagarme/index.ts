@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
+let productionUrl = DEFAULT_PRODUCTION_URL;
 
 async function getSiteProductionUrl(supabaseUrl: string, serviceRoleKey: string): Promise<string> {
   try {
