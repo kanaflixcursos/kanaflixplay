@@ -1128,30 +1128,34 @@ async function handleChargeChargedback(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as chargedback`);
 
-  // Revoke enrollments (combo or single)
-  if (order.combo_id) {
-    const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
-    for (const c of (cc || [])) {
-      await revokeEnrollment(supabase, order.user_id, c.course_id);
+  // Revoke enrollments (combo or single) — only for authenticated users
+  if (order.user_id) {
+    if (order.combo_id) {
+      const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
+      for (const c of (cc || [])) {
+        await revokeEnrollment(supabase, order.user_id, c.course_id);
+      }
+    } else if (order.course_id) {
+      await revokeEnrollment(supabase, order.user_id, order.course_id);
     }
-  } else if (order.course_id) {
-    await revokeEnrollment(supabase, order.user_id, order.course_id);
   }
 
   const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'curso');
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_chargedback',
-    title: 'Contestação de pagamento',
-    message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
-    link: null,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      combo_id: order.combo_id,
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_chargedback',
+      title: 'Contestação de pagamento',
+      message: `O pagamento para "${itemTitle}" foi contestado. O acesso foi suspenso.`,
+      link: null,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        combo_id: order.combo_id,
+      }
+    });
+  }
 }
 
 // ===========================================
