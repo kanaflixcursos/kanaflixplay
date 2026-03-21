@@ -990,12 +990,12 @@ async function handleChargeRefunded(supabase: any, data: any) {
   console.log(`[Webhook] Order ${order.id} marked as refunded`);
 
   // Revoke enrollments (combo or single)
-  if (order.combo_id) {
+  if (order.user_id && order.combo_id) {
     const { data: cc } = await supabase.from('combo_courses').select('course_id').eq('combo_id', order.combo_id);
     for (const c of (cc || [])) {
       await revokeEnrollment(supabase, order.user_id, c.course_id);
     }
-  } else if (order.course_id) {
+  } else if (order.user_id && order.course_id) {
     await revokeEnrollment(supabase, order.user_id, order.course_id);
   }
 
