@@ -762,7 +762,7 @@ export async function fetchSalesData(page: number, pageSize: number): Promise<{ 
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('id, amount, status, payment_method, paid_at, created_at, course_id, user_id, pix_qr_code, boleto_url, failure_reason')
+    .select('id, amount, status, payment_method, paid_at, created_at, course_id, combo_id, user_id, buyer_email, pix_qr_code, boleto_url, failure_reason')
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -771,25 +771,36 @@ export async function fetchSalesData(page: number, pageSize: number): Promise<{ 
   }
 
   const courseIds = [...new Set(orders.map(o => o.course_id).filter(Boolean))] as string[];
-  const userIds = [...new Set(orders.map(o => o.user_id))];
+  const comboIds = [...new Set(orders.map(o => o.combo_id).filter(Boolean))] as string[];
+  const userIds = [...new Set(orders.map(o => o.user_id).filter(Boolean))] as string[];
 
-  const [{ data: courses }, { data: profiles }] = await Promise.all([
+  const [{ data: courses }, { data: combos }, { data: profiles }] = await Promise.all([
     courseIds.length > 0
       ? supabase.from('courses').select('id, title').in('id', courseIds)
       : Promise.resolve({ data: [] as { id: string; title: string }[] }),
-    supabase.from('profiles').select('user_id, full_name, email, avatar_url').in('user_id', userIds),
+    comboIds.length > 0
+      ? supabase.from('combos').select('id, title').in('id', comboIds)
+      : Promise.resolve({ data: [] as { id: string; title: string }[] }),
+    userIds.length > 0
+      ? supabase.from('profiles').select('user_id, full_name, email, avatar_url').in('user_id', userIds)
+      : Promise.resolve({ data: [] as { user_id: string; full_name: string | null; email: string | null; avatar_url: string | null }[] }),
   ]);
 
   const coursesMap = new Map(courses?.map(c => [c.id, c.title]) || []);
+  const combosMap = new Map(combos?.map(c => [c.id, c.title]) || []);
   const profilesMap = new Map(profiles?.map(p => [p.user_id, { name: p.full_name, email: p.email, avatar: p.avatar_url }]) || []);
 
-  const sales = orders.map(o => ({
-    ...o,
-    course_title: o.course_id ? (coursesMap.get(o.course_id) || null) : null,
-    user_name: profilesMap.get(o.user_id)?.name || null,
-    user_email: profilesMap.get(o.user_id)?.email || null,
-    user_avatar: profilesMap.get(o.user_id)?.avatar || null,
-  }));
+  const sales = orders.map(o => {
+    const profile = o.user_id ? profilesMap.get(o.user_id) : null;
+    const courseTitle = o.combo_id ? (combosMap.get(o.combo_id) || null) : o.course_id ? (coursesMap.get(o.course_id) || null) : null;
+    return {
+      ...o,
+      course_title: courseTitle,
+      user_name: profile?.name || null,
+      user_email: profile?.email || o.buyer_email || null,
+      user_avatar: profile?.avatar || null,
+    };
+  });
 
   return { sales, totalCount: count || 0 };
 }
