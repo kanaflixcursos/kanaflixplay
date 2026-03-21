@@ -946,19 +946,21 @@ async function handleChargePaymentFailed(supabase: any, data: any) {
 
   console.log(`[Webhook] Order ${order.id} marked as failed`);
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_failed',
-    title: 'Pagamento não aprovado',
-    message: `Seu pagamento para "${order.courses?.title || 'curso'}" não foi aprovado. Motivo: ${failureMessage}. Tente novamente com outro método de pagamento.`,
-    link: `/courses/${order.course_id}`,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      failure_code: failureCode,
-      failure_message: failureMessage
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_failed',
+      title: 'Pagamento não aprovado',
+      message: `Seu pagamento para "${order.courses?.title || 'curso'}" não foi aprovado. Motivo: ${failureMessage}. Tente novamente com outro método de pagamento.`,
+      link: `/courses/${order.course_id}`,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        failure_code: failureCode,
+        failure_message: failureMessage
+      }
+    });
+  }
 }
 
 async function handleChargeRefunded(supabase: any, data: any) {
