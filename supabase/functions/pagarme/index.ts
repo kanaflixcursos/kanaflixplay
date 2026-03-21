@@ -1000,15 +1000,16 @@ async function handleChargeRefunded(supabase: any, data: any) {
   }
 
   const itemTitle = order.combo_id ? (order.combos?.title || 'Combo') : (order.courses?.title || 'Curso');
-  const profile = await getUserProfile(supabase, order.user_id);
+  const profile = order.user_id ? await getUserProfile(supabase, order.user_id) : null;
+  const finalEmail = profile?.email || order.buyer_email;
   
-  if (profile?.email) {
+  if (finalEmail) {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     await sendEmail(SUPABASE_URL, {
       action: 'refund_confirmation',
-      to: profile.email,
+      to: finalEmail,
       data: {
-        userName: profile.full_name || '',
+        userName: profile?.full_name || '',
         courseName: itemTitle,
         amount: order.amount,
         orderId: order.id,
@@ -1016,19 +1017,21 @@ async function handleChargeRefunded(supabase: any, data: any) {
     });
   }
 
-  await createNotification(supabase, {
-    user_id: order.user_id,
-    type: 'payment_refunded',
-    title: 'Reembolso processado',
-    message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
-    link: null,
-    metadata: {
-      order_id: order.id,
-      course_id: order.course_id,
-      combo_id: order.combo_id,
-      amount: order.amount
-    }
-  });
+  if (order.user_id) {
+    await createNotification(supabase, {
+      user_id: order.user_id,
+      type: 'payment_refunded',
+      title: 'Reembolso processado',
+      message: `O reembolso para "${itemTitle}" foi processado. O acesso foi revogado.`,
+      link: null,
+      metadata: {
+        order_id: order.id,
+        course_id: order.course_id,
+        combo_id: order.combo_id,
+        amount: order.amount
+      }
+    });
+  }
 }
 
 async function handleChargePending(supabase: any, data: any) {
