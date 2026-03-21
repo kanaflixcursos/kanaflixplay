@@ -441,6 +441,8 @@ Deno.serve(async (req) => {
           paymentMethod: string;
           orderId: string;
           installments?: number;
+          isGuest?: boolean;
+          signupUrl?: string;
         });
         subject = `Pagamento Confirmado - ${PLATFORM_NAME}`;
         break;
