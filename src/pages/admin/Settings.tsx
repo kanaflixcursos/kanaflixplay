@@ -184,6 +184,9 @@ export default function Settings() {
         updateSettings.mutateAsync(values),
         updateApiKeys.mutateAsync(apiValues),
       ]);
+      // Update saved values so SecretField knows what's configured
+      setSavedGtm(values.gtm_container_id || '');
+      setSavedApiKeys({ ...apiValues });
       toast.success('Configurações salvas com sucesso!');
     } catch {
       toast.error('Erro ao salvar configurações');
