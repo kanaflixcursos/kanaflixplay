@@ -667,6 +667,7 @@ export default function CreatorForm() {
                     onChange={field.onChange}
                     placeholder="API Key do Pandavideo"
                     savedValue={savedApiKeys.pandavideo_api_key}
+                    envConfigured={envSecrets.pandavideo}
                   />
                 )} />
                 <FormField control={form.control} name="resend_api_key" render={({ field }) => (
@@ -677,6 +678,7 @@ export default function CreatorForm() {
                     onChange={field.onChange}
                     placeholder="API Key do Resend"
                     savedValue={savedApiKeys.resend_api_key}
+                    envConfigured={envSecrets.resend}
                   />
                 )} />
               </div>
