@@ -79,8 +79,12 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               
-              <Route path="/checkout/combo/:comboId" element={<ComboCheckout />} />
-              <Route path="/checkout/:courseId" element={<Checkout />} />
+              <Route path="/store/:slug/checkout/combo/:comboId" element={
+                <StoreCreatorProvider><ComboCheckout /></StoreCreatorProvider>
+              } />
+              <Route path="/store/:slug/checkout/:courseId" element={
+                <StoreCreatorProvider><Checkout /></StoreCreatorProvider>
+              } />
               
               {/* Student Routes */}
               {/* Student Home */}
