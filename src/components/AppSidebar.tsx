@@ -33,6 +33,7 @@ import {
   Trophy,
   Wallet,
   Settings,
+  UserPlus,
 } from 'lucide-react';
 
 const studentMenuItems = [
