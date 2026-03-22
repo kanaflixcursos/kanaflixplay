@@ -147,7 +147,7 @@ export default function CourseView() {
                   Adquira o curso para desbloquear todo o conteúdo.
                 </p>
               </div>
-              <Button size="sm" onClick={() => navigate(`/checkout/${courseId}`)} className="shrink-0 gap-1.5">
+              <Button size="sm" onClick={() => navigate(`/store/kanaflix/checkout/${courseId}`)} className="shrink-0 gap-1.5">
                 <ShoppingCart className="h-3.5 w-3.5" />
                 {isPaidCourse ? 'Comprar' : 'Matricular-se'}
               </Button>

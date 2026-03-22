@@ -98,7 +98,7 @@ export default function StorePage() {
       ) : (
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {courses.map((course) => (
-            <Link key={course.id} to={`/checkout/${course.id}`}>
+            <Link key={course.id} to={`/store/${creator?.slug}/checkout/${course.id}`}>
               <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
                 <div className="relative aspect-[4/5] w-full overflow-hidden bg-muted">
                   {course.thumbnail_url ? (

@@ -79,7 +79,7 @@ export function useCourseView() {
           setLessons(sorted);
           setSelectedLesson(sorted[0] || null);
         } else {
-          navigate(`/checkout/${courseId}`);
+          navigate(`/store/kanaflix/checkout/${courseId}`);
           return;
         }
         setLoading(false);
