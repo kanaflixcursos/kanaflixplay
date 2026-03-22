@@ -73,7 +73,7 @@ export default function CourseView() {
   if (!course) return null;
 
   if (!isEnrolled && !isPreviewMode) {
-    navigate(`/store/kanaflix/checkout/${courseId}`);
+    navigate(checkoutUrl);
     return null;
   }
 
