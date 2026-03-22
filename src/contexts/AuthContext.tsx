@@ -6,7 +6,7 @@ import { getStoredUtm } from '@/lib/utm';
 import { getVisitorId, linkVisitorToUser, trackEvent } from '@/hooks/useTrackEvent';
 import { getProductionUrl } from '@/hooks/useSiteSettings';
 
-type UserRole = 'admin' | 'student' | null;
+type UserRole = 'admin' | 'student' | 'creator' | null;
 
 interface AuthContextType {
   user: User | null;
