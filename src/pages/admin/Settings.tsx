@@ -70,6 +70,63 @@ function MaskedApiInput({
   );
 }
 
+function SecretField({
+  label,
+  description,
+  value,
+  onChange,
+  placeholder,
+  savedValue,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  savedValue: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [show, setShow] = useState(false);
+  const isConfigured = !!savedValue && !editing;
+
+  if (isConfigured) {
+    return (
+      <FormItem>
+        <FormLabel>{label}</FormLabel>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
+            <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">Secret já configurada</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => { setEditing(true); onChange(''); }}
+          >
+            Alterar
+          </Button>
+        </div>
+        <FormDescription>{description}</FormDescription>
+      </FormItem>
+    );
+  }
+
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <MaskedApiInput
+        value={value}
+        onChange={onChange}
+        show={show}
+        onToggle={() => setShow(!show)}
+        placeholder={placeholder}
+      />
+      <FormDescription>{description}</FormDescription>
+    </FormItem>
+  );
+}
+
 export default function Settings() {
   const navigate = useNavigate();
   const { data: settings, isLoading } = useSiteSettings();
@@ -77,18 +134,25 @@ export default function Settings() {
   const updateSettings = useUpdateSiteSettings();
   const updateApiKeys = useUpdateApiKeys();
 
-  const [showPandaKey, setShowPandaKey] = useState(false);
-  const [showResendKey, setShowResendKey] = useState(false);
+  // Store the originally-loaded values to detect "already configured"
+  const [savedApiKeys, setSavedApiKeys] = useState<ApiKeys | null>(null);
+  const [savedGtm, setSavedGtm] = useState('');
 
   const form = useForm<SiteSettings>({ defaultValues: settings });
   const apiForm = useForm<ApiKeys>({ defaultValues: apiKeys });
 
   useEffect(() => {
-    if (settings) form.reset(settings);
+    if (settings) {
+      form.reset(settings);
+      setSavedGtm(settings.gtm_container_id || '');
+    }
   }, [settings, form]);
 
   useEffect(() => {
-    if (apiKeys) apiForm.reset(apiKeys);
+    if (apiKeys) {
+      apiForm.reset(apiKeys);
+      setSavedApiKeys({ ...apiKeys });
+    }
   }, [apiKeys, apiForm]);
 
   const { theme } = useTheme();
@@ -120,6 +184,9 @@ export default function Settings() {
         updateSettings.mutateAsync(values),
         updateApiKeys.mutateAsync(apiValues),
       ]);
+      // Update saved values so SecretField knows what's configured
+      setSavedGtm(values.gtm_container_id || '');
+      setSavedApiKeys({ ...apiValues });
       toast.success('Configurações salvas com sucesso!');
     } catch {
       toast.error('Erro ao salvar configurações');
@@ -360,45 +427,38 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="dashboard-card-content space-y-4">
               <FormField control={form.control} name="gtm_container_id" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Google Tag Manager - Container ID</FormLabel>
-                  <FormControl><Input placeholder="GTM-XXXXXXX" {...field} /></FormControl>
-                  <FormDescription>Deixe vazio para desativar o GTM</FormDescription>
-                </FormItem>
+                <SecretField
+                  label="Google Tag Manager - Container ID"
+                  description="Deixe vazio para desativar o GTM"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="GTM-XXXXXXX"
+                  savedValue={savedGtm}
+                />
               )} />
 
               <Separator />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={apiForm.control} name="pandavideo_api_key" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pandavideo API Key</FormLabel>
-                    <FormControl>
-                      <MaskedApiInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        show={showPandaKey}
-                        onToggle={() => setShowPandaKey(!showPandaKey)}
-                        placeholder="Insira sua API Key do Pandavideo"
-                      />
-                    </FormControl>
-                    <FormDescription>Chave para sincronizar vídeos do Pandavideo</FormDescription>
-                  </FormItem>
+                  <SecretField
+                    label="Pandavideo API Key"
+                    description="Chave para sincronizar vídeos do Pandavideo"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Insira sua API Key do Pandavideo"
+                    savedValue={savedApiKeys?.pandavideo_api_key || ''}
+                  />
                 )} />
                 <FormField control={apiForm.control} name="resend_api_key" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resend API Key</FormLabel>
-                    <FormControl>
-                      <MaskedApiInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        show={showResendKey}
-                        onToggle={() => setShowResendKey(!showResendKey)}
-                        placeholder="Insira sua API Key do Resend"
-                      />
-                    </FormControl>
-                    <FormDescription>Chave para envio de e-mails transacionais</FormDescription>
-                  </FormItem>
+                  <SecretField
+                    label="Resend API Key"
+                    description="Chave para envio de e-mails transacionais"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Insira sua API Key do Resend"
+                    savedValue={savedApiKeys?.resend_api_key || ''}
+                  />
                 )} />
               </div>
             </CardContent>
