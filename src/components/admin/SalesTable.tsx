@@ -20,7 +20,7 @@ import {
   Pagination, PaginationContent, PaginationItem, PaginationLink,
   PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Eye, CreditCard, QrCode, FileText, User, Copy, RotateCcw, XCircle, Loader2 } from 'lucide-react';
+import { Eye, CreditCard, QrCode, FileText, User, Copy, RotateCcw, XCircle, Loader2, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link, useNavigate } from 'react-router-dom';
@@ -117,6 +117,35 @@ export default function SalesTable({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState<Sale | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+
+  const handleSendGuestReminder = async (sale: Sale) => {
+    if (!sale.user_email) {
+      toast.error('E-mail do comprador não encontrado');
+      return;
+    }
+    setSendingReminder(sale.id);
+    try {
+      const signupUrl = `${window.location.origin}/login?tab=signup&email=${encodeURIComponent(sale.user_email)}`;
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'guest_reminder',
+          to: sale.user_email,
+          data: {
+            buyerName: sale.buyer_name || '',
+            courseName: sale.course_title || 'seu curso',
+            signupUrl,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success('Lembrete enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Error sending reminder:', error);
+      toast.error('Erro ao enviar lembrete');
+    }
+    setSendingReminder(null);
+  };
 
   const copyId = (id: string) => {
     navigator.clipboard.writeText(id);
@@ -295,6 +324,18 @@ export default function SalesTable({
                     <XCircle className="h-3.5 w-3.5" />
                   </Button>
                 )}
+                {!sale.user_id && sale.status === 'paid' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => handleSendGuestReminder(sale)}
+                    disabled={sendingReminder === sale.id}
+                    title="Reenviar lembrete de cadastro"
+                  >
+                    {sendingReminder === sale.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -450,6 +491,18 @@ export default function SalesTable({
                         title="Cancelar"
                       >
                         <XCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {!sale.user_id && sale.status === 'paid' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleSendGuestReminder(sale)}
+                        disabled={sendingReminder === sale.id}
+                        title="Reenviar lembrete de cadastro"
+                      >
+                        {sendingReminder === sale.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                       </Button>
                     )}
                   </div>

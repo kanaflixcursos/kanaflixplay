@@ -382,11 +382,38 @@ const templates = {
       O valor será creditado em sua conta em até 10 dias úteis, dependendo do seu banco.
     </p>
   `, `Reembolso processado - R$ ${(data.amount / 100).toFixed(2).replace('.', ',')}`),
+  guestReminder: (data: {
+    buyerName: string;
+    courseName: string;
+    signupUrl: string;
+  }) => emailTemplate(`
+    <h1 style="margin: 0 0 16px; font-size: 24px; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily}; letter-spacing: -0.03em;">
+      Seu curso está esperando por você! 🎓
+    </h1>
+    <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily};">
+      Olá${data.buyerName ? ` <strong style="color: ${brand.text}; font-weight: 500;">${data.buyerName}</strong>` : ''}, você adquiriu o curso <strong style="color: ${brand.text}; font-weight: 500;">${data.courseName}</strong> mas ainda não criou sua conta na plataforma.
+    </p>
+    <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.7; color: ${brand.textMuted}; font-family: ${fontFamily};">
+      Crie sua conta com o mesmo e-mail usado na compra e seu acesso será liberado automaticamente.
+    </p>
+    <div style="background-color: #FFF3CD; border: 1px solid #FFEEBA; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+      <p style="margin: 0 0 12px; font-size: 15px; font-weight: 500; color: ${brand.text}; font-family: ${fontFamily};">
+        📋 Cadastre-se para liberar seu acesso
+      </p>
+      <p style="margin: 0 0 16px; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
+        Use o mesmo e-mail da compra para que o acesso seja vinculado automaticamente.
+      </p>
+      ${button("Criar minha conta", data.signupUrl)}
+    </div>
+    <p style="margin: 0; font-size: 13px; color: ${brand.textMuted}; font-family: ${fontFamily};">
+      Se precisar de ajuda, entre em contato com nosso suporte.
+    </p>
+  `, `Seu curso ${data.courseName} está esperando por você`),
 };
 
 // Handler types
 interface EmailRequest {
-  action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation' | 'campaign';
+  action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation' | 'campaign' | 'guest_reminder';
   to: string;
   data: Record<string, unknown>;
 }
@@ -514,6 +541,13 @@ Deno.serve(async (req) => {
           : '';
 
         html = emailTemplate(campaignContent + trackingPixel, subject);
+        break;
+      }
+
+      case 'guest_reminder': {
+        const reminderData = data as { buyerName: string; courseName: string; signupUrl: string };
+        html = templates.guestReminder(reminderData);
+        subject = `Lembrete: Crie sua conta - ${PLATFORM_NAME}`;
         break;
       }
 
