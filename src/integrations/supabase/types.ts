@@ -1267,6 +1267,7 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           created_at: string
+          creator_id: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -1283,6 +1284,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
+          creator_id?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -1299,6 +1301,7 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           created_at?: string
+          creator_id?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -1311,7 +1314,15 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       refund_requests: {
         Row: {
