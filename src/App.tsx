@@ -50,6 +50,9 @@ import ComboCheckout from "@/pages/ComboCheckout";
 import CreatorLayout from "@/components/layouts/CreatorLayout";
 import CreatorDashboard from "@/pages/creator/Dashboard";
 import CreatorSettings from "@/pages/creator/Settings";
+import CreatorCourses from "@/pages/creator/Courses";
+import CreatorStudents from "@/pages/creator/Students";
+import CreatorOrders from "@/pages/creator/Orders";
 import StoreLayout from "@/components/layouts/StoreLayout";
 import StorePage from "@/pages/store/StorePage";
 import { StoreCreatorProvider, AuthCreatorProvider } from "@/contexts/CreatorContext";
@@ -426,6 +429,42 @@ const App = () => (
                     <AuthCreatorProvider>
                       <CreatorLayout>
                         <CreatorSettings />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/courses"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorCourses />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/students"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorStudents />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/orders"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorOrders />
                       </CreatorLayout>
                     </AuthCreatorProvider>
                   </ProtectedRoute>

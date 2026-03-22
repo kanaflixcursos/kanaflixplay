@@ -59,29 +59,55 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub as string;
 
-    // Check if user is admin
-    const { data: roleData } = await supabase
+    // Check if user is admin or creator
+    const sbAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: roleData } = await sbAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .single();
+      .eq("user_id", userId);
 
-    const isAdmin = roleData?.role === "admin";
+    const roles = (roleData || []).map((r: { role: string }) => r.role);
+    const isAdmin = roles.includes("admin");
+    const isCreator = roles.includes("creator");
+
+    if (!isAdmin && !isCreator) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
+    const creatorIdParam = url.searchParams.get("creator_id");
 
-    // Try env var first, fallback to site_settings
-    let pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
+    // Resolve Pandavideo API key: creator_settings → env var → site_settings
+    let pandaApiKey: string | undefined;
+
+    // 1) Try creator-specific key
+    let resolvedCreatorId = creatorIdParam;
+    if (!resolvedCreatorId && isCreator) {
+      const { data: creatorRow } = await sbAdmin.from("creators").select("id").eq("user_id", userId).single();
+      resolvedCreatorId = creatorRow?.id;
+    }
+    if (resolvedCreatorId) {
+      const { data: cs } = await sbAdmin.from("creator_settings").select("pandavideo_api_key").eq("creator_id", resolvedCreatorId).single();
+      if (cs?.pandavideo_api_key) pandaApiKey = cs.pandavideo_api_key;
+    }
+
+    // 2) Fallback to env var
+    if (!pandaApiKey) pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
+
+    // 3) Fallback to site_settings
     if (!pandaApiKey) {
       try {
-        const sbAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
         const { data: keyData } = await sbAdmin.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
         if (keyData?.value && typeof keyData.value === "object") {
           pandaApiKey = (keyData.value as Record<string, string>).pandavideo_api_key || "";
         }
       } catch (e) { console.error("Failed to fetch Pandavideo key from DB:", e); }
     }
+
     if (!pandaApiKey) {
       return new Response(
         JSON.stringify({ error: "Pandavideo API key not configured" }),
@@ -91,8 +117,8 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "list": {
-        // Only admins can list all videos
-        if (!isAdmin) {
+        // Admins and creators can list videos
+        if (!isAdmin && !isCreator) {
           return new Response(
             JSON.stringify({ error: "Forbidden" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -201,8 +227,8 @@ Deno.serve(async (req) => {
       }
 
       case "folders": {
-        // Only admins can list folders
-        if (!isAdmin) {
+        // Admins and creators can list folders
+        if (!isAdmin && !isCreator) {
           return new Response(
             JSON.stringify({ error: "Forbidden" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

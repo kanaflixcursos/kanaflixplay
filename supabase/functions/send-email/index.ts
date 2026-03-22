@@ -3,11 +3,20 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ENV_RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-async function getResendApiKey(): Promise<string | null> {
-  // Try env var first, then fall back to site_settings
+async function getResendApiKey(creatorId?: string): Promise<string | null> {
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  // 1) Try creator-specific key
+  if (creatorId) {
+    const { data: cs } = await sb.from("creator_settings").select("resend_api_key").eq("creator_id", creatorId).single();
+    if (cs?.resend_api_key) return cs.resend_api_key;
+  }
+
+  // 2) Fallback to env var
   if (ENV_RESEND_API_KEY) return ENV_RESEND_API_KEY;
+
+  // 3) Fallback to site_settings
   try {
-    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data } = await sb.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
     if (data?.value && typeof data.value === "object") {
       return (data.value as Record<string, string>).resend_api_key || null;
@@ -416,6 +425,7 @@ interface EmailRequest {
   action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation' | 'campaign' | 'guest_reminder';
   to: string;
   data: Record<string, unknown>;
+  creator_id?: string;
 }
 
 Deno.serve(async (req) => {
@@ -438,7 +448,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, to, data }: EmailRequest = await req.json();
+    const { action, to, data, creator_id }: EmailRequest = await req.json();
 
     if (!action || !to) {
       throw new Error("Missing required fields: action, to");
@@ -555,15 +565,27 @@ Deno.serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
-    const resendKey = await getResendApiKey();
+    const resendKey = await getResendApiKey(creator_id);
     if (!resendKey) {
       throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    // Resolve sender from creator_settings if creator_id provided
+    let senderName = siteConfig.email_sender_name;
+    let senderAddress = siteConfig.email_sender_address;
+    if (creator_id) {
+      try {
+        const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: cs } = await sb.from("creator_settings").select("sender_name, sender_email").eq("creator_id", creator_id).single();
+        if (cs?.sender_name) senderName = cs.sender_name;
+        if (cs?.sender_email) senderAddress = cs.sender_email;
+      } catch (_e) { /* use defaults */ }
     }
 
     const resend = new Resend(resendKey);
 
     const emailResponse = await resend.emails.send({
-      from: `${siteConfig.email_sender_name} <${siteConfig.email_sender_address}>`,
+      from: `${senderName} <${senderAddress}>`,
       to: [to],
       subject,
       html,

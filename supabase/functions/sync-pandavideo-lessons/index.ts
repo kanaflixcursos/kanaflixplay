@@ -68,6 +68,7 @@ async function fetchVideoDetails(videoId: string, apiKey: string): Promise<Panda
 interface Course {
   id: string;
   pandavideo_folder_id: string;
+  creator_id: string;
 }
 
 Deno.serve(async (req) => {
@@ -75,26 +76,20 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
+   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    // Try env var first, fallback to site_settings
-    let pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
-    if (!pandaApiKey) {
+
+    // Global fallback Pandavideo key
+    let globalPandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
+    if (!globalPandaApiKey) {
       try {
         const sbKeys = createClient(supabaseUrl, supabaseServiceKey);
         const { data: keyData } = await sbKeys.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
         if (keyData?.value && typeof keyData.value === "object") {
-          pandaApiKey = (keyData.value as Record<string, string>).pandavideo_api_key || "";
+          globalPandaApiKey = (keyData.value as Record<string, string>).pandavideo_api_key || "";
         }
       } catch (e) { console.error("Failed to fetch Pandavideo key from DB:", e); }
-    }
-    if (!pandaApiKey) {
-      console.error("PANDAVIDEO_API_KEY not configured");
-      return new Response(
-        JSON.stringify({ error: "Pandavideo API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     const url = new URL(req.url);
@@ -155,10 +150,10 @@ Deno.serve(async (req) => {
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch courses with pandavideo folders
+    // Fetch courses with pandavideo folders (include creator_id for key lookup)
     let coursesQuery = supabase
       .from("courses")
-      .select("id, pandavideo_folder_id")
+      .select("id, pandavideo_folder_id, creator_id")
       .not("pandavideo_folder_id", "is", null);
 
     if (courseId) {
@@ -194,6 +189,18 @@ Deno.serve(async (req) => {
 
     for (const course of courses as Course[]) {
       try {
+        // Resolve per-creator Pandavideo API key
+        let pandaApiKey = globalPandaApiKey;
+        if (course.creator_id) {
+          const { data: cs } = await supabase.from("creator_settings").select("pandavideo_api_key").eq("creator_id", course.creator_id).single();
+          if (cs?.pandavideo_api_key) pandaApiKey = cs.pandavideo_api_key;
+        }
+        if (!pandaApiKey) {
+          console.error(`No Pandavideo API key for course ${course.id}`);
+          results.errors.push(`Course ${course.id}: No API key`);
+          continue;
+        }
+
         console.log(`Syncing course ${course.id} with folder ${course.pandavideo_folder_id}`);
         
         // Fetch all subfolder IDs recursively
