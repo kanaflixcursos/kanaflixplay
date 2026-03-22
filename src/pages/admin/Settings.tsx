@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/components/ThemeProvider';
@@ -137,6 +138,8 @@ export default function Settings() {
   // Store the originally-loaded values to detect "already configured"
   const [savedApiKeys, setSavedApiKeys] = useState<ApiKeys | null>(null);
   const [savedGtm, setSavedGtm] = useState('');
+  // Track which Supabase secrets are configured (from edge function check)
+  const [secretsConfigured, setSecretsConfigured] = useState<Record<string, boolean>>({});
 
   const form = useForm<SiteSettings>({ defaultValues: settings });
   const apiForm = useForm<ApiKeys>({ defaultValues: apiKeys });
@@ -154,6 +157,21 @@ export default function Settings() {
       setSavedApiKeys({ ...apiKeys });
     }
   }, [apiKeys, apiForm]);
+
+  // Check which secrets are configured in Supabase
+  useEffect(() => {
+    const checkSecrets = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-secrets');
+        if (!error && data?.configured) {
+          setSecretsConfigured(data.configured);
+        }
+      } catch (e) {
+        console.warn('Could not check secrets status', e);
+      }
+    };
+    checkSecrets();
+  }, []);
 
   const { theme } = useTheme();
   const selectedColor = form.watch('primary_color') || 'green';
@@ -447,7 +465,7 @@ export default function Settings() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Insira sua API Key do Pandavideo"
-                    savedValue={savedApiKeys?.pandavideo_api_key || ''}
+                    savedValue={savedApiKeys?.pandavideo_api_key || (secretsConfigured.PANDAVIDEO_API_KEY ? '***' : '')}
                   />
                 )} />
                 <FormField control={apiForm.control} name="resend_api_key" render={({ field }) => (
@@ -457,7 +475,7 @@ export default function Settings() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Insira sua API Key do Resend"
-                    savedValue={savedApiKeys?.resend_api_key || ''}
+                    savedValue={savedApiKeys?.resend_api_key || (secretsConfigured.RESEND_API_KEY ? '***' : '')}
                   />
                 )} />
               </div>
