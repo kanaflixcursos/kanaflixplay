@@ -152,7 +152,7 @@ export default function CreatorForm() {
     enabled: isEditing,
   });
 
-  // Fetch team members
+  // Fetch team members (batched profile lookup)
   const { data: teamMembers = [], refetch: refetchTeam } = useQuery({
     queryKey: ['creator-team', creatorId],
     queryFn: async () => {
@@ -163,18 +163,22 @@ export default function CreatorForm() {
         .eq('creator_id', creatorId)
         .order('created_at', { ascending: true });
       if (error) throw error;
+      if (!data || data.length === 0) return [];
 
-      const enriched = await Promise.all(
-        (data || []).map(async (member) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email, avatar_url')
-            .eq('user_id', member.user_id)
-            .single();
-          return { ...member, profile } as TeamMember;
-        })
+      const userIds = data.map(m => m.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, avatar_url')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.user_id, p])
       );
-      return enriched;
+
+      return data.map(member => ({
+        ...member,
+        profile: profileMap.get(member.user_id) || undefined,
+      })) as TeamMember[];
     },
     enabled: isEditing,
   });

@@ -20,8 +20,8 @@ interface Creator {
   status: string;
   created_at: string;
   profile?: { full_name: string | null; email: string | null; avatar_url: string | null };
-  course_count?: number;
-  enrollment_count?: number;
+  course_count: number;
+  enrollment_count: number;
 }
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -43,23 +43,42 @@ export default function Creators() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
+      if (!data || data.length === 0) return [];
 
-      const enriched = await Promise.all(
-        (data || []).map(async (creator) => {
-          const [profileRes, courseCountRes, enrollmentCountRes] = await Promise.all([
-            supabase.from('profiles').select('full_name, email, avatar_url').eq('user_id', creator.user_id).single(),
-            supabase.from('courses').select('*', { count: 'exact', head: true }).eq('creator_id', creator.id),
-            supabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('creator_id', creator.id),
-          ]);
-          return {
-            ...creator,
-            profile: profileRes.data || undefined,
-            course_count: courseCountRes.count || 0,
-            enrollment_count: enrollmentCountRes.count || 0,
-          } as Creator;
-        })
+      // Batch: fetch all profiles in one query
+      const userIds = data.map(c => c.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, avatar_url')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(
+        (profiles || []).map(p => [p.user_id, p])
       );
-      return enriched;
+
+      // Batch: fetch counts in two queries instead of 2*N
+      const creatorIds = data.map(c => c.id);
+      const [coursesRes, enrollmentsRes] = await Promise.all([
+        supabase.from('courses').select('creator_id').in('creator_id', creatorIds),
+        supabase.from('course_enrollments').select('creator_id').in('creator_id', creatorIds),
+      ]);
+
+      const courseCountMap = new Map<string, number>();
+      (coursesRes.data || []).forEach(c => {
+        courseCountMap.set(c.creator_id, (courseCountMap.get(c.creator_id) || 0) + 1);
+      });
+
+      const enrollmentCountMap = new Map<string, number>();
+      (enrollmentsRes.data || []).forEach(e => {
+        enrollmentCountMap.set(e.creator_id, (enrollmentCountMap.get(e.creator_id) || 0) + 1);
+      });
+
+      return data.map(creator => ({
+        ...creator,
+        profile: profileMap.get(creator.user_id) || undefined,
+        course_count: courseCountMap.get(creator.id) || 0,
+        enrollment_count: enrollmentCountMap.get(creator.id) || 0,
+      })) as Creator[];
     },
   });
 
