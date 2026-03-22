@@ -81,36 +81,29 @@ Deno.serve(async (req) => {
     const action = url.searchParams.get("action");
     const creatorIdParam = url.searchParams.get("creator_id");
 
-    // Resolve Pandavideo API key: creator_settings → env var → site_settings
+    // Resolve Pandavideo API key: ONLY from creator_settings (strict tenant isolation)
     let pandaApiKey: string | undefined;
 
-    // 1) Try creator-specific key
     let resolvedCreatorId = creatorIdParam;
     if (!resolvedCreatorId && isCreator) {
       const { data: creatorRow } = await sbAdmin.from("creators").select("id").eq("user_id", userId).single();
       resolvedCreatorId = creatorRow?.id;
+    }
+    if (!resolvedCreatorId && isAdmin) {
+      // Admin without creator_id param — cannot resolve, require param
+      return new Response(
+        JSON.stringify({ error: "creator_id parameter is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     if (resolvedCreatorId) {
       const { data: cs } = await sbAdmin.from("creator_settings").select("pandavideo_api_key").eq("creator_id", resolvedCreatorId).single();
       if (cs?.pandavideo_api_key) pandaApiKey = cs.pandavideo_api_key;
     }
 
-    // 2) Fallback to env var
-    if (!pandaApiKey) pandaApiKey = Deno.env.get("PANDAVIDEO_API_KEY");
-
-    // 3) Fallback to site_settings
-    if (!pandaApiKey) {
-      try {
-        const { data: keyData } = await sbAdmin.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
-        if (keyData?.value && typeof keyData.value === "object") {
-          pandaApiKey = (keyData.value as Record<string, string>).pandavideo_api_key || "";
-        }
-      } catch (e) { console.error("Failed to fetch Pandavideo key from DB:", e); }
-    }
-
     if (!pandaApiKey) {
       return new Response(
-        JSON.stringify({ error: "Pandavideo API key not configured" }),
+        JSON.stringify({ error: "Pandavideo API key not configured for this creator" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
