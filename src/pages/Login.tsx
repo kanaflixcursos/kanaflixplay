@@ -22,6 +22,7 @@ export default function Login() {
   const redirectTo = searchParams.get('redirect') || '/';
   const initialTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
   const initialEmail = searchParams.get('email') || '';
+  const creatorIdParam = searchParams.get('creator_id') || '';
   
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
@@ -81,7 +82,7 @@ export default function Login() {
       localStorage.setItem('kanaflix_redirect_after_confirm', effectiveRedirect);
     }
     
-    const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate);
+    const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate, creatorIdParam || undefined);
     
     if (error) {
       toast.error(translateError(error.message));

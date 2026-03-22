@@ -70,21 +70,22 @@ function MaskedApiInput({ value, onChange, show, onToggle, placeholder }: {
   );
 }
 
-function SecretField({ label, description, value, onChange, placeholder, savedValue }: {
-  label: string; description: string; value: string; onChange: (v: string) => void; placeholder: string; savedValue: string;
+function SecretField({ label, description, value, onChange, placeholder, savedValue, envConfigured }: {
+  label: string; description: string; value: string; onChange: (v: string) => void; placeholder: string; savedValue: string; envConfigured?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [show, setShow] = useState(false);
-  const isConfigured = !!savedValue && !editing;
+  const isConfigured = (!!savedValue || !!envConfigured) && !editing;
 
   if (isConfigured) {
+    const sourceLabel = savedValue ? 'Secret do criador configurada' : 'Configurada via ambiente global';
     return (
       <FormItem>
         <FormLabel>{label}</FormLabel>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
             <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Secret já configurada</span>
+            <span className="text-muted-foreground">{sourceLabel}</span>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(true); onChange(''); }}>Alterar</Button>
         </div>
@@ -124,6 +125,7 @@ export default function CreatorForm() {
   const isEditing = !!creatorId;
 
   const [savedApiKeys, setSavedApiKeys] = useState({ pandavideo_api_key: '', resend_api_key: '', gtm_container_id: '' });
+  const [envSecrets, setEnvSecrets] = useState<Record<string, boolean>>({});
   const [studentSearch, setStudentSearch] = useState('');
   const [studentPopoverOpen, setStudentPopoverOpen] = useState(false);
 
@@ -234,6 +236,28 @@ export default function CreatorForm() {
       gtm_container_id: settings?.gtm_container_id || '',
     });
   }, [creatorData, form]);
+
+  // Fetch env-level secrets status
+  useEffect(() => {
+    if (!creatorId) return;
+    const fetchEnvSecrets = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-secrets?creator_id=${creatorId}`,
+          { headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          setEnvSecrets(json.effective || {});
+        }
+      } catch (e) {
+        console.error('Failed to check env secrets:', e);
+      }
+    };
+    fetchEnvSecrets();
+  }, [creatorId]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -638,6 +662,7 @@ export default function CreatorForm() {
                     onChange={field.onChange}
                     placeholder="API Key do Pandavideo"
                     savedValue={savedApiKeys.pandavideo_api_key}
+                    envConfigured={envSecrets.pandavideo}
                   />
                 )} />
                 <FormField control={form.control} name="resend_api_key" render={({ field }) => (
@@ -648,6 +673,7 @@ export default function CreatorForm() {
                     onChange={field.onChange}
                     placeholder="API Key do Resend"
                     savedValue={savedApiKeys.resend_api_key}
+                    envConfigured={envSecrets.resend}
                   />
                 )} />
               </div>

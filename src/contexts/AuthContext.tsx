@@ -16,7 +16,7 @@ interface AuthContextType {
   profileComplete: boolean | null;
   recheckProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string, creatorId?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -164,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => {
+  const signUp = async (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string, creatorId?: string) => {
     // Check if email already exists in profiles
     const { data: existingProfile } = await supabase
       .from('profiles')
@@ -184,12 +184,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ? `${baseUrl}${redirectTo}`
       : baseUrl;
     
-    // Include UTM params in user metadata so the DB trigger can save them to profile
+    // Include UTM params and creator_id in user metadata so the DB trigger can save them to profile
     const utm = getStoredUtm();
     const userData: Record<string, string | undefined> = { full_name: fullName, phone, birth_date: birthDate };
     if (utm.utm_source) userData.utm_source = utm.utm_source;
     if (utm.utm_medium) userData.utm_medium = utm.utm_medium;
     if (utm.utm_campaign) userData.utm_campaign = utm.utm_campaign;
+    if (creatorId) userData.creator_id = creatorId;
 
     const { data, error } = await supabase.auth.signUp({
       email: email.toLowerCase().trim(),
