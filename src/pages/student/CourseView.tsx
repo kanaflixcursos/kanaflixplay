@@ -54,6 +54,7 @@ export default function CourseView() {
     isLessonLocked,
     handleMarkComplete,
     handleAutoComplete,
+    checkoutUrl,
   } = useCourseView();
 
   const getTotalDuration = () => {
