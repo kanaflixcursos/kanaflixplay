@@ -28,14 +28,13 @@ function SecretInput({ label, value, onChange, placeholder, savedValue, envConfi
   const isConfigured = (!!savedValue || !!envConfigured) && !editing;
 
   if (isConfigured) {
-    const sourceLabel = savedValue ? 'Secret já configurada' : 'Configurada via ambiente global';
     return (
       <div className="space-y-2">
         <Label>{label}</Label>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
             <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">{sourceLabel}</span>
+            <span className="text-muted-foreground">Secret já configurada</span>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(true); onChange(''); }}>Alterar</Button>
         </div>
@@ -68,7 +67,7 @@ export default function CreatorSettingsPage() {
     gtm_container_id: '',
   });
   const [savedKeys, setSavedKeys] = useState({ pandavideo_api_key: '', resend_api_key: '', gtm_container_id: '' });
-  const [envSecrets, setEnvSecrets] = useState<Record<string, boolean>>({});
+  const [creatorSecrets, setCreatorSecrets] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -101,7 +100,7 @@ export default function CreatorSettingsPage() {
       setLoading(false);
     };
 
-    const fetchEnvSecrets = async () => {
+    const fetchCreatorSecrets = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       try {
@@ -111,15 +110,15 @@ export default function CreatorSettingsPage() {
         );
         if (res.ok) {
           const json = await res.json();
-          setEnvSecrets(json.effective || {});
+          setCreatorSecrets(json.configured || {});
         }
       } catch (e) {
-        console.error('Failed to check env secrets:', e);
+        console.error('Failed to check creator secrets:', e);
       }
     };
 
     fetchSettings();
-    fetchEnvSecrets();
+    fetchCreatorSecrets();
   }, [creatorId]);
 
   const handleSave = async () => {
@@ -199,7 +198,7 @@ export default function CreatorSettingsPage() {
             onChange={v => setSettings(s => ({ ...s, pandavideo_api_key: v }))}
             placeholder="Sua chave Pandavideo"
             savedValue={savedKeys.pandavideo_api_key}
-            envConfigured={envSecrets.pandavideo}
+            envConfigured={creatorSecrets.pandavideo}
           />
           <SecretInput
             label="Resend API Key"
@@ -207,7 +206,7 @@ export default function CreatorSettingsPage() {
             onChange={v => setSettings(s => ({ ...s, resend_api_key: v }))}
             placeholder="Sua chave Resend"
             savedValue={savedKeys.resend_api_key}
-            envConfigured={envSecrets.resend}
+            envConfigured={creatorSecrets.resend}
           />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
