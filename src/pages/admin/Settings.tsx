@@ -465,7 +465,7 @@ export default function Settings() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Insira sua API Key do Pandavideo"
-                    savedValue={savedApiKeys?.pandavideo_api_key || ''}
+                    savedValue={savedApiKeys?.pandavideo_api_key || (secretsConfigured.PANDAVIDEO_API_KEY ? '***' : '')}
                   />
                 )} />
                 <FormField control={apiForm.control} name="resend_api_key" render={({ field }) => (
