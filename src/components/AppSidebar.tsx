@@ -172,8 +172,8 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Admin: link to go back to LMS / Student: link to admin panel */}
-        {isAdmin ? (
+        {/* Navigation links between panels */}
+        {(isAdmin || isCreator) ? (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -191,26 +191,42 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ) : role === 'admin' ? (
+        ) : (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/admin"
-                      className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <Shield className="h-4.5 w-4.5" />
-                      <span>Painel Admin</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {role === 'admin' && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/admin"
+                        className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
+                        <Shield className="h-4.5 w-4.5" />
+                        <span>Painel Admin</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {role === 'creator' && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/creator"
+                        className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
+                        <Shield className="h-4.5 w-4.5" />
+                        <span>Painel Criador</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ) : null}
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">
