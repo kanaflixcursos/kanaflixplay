@@ -105,15 +105,16 @@ export default function ComboCheckout() {
   };
 
   const handlePaymentSuccess = (buyerEmail?: string) => {
+    // Always track checkout_completed, even for guest checkouts
+    if (comboId) {
+      trackEvent('checkout_completed', { combo_id: comboId, amount: combo?.price, combo_title: combo?.title }, `/checkout/combo/${comboId}`, user?.id || undefined);
+    }
+
     if (user) {
       setAllEnrolled(true);
-      if (comboId) {
-        trackEvent('checkout_completed', { combo_id: comboId, amount: combo?.price, combo_title: combo?.title }, `/checkout/combo/${comboId}`, user.id);
-      }
     } else if (buyerEmail) {
       // Guest checkout: redirect to signup
-      const navigate_fn = navigate;
-      navigate_fn(`/login?tab=signup&email=${encodeURIComponent(buyerEmail)}&redirect=${encodeURIComponent('/courses')}`);
+      navigate(`/login?tab=signup&email=${encodeURIComponent(buyerEmail)}&redirect=${encodeURIComponent('/courses')}`);
     }
   };
 

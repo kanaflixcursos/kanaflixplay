@@ -194,9 +194,11 @@ export default function Checkout() {
   };
 
   const handlePaymentSuccess = (buyerEmail?: string) => {
+    // Always track checkout_completed, even for guest checkouts
+    trackEvent('checkout_completed', { course_id: courseId, amount: course?.price, course_title: course?.title }, `/checkout/${courseId}`, user?.id || undefined);
+
     if (user) {
       setIsEnrolled(true);
-      trackEvent('checkout_completed', { course_id: courseId, amount: course?.price, course_title: course?.title }, `/checkout/${courseId}`, user.id);
       trackEvent('enrollment', { course_id: courseId, course_title: course?.title }, `/checkout/${courseId}`, user.id);
     } else if (buyerEmail) {
       // Guest checkout: redirect to signup with email pre-filled
