@@ -68,6 +68,7 @@ async function fetchVideoDetails(videoId: string, apiKey: string): Promise<Panda
 interface Course {
   id: string;
   pandavideo_folder_id: string;
+  creator_id: string;
 }
 
 Deno.serve(async (req) => {
