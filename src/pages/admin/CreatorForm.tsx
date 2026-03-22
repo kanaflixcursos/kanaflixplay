@@ -237,10 +237,10 @@ export default function CreatorForm() {
     });
   }, [creatorData, form]);
 
-  // Fetch env-level secrets status
+  // Fetch creator-level secrets status
   useEffect(() => {
     if (!creatorId) return;
-    const fetchEnvSecrets = async () => {
+    const fetchCreatorSecrets = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       try {
@@ -250,13 +250,13 @@ export default function CreatorForm() {
         );
         if (res.ok) {
           const json = await res.json();
-          setEnvSecrets(json.effective || {});
+          setEnvSecrets(json.configured || {});
         }
       } catch (e) {
-        console.error('Failed to check env secrets:', e);
+        console.error('Failed to check creator secrets:', e);
       }
     };
-    fetchEnvSecrets();
+    fetchCreatorSecrets();
   }, [creatorId]);
 
   // Save mutation
