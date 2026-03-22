@@ -1,11 +1,15 @@
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useCreator } from '@/contexts/CreatorContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function StoreLayout({ children }: { children: ReactNode }) {
-  const { creator, settings, loading } = useCreator();
+  const { creator, settings, loading, creatorId } = useCreator();
+  const { user, role } = useAuth();
+  const isAdmin = role === 'admin';
 
   if (loading) {
     return (
@@ -41,9 +45,25 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
               <span className="text-lg font-bold">{storeName}</span>
             )}
           </Link>
-          <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Entrar
-          </Link>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link to={`/admin/creators/${creatorId}`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-amber-500/50 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30">
+                  <Shield className="h-3.5 w-3.5" />
+                  Admin
+                </Button>
+              </Link>
+            )}
+            {user ? (
+              <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Meu painel
+              </Link>
+            ) : (
+              <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Entrar
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
