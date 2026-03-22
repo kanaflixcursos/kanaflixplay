@@ -565,15 +565,27 @@ Deno.serve(async (req) => {
         throw new Error(`Unknown action: ${action}`);
     }
 
-    const resendKey = await getResendApiKey();
+    const resendKey = await getResendApiKey(creator_id);
     if (!resendKey) {
       throw new Error("RESEND_API_KEY is not configured");
+    }
+
+    // Resolve sender from creator_settings if creator_id provided
+    let senderName = siteConfig.email_sender_name;
+    let senderAddress = siteConfig.email_sender_address;
+    if (creator_id) {
+      try {
+        const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: cs } = await sb.from("creator_settings").select("sender_name, sender_email").eq("creator_id", creator_id).single();
+        if (cs?.sender_name) senderName = cs.sender_name;
+        if (cs?.sender_email) senderAddress = cs.sender_email;
+      } catch (_e) { /* use defaults */ }
     }
 
     const resend = new Resend(resendKey);
 
     const emailResponse = await resend.emails.send({
-      from: `${siteConfig.email_sender_name} <${siteConfig.email_sender_address}>`,
+      from: `${senderName} <${senderAddress}>`,
       to: [to],
       subject,
       html,
