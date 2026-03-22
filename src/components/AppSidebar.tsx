@@ -56,6 +56,14 @@ const adminMenuItems = [
   { title: 'Configurações', url: '/admin/settings', icon: Settings },
 ];
 
+const creatorMenuItems = [
+  { title: 'Dashboard', url: '/creator', icon: LayoutDashboard },
+  { title: 'Cursos', url: '/creator/courses', icon: BookOpen },
+  { title: 'Alunos', url: '/creator/students', icon: Users },
+  { title: 'Vendas', url: '/creator/orders', icon: ShoppingCart },
+  { title: 'Configurações', url: '/creator/settings', icon: Settings },
+];
+
 interface AppSidebarProps {
   variant: 'student' | 'admin';
 }
