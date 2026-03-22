@@ -448,7 +448,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, to, data }: EmailRequest = await req.json();
+    const { action, to, data, creator_id }: EmailRequest = await req.json();
 
     if (!action || !to) {
       throw new Error("Missing required fields: action, to");
