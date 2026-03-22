@@ -175,7 +175,7 @@ export default function AdminCourses() {
     return `${mins}min`;
   };
 
-  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/checkout/${course.id}`;
+  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}${getCheckoutUrl(slugs, course.creator_id, 'course', course.id)}`;
   const getPreviewLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/courses/${course.id}`;
 
   const handleCopyLink = async (course: AdminCourse) => {
