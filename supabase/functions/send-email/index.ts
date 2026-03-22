@@ -3,11 +3,20 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const ENV_RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-async function getResendApiKey(): Promise<string | null> {
-  // Try env var first, then fall back to site_settings
+async function getResendApiKey(creatorId?: string): Promise<string | null> {
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  // 1) Try creator-specific key
+  if (creatorId) {
+    const { data: cs } = await sb.from("creator_settings").select("resend_api_key").eq("creator_id", creatorId).single();
+    if (cs?.resend_api_key) return cs.resend_api_key;
+  }
+
+  // 2) Fallback to env var
   if (ENV_RESEND_API_KEY) return ENV_RESEND_API_KEY;
+
+  // 3) Fallback to site_settings
   try {
-    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data } = await sb.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
     if (data?.value && typeof data.value === "object") {
       return (data.value as Record<string, string>).resend_api_key || null;
