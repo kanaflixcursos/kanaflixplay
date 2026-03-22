@@ -39,6 +39,7 @@ export default function AvailableCoursesSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const { data: slugs } = useCreatorSlugs();
 
   const updateScrollButtons = () => {
     const el = scrollRef.current;
