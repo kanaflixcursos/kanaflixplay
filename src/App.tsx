@@ -45,6 +45,7 @@ import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
 import AdminComboForm from "@/pages/admin/ComboForm";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminCreators from "@/pages/admin/Creators";
+import AdminCreatorForm from "@/pages/admin/CreatorForm";
 import ComboCheckout from "@/pages/ComboCheckout";
 
 import CreatorLayout from "@/components/layouts/CreatorLayout";
@@ -393,6 +394,26 @@ const App = () => (
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminCreators />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/creators/new"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCreatorForm />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/creators/:creatorId/edit"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCreatorForm />
                     </AdminLayout>
                   </ProtectedRoute>
                 }
