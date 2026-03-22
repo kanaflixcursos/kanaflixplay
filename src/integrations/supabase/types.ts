@@ -19,18 +19,21 @@ export type Database = {
           combo_id: string
           course_id: string
           created_at: string
+          creator_id: string | null
           id: string
         }
         Insert: {
           combo_id: string
           course_id: string
           created_at?: string
+          creator_id?: string | null
           id?: string
         }
         Update: {
           combo_id?: string
           course_id?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
         }
         Relationships: [
@@ -48,11 +51,19 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "combo_courses_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       combos: {
         Row: {
           created_at: string
+          creator_id: string
           description: string | null
           expires_at: string | null
           id: string
@@ -67,6 +78,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string
           description?: string | null
           expires_at?: string | null
           id?: string
@@ -81,6 +93,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string
           description?: string | null
           expires_at?: string | null
           id?: string
@@ -93,7 +106,15 @@ export type Database = {
           updated_at?: string
           used_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "combos_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       course_categories: {
         Row: {
@@ -116,6 +137,7 @@ export type Database = {
       course_enrollments: {
         Row: {
           course_id: string
+          creator_id: string
           enrolled_at: string
           expires_at: string | null
           id: string
@@ -123,6 +145,7 @@ export type Database = {
         }
         Insert: {
           course_id: string
+          creator_id?: string
           enrolled_at?: string
           expires_at?: string | null
           id?: string
@@ -130,6 +153,7 @@ export type Database = {
         }
         Update: {
           course_id?: string
+          creator_id?: string
           enrolled_at?: string
           expires_at?: string | null
           id?: string
@@ -143,12 +167,20 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "course_enrollments_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       course_modules: {
         Row: {
           course_id: string
           created_at: string
+          creator_id: string
           id: string
           is_optional: boolean
           order_index: number
@@ -158,6 +190,7 @@ export type Database = {
         Insert: {
           course_id: string
           created_at?: string
+          creator_id?: string
           id?: string
           is_optional?: boolean
           order_index?: number
@@ -167,6 +200,7 @@ export type Database = {
         Update: {
           course_id?: string
           created_at?: string
+          creator_id?: string
           id?: string
           is_optional?: boolean
           order_index?: number
@@ -181,12 +215,20 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "course_modules_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       courses: {
         Row: {
           category_id: string | null
           created_at: string
+          creator_id: string
           description: string | null
           id: string
           is_featured: boolean
@@ -205,6 +247,7 @@ export type Database = {
         Insert: {
           category_id?: string | null
           created_at?: string
+          creator_id?: string
           description?: string | null
           id?: string
           is_featured?: boolean
@@ -223,6 +266,7 @@ export type Database = {
         Update: {
           category_id?: string | null
           created_at?: string
+          creator_id?: string
           description?: string | null
           id?: string
           is_featured?: boolean
@@ -246,11 +290,114 @@ export type Database = {
             referencedRelation: "course_categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "courses_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      creator_settings: {
+        Row: {
+          created_at: string
+          creator_id: string
+          gtm_container_id: string | null
+          id: string
+          logo_url: string | null
+          pandavideo_api_key: string | null
+          platform_description: string | null
+          platform_name: string | null
+          primary_color: string | null
+          production_url: string | null
+          resend_api_key: string | null
+          sender_email: string | null
+          sender_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          gtm_container_id?: string | null
+          id?: string
+          logo_url?: string | null
+          pandavideo_api_key?: string | null
+          platform_description?: string | null
+          platform_name?: string | null
+          primary_color?: string | null
+          production_url?: string | null
+          resend_api_key?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          gtm_container_id?: string | null
+          id?: string
+          logo_url?: string | null
+          pandavideo_api_key?: string | null
+          platform_description?: string | null
+          platform_name?: string | null
+          primary_color?: string | null
+          production_url?: string | null
+          resend_api_key?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_settings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creators: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       daily_login_points: {
         Row: {
           created_at: string
+          creator_id: string | null
           id: string
           login_date: string
           points_awarded: number
@@ -258,6 +405,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           login_date?: string
           points_awarded?: number
@@ -265,12 +413,21 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           login_date?: string
           points_awarded?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_login_points_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_coupons: {
         Row: {
@@ -278,6 +435,7 @@ export type Database = {
           course_id: string | null
           course_ids: string[]
           created_at: string
+          creator_id: string
           discount_type: string
           discount_value: number
           expires_at: string | null
@@ -293,6 +451,7 @@ export type Database = {
           course_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
@@ -308,6 +467,7 @@ export type Database = {
           course_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
@@ -326,11 +486,19 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "discount_coupons_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_campaigns: {
         Row: {
           created_at: string
+          creator_id: string
           failed_count: number
           html_content: string
           id: string
@@ -348,6 +516,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string
           failed_count?: number
           html_content: string
           id?: string
@@ -365,6 +534,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string
           failed_count?: number
           html_content?: string
           id?: string
@@ -380,23 +550,34 @@ export type Database = {
           total_recipients?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_opens: {
         Row: {
           campaign_id: string
+          creator_id: string | null
           id: string
           opened_at: string
           recipient_email: string
         }
         Insert: {
           campaign_id: string
+          creator_id?: string | null
           id?: string
           opened_at?: string
           recipient_email: string
         }
         Update: {
           campaign_id?: string
+          creator_id?: string | null
           id?: string
           opened_at?: string
           recipient_email?: string
@@ -409,6 +590,13 @@ export type Database = {
             referencedRelation: "email_campaigns"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "email_opens_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       featured_banner: {
@@ -416,6 +604,7 @@ export type Database = {
           badge_text: string
           course_id: string | null
           created_at: string
+          creator_id: string
           cta_text: string
           custom_description: string | null
           custom_image_url: string | null
@@ -431,6 +620,7 @@ export type Database = {
           badge_text?: string
           course_id?: string | null
           created_at?: string
+          creator_id?: string
           cta_text?: string
           custom_description?: string | null
           custom_image_url?: string | null
@@ -446,6 +636,7 @@ export type Database = {
           badge_text?: string
           course_id?: string | null
           created_at?: string
+          creator_id?: string
           cta_text?: string
           custom_description?: string | null
           custom_image_url?: string | null
@@ -465,6 +656,13 @@ export type Database = {
             referencedRelation: "courses"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "featured_banner_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
         ]
       }
       imported_users: {
@@ -472,6 +670,7 @@ export type Database = {
           auth_user_id: string | null
           course_ids: string[]
           created_at: string
+          creator_id: string | null
           email: string
           full_name: string
           id: string
@@ -482,6 +681,7 @@ export type Database = {
           auth_user_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string | null
           email: string
           full_name: string
           id?: string
@@ -492,17 +692,27 @@ export type Database = {
           auth_user_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string | null
           email?: string
           full_name?: string
           id?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "imported_users_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_forms: {
         Row: {
           created_at: string
+          creator_id: string
           description: string | null
           fields: Json
           id: string
@@ -514,6 +724,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string
           description?: string | null
           fields?: Json
           id?: string
@@ -525,6 +736,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string
           description?: string | null
           fields?: Json
           id?: string
@@ -534,12 +746,21 @@ export type Database = {
           slug?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lead_forms_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
           converted_at: string | null
           created_at: string
+          creator_id: string
           custom_data: Json | null
           email: string
           form_id: string | null
@@ -563,6 +784,7 @@ export type Database = {
         Insert: {
           converted_at?: string | null
           created_at?: string
+          creator_id?: string
           custom_data?: Json | null
           email: string
           form_id?: string | null
@@ -586,6 +808,7 @@ export type Database = {
         Update: {
           converted_at?: string | null
           created_at?: string
+          creator_id?: string
           custom_data?: Json | null
           email?: string
           form_id?: string | null
@@ -608,6 +831,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "leads_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leads_form_id_fkey"
             columns: ["form_id"]
             isOneToOne: false
@@ -620,6 +850,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          creator_id: string | null
           id: string
           lesson_id: string
           parent_id: string | null
@@ -629,6 +860,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           lesson_id: string
           parent_id?: string | null
@@ -638,6 +870,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           lesson_id?: string
           parent_id?: string | null
@@ -645,6 +878,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_comments_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_comments_lesson_id_fkey"
             columns: ["lesson_id"]
@@ -664,6 +904,7 @@ export type Database = {
       lesson_materials: {
         Row: {
           created_at: string
+          creator_id: string | null
           file_name: string
           file_size: number
           file_type: string
@@ -674,6 +915,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
           file_name: string
           file_size: number
           file_type: string
@@ -684,6 +926,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
           file_name?: string
           file_size?: number
           file_type?: string
@@ -693,6 +936,13 @@ export type Database = {
           order_index?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_materials_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_materials_lesson_id_fkey"
             columns: ["lesson_id"]
@@ -706,6 +956,7 @@ export type Database = {
         Row: {
           completed: boolean
           completed_at: string | null
+          creator_id: string | null
           id: string
           lesson_id: string
           updated_at: string
@@ -715,6 +966,7 @@ export type Database = {
         Insert: {
           completed?: boolean
           completed_at?: string | null
+          creator_id?: string | null
           id?: string
           lesson_id: string
           updated_at?: string
@@ -724,6 +976,7 @@ export type Database = {
         Update: {
           completed?: boolean
           completed_at?: string | null
+          creator_id?: string | null
           id?: string
           lesson_id?: string
           updated_at?: string
@@ -731,6 +984,13 @@ export type Database = {
           watched_seconds?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lesson_progress_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lesson_progress_lesson_id_fkey"
             columns: ["lesson_id"]
@@ -744,6 +1004,7 @@ export type Database = {
         Row: {
           course_id: string
           created_at: string
+          creator_id: string
           description: string | null
           duration_minutes: number | null
           id: string
@@ -759,6 +1020,7 @@ export type Database = {
         Insert: {
           course_id: string
           created_at?: string
+          creator_id?: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -774,6 +1036,7 @@ export type Database = {
         Update: {
           course_id?: string
           created_at?: string
+          creator_id?: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -795,6 +1058,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lessons_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lessons_module_id_fkey"
             columns: ["module_id"]
             isOneToOne: false
@@ -806,6 +1076,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
+          creator_id: string | null
           id: string
           is_read: boolean
           link: string | null
@@ -817,6 +1088,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
@@ -828,6 +1100,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           is_read?: boolean
           link?: string | null
@@ -837,7 +1110,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
@@ -851,6 +1132,7 @@ export type Database = {
           coupon_id: string | null
           course_id: string | null
           created_at: string
+          creator_id: string
           discount_amount: number | null
           failure_reason: string | null
           id: string
@@ -876,6 +1158,7 @@ export type Database = {
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
+          creator_id?: string
           discount_amount?: number | null
           failure_reason?: string | null
           id: string
@@ -901,6 +1184,7 @@ export type Database = {
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
+          creator_id?: string
           discount_amount?: number | null
           failure_reason?: string | null
           id?: string
@@ -935,6 +1219,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
             referencedColumns: ["id"]
           },
         ]
@@ -994,6 +1285,7 @@ export type Database = {
         Row: {
           admin_notes: string | null
           created_at: string
+          creator_id: string | null
           id: string
           order_id: string
           reason: string
@@ -1007,6 +1299,7 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           order_id: string
           reason: string
@@ -1020,6 +1313,7 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           order_id?: string
           reason?: string
@@ -1031,6 +1325,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "refund_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "refund_requests_order_id_fkey"
             columns: ["order_id"]
@@ -1074,6 +1375,7 @@ export type Database = {
       }
       site_visits: {
         Row: {
+          creator_id: string | null
           id: string
           page_path: string
           referrer: string | null
@@ -1086,6 +1388,7 @@ export type Database = {
           visitor_id: string
         }
         Insert: {
+          creator_id?: string | null
           id?: string
           page_path?: string
           referrer?: string | null
@@ -1098,6 +1401,7 @@ export type Database = {
           visitor_id: string
         }
         Update: {
+          creator_id?: string | null
           id?: string
           page_path?: string
           referrer?: string | null
@@ -1109,12 +1413,21 @@ export type Database = {
           visited_at?: string
           visitor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "site_visits_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       support_ticket_messages: {
         Row: {
           attachments: Json | null
           created_at: string
+          creator_id: string | null
           id: string
           is_admin_reply: boolean
           message: string
@@ -1124,6 +1437,7 @@ export type Database = {
         Insert: {
           attachments?: Json | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           is_admin_reply?: boolean
           message: string
@@ -1133,6 +1447,7 @@ export type Database = {
         Update: {
           attachments?: Json | null
           created_at?: string
+          creator_id?: string | null
           id?: string
           is_admin_reply?: boolean
           message?: string
@@ -1140,6 +1455,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "support_ticket_messages_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -1151,24 +1473,34 @@ export type Database = {
       }
       support_ticket_reads: {
         Row: {
+          creator_id: string | null
           id: string
           last_read_at: string
           ticket_id: string
           user_id: string
         }
         Insert: {
+          creator_id?: string | null
           id?: string
           last_read_at?: string
           ticket_id: string
           user_id: string
         }
         Update: {
+          creator_id?: string | null
           id?: string
           last_read_at?: string
           ticket_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "support_ticket_reads_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "support_ticket_reads_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -1182,6 +1514,7 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          creator_id: string | null
           id: string
           message: string
           priority: string
@@ -1193,6 +1526,7 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           message: string
           priority?: string
@@ -1204,6 +1538,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           message?: string
           priority?: string
@@ -1212,11 +1547,20 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_events: {
         Row: {
           created_at: string
+          creator_id: string | null
           event_data: Json | null
           event_type: string
           id: string
@@ -1229,6 +1573,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
           event_data?: Json | null
           event_type: string
           id?: string
@@ -1241,6 +1586,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
           event_data?: Json | null
           event_type?: string
           id?: string
@@ -1251,7 +1597,15 @@ export type Database = {
           utm_source?: string | null
           visitor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_events_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1367,6 +1721,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_creator_id: { Args: { _user_id: string }; Returns: string }
       get_leaderboard: {
         Args: { limit_count?: number }
         Returns: {
@@ -1387,6 +1742,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_creator_or_admin: {
+        Args: { _creator_id: string; _user_id: string }
+        Returns: boolean
+      }
       lead_stage_priority: { Args: { stage: string }; Returns: number }
       mark_checkout_abandoned: { Args: never; Returns: undefined }
       promote_lead_on_checkout: {
@@ -1395,7 +1754,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "student" | "professor"
+      app_role: "admin" | "student" | "professor" | "creator"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1523,7 +1882,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "student", "professor"],
+      app_role: ["admin", "student", "professor", "creator"],
     },
   },
 } as const
