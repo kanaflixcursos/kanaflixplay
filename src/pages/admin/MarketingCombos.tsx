@@ -150,7 +150,7 @@ export default function MarketingCombos() {
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title, creator_id: combo.creator_id })}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
