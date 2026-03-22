@@ -44,6 +44,7 @@ import AdminCouponForm from "@/pages/admin/CouponForm";
 import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
 import AdminComboForm from "@/pages/admin/ComboForm";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminCreators from "@/pages/admin/Creators";
 import ComboCheckout from "@/pages/ComboCheckout";
 
 import ProtectedRoute from "@/components/ProtectedRoute";

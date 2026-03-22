@@ -46,6 +46,7 @@ const studentMenuItems = [
 
 const adminMenuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
+  { title: 'Criadores', url: '/admin/creators', icon: UserPlus },
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
   { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
