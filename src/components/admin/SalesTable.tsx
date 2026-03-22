@@ -493,6 +493,18 @@ export default function SalesTable({
                         <XCircle className="h-4 w-4" />
                       </Button>
                     )}
+                    {!sale.user_id && sale.status === 'paid' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleSendGuestReminder(sale)}
+                        disabled={sendingReminder === sale.id}
+                        title="Reenviar lembrete de cadastro"
+                      >
+                        {sendingReminder === sale.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
