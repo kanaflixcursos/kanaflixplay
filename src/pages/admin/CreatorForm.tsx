@@ -676,6 +676,51 @@ export default function CreatorForm() {
                   />
                 )} />
               </div>
+              {isEditing && !envSecrets.pandavideo && !envSecrets.resend && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={async () => {
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const token = sessionData?.session?.access_token;
+                    try {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-env-keys`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ creator_id: creatorId }),
+                        }
+                      );
+                      const json = await res.json();
+                      if (res.ok) {
+                        toast.success(`Chaves migradas: ${(json.migrated || []).join(', ')}`);
+                        // Refresh secrets status
+                        const res2 = await fetch(
+                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-secrets?creator_id=${creatorId}`,
+                          { headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+                        );
+                        if (res2.ok) {
+                          const json2 = await res2.json();
+                          setEnvSecrets(json2.configured || {});
+                        }
+                      } else {
+                        toast.error(json.error || 'Erro ao migrar chaves');
+                      }
+                    } catch (e) {
+                      toast.error('Erro de conexão');
+                    }
+                  }}
+                >
+                  Migrar chaves do ambiente para este criador
+                </Button>
+              )}
             </CardContent>
           </Card>
 
