@@ -82,7 +82,7 @@ export default function Login() {
       localStorage.setItem('kanaflix_redirect_after_confirm', effectiveRedirect);
     }
     
-    const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate);
+    const { error } = await signUp(email, password, fullName, effectiveRedirect || redirectTo, phone, birthDate, creatorIdParam || undefined);
     
     if (error) {
       toast.error(translateError(error.message));
