@@ -81,7 +81,7 @@ export function useCourseView() {
           setLessons(sorted);
           setSelectedLesson(sorted[0] || null);
         } else {
-          navigate(`/store/kanaflix/checkout/${courseId}`);
+          navigate(getCheckoutUrl(slugs, courseData.creator_id, 'course', courseId));
           return;
         }
         setLoading(false);
