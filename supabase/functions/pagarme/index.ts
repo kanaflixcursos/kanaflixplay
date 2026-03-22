@@ -134,15 +134,16 @@ Deno.serve(async (req) => {
     const userId = user.id;
     const adminSupabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Helper to check admin role
-    const checkAdmin = async () => {
+    // Helper to check admin or creator role
+    const checkAdminOrCreator = async () => {
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .single();
-      return roleData?.role === 'admin';
+        .eq('user_id', userId);
+      if (!roleData) return false;
+      return roleData.some((r: any) => r.role === 'admin' || r.role === 'creator');
     };
+    const checkAdmin = checkAdminOrCreator;
 
     switch (action) {
       case 'get_payment_config':
