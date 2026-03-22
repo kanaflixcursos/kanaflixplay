@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Save, Building2, ImageIcon, Palette, PlugZap, Mail,
-  Lock, Eye, EyeOff, Info, Trash2, Users, Search,
+  ArrowLeft, Save, Building2, Store, ImageIcon, Palette, PlugZap, Mail,
+  Lock, Eye, EyeOff, Info, Trash2, Users, Search, User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,8 +34,6 @@ interface CreatorFormValues {
   // Branding
   logo_url: string;
   primary_color: string;
-  platform_name: string;
-  platform_description: string;
   // APIs
   pandavideo_api_key: string;
   resend_api_key: string;
@@ -52,8 +50,6 @@ const DEFAULT_VALUES: CreatorFormValues = {
   status: 'active',
   logo_url: '',
   primary_color: 'green',
-  platform_name: '',
-  platform_description: '',
   pandavideo_api_key: '',
   resend_api_key: '',
   sender_name: '',
@@ -231,8 +227,6 @@ export default function CreatorForm() {
       status: creator.status,
       logo_url: settings?.logo_url || '',
       primary_color: settings?.primary_color || 'green',
-      platform_name: settings?.platform_name || '',
-      platform_description: settings?.platform_description || '',
       pandavideo_api_key: '',
       resend_api_key: '',
       sender_name: settings?.sender_name || '',
@@ -266,8 +260,8 @@ export default function CreatorForm() {
         const settingsUpdate: Record<string, any> = {
           logo_url: values.logo_url || null,
           primary_color: values.primary_color || 'green',
-          platform_name: values.platform_name || null,
-          platform_description: values.platform_description || null,
+          platform_name: values.business_name || null,
+          platform_description: values.description || null,
           production_url: values.slug ? `https://${values.slug}.kanaflixplay.com` : null,
           sender_name: values.sender_name || null,
           sender_email: values.sender_email || null,
@@ -324,8 +318,8 @@ export default function CreatorForm() {
             creator_id: newCreator.id,
             logo_url: values.logo_url || null,
             primary_color: values.primary_color || 'green',
-            platform_name: values.platform_name || null,
-            platform_description: values.platform_description || null,
+            platform_name: values.business_name || null,
+            platform_description: values.description || null,
             production_url: values.slug ? `https://${values.slug}.kanaflixplay.com` : null,
             sender_name: values.sender_name || null,
             sender_email: values.sender_email || null,
@@ -408,14 +402,14 @@ export default function CreatorForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-          {/* ── Dados do Criador ── */}
+          {/* ── Dados do Usuário ── */}
           <Card>
             <CardHeader className="dashboard-card-header">
               <CardTitle className="flex items-center gap-3 text-left">
-                <div className="icon-box"><Building2 /></div>
+                <div className="icon-box"><User /></div>
                 <div>
-                  <span className="text-base">Dados do Criador</span>
-                  <p className="text-sm text-muted-foreground font-normal">Pessoa responsável e nome do negócio</p>
+                  <span className="text-base">Dados do Usuário</span>
+                  <p className="text-sm text-muted-foreground font-normal">Pessoa responsável pelo negócio</p>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -445,13 +439,27 @@ export default function CreatorForm() {
                   </div>
                 </FormItem>
               )}
+            </CardContent>
+          </Card>
 
+          {/* ── Identidade da Loja ── */}
+          <Card>
+            <CardHeader className="dashboard-card-header">
+              <CardTitle className="flex items-center gap-3 text-left">
+                <div className="icon-box"><Store /></div>
+                <div>
+                  <span className="text-base">Identidade da Loja</span>
+                  <p className="text-sm text-muted-foreground font-normal">Nome, URL e descrição exibidos publicamente</p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="dashboard-card-content space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={form.control} name="business_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nome do Negócio *</FormLabel>
                     <FormControl><Input placeholder="Nome da marca ou empresa" {...field} /></FormControl>
-                    <FormDescription>Nome exibido publicamente na loja. Apenas o admin master pode alterar.</FormDescription>
+                    <FormDescription>Nome exibido publicamente. Apenas o admin master pode alterar.</FormDescription>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="slug" render={({ field }) => (
@@ -472,7 +480,7 @@ export default function CreatorForm() {
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
-                  <FormControl><Textarea placeholder="Breve descrição do negócio..." rows={3} {...field} /></FormControl>
+                  <FormControl><Textarea placeholder="Breve descrição do negócio (também usada como meta description)" rows={3} {...field} /></FormControl>
                 </FormItem>
               )} />
 
@@ -490,33 +498,6 @@ export default function CreatorForm() {
                       <SelectItem value="suspended">Suspenso</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormItem>
-              )} />
-            </CardContent>
-          </Card>
-
-          {/* ── Identidade da Loja ── */}
-          <Card>
-            <CardHeader className="dashboard-card-header">
-              <CardTitle className="flex items-center gap-3 text-left">
-                <div className="icon-box"><Building2 /></div>
-                <div>
-                  <span className="text-base">Identidade da Loja</span>
-                  <p className="text-sm text-muted-foreground font-normal">Dados exibidos na loja pública</p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="dashboard-card-content space-y-4">
-              <FormField control={form.control} name="platform_name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome da plataforma</FormLabel>
-                  <FormControl><Input placeholder="Nome exibido na loja" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="platform_description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição da loja</FormLabel>
-                  <FormControl><Input placeholder="Meta description para SEO" {...field} /></FormControl>
                 </FormItem>
               )} />
             </CardContent>
