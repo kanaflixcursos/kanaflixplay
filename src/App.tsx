@@ -434,6 +434,42 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/creator/courses"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorCourses />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/students"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorStudents />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/orders"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorOrders />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Public Store Routes */}
               <Route
