@@ -134,8 +134,9 @@ export default function Settings() {
   const updateSettings = useUpdateSiteSettings();
   const updateApiKeys = useUpdateApiKeys();
 
-  const [showPandaKey, setShowPandaKey] = useState(false);
-  const [showResendKey, setShowResendKey] = useState(false);
+  // Store the originally-loaded values to detect "already configured"
+  const [savedApiKeys, setSavedApiKeys] = useState<ApiKeys | null>(null);
+  const [savedGtm, setSavedGtm] = useState('');
 
   const form = useForm<SiteSettings>({ defaultValues: settings });
   const apiForm = useForm<ApiKeys>({ defaultValues: apiKeys });
