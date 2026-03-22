@@ -8,6 +8,7 @@ export interface CourseData {
   is_sequential: boolean;
   price: number;
   launch_date: string | null;
+  creator_id: string;
 }
 
 export interface LessonMaterial {

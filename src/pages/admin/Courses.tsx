@@ -72,6 +72,7 @@ import { useAdminCourses, useCategories, usePandaFolders, useInvalidateCourses }
 import { deleteCourse, syncPandavideoLessons } from '@/services/courseService';
 import type { AdminCourse } from '@/services/courseService';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useCreatorSlugs, getCheckoutUrl } from '@/hooks/useCheckoutUrl';
 
 export default function AdminCourses() {
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ export default function AdminCourses() {
   const { data: pandaFolders = [] } = usePandaFolders();
   const invalidateCourses = useInvalidateCourses();
   const { data: settings } = useSiteSettings();
+  const { data: slugs } = useCreatorSlugs();
 
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -173,7 +175,7 @@ export default function AdminCourses() {
     return `${mins}min`;
   };
 
-  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/checkout/${course.id}`;
+  const getCourseLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}${getCheckoutUrl(slugs, course.creator_id, 'course', course.id)}`;
   const getPreviewLink = (course: AdminCourse) => `${settings?.production_url || window.location.origin}/courses/${course.id}`;
 
   const handleCopyLink = async (course: AdminCourse) => {

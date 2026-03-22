@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useCreatorSlugs } from '@/hooks/useCheckoutUrl';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, ArrowRight, ShoppingCart, Clock, ChevronLeft, ChevronRight, Star } from 'lucide-react';
@@ -17,6 +18,7 @@ interface AvailableCourse {
   category_name: string | null;
   total_duration: number;
   points_reward: number;
+  creator_id: string;
 }
 
 function formatPrice(cents: number | null): string {
@@ -37,6 +39,7 @@ export default function AvailableCoursesSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const { data: slugs } = useCreatorSlugs();
 
   const updateScrollButtons = () => {
     const el = scrollRef.current;
@@ -67,7 +70,7 @@ export default function AvailableCoursesSection() {
 
       let query = supabase
         .from('courses')
-        .select('id, title, description, thumbnail_url, price, category_id, points_reward, course_categories(name)')
+        .select('id, title, description, thumbnail_url, price, category_id, points_reward, creator_id, course_categories(name)')
         .eq('is_published', true);
 
       if (enrolledIds.length > 0) {
@@ -94,6 +97,7 @@ export default function AvailableCoursesSection() {
             category_name: course.course_categories?.name || null,
             total_duration,
             points_reward: course.points_reward || 0,
+            creator_id: course.creator_id,
           };
         })
       );
@@ -169,7 +173,7 @@ export default function AvailableCoursesSection() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              to={`/checkout/${course.id}`}
+              to={`/store/${slugs?.[course.creator_id] || 'kanaflix'}/checkout/${course.id}`}
               data-card
               className="shrink-0 w-40 sm:w-48 snap-start"
             >

@@ -31,7 +31,7 @@ interface ComboData {
 }
 
 export default function ComboCheckout() {
-  const { comboId } = useParams<{ comboId: string }>();
+  const { slug, comboId } = useParams<{ slug: string; comboId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: settings } = useSiteSettings();

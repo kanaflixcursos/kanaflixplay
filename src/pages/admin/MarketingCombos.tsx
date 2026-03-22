@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useCreatorSlugs } from '@/hooks/useCheckoutUrl';
 
 function formatPrice(cents: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
@@ -30,10 +31,11 @@ export default function MarketingCombos() {
   const { data: combos, isLoading } = useCombos();
   const invalidate = useInvalidateCombos();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
+  const [linkCombo, setLinkCombo] = useState<{ id: string; title: string; creator_id: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const { data: settings } = useSiteSettings();
+  const { data: slugs } = useCreatorSlugs();
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -148,7 +150,7 @@ export default function MarketingCombos() {
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/admin/marketing/combos/${combo.id}/edit`)}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title })}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setLinkCombo({ id: combo.id, title: combo.title, creator_id: combo.creator_id })}>
             <ExternalLink className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(combo.id)}>
@@ -190,7 +192,7 @@ export default function MarketingCombos() {
     },
   ];
 
-  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/checkout/combo/${linkCombo.id}` : '';
+  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/store/${slugs?.[linkCombo.creator_id] || 'kanaflix'}/checkout/combo/${linkCombo.id}` : '';
 
   return (
     <div className="space-y-6">

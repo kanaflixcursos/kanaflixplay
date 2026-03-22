@@ -13,6 +13,7 @@ export interface Combo {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+  creator_id: string;
   courses: ComboCourse[];
 }
 

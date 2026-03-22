@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCreatorSlugs, getCheckoutUrl } from '@/hooks/useCheckoutUrl';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
@@ -18,6 +19,7 @@ export function useCourseView() {
   const { courseId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: slugs } = useCreatorSlugs();
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [lessons, setLessons] = useState<LessonData[]>([]);
@@ -79,7 +81,7 @@ export function useCourseView() {
           setLessons(sorted);
           setSelectedLesson(sorted[0] || null);
         } else {
-          navigate(`/checkout/${courseId}`);
+          navigate(getCheckoutUrl(slugs, courseData.creator_id, 'course', courseId));
           return;
         }
         setLoading(false);
@@ -215,6 +217,10 @@ export function useCourseView() {
 
   const isPaidCourse = !!(course?.price && course.price > 0);
 
+  const checkoutUrl = course && slugs
+    ? getCheckoutUrl(slugs, course.creator_id, 'course', course.id)
+    : `/store/kanaflix/checkout/${courseId}`;
+
   return {
     courseId,
     course,
@@ -237,5 +243,6 @@ export function useCourseView() {
     handleMarkComplete,
     handleAutoComplete,
     user,
+    checkoutUrl,
   };
 }

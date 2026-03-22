@@ -24,6 +24,7 @@ export interface AdminCourse {
   last_synced_at: string | null;
   price: number | null;
   category_id: string | null;
+  creator_id: string;
   lessonCount: number;
   enrollmentCount: number;
   totalDurationMinutes: number;

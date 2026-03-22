@@ -183,25 +183,17 @@ export default function CreatorForm() {
     enabled: isEditing,
   });
 
-  // Fetch enrolled students for this creator (for team selection)
+  // Fetch users linked to this creator (via profiles.creator_id)
   const { data: enrolledStudents = [] } = useQuery({
-    queryKey: ['creator-enrolled-students', creatorId],
+    queryKey: ['creator-linked-users', creatorId],
     queryFn: async () => {
       if (!creatorId) return [];
-      const { data: enrollments, error } = await supabase
-        .from('course_enrollments')
-        .select('user_id')
-        .eq('creator_id', creatorId);
-      if (error) throw error;
-
-      const uniqueUserIds = [...new Set((enrollments || []).map(e => e.user_id))];
-      if (uniqueUserIds.length === 0) return [];
-
-      const { data: profiles } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('user_id, full_name, email, avatar_url')
-        .in('user_id', uniqueUserIds);
-
+        .eq('creator_id', creatorId)
+        .order('full_name');
+      if (error) throw error;
       return (profiles || []) as EnrolledStudent[];
     },
     enabled: isEditing,
@@ -760,7 +752,7 @@ export default function CreatorForm() {
                       {filteredStudents.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           {enrolledStudents.length === 0
-                            ? 'Nenhum aluno matriculado neste negócio'
+                            ? 'Nenhum aluno vinculado a este negócio'
                             : 'Nenhum aluno encontrado'}
                         </p>
                       ) : (
