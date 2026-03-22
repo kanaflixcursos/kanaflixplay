@@ -475,7 +475,7 @@ export default function Settings() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder="Insira sua API Key do Resend"
-                    savedValue={savedApiKeys?.resend_api_key || ''}
+                    savedValue={savedApiKeys?.resend_api_key || (secretsConfigured.RESEND_API_KEY ? '***' : '')}
                   />
                 )} />
               </div>
