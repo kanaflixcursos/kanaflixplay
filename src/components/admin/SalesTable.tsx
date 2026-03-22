@@ -20,7 +20,7 @@ import {
   Pagination, PaginationContent, PaginationItem, PaginationLink,
   PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Eye, CreditCard, QrCode, FileText, User, Copy, RotateCcw, XCircle, Loader2 } from 'lucide-react';
+import { Eye, CreditCard, QrCode, FileText, User, Copy, RotateCcw, XCircle, Loader2, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Link, useNavigate } from 'react-router-dom';
