@@ -219,6 +219,12 @@ export function useCourseView() {
 
   return {
     courseId,
+  const checkoutUrl = course && slugs
+    ? getCheckoutUrl(slugs, course.creator_id, 'course', course.id)
+    : `/store/kanaflix/checkout/${courseId}`;
+
+  return {
+    courseId,
     course,
     lessons,
     modules,
@@ -239,5 +245,6 @@ export function useCourseView() {
     handleMarkComplete,
     handleAutoComplete,
     user,
+    checkoutUrl,
   };
 }
