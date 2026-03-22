@@ -173,7 +173,7 @@ export default function AvailableCoursesSection() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              to={`/store/kanaflix/checkout/${course.id}`}
+              to={`/store/${slugs?.[course.creator_id] || 'kanaflix'}/checkout/${course.id}`}
               data-card
               className="shrink-0 w-40 sm:w-48 snap-start"
             >
