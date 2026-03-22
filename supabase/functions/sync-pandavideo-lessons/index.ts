@@ -189,6 +189,18 @@ Deno.serve(async (req) => {
 
     for (const course of courses as Course[]) {
       try {
+        // Resolve per-creator Pandavideo API key
+        let pandaApiKey = globalPandaApiKey;
+        if (course.creator_id) {
+          const { data: cs } = await supabase.from("creator_settings").select("pandavideo_api_key").eq("creator_id", course.creator_id).single();
+          if (cs?.pandavideo_api_key) pandaApiKey = cs.pandavideo_api_key;
+        }
+        if (!pandaApiKey) {
+          console.error(`No Pandavideo API key for course ${course.id}`);
+          results.errors.push(`Course ${course.id}: No API key`);
+          continue;
+        }
+
         console.log(`Syncing course ${course.id} with folder ${course.pandavideo_folder_id}`);
         
         // Fetch all subfolder IDs recursively
