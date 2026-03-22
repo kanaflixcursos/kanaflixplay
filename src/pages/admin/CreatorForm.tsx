@@ -34,8 +34,6 @@ interface CreatorFormValues {
   // Branding
   logo_url: string;
   primary_color: string;
-  platform_name: string;
-  platform_description: string;
   // APIs
   pandavideo_api_key: string;
   resend_api_key: string;
@@ -52,8 +50,6 @@ const DEFAULT_VALUES: CreatorFormValues = {
   status: 'active',
   logo_url: '',
   primary_color: 'green',
-  platform_name: '',
-  platform_description: '',
   pandavideo_api_key: '',
   resend_api_key: '',
   sender_name: '',
