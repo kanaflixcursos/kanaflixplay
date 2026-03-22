@@ -1,30 +1,12 @@
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ENV_RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
 async function getResendApiKey(creatorId?: string): Promise<string | null> {
+  if (!creatorId) return null;
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-  // 1) Try creator-specific key
-  if (creatorId) {
-    const { data: cs } = await sb.from("creator_settings").select("resend_api_key").eq("creator_id", creatorId).single();
-    if (cs?.resend_api_key) return cs.resend_api_key;
-  }
-
-  // 2) Fallback to env var
-  if (ENV_RESEND_API_KEY) return ENV_RESEND_API_KEY;
-
-  // 3) Fallback to site_settings
-  try {
-    const { data } = await sb.from("site_settings").select("value").eq("key", "api_keys").maybeSingle();
-    if (data?.value && typeof data.value === "object") {
-      return (data.value as Record<string, string>).resend_api_key || null;
-    }
-  } catch (e) {
-    console.error("Failed to fetch Resend API key from DB:", e);
-  }
-  return null;
+  const { data: cs } = await sb.from("creator_settings").select("resend_api_key").eq("creator_id", creatorId).single();
+  return cs?.resend_api_key || null;
 }
 const DEFAULT_PRODUCTION_URL = "https://cursos.kanaflix.com.br";
 const DEFAULT_PLATFORM_NAME = "Kanaflix Play";
