@@ -183,15 +183,25 @@ export default function CreatorForm() {
     enabled: isEditing,
   });
 
-  // Fetch all registered users for team selection
+  // Fetch enrolled students for this creator (for team selection)
   const { data: enrolledStudents = [] } = useQuery({
-    queryKey: ['creator-all-users', creatorId],
+    queryKey: ['creator-enrolled-students', creatorId],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
+      if (!creatorId) return [];
+      const { data: enrollments, error } = await supabase
+        .from('course_enrollments')
+        .select('user_id')
+        .eq('creator_id', creatorId);
+      if (error) throw error;
+
+      const uniqueUserIds = [...new Set((enrollments || []).map(e => e.user_id))];
+      if (uniqueUserIds.length === 0) return [];
+
+      const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, full_name, email, avatar_url')
-        .order('full_name');
-      if (error) throw error;
+        .in('user_id', uniqueUserIds);
+
       return (profiles || []) as EnrolledStudent[];
     },
     enabled: isEditing,
