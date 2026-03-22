@@ -18,6 +18,7 @@ interface AvailableCourse {
   category_name: string | null;
   total_duration: number;
   points_reward: number;
+  creator_id: string;
 }
 
 function formatPrice(cents: number | null): string {
