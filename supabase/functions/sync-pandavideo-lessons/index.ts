@@ -149,10 +149,10 @@ Deno.serve(async (req) => {
     // Use service role client for database operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch courses with pandavideo folders
+    // Fetch courses with pandavideo folders (include creator_id for key lookup)
     let coursesQuery = supabase
       .from("courses")
-      .select("id, pandavideo_folder_id")
+      .select("id, pandavideo_folder_id, creator_id")
       .not("pandavideo_folder_id", "is", null);
 
     if (courseId) {
