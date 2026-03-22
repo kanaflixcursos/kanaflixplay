@@ -191,7 +191,7 @@ export default function MarketingCombos() {
     },
   ];
 
-  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/checkout/combo/${linkCombo.id}` : '';
+  const checkoutLink = linkCombo ? `${settings?.production_url || window.location.origin}/store/${slugs?.[linkCombo.creator_id] || 'kanaflix'}/checkout/combo/${linkCombo.id}` : '';
 
   return (
     <div className="space-y-6">
