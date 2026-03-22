@@ -142,9 +142,9 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
     navigate('/login');
   };
 
-  const userName = profile.full_name || (isAdmin ? 'Administrador' : 'Usuário');
+  const userName = profile.full_name || (isAdmin ? 'Administrador' : isCreator ? 'Criador' : 'Usuário');
   const userEmail = profile.email || user?.email || '';
-  const homeEnd = isAdmin ? '/admin' : '/';
+  const homeEnd = isAdmin ? '/admin' : isCreator ? '/creator' : '/';
 
   return (
     <Sidebar variant="sidebar">
