@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   ArrowLeft, Save, Building2, ImageIcon, Palette, PlugZap, Mail,
-  Lock, Eye, EyeOff, Info, UserPlus, Trash2, Users,
+  Lock, Eye, EyeOff, Info, Trash2, Users, Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ImageUpload from '@/components/ImageUpload';
 import { PRIMARY_COLOR_PRESETS } from '@/hooks/useSiteSettings';
 import { cn } from '@/lib/utils';
@@ -35,7 +36,6 @@ interface CreatorFormValues {
   primary_color: string;
   platform_name: string;
   platform_description: string;
-  production_url: string;
   // APIs
   pandavideo_api_key: string;
   resend_api_key: string;
@@ -54,7 +54,6 @@ const DEFAULT_VALUES: CreatorFormValues = {
   primary_color: 'green',
   platform_name: '',
   platform_description: '',
-  production_url: '',
   pandavideo_api_key: '',
   resend_api_key: '',
   sender_name: '',
@@ -115,6 +114,13 @@ interface TeamMember {
   profile?: { full_name: string | null; email: string | null; avatar_url: string | null };
 }
 
+interface EnrolledStudent {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
 export default function CreatorForm() {
   const { creatorId } = useParams();
   const navigate = useNavigate();
@@ -122,7 +128,8 @@ export default function CreatorForm() {
   const isEditing = !!creatorId;
 
   const [savedApiKeys, setSavedApiKeys] = useState({ pandavideo_api_key: '', resend_api_key: '', gtm_container_id: '' });
-  const [teamEmail, setTeamEmail] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentPopoverOpen, setStudentPopoverOpen] = useState(false);
 
   const form = useForm<CreatorFormValues>({ defaultValues: DEFAULT_VALUES });
   const selectedColor = form.watch('primary_color') || 'green';
@@ -176,6 +183,42 @@ export default function CreatorForm() {
     enabled: isEditing,
   });
 
+  // Fetch enrolled students for this creator (for team selection)
+  const { data: enrolledStudents = [] } = useQuery({
+    queryKey: ['creator-enrolled-students', creatorId],
+    queryFn: async () => {
+      if (!creatorId) return [];
+      // Get distinct user_ids enrolled in this creator's courses
+      const { data: enrollments, error } = await supabase
+        .from('course_enrollments')
+        .select('user_id')
+        .eq('creator_id', creatorId);
+      if (error) throw error;
+
+      const uniqueUserIds = [...new Set((enrollments || []).map(e => e.user_id))];
+      if (uniqueUserIds.length === 0) return [];
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, avatar_url')
+        .in('user_id', uniqueUserIds);
+
+      return (profiles || []) as EnrolledStudent[];
+    },
+    enabled: isEditing,
+  });
+
+  // Filter enrolled students: exclude owner, existing team members, and apply search
+  const teamMemberIds = teamMembers.map(m => m.user_id);
+  const ownerUserId = creatorData?.creator?.user_id;
+  const filteredStudents = enrolledStudents.filter(s => {
+    if (s.user_id === ownerUserId) return false;
+    if (teamMemberIds.includes(s.user_id)) return false;
+    if (!studentSearch) return true;
+    const q = studentSearch.toLowerCase();
+    return (s.full_name?.toLowerCase().includes(q) || s.email?.toLowerCase().includes(q));
+  });
+
   // Populate form when editing
   useEffect(() => {
     if (!creatorData) return;
@@ -190,7 +233,6 @@ export default function CreatorForm() {
       primary_color: settings?.primary_color || 'green',
       platform_name: settings?.platform_name || '',
       platform_description: settings?.platform_description || '',
-      production_url: settings?.production_url || '',
       pandavideo_api_key: '',
       resend_api_key: '',
       sender_name: settings?.sender_name || '',
@@ -226,7 +268,7 @@ export default function CreatorForm() {
           primary_color: values.primary_color || 'green',
           platform_name: values.platform_name || null,
           platform_description: values.platform_description || null,
-          production_url: values.production_url || null,
+          production_url: values.slug ? `https://${values.slug}.kanaflixplay.com` : null,
           sender_name: values.sender_name || null,
           sender_email: values.sender_email || null,
           gtm_container_id: values.gtm_container_id || null,
@@ -284,7 +326,7 @@ export default function CreatorForm() {
             primary_color: values.primary_color || 'green',
             platform_name: values.platform_name || null,
             platform_description: values.platform_description || null,
-            production_url: values.production_url || null,
+            production_url: values.slug ? `https://${values.slug}.kanaflixplay.com` : null,
             sender_name: values.sender_name || null,
             sender_email: values.sender_email || null,
             gtm_container_id: values.gtm_container_id || null,
@@ -302,19 +344,12 @@ export default function CreatorForm() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // Add team member
+  // Add team member by user_id
   const addTeamMember = useMutation({
-    mutationFn: async (email: string) => {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('email', email.toLowerCase().trim())
-        .single();
-      if (error || !profile) throw new Error('Usuário não encontrado com esse email.');
-
+    mutationFn: async (userId: string) => {
       const { error: insertError } = await supabase
         .from('creator_admins')
-        .insert({ creator_id: creatorId!, user_id: profile.user_id });
+        .insert({ creator_id: creatorId!, user_id: userId });
       if (insertError) {
         if (insertError.code === '23505') throw new Error('Este usuário já faz parte da equipe.');
         throw insertError;
@@ -322,7 +357,8 @@ export default function CreatorForm() {
     },
     onSuccess: () => {
       toast.success('Membro adicionado à equipe!');
-      setTeamEmail('');
+      setStudentSearch('');
+      setStudentPopoverOpen(false);
       refetchTeam();
     },
     onError: (err: Error) => toast.error(err.message),
@@ -415,7 +451,7 @@ export default function CreatorForm() {
                   <FormItem>
                     <FormLabel>Nome do Negócio *</FormLabel>
                     <FormControl><Input placeholder="Nome da marca ou empresa" {...field} /></FormControl>
-                    <FormDescription>Nome exibido publicamente na loja</FormDescription>
+                    <FormDescription>Nome exibido publicamente na loja. Apenas o admin master pode alterar.</FormDescription>
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="slug" render={({ field }) => (
@@ -428,7 +464,7 @@ export default function CreatorForm() {
                         onChange={e => field.onChange(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                       />
                     </FormControl>
-                    <FormDescription>/store/{field.value || 'meu-negocio'}</FormDescription>
+                    <FormDescription>/store/{field.value || 'meu-negocio'} — Apenas o admin master pode alterar.</FormDescription>
                   </FormItem>
                 )} />
               </div>
@@ -454,6 +490,33 @@ export default function CreatorForm() {
                       <SelectItem value="suspended">Suspenso</SelectItem>
                     </SelectContent>
                   </Select>
+                </FormItem>
+              )} />
+            </CardContent>
+          </Card>
+
+          {/* ── Identidade da Loja ── */}
+          <Card>
+            <CardHeader className="dashboard-card-header">
+              <CardTitle className="flex items-center gap-3 text-left">
+                <div className="icon-box"><Building2 /></div>
+                <div>
+                  <span className="text-base">Identidade da Loja</span>
+                  <p className="text-sm text-muted-foreground font-normal">Dados exibidos na loja pública</p>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="dashboard-card-content space-y-4">
+              <FormField control={form.control} name="platform_name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da plataforma</FormLabel>
+                  <FormControl><Input placeholder="Nome exibido na loja" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="platform_description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição da loja</FormLabel>
+                  <FormControl><Input placeholder="Meta description para SEO" {...field} /></FormControl>
                 </FormItem>
               )} />
             </CardContent>
@@ -537,41 +600,6 @@ export default function CreatorForm() {
               </CardContent>
             </Card>
           </div>
-
-          {/* ── Identidade da Loja ── */}
-          <Card>
-            <CardHeader className="dashboard-card-header">
-              <CardTitle className="flex items-center gap-3 text-left">
-                <div className="icon-box"><Building2 /></div>
-                <div>
-                  <span className="text-base">Identidade da Loja</span>
-                  <p className="text-sm text-muted-foreground font-normal">Dados exibidos na loja pública</p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="dashboard-card-content space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField control={form.control} name="platform_name" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome da plataforma</FormLabel>
-                    <FormControl><Input placeholder="Nome exibido na loja" {...field} /></FormControl>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="production_url" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL de produção</FormLabel>
-                    <FormControl><Input placeholder="https://cursos.exemplo.com" {...field} /></FormControl>
-                  </FormItem>
-                )} />
-              </div>
-              <FormField control={form.control} name="platform_description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição da loja</FormLabel>
-                  <FormControl><Input placeholder="Meta description para SEO" {...field} /></FormControl>
-                </FormItem>
-              )} />
-            </CardContent>
-          </Card>
 
           {/* ── E-mail Transacional ── */}
           <Card>
@@ -659,7 +687,7 @@ export default function CreatorForm() {
                   <div>
                     <span className="text-base">Equipe Administrativa</span>
                     <p className="text-sm text-muted-foreground font-normal">
-                      Conceda acesso administrativo do negócio a outros usuários
+                      Conceda acesso administrativo a alunos cadastrados neste negócio
                     </p>
                   </div>
                 </CardTitle>
@@ -724,27 +752,60 @@ export default function CreatorForm() {
                   </div>
                 ))}
 
-                {/* Add member */}
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Email do usuário para adicionar..."
-                    value={teamEmail}
-                    onChange={e => setTeamEmail(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => teamEmail && addTeamMember.mutate(teamEmail)}
-                    disabled={!teamEmail || addTeamMember.isPending}
-                    className="gap-2"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Adicionar
-                  </Button>
-                </div>
+                {/* Add member - select from enrolled students */}
+                <Popover open={studentPopoverOpen} onOpenChange={setStudentPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="gap-2 w-full justify-start text-muted-foreground font-normal">
+                      <Users className="h-4 w-4" />
+                      Selecionar aluno para adicionar à equipe...
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="start">
+                    <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar aluno..."
+                          value={studentSearch}
+                          onChange={e => setStudentSearch(e.target.value)}
+                          className="pl-8 h-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto p-1">
+                      {filteredStudents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {enrolledStudents.length === 0
+                            ? 'Nenhum aluno matriculado neste negócio'
+                            : 'Nenhum aluno encontrado'}
+                        </p>
+                      ) : (
+                        filteredStudents.map(student => (
+                          <button
+                            key={student.user_id}
+                            type="button"
+                            onClick={() => addTeamMember.mutate(student.user_id)}
+                            disabled={addTeamMember.isPending}
+                            className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-accent text-left transition-colors"
+                          >
+                            <Avatar className="h-7 w-7">
+                              <AvatarImage src={student.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs">
+                                {(student.full_name || '?').substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{student.full_name || '—'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <p className="text-xs text-muted-foreground">
-                  Membros da equipe podem gerenciar cursos, alunos e vendas deste negócio.
+                  Apenas alunos matriculados neste negócio podem ser adicionados como membros da equipe.
                 </p>
               </CardContent>
             </Card>
