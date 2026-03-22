@@ -70,6 +70,63 @@ function MaskedApiInput({
   );
 }
 
+function SecretField({
+  label,
+  description,
+  value,
+  onChange,
+  placeholder,
+  savedValue,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  savedValue: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [show, setShow] = useState(false);
+  const isConfigured = !!savedValue && !editing;
+
+  if (isConfigured) {
+    return (
+      <FormItem>
+        <FormLabel>{label}</FormLabel>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
+            <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">Secret já configurada</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => { setEditing(true); onChange(''); }}
+          >
+            Alterar
+          </Button>
+        </div>
+        <FormDescription>{description}</FormDescription>
+      </FormItem>
+    );
+  }
+
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <MaskedApiInput
+        value={value}
+        onChange={onChange}
+        show={show}
+        onToggle={() => setShow(!show)}
+        placeholder={placeholder}
+      />
+      <FormDescription>{description}</FormDescription>
+    </FormItem>
+  );
+}
+
 export default function Settings() {
   const navigate = useNavigate();
   const { data: settings, isLoading } = useSiteSettings();
