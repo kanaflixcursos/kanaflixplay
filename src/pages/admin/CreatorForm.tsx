@@ -236,6 +236,33 @@ export default function CreatorForm() {
     });
   }, [creatorData, form]);
 
+  // Fetch env-level secrets status
+  useEffect(() => {
+    if (!creatorId) return;
+    supabase.functions.invoke('check-secrets', {
+      body: null,
+      method: 'GET',
+    }).then(() => {});
+    // Use fetch directly with query param
+    const fetchEnvSecrets = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-secrets?creator_id=${creatorId}`,
+          { headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+        );
+        if (res.ok) {
+          const json = await res.json();
+          setEnvSecrets(json.effective || {});
+        }
+      } catch (e) {
+        console.error('Failed to check env secrets:', e);
+      }
+    };
+    fetchEnvSecrets();
+  }, [creatorId]);
+
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (values: CreatorFormValues) => {
