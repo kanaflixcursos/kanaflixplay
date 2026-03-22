@@ -19,18 +19,21 @@ export type Database = {
           combo_id: string
           course_id: string
           created_at: string
+          creator_id: string | null
           id: string
         }
         Insert: {
           combo_id: string
           course_id: string
           created_at?: string
+          creator_id?: string | null
           id?: string
         }
         Update: {
           combo_id?: string
           course_id?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
         }
         Relationships: [
@@ -46,6 +49,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "combo_courses_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
             referencedColumns: ["id"]
           },
         ]
@@ -387,6 +397,7 @@ export type Database = {
       daily_login_points: {
         Row: {
           created_at: string
+          creator_id: string | null
           id: string
           login_date: string
           points_awarded: number
@@ -394,6 +405,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           login_date?: string
           points_awarded?: number
@@ -401,12 +413,21 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          creator_id?: string | null
           id?: string
           login_date?: string
           points_awarded?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_login_points_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_coupons: {
         Row: {
@@ -542,18 +563,21 @@ export type Database = {
       email_opens: {
         Row: {
           campaign_id: string
+          creator_id: string | null
           id: string
           opened_at: string
           recipient_email: string
         }
         Insert: {
           campaign_id: string
+          creator_id?: string | null
           id?: string
           opened_at?: string
           recipient_email: string
         }
         Update: {
           campaign_id?: string
+          creator_id?: string | null
           id?: string
           opened_at?: string
           recipient_email?: string
@@ -564,6 +588,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_opens_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
             referencedColumns: ["id"]
           },
         ]
@@ -639,6 +670,7 @@ export type Database = {
           auth_user_id: string | null
           course_ids: string[]
           created_at: string
+          creator_id: string | null
           email: string
           full_name: string
           id: string
@@ -649,6 +681,7 @@ export type Database = {
           auth_user_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string | null
           email: string
           full_name: string
           id?: string
@@ -659,13 +692,22 @@ export type Database = {
           auth_user_id?: string | null
           course_ids?: string[]
           created_at?: string
+          creator_id?: string | null
           email?: string
           full_name?: string
           id?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "imported_users_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_forms: {
         Row: {
@@ -1431,24 +1473,34 @@ export type Database = {
       }
       support_ticket_reads: {
         Row: {
+          creator_id: string | null
           id: string
           last_read_at: string
           ticket_id: string
           user_id: string
         }
         Insert: {
+          creator_id?: string | null
           id?: string
           last_read_at?: string
           ticket_id: string
           user_id: string
         }
         Update: {
+          creator_id?: string | null
           id?: string
           last_read_at?: string
           ticket_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "support_ticket_reads_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "support_ticket_reads_ticket_id_fkey"
             columns: ["ticket_id"]
