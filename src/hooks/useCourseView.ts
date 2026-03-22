@@ -19,6 +19,7 @@ export function useCourseView() {
   const { courseId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: slugs } = useCreatorSlugs();
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [lessons, setLessons] = useState<LessonData[]>([]);
