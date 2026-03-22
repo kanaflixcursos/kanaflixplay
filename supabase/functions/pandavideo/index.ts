@@ -117,8 +117,8 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "list": {
-        // Only admins can list all videos
-        if (!isAdmin) {
+        // Admins and creators can list videos
+        if (!isAdmin && !isCreator) {
           return new Response(
             JSON.stringify({ error: "Forbidden" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
