@@ -124,6 +124,7 @@ export default function CreatorForm() {
   const isEditing = !!creatorId;
 
   const [savedApiKeys, setSavedApiKeys] = useState({ pandavideo_api_key: '', resend_api_key: '', gtm_container_id: '' });
+  const [envSecrets, setEnvSecrets] = useState<Record<string, boolean>>({});
   const [studentSearch, setStudentSearch] = useState('');
   const [studentPopoverOpen, setStudentPopoverOpen] = useState(false);
 
