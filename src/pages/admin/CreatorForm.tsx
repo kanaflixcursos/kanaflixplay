@@ -240,11 +240,6 @@ export default function CreatorForm() {
   // Fetch env-level secrets status
   useEffect(() => {
     if (!creatorId) return;
-    supabase.functions.invoke('check-secrets', {
-      body: null,
-      method: 'GET',
-    }).then(() => {});
-    // Use fetch directly with query param
     const fetchEnvSecrets = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
