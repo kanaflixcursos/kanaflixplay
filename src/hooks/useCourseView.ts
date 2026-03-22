@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCreatorSlugs, getCheckoutUrl } from '@/hooks/useCheckoutUrl';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
