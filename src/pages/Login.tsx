@@ -22,6 +22,7 @@ export default function Login() {
   const redirectTo = searchParams.get('redirect') || '/';
   const initialTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
   const initialEmail = searchParams.get('email') || '';
+  const creatorIdParam = searchParams.get('creator_id') || '';
   
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
