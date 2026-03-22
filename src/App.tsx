@@ -398,6 +398,26 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/admin/creators/new"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCreatorForm />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/creators/:creatorId/edit"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCreatorForm />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
 
               <Route
                 path="/admin/settings"
