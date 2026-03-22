@@ -27,26 +27,31 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Verify admin role
+  // Accept service role key OR admin user token
   const token = authHeader.replace("Bearer ", "");
-  const { data: userData, error: userError } = await sbAdmin.auth.getUser(token);
-  if (userError || !userData?.user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  
+  if (token !== serviceRoleKey) {
+    // Verify as user token - must be admin
+    const { data: userData, error: userError } = await sbAdmin.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  const { data: roleData } = await sbAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userData.user.id)
-    .eq("role", "admin")
-    .maybeSingle();
+    const { data: roleData } = await sbAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
 
-  if (!roleData) {
-    return new Response(JSON.stringify({ error: "Forbidden - admin only" }), {
-      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (!roleData) {
+      return new Response(JSON.stringify({ error: "Forbidden - admin only" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   const { creator_id } = await req.json();
