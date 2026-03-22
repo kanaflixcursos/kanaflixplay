@@ -143,7 +143,7 @@ export default function Checkout() {
 
   const handleFreeEnrollment = async () => {
     if (!user) {
-      const returnUrl = `/checkout/${courseId}`;
+      const returnUrl = `/store/${slug}/checkout/${courseId}`;
       navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
       return;
     }
