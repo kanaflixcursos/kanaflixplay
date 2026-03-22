@@ -33,6 +33,7 @@ import {
   Trophy,
   Wallet,
   Settings,
+  UserPlus,
 } from 'lucide-react';
 
 const studentMenuItems = [
@@ -45,6 +46,7 @@ const studentMenuItems = [
 
 const adminMenuItems = [
   { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
+  { title: 'Criadores', url: '/admin/creators', icon: UserPlus },
   { title: 'Cursos', url: '/admin/courses', icon: BookOpen },
   { title: 'Alunos', url: '/admin/students', icon: Users },
   { title: 'Vendas', url: '/admin/orders', icon: ShoppingCart },
@@ -54,8 +56,16 @@ const adminMenuItems = [
   { title: 'Configurações', url: '/admin/settings', icon: Settings },
 ];
 
+const creatorMenuItems = [
+  { title: 'Dashboard', url: '/creator', icon: LayoutDashboard },
+  { title: 'Cursos', url: '/creator/courses', icon: BookOpen },
+  { title: 'Alunos', url: '/creator/students', icon: Users },
+  { title: 'Vendas', url: '/creator/orders', icon: ShoppingCart },
+  { title: 'Configurações', url: '/creator/settings', icon: Settings },
+];
+
 interface AppSidebarProps {
-  variant: 'student' | 'admin';
+  variant: 'student' | 'admin' | 'creator';
 }
 
 export default function AppSidebar({ variant }: AppSidebarProps) {
@@ -71,7 +81,8 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const isAdmin = variant === 'admin';
-  const menuItems = isAdmin ? adminMenuItems : studentMenuItems;
+  const isCreator = variant === 'creator';
+  const menuItems = isAdmin ? adminMenuItems : isCreator ? creatorMenuItems : studentMenuItems;
 
   // Auto-close sidebar on route change (mobile)
   useEffect(() => {
@@ -131,9 +142,9 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
     navigate('/login');
   };
 
-  const userName = profile.full_name || (isAdmin ? 'Administrador' : 'Usuário');
+  const userName = profile.full_name || (isAdmin ? 'Administrador' : isCreator ? 'Criador' : 'Usuário');
   const userEmail = profile.email || user?.email || '';
-  const homeEnd = isAdmin ? '/admin' : '/';
+  const homeEnd = isAdmin ? '/admin' : isCreator ? '/creator' : '/';
 
   return (
     <Sidebar variant="sidebar">
@@ -161,8 +172,8 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Admin: link to go back to LMS / Student: link to admin panel */}
-        {isAdmin ? (
+        {/* Navigation links between panels */}
+        {(isAdmin || isCreator) ? (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -180,26 +191,42 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ) : role === 'admin' ? (
+        ) : (
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/admin"
-                      className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <Shield className="h-4.5 w-4.5" />
-                      <span>Painel Admin</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {role === 'admin' && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/admin"
+                        className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
+                        <Shield className="h-4.5 w-4.5" />
+                        <span>Painel Admin</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {role === 'creator' && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/creator"
+                        className="flex items-center gap-3 px-6 py-5 rounded-md text-sm"
+                        activeClassName="bg-primary/10 text-primary font-medium"
+                      >
+                        <Shield className="h-4.5 w-4.5" />
+                        <span>Painel Criador</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ) : null}
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">

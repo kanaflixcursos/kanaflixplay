@@ -44,7 +44,12 @@ import AdminCouponForm from "@/pages/admin/CouponForm";
 import AdminMarketingCombos from "@/pages/admin/MarketingCombos";
 import AdminComboForm from "@/pages/admin/ComboForm";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminCreators from "@/pages/admin/Creators";
 import ComboCheckout from "@/pages/ComboCheckout";
+
+import CreatorLayout from "@/components/layouts/CreatorLayout";
+import CreatorDashboard from "@/pages/creator/Dashboard";
+import CreatorSettings from "@/pages/creator/Settings";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -377,12 +382,45 @@ const App = () => (
               />
 
               <Route
+                path="/admin/creators"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminLayout>
+                      <AdminCreators />
+                    </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/admin/settings"
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminLayout>
                       <AdminSettings />
                     </AdminLayout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Creator Routes */}
+              <Route
+                path="/creator"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <CreatorLayout>
+                      <CreatorDashboard />
+                    </CreatorLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/settings"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <CreatorLayout>
+                      <CreatorSettings />
+                    </CreatorLayout>
                   </ProtectedRoute>
                 }
               />
