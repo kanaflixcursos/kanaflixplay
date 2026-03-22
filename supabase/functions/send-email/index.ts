@@ -544,6 +544,13 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case 'guest_reminder': {
+        const reminderData = data as { buyerName: string; courseName: string; signupUrl: string };
+        html = templates.guestReminder(reminderData);
+        subject = `Lembrete: Crie sua conta - ${PLATFORM_NAME}`;
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }
