@@ -227,8 +227,8 @@ Deno.serve(async (req) => {
       }
 
       case "folders": {
-        // Only admins can list folders
-        if (!isAdmin) {
+        // Admins and creators can list folders
+        if (!isAdmin && !isCreator) {
           return new Response(
             JSON.stringify({ error: "Forbidden" }),
             { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
