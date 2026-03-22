@@ -1190,14 +1190,9 @@ async function sendEmail(supabaseUrl: string, data: {
   action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation';
   to: string;
   data: Record<string, unknown>;
+  creator_id?: string;
 }) {
   try {
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (!RESEND_API_KEY) {
-      console.log('[Email] RESEND_API_KEY not configured, skipping email');
-      return;
-    }
-
     const response = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
       method: 'POST',
       headers: {

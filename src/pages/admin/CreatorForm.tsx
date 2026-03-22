@@ -78,14 +78,13 @@ function SecretField({ label, description, value, onChange, placeholder, savedVa
   const isConfigured = (!!savedValue || !!envConfigured) && !editing;
 
   if (isConfigured) {
-    const sourceLabel = savedValue ? 'Secret do criador configurada' : 'Configurada via ambiente global';
     return (
       <FormItem>
         <FormLabel>{label}</FormLabel>
         <div className="flex items-center gap-2">
           <div className="flex-1 flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm">
             <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">{sourceLabel}</span>
+            <span className="text-muted-foreground">Secret já configurada</span>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(true); onChange(''); }}>Alterar</Button>
         </div>
@@ -237,10 +236,10 @@ export default function CreatorForm() {
     });
   }, [creatorData, form]);
 
-  // Fetch env-level secrets status
+  // Fetch creator-level secrets status
   useEffect(() => {
     if (!creatorId) return;
-    const fetchEnvSecrets = async () => {
+    const fetchCreatorSecrets = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
       try {
@@ -250,13 +249,13 @@ export default function CreatorForm() {
         );
         if (res.ok) {
           const json = await res.json();
-          setEnvSecrets(json.effective || {});
+          setEnvSecrets(json.configured || {});
         }
       } catch (e) {
-        console.error('Failed to check env secrets:', e);
+        console.error('Failed to check creator secrets:', e);
       }
     };
-    fetchEnvSecrets();
+    fetchCreatorSecrets();
   }, [creatorId]);
 
   // Save mutation
@@ -677,6 +676,51 @@ export default function CreatorForm() {
                   />
                 )} />
               </div>
+              {isEditing && !envSecrets.pandavideo && !envSecrets.resend && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={async () => {
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const token = sessionData?.session?.access_token;
+                    try {
+                      const res = await fetch(
+                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/migrate-env-keys`,
+                        {
+                          method: 'POST',
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ creator_id: creatorId }),
+                        }
+                      );
+                      const json = await res.json();
+                      if (res.ok) {
+                        toast.success(`Chaves migradas: ${(json.migrated || []).join(', ')}`);
+                        // Refresh secrets status
+                        const res2 = await fetch(
+                          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-secrets?creator_id=${creatorId}`,
+                          { headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
+                        );
+                        if (res2.ok) {
+                          const json2 = await res2.json();
+                          setEnvSecrets(json2.configured || {});
+                        }
+                      } else {
+                        toast.error(json.error || 'Erro ao migrar chaves');
+                      }
+                    } catch (e) {
+                      toast.error('Erro de conexão');
+                    }
+                  }}
+                >
+                  Migrar chaves do ambiente para este criador
+                </Button>
+              )}
             </CardContent>
           </Card>
 
