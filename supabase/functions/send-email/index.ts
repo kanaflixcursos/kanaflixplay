@@ -425,6 +425,7 @@ interface EmailRequest {
   action: 'welcome' | 'purchase_confirmation' | 'payment_pending' | 'refund_confirmation' | 'campaign' | 'guest_reminder';
   to: string;
   data: Record<string, unknown>;
+  creator_id?: string;
 }
 
 Deno.serve(async (req) => {
