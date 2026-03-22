@@ -50,6 +50,9 @@ import ComboCheckout from "@/pages/ComboCheckout";
 import CreatorLayout from "@/components/layouts/CreatorLayout";
 import CreatorDashboard from "@/pages/creator/Dashboard";
 import CreatorSettings from "@/pages/creator/Settings";
+import StoreLayout from "@/components/layouts/StoreLayout";
+import StorePage from "@/pages/store/StorePage";
+import { StoreCreatorProvider, AuthCreatorProvider } from "@/contexts/CreatorContext";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -408,9 +411,11 @@ const App = () => (
                 path="/creator"
                 element={
                   <ProtectedRoute requiredRole="creator">
-                    <CreatorLayout>
-                      <CreatorDashboard />
-                    </CreatorLayout>
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorDashboard />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
                   </ProtectedRoute>
                 }
               />
@@ -418,10 +423,24 @@ const App = () => (
                 path="/creator/settings"
                 element={
                   <ProtectedRoute requiredRole="creator">
-                    <CreatorLayout>
-                      <CreatorSettings />
-                    </CreatorLayout>
+                    <AuthCreatorProvider>
+                      <CreatorLayout>
+                        <CreatorSettings />
+                      </CreatorLayout>
+                    </AuthCreatorProvider>
                   </ProtectedRoute>
+                }
+              />
+
+              {/* Public Store Routes */}
+              <Route
+                path="/store/:slug"
+                element={
+                  <StoreCreatorProvider>
+                    <StoreLayout>
+                      <StorePage />
+                    </StoreLayout>
+                  </StoreCreatorProvider>
                 }
               />
 

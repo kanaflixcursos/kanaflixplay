@@ -269,11 +269,11 @@ export default function Creators() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
                             <AvatarImage src={creator.profile?.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs">{creator.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback className="text-xs">{(creator.profile?.full_name || creator.name).substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-sm">{creator.name}</p>
-                            <p className="text-xs text-muted-foreground">{creator.profile?.email}</p>
+                            <p className="font-medium text-sm">{creator.profile?.full_name || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{creator.name}</p>
                           </div>
                         </div>
                       </TableCell>
