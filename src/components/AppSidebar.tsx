@@ -65,7 +65,7 @@ const creatorMenuItems = [
 ];
 
 interface AppSidebarProps {
-  variant: 'student' | 'admin';
+  variant: 'student' | 'admin' | 'creator';
 }
 
 export default function AppSidebar({ variant }: AppSidebarProps) {
