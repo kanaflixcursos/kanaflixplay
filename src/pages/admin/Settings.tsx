@@ -424,45 +424,38 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="dashboard-card-content space-y-4">
               <FormField control={form.control} name="gtm_container_id" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Google Tag Manager - Container ID</FormLabel>
-                  <FormControl><Input placeholder="GTM-XXXXXXX" {...field} /></FormControl>
-                  <FormDescription>Deixe vazio para desativar o GTM</FormDescription>
-                </FormItem>
+                <SecretField
+                  label="Google Tag Manager - Container ID"
+                  description="Deixe vazio para desativar o GTM"
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="GTM-XXXXXXX"
+                  savedValue={savedGtm}
+                />
               )} />
 
               <Separator />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField control={apiForm.control} name="pandavideo_api_key" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pandavideo API Key</FormLabel>
-                    <FormControl>
-                      <MaskedApiInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        show={showPandaKey}
-                        onToggle={() => setShowPandaKey(!showPandaKey)}
-                        placeholder="Insira sua API Key do Pandavideo"
-                      />
-                    </FormControl>
-                    <FormDescription>Chave para sincronizar vídeos do Pandavideo</FormDescription>
-                  </FormItem>
+                  <SecretField
+                    label="Pandavideo API Key"
+                    description="Chave para sincronizar vídeos do Pandavideo"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Insira sua API Key do Pandavideo"
+                    savedValue={savedApiKeys?.pandavideo_api_key || ''}
+                  />
                 )} />
                 <FormField control={apiForm.control} name="resend_api_key" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resend API Key</FormLabel>
-                    <FormControl>
-                      <MaskedApiInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        show={showResendKey}
-                        onToggle={() => setShowResendKey(!showResendKey)}
-                        placeholder="Insira sua API Key do Resend"
-                      />
-                    </FormControl>
-                    <FormDescription>Chave para envio de e-mails transacionais</FormDescription>
-                  </FormItem>
+                  <SecretField
+                    label="Resend API Key"
+                    description="Chave para envio de e-mails transacionais"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Insira sua API Key do Resend"
+                    savedValue={savedApiKeys?.resend_api_key || ''}
+                  />
                 )} />
               </div>
             </CardContent>
