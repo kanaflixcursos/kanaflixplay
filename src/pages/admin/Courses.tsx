@@ -83,6 +83,7 @@ export default function AdminCourses() {
   const { data: pandaFolders = [] } = usePandaFolders();
   const invalidateCourses = useInvalidateCourses();
   const { data: settings } = useSiteSettings();
+  const { data: slugs } = useCreatorSlugs();
 
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
