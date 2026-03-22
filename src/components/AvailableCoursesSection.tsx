@@ -97,6 +97,7 @@ export default function AvailableCoursesSection() {
             category_name: course.course_categories?.name || null,
             total_duration,
             points_reward: course.points_reward || 0,
+            creator_id: course.creator_id,
           };
         })
       );
