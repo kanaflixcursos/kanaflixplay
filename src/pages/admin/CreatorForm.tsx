@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Save, Building2, ImageIcon, Palette, PlugZap, Mail,
-  Lock, Eye, EyeOff, Info, Trash2, Users, Search,
+  ArrowLeft, Save, Building2, Store, ImageIcon, Palette, PlugZap, Mail,
+  Lock, Eye, EyeOff, Info, Trash2, Users, Search, User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
