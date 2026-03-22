@@ -47,6 +47,10 @@ import AdminSettings from "@/pages/admin/Settings";
 import AdminCreators from "@/pages/admin/Creators";
 import ComboCheckout from "@/pages/ComboCheckout";
 
+import CreatorLayout from "@/components/layouts/CreatorLayout";
+import CreatorDashboard from "@/pages/creator/Dashboard";
+import CreatorSettings from "@/pages/creator/Settings";
+
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import DynamicMeta from "@/components/DynamicMeta";
