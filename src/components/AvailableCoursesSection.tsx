@@ -70,7 +70,7 @@ export default function AvailableCoursesSection() {
 
       let query = supabase
         .from('courses')
-        .select('id, title, description, thumbnail_url, price, category_id, points_reward, course_categories(name)')
+        .select('id, title, description, thumbnail_url, price, category_id, points_reward, creator_id, course_categories(name)')
         .eq('is_published', true);
 
       if (enrolledIds.length > 0) {
