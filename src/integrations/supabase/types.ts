@@ -53,7 +53,7 @@ export type Database = {
       combos: {
         Row: {
           created_at: string
-          creator_id: string | null
+          creator_id: string
           description: string | null
           expires_at: string | null
           id: string
@@ -68,7 +68,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           expires_at?: string | null
           id?: string
@@ -83,7 +83,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           expires_at?: string | null
           id?: string
@@ -127,7 +127,7 @@ export type Database = {
       course_enrollments: {
         Row: {
           course_id: string
-          creator_id: string | null
+          creator_id: string
           enrolled_at: string
           expires_at: string | null
           id: string
@@ -135,7 +135,7 @@ export type Database = {
         }
         Insert: {
           course_id: string
-          creator_id?: string | null
+          creator_id?: string
           enrolled_at?: string
           expires_at?: string | null
           id?: string
@@ -143,7 +143,7 @@ export type Database = {
         }
         Update: {
           course_id?: string
-          creator_id?: string | null
+          creator_id?: string
           enrolled_at?: string
           expires_at?: string | null
           id?: string
@@ -170,7 +170,7 @@ export type Database = {
         Row: {
           course_id: string
           created_at: string
-          creator_id: string | null
+          creator_id: string
           id: string
           is_optional: boolean
           order_index: number
@@ -180,7 +180,7 @@ export type Database = {
         Insert: {
           course_id: string
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           id?: string
           is_optional?: boolean
           order_index?: number
@@ -190,7 +190,7 @@ export type Database = {
         Update: {
           course_id?: string
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           id?: string
           is_optional?: boolean
           order_index?: number
@@ -218,7 +218,7 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string
-          creator_id: string | null
+          creator_id: string
           description: string | null
           id: string
           is_featured: boolean
@@ -237,7 +237,7 @@ export type Database = {
         Insert: {
           category_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           id?: string
           is_featured?: boolean
@@ -256,7 +256,7 @@ export type Database = {
         Update: {
           category_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           id?: string
           is_featured?: boolean
@@ -414,7 +414,7 @@ export type Database = {
           course_id: string | null
           course_ids: string[]
           created_at: string
-          creator_id: string | null
+          creator_id: string
           discount_type: string
           discount_value: number
           expires_at: string | null
@@ -430,7 +430,7 @@ export type Database = {
           course_id?: string | null
           course_ids?: string[]
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
@@ -446,7 +446,7 @@ export type Database = {
           course_id?: string | null
           course_ids?: string[]
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
@@ -477,7 +477,7 @@ export type Database = {
       email_campaigns: {
         Row: {
           created_at: string
-          creator_id: string | null
+          creator_id: string
           failed_count: number
           html_content: string
           id: string
@@ -495,7 +495,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           failed_count?: number
           html_content: string
           id?: string
@@ -513,7 +513,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           failed_count?: number
           html_content?: string
           id?: string
@@ -573,7 +573,7 @@ export type Database = {
           badge_text: string
           course_id: string | null
           created_at: string
-          creator_id: string | null
+          creator_id: string
           cta_text: string
           custom_description: string | null
           custom_image_url: string | null
@@ -589,7 +589,7 @@ export type Database = {
           badge_text?: string
           course_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           cta_text?: string
           custom_description?: string | null
           custom_image_url?: string | null
@@ -605,7 +605,7 @@ export type Database = {
           badge_text?: string
           course_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           cta_text?: string
           custom_description?: string | null
           custom_image_url?: string | null
@@ -670,7 +670,7 @@ export type Database = {
       lead_forms: {
         Row: {
           created_at: string
-          creator_id: string | null
+          creator_id: string
           description: string | null
           fields: Json
           id: string
@@ -682,7 +682,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           fields?: Json
           id?: string
@@ -694,7 +694,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           fields?: Json
           id?: string
@@ -718,7 +718,7 @@ export type Database = {
         Row: {
           converted_at: string | null
           created_at: string
-          creator_id: string | null
+          creator_id: string
           custom_data: Json | null
           email: string
           form_id: string | null
@@ -742,7 +742,7 @@ export type Database = {
         Insert: {
           converted_at?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           custom_data?: Json | null
           email: string
           form_id?: string | null
@@ -766,7 +766,7 @@ export type Database = {
         Update: {
           converted_at?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           custom_data?: Json | null
           email?: string
           form_id?: string | null
@@ -962,7 +962,7 @@ export type Database = {
         Row: {
           course_id: string
           created_at: string
-          creator_id: string | null
+          creator_id: string
           description: string | null
           duration_minutes: number | null
           id: string
@@ -978,7 +978,7 @@ export type Database = {
         Insert: {
           course_id: string
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -994,7 +994,7 @@ export type Database = {
         Update: {
           course_id?: string
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -1090,7 +1090,7 @@ export type Database = {
           coupon_id: string | null
           course_id: string | null
           created_at: string
-          creator_id: string | null
+          creator_id: string
           discount_amount: number | null
           failure_reason: string | null
           id: string
@@ -1116,7 +1116,7 @@ export type Database = {
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           discount_amount?: number | null
           failure_reason?: string | null
           id: string
@@ -1142,7 +1142,7 @@ export type Database = {
           coupon_id?: string | null
           course_id?: string | null
           created_at?: string
-          creator_id?: string | null
+          creator_id?: string
           discount_amount?: number | null
           failure_reason?: string | null
           id?: string
