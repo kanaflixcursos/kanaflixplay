@@ -31,10 +31,11 @@ export default function MarketingCombos() {
   const { data: combos, isLoading } = useCombos();
   const invalidate = useInvalidateCombos();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [linkCombo, setLinkCombo] = useState<{ id: string; title: string } | null>(null);
+  const [linkCombo, setLinkCombo] = useState<{ id: string; title: string; creator_id: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const { data: settings } = useSiteSettings();
+  const { data: slugs } = useCreatorSlugs();
 
   const handleDelete = async () => {
     if (!deleteId) return;
