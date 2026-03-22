@@ -117,6 +117,35 @@ export default function SalesTable({
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelingOrder, setCancelingOrder] = useState<Sale | null>(null);
   const [canceling, setCanceling] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+
+  const handleSendGuestReminder = async (sale: Sale) => {
+    if (!sale.user_email) {
+      toast.error('E-mail do comprador não encontrado');
+      return;
+    }
+    setSendingReminder(sale.id);
+    try {
+      const signupUrl = `${window.location.origin}/login?tab=signup&email=${encodeURIComponent(sale.user_email)}`;
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'guest_reminder',
+          to: sale.user_email,
+          data: {
+            buyerName: sale.buyer_name || '',
+            courseName: sale.course_title || 'seu curso',
+            signupUrl,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success('Lembrete enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Error sending reminder:', error);
+      toast.error('Erro ao enviar lembrete');
+    }
+    setSendingReminder(null);
+  };
 
   const copyId = (id: string) => {
     navigator.clipboard.writeText(id);
