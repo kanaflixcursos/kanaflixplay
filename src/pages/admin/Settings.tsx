@@ -142,11 +142,17 @@ export default function Settings() {
   const apiForm = useForm<ApiKeys>({ defaultValues: apiKeys });
 
   useEffect(() => {
-    if (settings) form.reset(settings);
+    if (settings) {
+      form.reset(settings);
+      setSavedGtm(settings.gtm_container_id || '');
+    }
   }, [settings, form]);
 
   useEffect(() => {
-    if (apiKeys) apiForm.reset(apiKeys);
+    if (apiKeys) {
+      apiForm.reset(apiKeys);
+      setSavedApiKeys({ ...apiKeys });
+    }
   }, [apiKeys, apiForm]);
 
   const { theme } = useTheme();
