@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCreator } from '@/contexts/CreatorContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { PRIMARY_COLOR_PRESETS } from '@/hooks/useSiteSettings';
 import ImageUpload from '@/components/ImageUpload';
@@ -24,9 +23,8 @@ interface CreatorSettingsData {
   production_url: string;
 }
 
-export default function CreatorSettings() {
-  const { user } = useAuth();
-  const [creatorId, setCreatorId] = useState<string | null>(null);
+export default function CreatorSettingsPage() {
+  const { creatorId, loading: creatorLoading } = useCreator();
   const [settings, setSettings] = useState<CreatorSettingsData>({
     primary_color: 'emerald',
     platform_name: '',
@@ -43,26 +41,13 @@ export default function CreatorSettings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!creatorId) return;
 
     const fetchSettings = async () => {
-      const { data: creator } = await supabase
-        .from('creators')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!creator) {
-        setLoading(false);
-        return;
-      }
-
-      setCreatorId(creator.id);
-
       const { data } = await supabase
         .from('creator_settings')
         .select('*')
-        .eq('creator_id', creator.id)
+        .eq('creator_id', creatorId)
         .single();
 
       if (data) {
@@ -83,7 +68,7 @@ export default function CreatorSettings() {
     };
 
     fetchSettings();
-  }, [user]);
+  }, [creatorId]);
 
   const handleSave = async () => {
     if (!creatorId) return;
@@ -113,7 +98,7 @@ export default function CreatorSettings() {
     }
   };
 
-  if (loading) return <p className="text-muted-foreground p-4">Carregando...</p>;
+  if (creatorLoading || loading) return <p className="text-muted-foreground p-4">Carregando...</p>;
 
   return (
     <div className="space-y-6">

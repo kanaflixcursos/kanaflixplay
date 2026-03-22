@@ -1,37 +1,22 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCreator } from '@/contexts/CreatorContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 
 export default function CreatorDashboard() {
-  const { user } = useAuth();
+  const { creator, creatorId, loading: creatorLoading } = useCreator();
   const [stats, setStats] = useState({ courses: 0, enrollments: 0, orders: 0, revenue: 0 });
-  const [creatorName, setCreatorName] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!creatorId) return;
 
     const fetchStats = async () => {
-      // Get creator record
-      const { data: creator } = await supabase
-        .from('creators')
-        .select('id, name')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!creator) {
-        setLoading(false);
-        return;
-      }
-
-      setCreatorName(creator.name);
-
       const [coursesRes, enrollmentsRes, ordersRes] = await Promise.all([
-        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('creator_id', creator.id),
-        supabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('creator_id', creator.id),
-        supabase.from('orders').select('amount, status').eq('creator_id', creator.id).eq('status', 'paid'),
+        supabase.from('courses').select('*', { count: 'exact', head: true }).eq('creator_id', creatorId),
+        supabase.from('course_enrollments').select('*', { count: 'exact', head: true }).eq('creator_id', creatorId),
+        supabase.from('orders').select('amount, status').eq('creator_id', creatorId).eq('status', 'paid'),
       ]);
 
       const revenue = (ordersRes.data || []).reduce((sum, o) => sum + (o.amount || 0), 0);
@@ -46,7 +31,9 @@ export default function CreatorDashboard() {
     };
 
     fetchStats();
-  }, [user]);
+  }, [creatorId]);
+
+  const isLoading = creatorLoading || loading;
 
   const statCards = [
     { title: 'Cursos', value: stats.courses, icon: BookOpen, color: 'text-primary' },
@@ -59,7 +46,7 @@ export default function CreatorDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          {loading ? 'Carregando...' : `Olá, ${creatorName}`}
+          {isLoading ? 'Carregando...' : `Olá, ${creator?.name || ''}`}
         </h1>
         <p className="text-muted-foreground text-sm">Visão geral do seu conteúdo</p>
       </div>
@@ -72,7 +59,7 @@ export default function CreatorDashboard() {
               <stat.icon className={`h-4 w-4 ${stat.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{loading ? '—' : stat.value}</div>
+              <div className="text-2xl font-bold">{isLoading ? '—' : stat.value}</div>
             </CardContent>
           </Card>
         ))}
