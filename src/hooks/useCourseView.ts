@@ -217,8 +217,6 @@ export function useCourseView() {
 
   const isPaidCourse = !!(course?.price && course.price > 0);
 
-  return {
-    courseId,
   const checkoutUrl = course && slugs
     ? getCheckoutUrl(slugs, course.creator_id, 'course', course.id)
     : `/store/kanaflix/checkout/${courseId}`;
