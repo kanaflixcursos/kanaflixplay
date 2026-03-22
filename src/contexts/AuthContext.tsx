@@ -16,7 +16,7 @@ interface AuthContextType {
   profileComplete: boolean | null;
   recheckProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, redirectTo?: string, phone?: string, birthDate?: string, creatorId?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
