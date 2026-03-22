@@ -81,7 +81,8 @@ export default function AppSidebar({ variant }: AppSidebarProps) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const isAdmin = variant === 'admin';
-  const menuItems = isAdmin ? adminMenuItems : studentMenuItems;
+  const isCreator = variant === 'creator';
+  const menuItems = isAdmin ? adminMenuItems : isCreator ? creatorMenuItems : studentMenuItems;
 
   // Auto-close sidebar on route change (mobile)
   useEffect(() => {
