@@ -227,8 +227,6 @@ export default function CreatorForm() {
       status: creator.status,
       logo_url: settings?.logo_url || '',
       primary_color: settings?.primary_color || 'green',
-      platform_name: settings?.platform_name || '',
-      platform_description: settings?.platform_description || '',
       pandavideo_api_key: '',
       resend_api_key: '',
       sender_name: settings?.sender_name || '',
