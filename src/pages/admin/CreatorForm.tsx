@@ -760,7 +760,7 @@ export default function CreatorForm() {
                       {filteredStudents.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
                           {enrolledStudents.length === 0
-                            ? 'Nenhum usuário cadastrado'
+                            ? 'Nenhum aluno matriculado neste negócio'
                             : 'Nenhum aluno encontrado'}
                         </p>
                       ) : (
