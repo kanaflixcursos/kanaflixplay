@@ -72,6 +72,7 @@ import { useAdminCourses, useCategories, usePandaFolders, useInvalidateCourses }
 import { deleteCourse, syncPandavideoLessons } from '@/services/courseService';
 import type { AdminCourse } from '@/services/courseService';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { useCreatorSlugs, getCheckoutUrl } from '@/hooks/useCheckoutUrl';
 
 export default function AdminCourses() {
   const navigate = useNavigate();
