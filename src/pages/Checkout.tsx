@@ -44,7 +44,7 @@ interface CourseModule {
 }
 
 export default function Checkout() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { slug, courseId } = useParams<{ slug: string; courseId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: settings } = useSiteSettings();
