@@ -403,6 +403,28 @@ const App = () => (
                 }
               />
 
+              {/* Creator Routes */}
+              <Route
+                path="/creator"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <CreatorLayout>
+                      <CreatorDashboard />
+                    </CreatorLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creator/settings"
+                element={
+                  <ProtectedRoute requiredRole="creator">
+                    <CreatorLayout>
+                      <CreatorSettings />
+                    </CreatorLayout>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
